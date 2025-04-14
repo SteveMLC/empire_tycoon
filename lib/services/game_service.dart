@@ -401,14 +401,23 @@ class GameService {
       try {
         print('📖 Found saved game data of size: ${gameData.length} bytes');
         final Map<String, dynamic> gameJson = jsonDecode(gameData);
-        _gameState.fromJson(gameJson);
+        // Await the async fromJson method
+        await _gameState.fromJson(gameJson); 
         print('✅ Game loaded successfully from save');
       } catch (e) {
         print('❌ Error loading game: $e');
         // Continue with new game if loading fails
+        // Consider if we need to re-initialize gameState here or ensure it's in a clean state
       }
     } else {
       print('ℹ️ No saved game found, starting new game');
+      // Ensure real estate is initialized even for a new game
+      // Although the constructor handles this, awaiting it here ensures consistency
+      // if the constructor's future hasn't completed for some reason.
+      // This check might be redundant if constructor guarantees completion before service init.
+      if (_gameState.realEstateInitializationFuture != null) {
+          await _gameState.realEstateInitializationFuture;
+      }
     }
   }
   
@@ -424,10 +433,9 @@ class GameService {
       // Reset the game state to default values
       _gameState.resetToDefaults(); 
       
-      // Make sure we're still listening for changes
-      if (!_gameState.hasListeners) {
-        _gameState.addListener(_saveGame);
-      }
+      // IMPORTANT: Need to re-initialize real estate upgrades after reset
+      // and wait for it before potential save
+      await _gameState.initializeRealEstateUpgrades();
       
       print('🔄 Game reset to defaults with version $_currentVersion');
     } catch (e) {
@@ -445,8 +453,9 @@ class GameService {
   Future<bool> importGameData(String data) async {
     try {
       final Map<String, dynamic> gameJson = jsonDecode(data);
-      _gameState.fromJson(gameJson);
-      _saveGame();
+      // Await the async fromJson method
+      await _gameState.fromJson(gameJson);
+      await saveGame(); // Save after importing
       return true;
     } catch (e) {
       print('❌ Error importing game data: $e');

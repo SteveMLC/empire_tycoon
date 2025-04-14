@@ -209,6 +209,9 @@ class GameState with ChangeNotifier {
   Timer? _saveTimer;
   Timer? _updateTimer;
   
+  // Future for tracking real estate initialization (made public)
+  Future<void>? realEstateInitializationFuture;
+  
   // Constructor initializes with default values or loaded state
   GameState() {
     _initializeDefaultBusinesses();
@@ -223,8 +226,8 @@ class GameState with ChangeNotifier {
     _updateBusinessUnlocks();
     _updateRealEstateUnlocks();
     
-    // Load real estate upgrades
-    initializeRealEstateUpgrades();
+    // Load real estate upgrades and store the future (now public)
+    realEstateInitializationFuture = initializeRealEstateUpgrades();
     
     // Initialize achievements after game state is ready
     achievementManager = AchievementManager(this);
@@ -2188,6 +2191,11 @@ class GameState with ChangeNotifier {
       'properties': locale.properties.map((property) => {
         'id': property.id,
         'owned': property.owned,
+        // Save the IDs of purchased upgrades
+        'purchasedUpgradeIds': property.upgrades
+            .where((upgrade) => upgrade.purchased)
+            .map((upgrade) => upgrade.id)
+            .toList(),
       }).toList(),
     }).toList();
     
@@ -2204,8 +2212,8 @@ class GameState with ChangeNotifier {
     return json;
   }
   
-  // Load game from JSON
-  void fromJson(Map<String, dynamic> json) {
+  // Load game from JSON - NOW ASYNC
+  Future<void> fromJson(Map<String, dynamic> json) async { // <-- Mark as async
     money = json['money'] ?? 1000.0;
     totalEarned = json['totalEarned'] ?? 1000.0;
     manualEarnings = json['manualEarnings'] ?? 0.0;
@@ -2343,9 +2351,14 @@ class GameState with ChangeNotifier {
       }
     }
     
-    // Load real estate
-    _initializeRealEstateLocales(); // Initialize with defaults first
+    // Ensure real estate upgrades are loaded before applying saved state
+    if (realEstateInitializationFuture != null) { // <-- Use public name
+      print("⏳ Waiting for real estate initialization before loading saved state...");
+      await realEstateInitializationFuture; // <-- Use public name
+      print("✅ Real estate initialization complete. Proceeding with loading saved state.");
+    }
     
+    // Load real estate
     if (json['realEstateLocales'] != null) {
       List<dynamic> realEstateJson = json['realEstateLocales'];
       
@@ -2359,7 +2372,7 @@ class GameState with ChangeNotifier {
           // Update locale unlock status
           realEstateLocales[localeIndex].unlocked = localeJson['unlocked'] ?? false;
           
-          // Update property owned counts
+          // Update property owned counts and upgrades
           if (localeJson['properties'] != null) {
             List<dynamic> propertiesJson = localeJson['properties'];
             
@@ -2370,7 +2383,40 @@ class GameState with ChangeNotifier {
               int propertyIndex = realEstateLocales[localeIndex].properties.indexWhere((p) => p.id == propertyId);
               
               if (propertyIndex != -1) {
-                realEstateLocales[localeIndex].properties[propertyIndex].owned = propertyJson['owned'] ?? 0;
+                final property = realEstateLocales[localeIndex].properties[propertyIndex];
+                property.owned = propertyJson['owned'] ?? 0;
+
+                // Load purchased upgrade IDs
+                if (propertyJson['purchasedUpgradeIds'] != null) {
+                  List<String> purchasedIds = List<String>.from(propertyJson['purchasedUpgradeIds']);
+                  print("🔧 Loading upgrades for ${property.name} (${property.id}). Found ${purchasedIds.length} purchased IDs in save.");
+                  print("   Current upgrades in memory: ${property.upgrades.length}");
+                  
+                  // Mark upgrades as purchased based on loaded IDs
+                  int appliedCount = 0;
+                  for (var upgrade in property.upgrades) {
+                    if (purchasedIds.contains(upgrade.id)) {
+                      if (!upgrade.purchased) { // Apply only if not already marked (might happen if loaded twice?)
+                         upgrade.purchased = true;
+                         appliedCount++;
+                         print("      -> Applied purchased status to upgrade: ${upgrade.id} (${upgrade.description})");
+                      } else {
+                         print("      -> Upgrade already marked purchased: ${upgrade.id}");
+                      }
+                    } else {
+                      // Ensure upgrades not in the list are marked as not purchased
+                      // This handles cases where an upgrade might have been removed or save file is old
+                      upgrade.purchased = false; 
+                    }
+                  }
+                  print("   Applied purchased status to $appliedCount upgrades for ${property.name}.");
+                } else {
+                  // If no purchased IDs are saved, ensure all current upgrades are marked not purchased
+                  print("🔧 No purchased upgrade IDs found for ${property.name} in save. Ensuring all current upgrades are marked not purchased.");
+                  for (var upgrade in property.upgrades) {
+                    upgrade.purchased = false;
+                  }
+                }
               }
             }
           }
@@ -2415,6 +2461,7 @@ class GameState with ChangeNotifier {
     
     isInitialized = true;
     notifyListeners();
+    print("✅ GameState.fromJson complete.");
   }
   
   // Process progress while game was closed
