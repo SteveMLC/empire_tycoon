@@ -555,7 +555,7 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
         const SizedBox(height: 16),
         
         // Property list
-        ...locale.properties.map((property) => _buildPropertyItem(property, gameState, theme)).toList(),
+        ...locale.properties.map((property) => _buildPropertyItem(locale, property, gameState, theme)).toList(),
       ],
     );
   }
@@ -702,13 +702,13 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
     );
   }
   
-  Widget _buildPropertyItem(RealEstateProperty property, GameState gameState, ThemeData theme) {
+  Widget _buildPropertyItem(RealEstateLocale locale, RealEstateProperty property, GameState gameState, ThemeData theme) {
     // Determine if the property is owned
     bool isOwned = property.owned > 0;
     bool canAfford = gameState.money >= property.purchasePrice;
     
-    // Get the locale ID for image path
-    String localeId = _selectedLocale!.id;
+    // Get the locale ID from the passed locale object
+    String localeId = locale.id; // Use passed locale
     
     // Get next available upgrade if property is owned
     RealEstateUpgrade? nextUpgrade = isOwned ? property.getNextAvailableUpgrade() : null;
@@ -893,6 +893,7 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
                   child: isOwned
                     ? hasUpgrade 
                       ? _buildUpgradeButton(
+                          locale, // Pass locale down
                           property, 
                           nextUpgrade!, 
                           canAffordUpgrade, 
@@ -915,7 +916,8 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
                         onPressed: canAfford 
                           ? () {
                               // Try to buy the property
-                              if (gameState.buyRealEstateProperty(_selectedLocale!.id, property.id)) {
+                              // Use the passed locale's ID here too for consistency
+                              if (gameState.buyRealEstateProperty(locale.id, property.id)) {
                                 // Play real estate purchase sound
                                 final gameService = Provider.of<GameService>(context, listen: false);
                                 gameService.soundManager.playRealEstatePurchaseSound();
@@ -967,6 +969,7 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
   
   // Helper method to build upgrade button
   Widget _buildUpgradeButton(
+    RealEstateLocale locale, // Accept locale
     RealEstateProperty property, 
     RealEstateUpgrade upgrade, 
     bool canAffordUpgrade, 
@@ -976,32 +979,36 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
     return ElevatedButton.icon(
       onPressed: canAffordUpgrade 
         ? () {
-            // Try to purchase the upgrade
-            if (gameState.purchasePropertyUpgrade(_selectedLocale!.id, property.id, upgrade.id)) {
-              // Play property upgrade sound - using the dedicated real estate upgrade sound
-              final gameService = Provider.of<GameService>(context, listen: false);
-              gameService.soundManager.playRealEstateUpgradeSound();
-              
+            // Get GameState and GameService providers
+            final gameState = context.read<GameState>();
+            final gameService = Provider.of<GameService>(context, listen: false); // Keep GameService for sounds
+
+            // Attempt to purchase the upgrade - use the PASSED locale.id
+            if (gameState.purchasePropertyUpgrade(locale.id, property.id, upgrade.id)) { // Use locale.id
+              // Play property upgrade sound
+              gameService.soundManager.playRealEstateUpgradeSound(); 
+              // Use ScaffoldMessenger to show the success snackbar
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text('Upgraded ${property.name}'),
+                  content: Text('Upgrade purchased: ${upgrade.description}'),
                   duration: const Duration(seconds: 2),
+                  backgroundColor: Colors.green, // Optional: Success styling
                 ),
               );
             } else {
               // Play error sound
-              final gameService = Provider.of<GameService>(context, listen: false);
-              gameService.soundManager.playErrorSound();
-              
+              gameService.soundManager.playErrorSound(); 
+              // Use ScaffoldMessenger to show the error snackbar
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('Failed to upgrade property'),
+                  content: Text('Upgrade failed. Please try again.'),
                   duration: Duration(seconds: 2),
+                  backgroundColor: Colors.red, // Optional: Error styling
                 ),
               );
             }
           } 
-        : null,
+        : null, // Disable button if cannot afford
       icon: const Icon(Icons.upgrade, size: 18),
       label: Text(canAffordUpgrade ? 'UPGRADE PROPERTY' : 'INSUFFICIENT FUNDS'),
       style: ElevatedButton.styleFrom(

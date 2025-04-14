@@ -52,6 +52,14 @@ class Achievement {
 class AchievementManager {
   List<Achievement> achievements = [];
   
+  // Define locale groups as static constants for reuse
+  static const Set<String> _tropicalLocaleIds = {'rural_thailand', 'ho_chi_minh', 'miami_fl'}; // Example IDs - replace with actual IDs
+  static const Set<String> _urbanLocaleIds = {
+      'lagos_nigeria', 'mumbai_india', 'singapore', 'hong_kong', 'berlin_germany',
+      'london_uk', 'mexico_city', 'new_york_city', 'los_angeles_ca', 'sao_paulo_brazil', 'dubai_uae'
+  }; // Example IDs - replace with actual IDs
+  static const Set<String> _ruralLocaleIds = {'rural_kenya', 'rural_thailand', 'rural_mexico'}; // Example IDs - replace with actual IDs
+
   /// Constructor that initializes all achievements
   AchievementManager(GameState gameState) {
     // Initialize the list of achievements
@@ -123,7 +131,7 @@ class AchievementManager {
       Achievement(
         id: 'big_investment',
         name: 'Stock Market Savvy',
-        description: 'Own investments worth \$100,000 or more',
+        description: 'Own investments worth \\\$100,000 or more',
         icon: Icons.attach_money,
         category: AchievementCategory.progress,
         rarity: AchievementRarity.rare,
@@ -207,7 +215,7 @@ class AchievementManager {
       Achievement(
         id: 'max_reincorporations',
         name: 'Corporate Dynasty',
-        description: 'Complete all 9 re-incorporations (\$1M to \$100T)',
+        description: 'Complete all 9 re-incorporations (\\\$1M to \\\$100T)',
         icon: Icons.sync_alt,
         category: AchievementCategory.progress,
         rarity: AchievementRarity.milestone,
@@ -217,7 +225,7 @@ class AchievementManager {
       Achievement(
         id: 'first_thousand',
         name: 'First Grand',
-        description: 'Earn your first \$1,000',
+        description: 'Earn your first \\\$1,000',
         icon: Icons.monetization_on,
         category: AchievementCategory.wealth,
         rarity: AchievementRarity.basic,
@@ -227,7 +235,7 @@ class AchievementManager {
       Achievement(
         id: 'crisis_investor',
         name: 'Crisis Investor',
-        description: 'Spend \$50,000 resolving events to keep your empire afloat',
+        description: 'Spend \\\$50,000 resolving events to keep your empire afloat',
         icon: Icons.attach_money,
         category: AchievementCategory.wealth,
         rarity: AchievementRarity.basic,
@@ -237,7 +245,7 @@ class AchievementManager {
       Achievement(
         id: 'first_million',
         name: 'Millionaire',
-        description: 'Reach \$1,000,000 in total earnings',
+        description: 'Reach \\\$1,000,000 in total earnings',
         icon: Icons.emoji_events,
         category: AchievementCategory.wealth,
         rarity: AchievementRarity.rare,
@@ -245,7 +253,7 @@ class AchievementManager {
       Achievement(
         id: 'passive_income_master',
         name: 'Passive Income Master',
-        description: 'Earn \$10,000 per second in passive income',
+        description: 'Earn \\\$10,000 per second in passive income',
         icon: Icons.update,
         category: AchievementCategory.wealth,
         rarity: AchievementRarity.rare,
@@ -253,7 +261,7 @@ class AchievementManager {
       Achievement(
         id: 'investment_genius',
         name: 'Investment Genius',
-        description: 'Make \$500,000 profit from investments',
+        description: 'Make \\\$500,000 profit from investments',
         icon: Icons.insert_chart,
         category: AchievementCategory.wealth,
         rarity: AchievementRarity.rare,
@@ -271,7 +279,7 @@ class AchievementManager {
       Achievement(
         id: 'first_billion',
         name: 'Billionaire',
-        description: 'Reach \$1,000,000,000 in total earnings',
+        description: 'Reach \\\$1,000,000,000 in total earnings',
         icon: Icons.diamond,
         category: AchievementCategory.wealth,
         rarity: AchievementRarity.milestone,
@@ -279,7 +287,7 @@ class AchievementManager {
       Achievement(
         id: 'trillionaire',
         name: 'Trillion-Dollar Titan',
-        description: 'Reach \$1,000,000,000,000 in total earnings',
+        description: 'Reach \\\$1,000,000,000,000 in total earnings',
         icon: Icons.auto_awesome,
         category: AchievementCategory.wealth,
         rarity: AchievementRarity.milestone,
@@ -287,7 +295,7 @@ class AchievementManager {
       Achievement(
         id: 'income_trifecta',
         name: 'Income Trifecta',
-        description: 'Generate \$10,000,000 income per second from each: Businesses, Real Estate, and Investments',
+        description: 'Generate \\\$10,000,000 income per second from each: Businesses, Real Estate, and Investments',
         icon: Icons.monetization_on_outlined,
         category: AchievementCategory.wealth,
         rarity: AchievementRarity.milestone,
@@ -297,7 +305,7 @@ class AchievementManager {
       Achievement(
         id: 'million_dollar_fixer',
         name: 'Million-Dollar Fixer',
-        description: 'Spend \$1,000,000 on event resolutions to prove your financial might',
+        description: 'Spend \\\$1,000,000 on event resolutions to prove your financial might',
         icon: Icons.diamond,
         category: AchievementCategory.wealth,
         rarity: AchievementRarity.milestone,
@@ -305,7 +313,7 @@ class AchievementManager {
       Achievement(
         id: 'tycoon_titan',
         name: 'Tycoon Titan',
-        description: 'Spend \$50,000,000 resolving events to dominate crisis management',
+        description: 'Spend \\\$50,000,000 resolving events to dominate crisis management',
         icon: Icons.auto_awesome,
         category: AchievementCategory.wealth,
         rarity: AchievementRarity.milestone,
@@ -313,7 +321,7 @@ class AchievementManager {
       Achievement(
         id: 'million_dollar_maverick',
         name: 'Million-Dollar Maverick',
-        description: 'Pay a single fee of \$1,000,000 to resolve an event in one bold move',
+        description: 'Pay a single fee of \\\$1,000,000 to resolve an event in one bold move',
         icon: Icons.monetization_on_outlined,
         category: AchievementCategory.wealth,
         rarity: AchievementRarity.milestone,
@@ -949,6 +957,78 @@ class AchievementManager {
         }
         return largestFeePaid / 1000000.0 > 1.0 ? 1.0 : largestFeePaid / 1000000.0;
         
+      // >> NEW: Real Estate Upgrade Achievement Progress Calculation <<
+      case 'first_fixer':
+        // Binary: Fully upgrade 1 property
+        return gameState.fullyUpgradedPropertyIds.isNotEmpty ? 1.0 : 0.0;
+
+      case 'upgrade_enthusiast':
+        // Progress towards 50 upgrades
+        return gameState.totalRealEstateUpgradesPurchased / 50.0 > 1.0 ? 1.0 : gameState.totalRealEstateUpgradesPurchased / 50.0;
+
+      case 'renovation_master':
+        // Progress towards fully upgrading 25 properties
+        return gameState.fullyUpgradedPropertyIds.length / 25.0 > 1.0 ? 1.0 : gameState.fullyUpgradedPropertyIds.length / 25.0;
+
+      case 'property_perfectionist':
+        // Progress towards 500 upgrades
+        return gameState.totalRealEstateUpgradesPurchased / 500.0 > 1.0 ? 1.0 : gameState.totalRealEstateUpgradesPurchased / 500.0;
+
+      case 'upgrade_titan':
+        // Progress towards fully upgrading all properties
+        int totalProperties = gameState.realEstateLocales.fold(0, (sum, locale) => sum + locale.properties.length);
+        if (totalProperties == 0) return 0.0; // Avoid division by zero
+        return gameState.fullyUpgradedPropertyIds.length / totalProperties > 1.0 ? 1.0 : gameState.fullyUpgradedPropertyIds.length / totalProperties;
+
+      case 'renovation_spender':
+        // Progress towards spending $100k on upgrades
+        return gameState.totalUpgradeSpending / 100000.0 > 1.0 ? 1.0 : gameState.totalUpgradeSpending / 100000.0;
+
+      case 'million_dollar_upgrader':
+        // Progress towards spending $1M on upgrades
+        return gameState.totalUpgradeSpending / 1000000.0 > 1.0 ? 1.0 : gameState.totalUpgradeSpending / 1000000.0;
+
+      case 'big_renovator':
+        // Progress towards spending $4M on upgrades
+        return gameState.totalUpgradeSpending / 4000000.0 > 1.0 ? 1.0 : gameState.totalUpgradeSpending / 4000000.0;
+
+      case 'luxury_investor':
+        // Progress towards spending $10M on luxury property upgrades
+        return gameState.luxuryUpgradeSpending / 10000000.0 > 1.0 ? 1.0 : gameState.luxuryUpgradeSpending / 10000000.0;
+
+      case 'billion_dollar_builder':
+        // Progress towards spending $1B on upgrades
+        return gameState.totalUpgradeSpending / 1000000000.0 > 1.0 ? 1.0 : gameState.totalUpgradeSpending / 1000000000.0;
+
+      case 'locale_landscaper':
+        // Binary: Fully upgrade all properties in 1 locale
+        return gameState.fullyUpgradedLocales.isNotEmpty ? 1.0 : 0.0;
+
+      case 'tropical_transformer':
+        // Progress towards fully upgrading 15 properties in tropical locales
+        // Use the class member function and static set
+        int count = _countFullyUpgradedInLocales(gameState, _tropicalLocaleIds);
+        return count / 15.0 > 1.0 ? 1.0 : count / 15.0;
+
+      case 'urban_upgrader':
+        // Progress towards fully upgrading 30 properties in urban locales
+        // Use the class member function and static set
+        int count = _countFullyUpgradedInLocales(gameState, _urbanLocaleIds);
+        return count / 30.0 > 1.0 ? 1.0 : count / 30.0;
+
+      case 'rural_renovator':
+        // Progress towards fully upgrading 15 properties in rural locales
+        // Use the class member function and static set
+        int count = _countFullyUpgradedInLocales(gameState, _ruralLocaleIds);
+        return count / 15.0 > 1.0 ? 1.0 : count / 15.0;
+
+      case 'global_renovator':
+        // Progress towards fully upgrading at least 1 property in every locale
+        int totalLocales = gameState.realEstateLocales.length;
+        if (totalLocales == 0) return 0.0; // Avoid division by zero
+        return gameState.localesWithOneFullyUpgradedProperty.length / totalLocales > 1.0 ? 1.0 : gameState.localesWithOneFullyUpgradedProperty.length / totalLocales;
+      // << END NEW >>
+        
       default:
         return 0.0;
     }
@@ -1233,37 +1313,25 @@ class AchievementManager {
       newlyCompleted.add(achievements.firstWhere((a) => a.id == 'locale_landscaper'));
     }
 
-    // Helper to count fully upgraded properties in specific locales
-    int countFullyUpgradedInLocales(Set<String> localeIds) {
-      int count = 0;
-      for (String localeId in localeIds) {
-        count += (gameState.fullyUpgradedPropertiesPerLocale[localeId] ?? 0) as int; 
-      }
-      return count;
-    }
-
-    // Define locale groups
-    const Set<String> tropicalLocaleIds = {'rural_thailand', 'ho_chi_minh', 'miami_fl'}; // Example IDs - replace with actual IDs
-    const Set<String> urbanLocaleIds = {
-        'lagos_nigeria', 'mumbai_india', 'singapore', 'hong_kong', 'berlin_germany', 
-        'london_uk', 'mexico_city', 'new_york_city', 'los_angeles_ca', 'sao_paulo_brazil', 'dubai_uae'
-    }; // Example IDs - replace with actual IDs
-    const Set<String> ruralLocaleIds = {'rural_kenya', 'rural_thailand', 'rural_mexico'}; // Example IDs - replace with actual IDs
+    // Helper function moved outside
 
     // Tropical Transformer (Fully upgrade 15 properties in tropical locales)
-    if (!_isCompleted('tropical_transformer') && countFullyUpgradedInLocales(tropicalLocaleIds) >= 15) {
+    // Use the class member function and static set
+    if (!_isCompleted('tropical_transformer') && _countFullyUpgradedInLocales(gameState, _tropicalLocaleIds) >= 15) {
       completeAchievement('tropical_transformer');
       newlyCompleted.add(achievements.firstWhere((a) => a.id == 'tropical_transformer'));
     }
 
     // Urban Upgrader (Fully upgrade 30 properties in urban locales)
-    if (!_isCompleted('urban_upgrader') && countFullyUpgradedInLocales(urbanLocaleIds) >= 30) {
+    // Use the class member function and static set
+    if (!_isCompleted('urban_upgrader') && _countFullyUpgradedInLocales(gameState, _urbanLocaleIds) >= 30) {
       completeAchievement('urban_upgrader');
       newlyCompleted.add(achievements.firstWhere((a) => a.id == 'urban_upgrader'));
     }
 
     // Rural Renovator (Fully upgrade 15 properties in rural locales)
-    if (!_isCompleted('rural_renovator') && countFullyUpgradedInLocales(ruralLocaleIds) >= 15) {
+    // Use the class member function and static set
+    if (!_isCompleted('rural_renovator') && _countFullyUpgradedInLocales(gameState, _ruralLocaleIds) >= 15) {
       completeAchievement('rural_renovator');
       newlyCompleted.add(achievements.firstWhere((a) => a.id == 'rural_renovator'));
     }
@@ -1271,10 +1339,22 @@ class AchievementManager {
     // Global Renovator (Fully upgrade at least 1 property in every locale)
     // Assuming 20 total locales
     int totalLocales = gameState.realEstateLocales.length;
+    if (totalLocales == 0) return; // Avoid division by zero
     if (!_isCompleted('global_renovator') && gameState.localesWithOneFullyUpgradedProperty.length >= totalLocales && totalLocales > 0) {
       completeAchievement('global_renovator');
       newlyCompleted.add(achievements.firstWhere((a) => a.id == 'global_renovator'));
     }
   }
   // << END NEW
+
+  // Helper function moved to class scope
+  // Helper to count fully upgraded properties in specific locales
+  int _countFullyUpgradedInLocales(GameState gameState, Set<String> localeIds) {
+    int count = 0;
+    for (String localeId in localeIds) {
+      // Safely access the count from gameState, defaulting to 0
+      count += gameState.fullyUpgradedPropertiesPerLocale[localeId] ?? 0;
+    }
+    return count;
+  }
 }
