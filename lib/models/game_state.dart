@@ -1015,7 +1015,11 @@ class GameState with ChangeNotifier {
         owned: 0,
         icon: Icons.computer,
         color: Colors.blue,
-        priceHistory: List.generate(7, (_) => 10.0),
+        priceHistory: List.generate(30, (i) {
+          // Create slight variations in the initial price history
+          final randomFactor = 0.98 + (Random().nextDouble() * 0.04); // 0.98 to 1.02
+          return 10.0 * randomFactor;
+        }),
         category: 'Technology',
         marketCap: 2.5, // Small-cap tech firm, moderate volatility
       ),
@@ -1032,7 +1036,11 @@ class GameState with ChangeNotifier {
         owned: 0,
         icon: Icons.eco,
         color: Colors.green,
-        priceHistory: List.generate(7, (_) => 25.0),
+        priceHistory: List.generate(30, (i) {
+          // Create slight variations in the initial price history
+          final randomFactor = 0.98 + (Random().nextDouble() * 0.04); // 0.98 to 1.02
+          return 25.0 * randomFactor;
+        }),
         category: 'Energy',
         marketCap: 5.0, // Mid-size energy firm, stable growth
       ),
@@ -1049,7 +1057,11 @@ class GameState with ChangeNotifier {
         owned: 0,
         icon: Icons.local_shipping,
         color: Colors.blueGrey,
-        priceHistory: List.generate(7, (_) => 50.0),
+        priceHistory: List.generate(30, (i) {
+          // Create slight variations in the initial price history
+          final randomFactor = 0.98 + (Random().nextDouble() * 0.04); // 0.98 to 1.02
+          return 50.0 * randomFactor;
+        }),
         category: 'Transportation',
         marketCap: 12.0, // Large shipping corporation
       ),
@@ -1066,7 +1078,11 @@ class GameState with ChangeNotifier {
         owned: 0,
         icon: Icons.diamond_outlined,
         color: Colors.pink,
-        priceHistory: List.generate(7, (_) => 100.0),
+        priceHistory: List.generate(30, (i) {
+          // Create slight variations in the initial price history
+          final randomFactor = 0.98 + (Random().nextDouble() * 0.04); // 0.98 to 1.02
+          return 100.0 * randomFactor;
+        }),
         category: 'Fashion',
         marketCap: 3.2, // Boutique fashion company
       ),
@@ -1083,7 +1099,11 @@ class GameState with ChangeNotifier {
         owned: 0,
         icon: Icons.rocket_launch,
         color: Colors.deepPurple,
-        priceHistory: List.generate(7, (_) => 500.0),
+        priceHistory: List.generate(30, (i) {
+          // Create slight variations in the initial price history
+          final randomFactor = 0.98 + (Random().nextDouble() * 0.04); // 0.98 to 1.02
+          return 500.0 * randomFactor;
+        }),
         category: 'Aerospace',
         marketCap: 20.0, // High-growth aerospace company
       ),
@@ -1102,7 +1122,11 @@ class GameState with ChangeNotifier {
         owned: 0,
         icon: Icons.currency_bitcoin,
         color: Colors.amber,
-        priceHistory: List.generate(7, (_) => 50.0),
+        priceHistory: List.generate(30, (i) {
+          // Create slight variations in the initial price history
+          final randomFactor = 0.98 + (Random().nextDouble() * 0.04); // 0.98 to 1.02
+          return 50.0 * randomFactor;
+        }),
         category: 'Cryptocurrency',
         marketCap: 0.85, // Small crypto market cap
       ),
@@ -1119,7 +1143,11 @@ class GameState with ChangeNotifier {
         owned: 0,
         icon: Icons.hub,
         color: Colors.blue.shade800,
-        priceHistory: List.generate(7, (_) => 200.0),
+        priceHistory: List.generate(30, (i) {
+          // Create slight variations in the initial price history
+          final randomFactor = 0.98 + (Random().nextDouble() * 0.04); // 0.98 to 1.02
+          return 200.0 * randomFactor;
+        }),
         category: 'Cryptocurrency',
         marketCap: 2.4, // Medium-sized blockchain platform
       ),
@@ -1136,7 +1164,11 @@ class GameState with ChangeNotifier {
         owned: 0,
         icon: Icons.nightlight_round,
         color: Colors.purple.shade300,
-        priceHistory: List.generate(7, (_) => 10.0),
+        priceHistory: List.generate(30, (i) {
+          // Create slight variations in the initial price history
+          final randomFactor = 0.98 + (Random().nextDouble() * 0.04); // 0.98 to 1.02
+          return 10.0 * randomFactor;
+        }),
         category: 'Cryptocurrency',
         marketCap: 0.25, // Small meme coin market cap
       ),
@@ -1153,7 +1185,11 @@ class GameState with ChangeNotifier {
         owned: 0,
         icon: Icons.lock,
         color: Colors.teal,
-        priceHistory: List.generate(7, (_) => 100.0),
+        priceHistory: List.generate(30, (i) {
+          // Create slight variations in the initial price history
+          final randomFactor = 0.98 + (Random().nextDouble() * 0.04); // 0.98 to 1.02
+          return 100.0 * randomFactor;
+        }),
         category: 'Cryptocurrency',
         marketCap: 5.7, // Stablecoin with large adoption
       ),
@@ -1170,7 +1206,11 @@ class GameState with ChangeNotifier {
         owned: 0,
         icon: Icons.pending,
         color: Colors.cyan.shade700,
-        priceHistory: List.generate(7, (_) => 1000.0),
+        priceHistory: List.generate(30, (i) {
+          // Create slight variations in the initial price history
+          final randomFactor = 0.98 + (Random().nextDouble() * 0.04); // 0.98 to 1.02
+          return 1000.0 * randomFactor;
+        }),
         category: 'Cryptocurrency',
         marketCap: 3.2, // Emerging tech with promising growth
       ),
@@ -1189,7 +1229,11 @@ class GameState with ChangeNotifier {
         owned: 0,
         icon: Icons.healing,
         color: Colors.lightBlue.shade700,
-        priceHistory: List.generate(7, (_) => 500.0),
+        priceHistory: List.generate(30, (i) {
+          // Create slight variations in the initial price history
+          final randomFactor = 0.98 + (Random().nextDouble() * 0.04); // 0.98 to 1.02
+          return 500.0 * randomFactor;
+        }),
         category: 'Healthcare',
         dividendPerSecond: 1.89, // Income per second per share
         marketCap: 12.5, // Fund with multiple biotech companies
@@ -1207,7 +1251,11 @@ class GameState with ChangeNotifier {
         owned: 0,
         icon: Icons.live_tv,
         color: Colors.red.shade700,
-        priceHistory: List.generate(7, (_) => 2000.0),
+        priceHistory: List.generate(30, (i) {
+          // Create slight variations in the initial price history
+          final randomFactor = 0.98 + (Random().nextDouble() * 0.04); // 0.98 to 1.02
+          return 2000.0 * randomFactor;
+        }),
         category: 'Entertainment',
         dividendPerSecond: 7.56,
         marketCap: 35.8, // Large ETF covering streaming industry
@@ -1225,7 +1273,11 @@ class GameState with ChangeNotifier {
         owned: 0,
         icon: Icons.agriculture,
         color: Colors.green.shade800,
-        priceHistory: List.generate(7, (_) => 10000.0),
+        priceHistory: List.generate(30, (i) {
+          // Create slight variations in the initial price history
+          final randomFactor = 0.98 + (Random().nextDouble() * 0.04); // 0.98 to 1.02
+          return 10000.0 * randomFactor;
+        }),
         category: 'Agriculture',
         dividendPerSecond: 39,
         marketCap: 22.7, // Bond portfolio for agricultural investments
@@ -1243,7 +1295,11 @@ class GameState with ChangeNotifier {
         owned: 0,
         icon: Icons.flight,
         color: Colors.amber.shade800,
-        priceHistory: List.generate(7, (_) => 50000.0),
+        priceHistory: List.generate(30, (i) {
+          // Create slight variations in the initial price history
+          final randomFactor = 0.98 + (Random().nextDouble() * 0.04); // 0.98 to 1.02
+          return 50000.0 * randomFactor;
+        }),
         category: 'Tourism',
         dividendPerSecond: 191,
         marketCap: 86.5, // Global index of tourism companies
@@ -1261,7 +1317,11 @@ class GameState with ChangeNotifier {
         owned: 0,
         icon: Icons.business,
         color: Colors.brown.shade600,
-        priceHistory: List.generate(7, (_) => 200000.0),
+        priceHistory: List.generate(30, (i) {
+          // Create slight variations in the initial price history
+          final randomFactor = 0.98 + (Random().nextDouble() * 0.04); // 0.98 to 1.02
+          return 200000.0 * randomFactor;
+        }),
         category: 'REITs',
         dividendPerSecond: 762,
         marketCap: 125.8, // Urban commercial real estate trust
@@ -1279,7 +1339,11 @@ class GameState with ChangeNotifier {
         owned: 0,
         icon: Icons.vrpano,
         color: Colors.deepPurple.shade600,
-        priceHistory: List.generate(7, (_) => 1000000.0),
+        priceHistory: List.generate(30, (i) {
+          // Create slight variations in the initial price history
+          final randomFactor = 0.98 + (Random().nextDouble() * 0.04); // 0.98 to 1.02
+          return 1000000.0 * randomFactor;
+        }),
         category: 'Entertainment',
         dividendPerSecond: 3900,
         marketCap: 75.2, // Emerging technology sector companies
@@ -1297,7 +1361,11 @@ class GameState with ChangeNotifier {
         owned: 0,
         icon: Icons.biotech,
         color: Colors.blue.shade800,
-        priceHistory: List.generate(7, (_) => 5000000.0),
+        priceHistory: List.generate(30, (i) {
+          // Create slight variations in the initial price history
+          final randomFactor = 0.98 + (Random().nextDouble() * 0.04); // 0.98 to 1.02
+          return 5000000.0 * randomFactor;
+        }),
         category: 'Healthcare',
         dividendPerSecond: 19500.0,
         marketCap: 120.7, // Medical technology multinational
@@ -1315,7 +1383,11 @@ class GameState with ChangeNotifier {
         owned: 0,
         icon: Icons.eco,
         color: Colors.lightGreen.shade800,
-        priceHistory: List.generate(7, (_) => 20000000.0),
+        priceHistory: List.generate(30, (i) {
+          // Create slight variations in the initial price history
+          final randomFactor = 0.98 + (Random().nextDouble() * 0.04); // 0.98 to 1.02
+          return 20000000.0 * randomFactor;
+        }),
         category: 'Agriculture',
         dividendPerSecond: 83000,
         marketCap: 195.3, // Agricultural technology conglomerate
@@ -1333,7 +1405,11 @@ class GameState with ChangeNotifier {
         owned: 0,
         icon: Icons.beach_access,
         color: Colors.teal.shade600,
-        priceHistory: List.generate(7, (_) => 100000000.0),
+        priceHistory: List.generate(30, (i) {
+          // Create slight variations in the initial price history
+          final randomFactor = 0.98 + (Random().nextDouble() * 0.04); // 0.98 to 1.02
+          return 100000000.0 * randomFactor;
+        }),
         category: 'REITs',
         dividendPerSecond: 385000,
         marketCap: 580.6, // Global luxury hospitality properties trust
@@ -1351,7 +1427,11 @@ class GameState with ChangeNotifier {
         owned: 0,
         icon: Icons.terrain,
         color: Colors.orange.shade800,
-        priceHistory: List.generate(7, (_) => 500000000.0),
+        priceHistory: List.generate(30, (i) {
+          // Create slight variations in the initial price history
+          final randomFactor = 0.98 + (Random().nextDouble() * 0.04); // 0.98 to 1.02
+          return 500000000.0 * randomFactor;
+        }),
         category: 'Tourism',
         dividendPerSecond: 1900000,
         marketCap: 1250.0, // Global adventure travel conglomerate
@@ -1454,6 +1534,9 @@ class GameState with ChangeNotifier {
       clickBoostEndTime = null;
       notifyListeners();
     }
+    
+    // Add micro-updates to investment prices for more dynamic charts
+    _updateInvestmentPricesMicro();
     
     // Check for achievement completions
     if (isInitialized && achievementManager != null) {
@@ -1597,8 +1680,8 @@ class GameState with ChangeNotifier {
     for (var investment in investments) {
       // Add current price to history
       investment.priceHistory.add(investment.currentPrice);
-      if (investment.priceHistory.length > 7) {
-        investment.priceHistory.removeAt(0); // Keep only last 7 days
+      if (investment.priceHistory.length > 30) {
+        investment.priceHistory.removeAt(0); // Keep only last 30 price points
       }
       
       // Apply random price change based on volatility and trend
@@ -2253,7 +2336,7 @@ class GameState with ChangeNotifier {
             } catch (e) {
               print('Error parsing price history: $e');
               // Use default price history if parsing fails
-              investments[index].priceHistory = List.generate(7, (_) => investments[index].basePrice);
+              investments[index].priceHistory = List.generate(30, (_) => investments[index].basePrice);
             }
           }
         }
@@ -4485,6 +4568,41 @@ class GameState with ChangeNotifier {
         
         // Reset upgrades list to empty, ensuring no purchased upgrades persist
         property.upgrades = [];
+      }
+    }
+  }
+
+  // Add micro-updates to investment prices for more dynamic chart movement
+  void _updateInvestmentPricesMicro() {
+    // Only update occasionally to avoid too many updates
+    if (Random().nextDouble() > 0.2) return; // 20% chance each tick
+    
+    for (var investment in investments) {
+      // Apply a much smaller random price change
+      double microChange = investment.trend * 0.01; // Smaller trend impact
+      
+      // Add smaller random component based on volatility
+      microChange += (Random().nextDouble() * 2 - 1) * investment.volatility * 0.03;
+      
+      // Apply the micro-change
+      double newPrice = investment.currentPrice * (1 + microChange);
+      
+      // Ensure price doesn't go below minimum threshold
+      if (newPrice < investment.basePrice * 0.1) {
+        newPrice = investment.basePrice * 0.1;
+      }
+      
+      // Cap maximum price to avoid excessive growth
+      double maxPrice = investment.basePrice * 10;
+      if (newPrice > maxPrice) {
+        newPrice = maxPrice;
+      }
+      
+      investment.currentPrice = newPrice;
+      
+      // Update the last price in history with the current price
+      if (investment.priceHistory.isNotEmpty) {
+        investment.priceHistory[investment.priceHistory.length - 1] = investment.currentPrice;
       }
     }
   }

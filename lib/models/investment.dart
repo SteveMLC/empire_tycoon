@@ -13,7 +13,7 @@ class Investment {
   int owned;
   final IconData icon;
   final Color color;
-  List<double> priceHistory; // Last 7 days
+  List<double> priceHistory; // Last 30 price points for more detailed charts
   final String category; // Investment category (e.g., 'Technology', 'Energy', etc.)
   bool autoInvestEnabled = false; // For auto-invest feature
   double autoInvestAmount = 0; // Amount to auto-invest

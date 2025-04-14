@@ -15,7 +15,10 @@ class InvestmentChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return CustomPaint(
-      painter: _ChartPainter(priceHistory, changePercent),
+      painter: _ChartPainter(
+        priceHistory, 
+        changePercent,
+      ),
       child: Container(),
     );
   }
@@ -24,7 +27,7 @@ class InvestmentChart extends StatelessWidget {
 class _ChartPainter extends CustomPainter {
   final List<double> priceHistory;
   final double changePercent;
-
+  
   _ChartPainter(this.priceHistory, this.changePercent);
 
   @override
@@ -115,18 +118,55 @@ class _ChartPainter extends CustomPainter {
     
     if (points.isEmpty) return;
     
-    // Create line path
+    // Create line path with bezier curves for smoother transitions
     linePath.moveTo(points[0].dx, points[0].dy);
-    for (int i = 1; i < points.length; i++) {
-      linePath.lineTo(points[i].dx, points[i].dy);
+    
+    // Use bezier curves for smoother line
+    for (int i = 0; i < points.length - 1; i++) {
+      final Offset current = points[i];
+      final Offset next = points[i + 1];
+      
+      // Calculate control points for bezier curve
+      final double controlX = (current.dx + next.dx) / 2;
+      
+      if (i < points.length - 2) {
+        linePath.cubicTo(
+          controlX, current.dy, // First control point
+          controlX, next.dy,    // Second control point
+          next.dx, next.dy      // End point
+        );
+      } else {
+        linePath.quadraticBezierTo(
+          controlX, current.dy, // Control point
+          next.dx, next.dy      // End point
+        );
+      }
     }
     
-    // Create fill path (area under the curve)
+    // Create fill path (area under the curve) with bezier curves
     fillPath.moveTo(points[0].dx, chartHeight - padding); // Bottom left
     fillPath.lineTo(points[0].dx, points[0].dy); // Top left
     
-    for (int i = 1; i < points.length; i++) {
-      fillPath.lineTo(points[i].dx, points[i].dy);
+    // Use same bezier curves as the line path
+    for (int i = 0; i < points.length - 1; i++) {
+      final Offset current = points[i];
+      final Offset next = points[i + 1];
+      
+      // Calculate control points for bezier curve
+      final double controlX = (current.dx + next.dx) / 2;
+      
+      if (i < points.length - 2) {
+        fillPath.cubicTo(
+          controlX, current.dy, // First control point
+          controlX, next.dy,    // Second control point
+          next.dx, next.dy      // End point
+        );
+      } else {
+        fillPath.quadraticBezierTo(
+          controlX, current.dy, // Control point
+          next.dx, next.dy      // End point
+        );
+      }
     }
     
     fillPath.lineTo(points.last.dx, chartHeight - padding); // Bottom right
