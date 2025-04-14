@@ -1,3 +1,4 @@
+import 'dart:async'; // Import dart:async for Timer
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -25,17 +26,87 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  Timer? _boostTimer; // Timer for boost UI updates
+  Duration _boostTimeRemaining = Duration.zero; // State variable for remaining time
   
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 5, vsync: this);
+    // Start listening to GameState changes to manage the timer
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _updateBoostTimer(Provider.of<GameState>(context, listen: false));
+      Provider.of<GameState>(context, listen: false).addListener(_handleGameStateChange);
+    });
   }
   
   @override
   void dispose() {
     _tabController.dispose();
+    _boostTimer?.cancel(); // Cancel timer on dispose
+    // Remove listener to avoid memory leaks
+    Provider.of<GameState>(context, listen: false).removeListener(_handleGameStateChange);
     super.dispose();
+  }
+
+  // Listen to GameState changes to start/stop the timer
+  void _handleGameStateChange() {
+    if (!mounted) return; // Avoid calling if widget is disposed
+    final gameState = Provider.of<GameState>(context, listen: false);
+    _updateBoostTimer(gameState);
+  }
+
+  // Start or stop the timer based on GameState
+  void _updateBoostTimer(GameState gameState) {
+    final bool isBoostActive = gameState.clickMultiplier > 1.0 && 
+                               gameState.clickBoostEndTime != null && 
+                               gameState.clickBoostEndTime!.isAfter(DateTime.now());
+
+    if (isBoostActive && (_boostTimer == null || !_boostTimer!.isActive)) {
+      // Start the timer if boost is active and timer isn't running
+      _boostTimer?.cancel(); // Cancel any existing timer just in case
+      _boostTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+        if (!mounted) {
+          timer.cancel();
+          return;
+        }
+        final now = DateTime.now();
+        final endTime = Provider.of<GameState>(context, listen: false).clickBoostEndTime;
+        if (endTime == null || now.isAfter(endTime)) {
+          timer.cancel();
+          setState(() {
+            _boostTimeRemaining = Duration.zero; // Reset remaining time
+          });
+          // Optionally trigger a final GameState check/update here if needed
+        } else {
+          setState(() {
+            _boostTimeRemaining = endTime.difference(now);
+          });
+        }
+      });
+      // Initial update
+       if (gameState.clickBoostEndTime != null) {
+         setState(() {
+           _boostTimeRemaining = gameState.clickBoostEndTime!.difference(DateTime.now());
+           if (_boostTimeRemaining.isNegative) _boostTimeRemaining = Duration.zero;
+         });
+       }
+    } else if (!isBoostActive && (_boostTimer != null && _boostTimer!.isActive)) {
+      // Stop the timer if boost is not active and timer is running
+      _boostTimer?.cancel();
+      setState(() {
+         _boostTimeRemaining = Duration.zero; // Ensure UI updates if boost ends early
+      });
+    } else if (isBoostActive) {
+       // Ensure remaining time is updated if the boost end time changes while active
+       final endTime = gameState.clickBoostEndTime!;
+       final remaining = endTime.difference(DateTime.now());
+       if (_boostTimeRemaining.inSeconds != remaining.inSeconds && mounted) {
+         setState(() {
+           _boostTimeRemaining = remaining.isNegative ? Duration.zero : remaining;
+         });
+       }
+    }
   }
 
   // Build offline income notification with improved error handling
@@ -130,8 +201,10 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
               // Top panel with money display
               _buildTopPanel(gameState),
               
-              // Offline Income notification (if available)
-              _buildOfflineIncomeNotification(),
+              // Check for offline income data before building the notification
+              if (Provider.of<GameService>(context, listen: false).offlineIncomeEarned != null &&
+                  Provider.of<GameService>(context, listen: false).offlineDuration != null)
+                _buildOfflineIncomeNotification(), // Only build if data exists
               
               // Achievement notifications
               _buildAchievementNotifications(gameState),
@@ -249,6 +322,11 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     // Get screen width to make panel full width
     final screenWidth = MediaQuery.of(context).size.width;
     
+    // Determine if boost is currently active based on GameState
+    final bool isBoostCurrentlyActive = gameState.clickMultiplier > 1.0 && 
+                                       gameState.clickBoostEndTime != null && 
+                                       gameState.clickBoostEndTime!.isAfter(DateTime.now());
+
     return Container(
       width: screenWidth,
       padding: const EdgeInsets.fromLTRB(20, 35, 20, 20),
@@ -330,8 +408,8 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
             ],
           ),
           
-          // Active boost timer
-          if (gameState.clickMultiplier > 1.0 && gameState.clickBoostEndTime != null)
+          // Active boost timer - uses local state _boostTimeRemaining now
+          if (isBoostCurrentlyActive)
             Padding(
               padding: const EdgeInsets.only(top: 12),
               child: Container(
@@ -346,7 +424,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
                     Icon(Icons.bolt, color: Colors.blue.shade700, size: 20),
                     const SizedBox(width: 8),
                     Text(
-                      '10x Boost Active! Expires in ${_formatBoostTimeRemaining(gameState)}',
+                      '10x Boost Active! Expires in ${_formatBoostTimeRemaining(_boostTimeRemaining)}', // Use local state
                       style: TextStyle(
                         color: Colors.blue.shade800,
                         fontWeight: FontWeight.w600,
@@ -394,16 +472,10 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     return total;
   }
   
-  // Format remaining boost time
-  String _formatBoostTimeRemaining(GameState gameState) {
-    if (gameState.clickBoostEndTime == null) return '';
-    
-    final now = DateTime.now();
-    final end = gameState.clickBoostEndTime!;
-    
-    if (now.isAfter(end)) return 'Expired';
-    
-    final remaining = end.difference(now);
+  // Format remaining boost time - now takes a Duration
+  String _formatBoostTimeRemaining(Duration remaining) {
+    if (remaining <= Duration.zero) return 'Expired';
+
     final minutes = remaining.inMinutes;
     final seconds = remaining.inSeconds % 60;
     

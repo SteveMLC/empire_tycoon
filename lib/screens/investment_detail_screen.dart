@@ -44,26 +44,28 @@ class _InvestmentDetailScreenState extends State<InvestmentDetailScreen> {
     super.initState();
     _quantityController = TextEditingController(text: _quantity.toString());
     // Get the game state from the provider
-    final gameState = Provider.of<GameState>(context, listen: false);
+    // final gameState = Provider.of<GameState>(context, listen: false); // No longer needed here
     // Force a rebuild when the game state updates (like price changes)
-    gameState.addListener(_onGameStateUpdate);
+    // gameState.addListener(_onGameStateUpdate); // REMOVED
   }
   
   @override
   void dispose() {
     // Clean up listener when widget is disposed
-    final gameState = Provider.of<GameState>(context, listen: false);
-    gameState.removeListener(_onGameStateUpdate);
+    // final gameState = Provider.of<GameState>(context, listen: false); // No longer needed here
+    // gameState.removeListener(_onGameStateUpdate); // REMOVED
     _quantityController.dispose();
     super.dispose();
   }
   
   // This will be called when game state updates
+  /* // REMOVED LISTENER METHOD
   void _onGameStateUpdate() {
     if (mounted) {
       setState(() {}); // Trigger a rebuild of the widget
     }
   }
+  */
   
   // Update the text controller when quantity changes
   void _updateQuantityController() {
@@ -600,7 +602,10 @@ class _InvestmentDetailScreenState extends State<InvestmentDetailScreen> {
                           onPressed: (_isBuying && canAfford && _quantity > 0) ||
                                   (!_isBuying && ownedShares >= _quantity && _quantity > 0)
                               ? () {
+                                  // Capture messenger BEFORE the buy/sell action
+                                  final scaffoldMessenger = ScaffoldMessenger.of(context);
                                   final gameService = Provider.of<GameService>(context, listen: false);
+                                  final gameState = Provider.of<GameState>(context, listen: false);
                                   bool success = false;
                                   
                                   if (_isBuying) {
@@ -617,7 +622,11 @@ class _InvestmentDetailScreenState extends State<InvestmentDetailScreen> {
                                       gameService.playSound(GameSounds.investmentSellStock);
                                     }
                                     
-                                    ScaffoldMessenger.of(context).showSnackBar(
+                                    // Now check mounted AFTER buy/sell completes
+                                    if (!mounted) return; 
+
+                                    // Use the captured messenger
+                                    scaffoldMessenger.showSnackBar(
                                       SnackBar(
                                         content: Text(
                                           _isBuying
@@ -628,6 +637,9 @@ class _InvestmentDetailScreenState extends State<InvestmentDetailScreen> {
                                       ),
                                     );
                                     
+                                    // Check if mounted again before setState, although the one above should suffice
+                                    // it's safer to have it directly before the state change too.
+                                    if (!mounted) return; 
                                     setState(() {
                                       _quantity = 1;
                                       _updateQuantityController();
@@ -636,7 +648,11 @@ class _InvestmentDetailScreenState extends State<InvestmentDetailScreen> {
                                     // Play error sound
                                     gameService.playSound(GameSounds.error);
                                     
-                                    ScaffoldMessenger.of(context).showSnackBar(
+                                    // Check if widget is still mounted BEFORE showing SnackBar
+                                    if (!mounted) return; 
+
+                                    // Use the captured messenger
+                                    scaffoldMessenger.showSnackBar(
                                       SnackBar(
                                         content: Text(
                                           _isBuying
