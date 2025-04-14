@@ -51,6 +51,15 @@ class GameState with ChangeNotifier {
   int clickLevel = 1;
   int totalRealEstateUpgradesPurchased = 0; // Track total upgrades purchased
   
+  // >> START: Add Achievement Tracking Fields Declaration <<
+  double totalUpgradeSpending = 0.0;
+  double luxuryUpgradeSpending = 0.0;
+  Set<String> fullyUpgradedPropertyIds = {};
+  Map<String, int> fullyUpgradedPropertiesPerLocale = {};
+  Set<String> localesWithOneFullyUpgradedProperty = {};
+  Set<String> fullyUpgradedLocales = {};
+  // >> END: Add Achievement Tracking Fields Declaration <<
+  
   // Premium features
   bool isPremium = false; // Whether the user has purchased premium
   
@@ -216,9 +225,20 @@ class GameState with ChangeNotifier {
   GameState() {
     _initializeDefaultBusinesses();
     _initializeDefaultInvestments();
-    _initializeRealEstateLocales();
+    _initializeRealEstateLocales(); // Initializes locales and properties
     _setupTimers();
-    
+
+    // >> NEW: Initialize achievement tracking fields
+    totalUpgradeSpending = 0.0;
+    luxuryUpgradeSpending = 0.0;
+    fullyUpgradedPropertyIds = {};
+    fullyUpgradedPropertiesPerLocale = {};
+    localesWithOneFullyUpgradedProperty = {};
+    fullyUpgradedLocales = {};
+    // Ensure totalRealEstateUpgradesPurchased is also initialized if not done elsewhere
+    totalRealEstateUpgradesPurchased = 0; 
+    // << END NEW
+
     // Make sure to set this first
     isInitialized = true;
     
@@ -2134,20 +2154,32 @@ class GameState with ChangeNotifier {
   
   // Convert game state to JSON
   Map<String, dynamic> toJson() {
+    print("💾 GameState.toJson starting...");
     Map<String, dynamic> json = {
       'money': money,
       'totalEarned': totalEarned,
       'manualEarnings': manualEarnings,
       'passiveEarnings': passiveEarnings,
-      'isPremium': isPremium,
       'investmentEarnings': investmentEarnings,
-      'investmentDividendEarnings': investmentDividendEarnings,
-      'realEstateEarnings': realEstateEarnings,
+      'investmentDividendEarnings': investmentDividendEarnings, // Added for serialization
+      'realEstateEarnings': realEstateEarnings, // Added for serialization
       'clickValue': clickValue,
       'taps': taps,
       'clickLevel': clickLevel,
-      'lifetimeTaps': lifetimeTaps, // Save lifetime taps counter
-      'gameStartTime': gameStartTime.toIso8601String(), // Save game start time
+      'totalRealEstateUpgradesPurchased': totalRealEstateUpgradesPurchased, // Serialize this
+
+      // >> NEW: Serialize achievement tracking fields
+      'totalUpgradeSpending': totalUpgradeSpending,
+      'luxuryUpgradeSpending': luxuryUpgradeSpending,
+      'fullyUpgradedPropertyIds': fullyUpgradedPropertyIds.toList(), // Convert Set to List
+      'fullyUpgradedPropertiesPerLocale': fullyUpgradedPropertiesPerLocale,
+      'localesWithOneFullyUpgradedProperty': localesWithOneFullyUpgradedProperty.toList(), // Convert Set to List
+      'fullyUpgradedLocales': fullyUpgradedLocales.toList(), // Convert Set to List
+      // << END NEW
+
+      'isPremium': isPremium,
+      'lifetimeTaps': lifetimeTaps,
+      'gameStartTime': gameStartTime.toIso8601String(),
       'currentDay': currentDay,
       'incomeMultiplier': incomeMultiplier,
       'clickMultiplier': clickMultiplier,
@@ -4490,31 +4522,32 @@ class GameState with ChangeNotifier {
   // Method to purchase an upgrade for a property
   bool purchasePropertyUpgrade(String localeId, String propertyId, String upgradeId) {
     print("🛒 Attempting to purchase upgrade: localeId=$localeId, propertyId=$propertyId, upgradeId=$upgradeId");
-    
+
     // Find locale
     final localeIndex = realEstateLocales.indexWhere((locale) => locale.id == localeId);
     if (localeIndex == -1) {
       print("❌ Locale not found: $localeId");
       return false;
     }
-    
-    // Find property
-    final propertyIndex = realEstateLocales[localeIndex].properties.indexWhere((p) => p.id == propertyId);
+    final RealEstateLocale locale = realEstateLocales[localeIndex]; // << GET LOCALE OBJECT
+
+    // Find property in the found locale
+    final propertyIndex = locale.properties.indexWhere((p) => p.id == propertyId);
     if (propertyIndex == -1) {
       print("❌ Property not found: $propertyId in locale $localeId");
       return false;
     }
-    
+
     // Get property
-    final property = realEstateLocales[localeIndex].properties[propertyIndex];
+    final property = locale.properties[propertyIndex]; // Use locale object here
     print("🏠 Found property: ${property.name} with ${property.upgrades.length} upgrades");
-    
+
     // Check if property is owned
     if (property.owned <= 0) {
       print("❌ Property not owned: ${property.name}");
       return false;
     }
-    
+
     // Find upgrade
     final upgradeIndex = property.upgrades.indexWhere((u) => u.id == upgradeId);
     if (upgradeIndex == -1) {
@@ -4523,38 +4556,71 @@ class GameState with ChangeNotifier {
       property.upgrades.forEach((u) => print("  - ${u.id}: ${u.description}"));
       return false;
     }
-    
+
     final upgrade = property.upgrades[upgradeIndex];
     print("🔍 Found upgrade: ${upgrade.description} (${upgrade.id})");
-    
+
     // Check if already purchased
     if (upgrade.purchased) {
       print("❌ Upgrade already purchased: ${upgrade.description}");
       return false;
     }
-    
+
     // Check if player can afford it
     if (money < upgrade.cost) {
       print("❌ Not enough money: Have \$${money.toStringAsFixed(2)}, need \$${upgrade.cost.toStringAsFixed(2)}");
       return false;
     }
-    
+
     // Purchase the upgrade
     print("💰 Purchasing upgrade: ${upgrade.description} for \$${upgrade.cost}");
     print("   Before: Money=$money, Income per second=${property.cashFlowPerSecond}");
-    
+
     money -= upgrade.cost;
     upgrade.purchased = true;
-    
+
     print("   After: Money=$money, Income per second=${property.cashFlowPerSecond}");
     print("✅ Upgrade purchased successfully! New property income: \$${property.cashFlowPerSecond}/sec");
-    
-    // Update stats
-    totalRealEstateUpgradesPurchased++;
-    
+
+    // Update stats for achievements (using the correctly scoped 'locale' variable)
+    totalRealEstateUpgradesPurchased++; 
+    totalUpgradeSpending += upgrade.cost;
+
+    // Track spending for luxury properties (purchase price >= $1M)
+    if (property.purchasePrice >= 1000000.0) {
+      luxuryUpgradeSpending += upgrade.cost;
+    }
+
+    // Check if property is now fully upgraded
+    if (property.allUpgradesPurchased) {
+      print("✨ Property fully upgraded: ${property.name} (${property.id})");
+      fullyUpgradedPropertyIds.add(property.id);
+      localesWithOneFullyUpgradedProperty.add(locale.id); // Use locale.id here
+
+      // Update per-locale count
+      fullyUpgradedPropertiesPerLocale[locale.id] = (fullyUpgradedPropertiesPerLocale[locale.id] ?? 0) + 1; // Use locale.id here
+      print("   Locale ${locale.name} now has ${fullyUpgradedPropertiesPerLocale[locale.id]} fully upgraded properties."); // Use locale.name and locale.id here
+
+      // Check if the entire locale is now fully upgraded
+      // Use the 'locale' object to check its properties
+      bool allInLocaleUpgraded = locale.properties.every((p) => p.owned > 0 && p.allUpgradesPurchased);
+      if (allInLocaleUpgraded) {
+        print("🌟 Entire locale fully upgraded: ${locale.name} (${locale.id})"); // Use locale.name and locale.id here
+        fullyUpgradedLocales.add(locale.id); // Use locale.id here
+      }
+    }
+
+    // Check achievements after updating stats
+    List<Achievement> newlyCompleted = achievementManager.evaluateAchievements(this);
+    if (newlyCompleted.isNotEmpty) {
+      print("🏆 Achievements completed: ${newlyCompleted.map((a) => a.name).join(', ')}");
+      // Add to recently completed list for potential UI notification
+      recentlyCompletedAchievements.addAll(newlyCompleted);
+    }
+
     // Notify listeners
     notifyListeners();
-    
+
     return true;
   }
   

@@ -385,6 +385,133 @@ class AchievementManager {
         rarity: AchievementRarity.milestone,
       ),
       
+      // >> NEW: Real Estate Upgrade Achievements
+      // Progress Category
+      Achievement(
+        id: 'first_fixer',
+        name: 'First Fixer',
+        description: 'Fully upgrade your first building to kickstart your real estate empire.',
+        icon: Icons.handyman,
+        category: AchievementCategory.progress,
+        rarity: AchievementRarity.basic,
+      ),
+      Achievement(
+        id: 'upgrade_enthusiast',
+        name: 'Upgrade Enthusiast',
+        description: 'Apply 50 upgrades across your properties to show your commitment.',
+        icon: Icons.home_repair_service,
+        category: AchievementCategory.progress,
+        rarity: AchievementRarity.basic,
+      ),
+      Achievement(
+        id: 'renovation_master',
+        name: 'Renovation Master',
+        description: 'Fully upgrade 25 properties to transform your portfolio.',
+        icon: Icons.build_circle,
+        category: AchievementCategory.progress,
+        rarity: AchievementRarity.rare,
+      ),
+      Achievement(
+        id: 'property_perfectionist',
+        name: 'Property Perfectionist',
+        description: 'Apply 500 upgrades to become a true upgrade aficionado.',
+        icon: Icons.architecture,
+        category: AchievementCategory.progress,
+        rarity: AchievementRarity.rare,
+      ),
+      Achievement(
+        id: 'upgrade_titan',
+        name: 'Upgrade Titan',
+        description: 'Fully upgrade all 200 properties to achieve real estate supremacy.',
+        icon: Icons.domain,
+        category: AchievementCategory.progress,
+        rarity: AchievementRarity.milestone,
+      ),
+
+      // Wealth Category
+      Achievement(
+        id: 'renovation_spender',
+        name: 'Renovation Spender',
+        description: "Spend \\\$100,000 upgrading properties to boost your empire's value.",
+        icon: Icons.payments,
+        category: AchievementCategory.wealth,
+        rarity: AchievementRarity.basic,
+      ),
+      Achievement(
+        id: 'million_dollar_upgrader',
+        name: 'Million-Dollar Upgrader',
+        description: 'Spend \\\$1,000,000 on upgrades to prove your financial prowess.',
+        icon: Icons.account_balance,
+        category: AchievementCategory.wealth,
+        rarity: AchievementRarity.basic,
+      ),
+      Achievement(
+        id: 'big_renovator',
+        name: 'Big Renovator',
+        description: 'Spend \\\$4,000,000 upgrading properties to reshape your empire.',
+        icon: Icons.storefront,
+        category: AchievementCategory.wealth,
+        rarity: AchievementRarity.rare,
+      ),
+      Achievement(
+        id: 'luxury_investor',
+        name: 'Luxury Investor',
+        description: 'Spend \\\$10,000,000 on upgrades for premium properties.',
+        icon: Icons.villa,
+        category: AchievementCategory.wealth,
+        rarity: AchievementRarity.rare,
+      ),
+      Achievement(
+        id: 'billion_dollar_builder',
+        name: 'Billion-Dollar Builder',
+        description: 'Spend \\\$1,000,000,000 upgrading properties to dominate the real estate market.',
+        icon: Icons.diamond,
+        category: AchievementCategory.wealth,
+        rarity: AchievementRarity.milestone,
+      ),
+
+      // Regional Category
+      Achievement(
+        id: 'locale_landscaper',
+        name: 'Locale Landscaper',
+        description: 'Fully upgrade all properties in a single locale to master a region.',
+        icon: Icons.landscape,
+        category: AchievementCategory.regional,
+        rarity: AchievementRarity.basic,
+      ),
+      Achievement(
+        id: 'tropical_transformer',
+        name: 'Tropical Transformer',
+        description: 'Fully upgrade 15 properties across tropical locales: Rural Thailand, Ho Chi Minh City, and Miami.',
+        icon: Icons.beach_access,
+        category: AchievementCategory.regional,
+        rarity: AchievementRarity.rare,
+      ),
+      Achievement(
+        id: 'urban_upgrader',
+        name: 'Urban Upgrader',
+        description: 'Fully upgrade 30 properties in major cities.',
+        icon: Icons.location_city,
+        category: AchievementCategory.regional,
+        rarity: AchievementRarity.rare,
+      ),
+      Achievement(
+        id: 'rural_renovator',
+        name: 'Rural Renovator',
+        description: 'Fully upgrade 15 properties in rural areas: Rural Kenya, Rural Thailand, and Rural Mexico.',
+        icon: Icons.agriculture,
+        category: AchievementCategory.regional,
+        rarity: AchievementRarity.basic,
+      ),
+      Achievement(
+        id: 'global_renovator',
+        name: 'Global Renovator',
+        description: 'Fully upgrade at least one property in every locale to conquer the world.',
+        icon: Icons.public,
+        category: AchievementCategory.regional,
+        rarity: AchievementRarity.milestone,
+      ),
+      // << END NEW
 
     ];
   }
@@ -437,6 +564,10 @@ class AchievementManager {
     // Event-related achievements (distributed into progress, wealth, and regional categories)
     _checkEventAchievements(gameState, newlyCompleted);
     
+    // >> NEW: Add call to check upgrade achievements
+    _checkRealEstateUpgradeAchievements(gameState, newlyCompleted);
+    // << END NEW
+
     return newlyCompleted;
   }
   
@@ -887,6 +1018,31 @@ class AchievementManager {
       completeAchievement('first_real_estate');
       newlyCompleted.add(achievements.firstWhere((a) => a.id == 'first_real_estate'));
     }
+
+    // Own properties in 5 locales
+    int localesWithProperties = gameState.realEstateLocales.where((l) => l.hasOwnedProperties()).length;
+    if (!_isCompleted('regional_investor') && localesWithProperties >= 5) {
+      completeAchievement('regional_investor');
+      newlyCompleted.add(achievements.firstWhere((a) => a.id == 'regional_investor'));
+    }
+
+    // Own 50 properties
+    if (!_isCompleted('property_magnate') && gameState.getTotalOwnedProperties() >= 50) {
+      completeAchievement('property_magnate');
+      newlyCompleted.add(achievements.firstWhere((a) => a.id == 'property_magnate'));
+    }
+
+    // Own properties in all 20 locales
+    if (!_isCompleted('global_landlord') && localesWithProperties >= 20) { // Assuming 20 locales total
+      completeAchievement('global_landlord');
+      newlyCompleted.add(achievements.firstWhere((a) => a.id == 'global_landlord'));
+    }
+
+    // Own all properties
+    if (!_isCompleted('own_all_properties') && gameState.ownsAllProperties()) {
+      completeAchievement('own_all_properties');
+      newlyCompleted.add(achievements.firstWhere((a) => a.id == 'own_all_properties'));
+    }
   }
   
   void _checkTapAchievements(GameState gameState, List<Achievement> newlyCompleted) {
@@ -997,7 +1153,128 @@ class AchievementManager {
   
   // Helper to check if an achievement is already completed
   bool _isCompleted(String id) {
-    int index = achievements.indexWhere((a) => a.id == id);
-    return index != -1 ? achievements[index].completed : false;
+    final achievement = achievements.firstWhere((a) => a.id == id, orElse: () => Achievement(id: '', name: '', description: '', icon: Icons.error, category: AchievementCategory.progress)); // Return dummy if not found
+    return achievement.completed;
   }
+
+  // >> NEW: Method to check Real Estate Upgrade Achievements
+  void _checkRealEstateUpgradeAchievements(GameState gameState, List<Achievement> newlyCompleted) {
+    // --- Progress Category ---
+
+    // First Fixer (Fully upgrade 1 property)
+    if (!_isCompleted('first_fixer') && gameState.fullyUpgradedPropertyIds.isNotEmpty) {
+      completeAchievement('first_fixer');
+      newlyCompleted.add(achievements.firstWhere((a) => a.id == 'first_fixer'));
+    }
+
+    // Upgrade Enthusiast (Apply 50 upgrades)
+    if (!_isCompleted('upgrade_enthusiast') && gameState.totalRealEstateUpgradesPurchased >= 50) {
+      completeAchievement('upgrade_enthusiast');
+      newlyCompleted.add(achievements.firstWhere((a) => a.id == 'upgrade_enthusiast'));
+    }
+
+    // Renovation Master (Fully upgrade 25 properties)
+    if (!_isCompleted('renovation_master') && gameState.fullyUpgradedPropertyIds.length >= 25) {
+      completeAchievement('renovation_master');
+      newlyCompleted.add(achievements.firstWhere((a) => a.id == 'renovation_master'));
+    }
+
+    // Property Perfectionist (Apply 500 upgrades)
+    if (!_isCompleted('property_perfectionist') && gameState.totalRealEstateUpgradesPurchased >= 500) {
+      completeAchievement('property_perfectionist');
+      newlyCompleted.add(achievements.firstWhere((a) => a.id == 'property_perfectionist'));
+    }
+
+    // Upgrade Titan (Fully upgrade all 200 properties)
+    // Assuming 200 total properties across all locales
+    int totalProperties = gameState.realEstateLocales.fold(0, (sum, locale) => sum + locale.properties.length);
+    if (!_isCompleted('upgrade_titan') && gameState.fullyUpgradedPropertyIds.length >= totalProperties && totalProperties > 0) {
+      completeAchievement('upgrade_titan');
+      newlyCompleted.add(achievements.firstWhere((a) => a.id == 'upgrade_titan'));
+    }
+
+    // --- Wealth Category ---
+
+    // Renovation Spender (Spend $100k)
+    if (!_isCompleted('renovation_spender') && gameState.totalUpgradeSpending >= 100000.0) {
+      completeAchievement('renovation_spender');
+      newlyCompleted.add(achievements.firstWhere((a) => a.id == 'renovation_spender'));
+    }
+
+    // Million-Dollar Upgrader (Spend $1M)
+    if (!_isCompleted('million_dollar_upgrader') && gameState.totalUpgradeSpending >= 1000000.0) {
+      completeAchievement('million_dollar_upgrader');
+      newlyCompleted.add(achievements.firstWhere((a) => a.id == 'million_dollar_upgrader'));
+    }
+
+    // Big Renovator (Spend $4M)
+    if (!_isCompleted('big_renovator') && gameState.totalUpgradeSpending >= 4000000.0) {
+      completeAchievement('big_renovator');
+      newlyCompleted.add(achievements.firstWhere((a) => a.id == 'big_renovator'));
+    }
+
+    // Luxury Investor (Spend $10M on properties >= $1M purchase price)
+    if (!_isCompleted('luxury_investor') && gameState.luxuryUpgradeSpending >= 10000000.0) {
+      completeAchievement('luxury_investor');
+      newlyCompleted.add(achievements.firstWhere((a) => a.id == 'luxury_investor'));
+    }
+
+    // Billion-Dollar Builder (Spend $1B)
+    if (!_isCompleted('billion_dollar_builder') && gameState.totalUpgradeSpending >= 1000000000.0) {
+      completeAchievement('billion_dollar_builder');
+      newlyCompleted.add(achievements.firstWhere((a) => a.id == 'billion_dollar_builder'));
+    }
+
+    // --- Regional Category ---
+
+    // Locale Landscaper (Fully upgrade all properties in 1 locale)
+    if (!_isCompleted('locale_landscaper') && gameState.fullyUpgradedLocales.isNotEmpty) {
+      completeAchievement('locale_landscaper');
+      newlyCompleted.add(achievements.firstWhere((a) => a.id == 'locale_landscaper'));
+    }
+
+    // Helper to count fully upgraded properties in specific locales
+    int countFullyUpgradedInLocales(Set<String> localeIds) {
+      int count = 0;
+      for (String localeId in localeIds) {
+        count += (gameState.fullyUpgradedPropertiesPerLocale[localeId] ?? 0) as int; 
+      }
+      return count;
+    }
+
+    // Define locale groups
+    const Set<String> tropicalLocaleIds = {'rural_thailand', 'ho_chi_minh', 'miami_fl'}; // Example IDs - replace with actual IDs
+    const Set<String> urbanLocaleIds = {
+        'lagos_nigeria', 'mumbai_india', 'singapore', 'hong_kong', 'berlin_germany', 
+        'london_uk', 'mexico_city', 'new_york_city', 'los_angeles_ca', 'sao_paulo_brazil', 'dubai_uae'
+    }; // Example IDs - replace with actual IDs
+    const Set<String> ruralLocaleIds = {'rural_kenya', 'rural_thailand', 'rural_mexico'}; // Example IDs - replace with actual IDs
+
+    // Tropical Transformer (Fully upgrade 15 properties in tropical locales)
+    if (!_isCompleted('tropical_transformer') && countFullyUpgradedInLocales(tropicalLocaleIds) >= 15) {
+      completeAchievement('tropical_transformer');
+      newlyCompleted.add(achievements.firstWhere((a) => a.id == 'tropical_transformer'));
+    }
+
+    // Urban Upgrader (Fully upgrade 30 properties in urban locales)
+    if (!_isCompleted('urban_upgrader') && countFullyUpgradedInLocales(urbanLocaleIds) >= 30) {
+      completeAchievement('urban_upgrader');
+      newlyCompleted.add(achievements.firstWhere((a) => a.id == 'urban_upgrader'));
+    }
+
+    // Rural Renovator (Fully upgrade 15 properties in rural locales)
+    if (!_isCompleted('rural_renovator') && countFullyUpgradedInLocales(ruralLocaleIds) >= 15) {
+      completeAchievement('rural_renovator');
+      newlyCompleted.add(achievements.firstWhere((a) => a.id == 'rural_renovator'));
+    }
+
+    // Global Renovator (Fully upgrade at least 1 property in every locale)
+    // Assuming 20 total locales
+    int totalLocales = gameState.realEstateLocales.length;
+    if (!_isCompleted('global_renovator') && gameState.localesWithOneFullyUpgradedProperty.length >= totalLocales && totalLocales > 0) {
+      completeAchievement('global_renovator');
+      newlyCompleted.add(achievements.firstWhere((a) => a.id == 'global_renovator'));
+    }
+  }
+  // << END NEW
 }
