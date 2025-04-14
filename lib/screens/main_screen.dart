@@ -251,7 +251,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     
     return Container(
       width: screenWidth,
-      padding: const EdgeInsets.fromLTRB(20, 25, 20, 20),
+      padding: const EdgeInsets.fromLTRB(20, 35, 20, 20),
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border(
