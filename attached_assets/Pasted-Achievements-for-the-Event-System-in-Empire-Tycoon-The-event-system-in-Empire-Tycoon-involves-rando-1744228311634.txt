@@ -1,0 +1,79 @@
+Achievements for the Event System in Empire Tycoon
+The event system in Empire Tycoon involves random events that reduce income to -25% of normal for affected businesses or real estate properties (top 50% by value in a locale). Players can resolve events by tapping 200 times, paying a fee (50% of total investment), or watching an ad. Achievements are categorized into Progress, Wealth, and Regional, recognizing players for their engagement with the event system.
+Progress Achievements
+These achievements focus on the player’s overall progress in handling events, such as resolving a certain number of events or using specific resolution methods repeatedly.
+Crisis Manager
+Description: "Resolve 10 events across your empire to prove your management skills."
+Criteria: Resolve 10 events (business or locale) using any method (tap, pay, or ad).
+Tap Titan
+Description: "Tap your way through 1,000 clicks to solve crises manually."
+Criteria: Accumulate 1,000 taps across all events (e.g., 5 events resolved by tapping 200 times each).
+Ad Enthusiast
+Description: "Watch 25 ads to resolve events quickly and keep your empire running."
+Criteria: Resolve 25 events by watching ads.
+Event Veteran
+Description: "Resolve 50 events to become a seasoned crisis handler."
+Criteria: Resolve 50 events (business or locale) using any method.
+Quick Fixer
+Description: "Resolve 5 events within 5 minutes of their occurrence."
+Criteria: Resolve 5 events within 5 minutes of their trigger time (using any method).
+Business Specialist
+Description: "Resolve 25 business events to master corporate crisis management."
+Criteria: Resolve 25 events specifically affecting businesses (using any method).
+Wealth Achievements
+These achievements focus on the financial aspect of resolving events, particularly through paying fees, and recognize players for significant investments in crisis management.
+Crisis Investor
+Description: "Spend $50,000 resolving events to keep your empire afloat."
+Criteria: Spend a cumulative total of $50,000 in fees to resolve events.
+Million-Dollar Fixer
+Description: "Spend $1,000,000 on event resolutions to prove your financial might."
+Criteria: Spend a cumulative total of $1,000,000 in fees to resolve events.
+Business Savior
+Description: "Spend $500,000 resolving business-specific events."
+Criteria: Spend a cumulative total of $500,000 in fees to resolve business events only.
+Property Protector
+Description: "Spend $500,000 resolving real estate locale events."
+Criteria: Spend a cumulative total of $500,000 in fees to resolve locale events only.
+High-Stakes Resolver
+Description: "Pay a single fee of $100,000 or more to resolve an event."
+Criteria: Resolve a single event by paying a fee of $100,000 or more (likely for high-level businesses or expensive properties).
+Tycoon Titan
+Description: "Spend $50,000,000 resolving events to dominate crisis management."
+Criteria: Spend a cumulative total of $50,000,000 in fees to resolve events.
+Million-Dollar Maverick
+Description: "Pay a single fee of $1,000,000 to resolve an event in one bold move."
+Criteria: Resolve a single event by paying a fee of $1,000,000 or more (likely for top-tier businesses or premium properties).
+Regional Achievements
+These achievements focus on resolving events in specific real estate locales or across multiple regions, encouraging players to expand their empire and handle regional challenges.
+Global Crisis Handler
+Description: "Resolve at least one event in 10 different real estate locales."
+Criteria: Resolve at least one event in 10 unique locales (e.g., Rural Kenya, Singapore, New York City, etc.).
+Tropical Troubleshooter
+Description: "Resolve 5 events in tropical locales: Rural Thailand, Ho Chi Minh City, and Miami, Florida."
+Criteria: Resolve a total of 5 events across Rural Thailand, Ho Chi Minh City, and Miami, Florida.
+Urban Defender
+Description: "Resolve 10 events in major cities: Lagos, Mumbai, Singapore, Hong Kong, Berlin, London, Mexico City, New York City, Los Angeles, Sao Paulo, and Dubai."
+Criteria: Resolve a total of 10 events across the listed major cities.
+Rural Rescuer
+Description: "Resolve 5 events in rural areas: Rural Kenya, Rural Thailand, and Rural Mexico."
+Criteria: Resolve a total of 5 events across Rural Kenya, Rural Thailand, and Rural Mexico.
+Disaster Master
+Description: "Resolve 3 natural disaster events in a single locale (e.g., typhoon, earthquake, flooding)."
+Criteria: Resolve 3 natural disaster events (specific to the locale’s event pool, like typhoon in Ho Chi Minh City or earthquake in Mexico City) in the same locale.
+
+Real Estate Expert
+Description: "Resolve 25 real estate events to secure your property empire."
+Criteria: Resolve 25 events specifically affecting real estate locales (using any method).
+
+________________________________________
+Implementation Notes
+Tracking Progress: 
+•	Store cumulative stats for taps, ad watches, and fees spent in the player’s profile. 
+•	Track the number of events resolved per business, per locale, and overall, with separate counters for business and real estate events. 
+•	Use timestamps to monitor resolution speed for achievements like "Quick Fixer."
+Event Categories: 
+•	Tag events as "business" or "real estate" for achievements like "Business Specialist" and "Real Estate Expert." 
+•	Tag events as "natural disaster" (e.g., typhoon, earthquake) for achievements like "Disaster Master." 
+UI Integration: 
+•	Display achievement progress in the game’s achievement menu (e.g., "Tycoon Titan: $45,000,000/$50,000,000"). 
+•	Show a pop-up notification when an achievement is unlocked (e.g., "Achievement Unlocked: Business Specialist!").

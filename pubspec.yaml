@@ -1,0 +1,99 @@
+name: empire_tycoon
+description: "Build your global business empire! A sophisticated idle tycoon game that simulates entrepreneurship across diverse worldwide locales."
+
+# The following line prevents the package from being accidentally published to
+# pub.dev using `flutter pub publish`. This is preferred for private packages.
+publish_to: 'none' 
+
+version: 1.0.0+100
+# Version format: [major].[minor].[patch]+[build-number]
+# The build number (100) is used by Android as versionCode
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  # Core dependencies with exact versions to prevent compatibility issues
+  vector_math: 2.1.4  # Explicitly required for Vector2 and Matrix4 types
+  collection: 1.19.1
+  characters: 1.4.0
+  meta: 1.16.0
+  
+  # Regular dependencies
+  cupertino_icons: ^1.0.6
+  provider: ^6.1.4
+  shared_preferences: ^2.2.2
+  intl: ^0.18.1
+  audioplayers: ^5.2.1
+  path_provider: ^2.1.2
+  fl_chart: ^0.62.0
+  font_awesome_flutter: ^10.6.0
+  # vibration: ^1.9.0
+  flutter_vibrate:
+    git:
+      url: https://github.com/10urbulut/flutter_vibrate.git
+      ref: main
+  google_fonts: ^4.0.4
+  uuid: ^3.0.7
+  flutter_svg: ^2.0.9
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.3
+
+  workspace: any
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/sounds/
+    - assets/sounds/ui/
+    - assets/sounds/achievements/
+    - assets/sounds/business/
+    - assets/sounds/investment/
+    - assets/sounds/real_estate/
+    - assets/sounds/events/
+    - assets/sounds/feedback/
+    - assets/images/
+    - assets/
+    - web/assets/
+    - assets/fonts/
+    - attached_assets/
+    - assets/images/rural_kenya/
+    - assets/images/lagos_nigeria/
+    - assets/images/rural_thailand/
+    - assets/images/rural_mexico/
+    - assets/images/cape_town_sa/
+    - assets/images/mumbai_india/
+    - assets/images/ho_chi_minh_city/
+    - assets/images/bucharest_romania/
+    - assets/images/lima_peru/
+    - assets/images/sao_paulo_brazil/
+    - assets/images/lisbon_portugal/
+    - assets/images/berlin_germany/
+    - assets/images/mexico_city/
+    - assets/images/singapore/
+    - assets/images/london_uk/
+    - assets/images/miami_florida/
+    - assets/images/new_york_city/
+    - assets/images/los_angeles/
+    - assets/images/hong_kong/
+    - assets/images/dubai_uae/
+    
+  fonts:
+    - family: Roboto
+      fonts:
+        - asset: assets/fonts/Roboto-Regular.ttf
+          style: normal
+          weight: 400
+        - asset: assets/fonts/Roboto-Medium.ttf
+          style: normal
+          weight: 500
+        - asset: assets/fonts/Roboto-Bold.ttf
+          style: normal
+          weight: 700
+# MaterialIcons is bundled with Flutter SDK when uses-material-design: true is set
+# We don't need to manually include it

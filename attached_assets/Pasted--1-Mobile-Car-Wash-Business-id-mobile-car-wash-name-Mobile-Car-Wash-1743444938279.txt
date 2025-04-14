@@ -1,0 +1,752 @@
+ // 1. Mobile Car Wash
+      Business(
+        id: 'mobile_car_wash',
+        name: 'Mobile Car Wash',
+        description: 'A van-based car wash service that visits customers',
+        basePrice: 250.0,
+        baseIncome: 0.6,
+        level: 0,
+        incomeInterval: 1, // Income per second
+        unlocked: true,
+        icon: Icons.local_car_wash,
+        levels: [
+          // Level 1
+          BusinessLevel(
+            cost: 250.0,
+            incomePerSecond: 0.6,
+            description: 'Basic van and supplies',
+          ),
+          // Level 2
+          BusinessLevel(
+            cost: 500.0,
+            incomePerSecond: 1.5,
+            description: 'Pressure washer',
+          ),
+          // Level 3
+          BusinessLevel(
+            cost: 1000.0,
+            incomePerSecond: 3.6,
+            description: 'Extra staff',
+          ),
+          // Level 4
+          BusinessLevel(
+            cost: 2000.0,
+            incomePerSecond: 9.0,
+            description: 'Second van',
+          ),
+          // Level 5
+          BusinessLevel(
+            cost: 4000.0,
+            incomePerSecond: 24.0,
+            description: 'Eco-friendly soap',
+          ),
+          // Level 6
+          BusinessLevel(
+            cost: 8000.0,
+            incomePerSecond: 60.0,
+            description: 'Mobile app bookings',
+          ),
+          // Level 7
+          BusinessLevel(
+            cost: 16000.0,
+            incomePerSecond: 150.0,
+            description: 'Franchise model',
+          ),
+          // Level 8
+          BusinessLevel(
+            cost: 32000.0,
+            incomePerSecond: 360.0,
+            description: 'Fleet expansion',
+          ),
+          // Level 9
+          BusinessLevel(
+            cost: 64000.0,
+            incomePerSecond: 900.0,
+            description: 'VIP detailing',
+          ),
+          // Level 10
+          BusinessLevel(
+            cost: 128000.0,
+            incomePerSecond: 2250.0,
+            description: 'Citywide coverage',
+          ),
+        ],
+      ),
+      
+      // 2. Pop-Up Food Stall
+      Business(
+        id: 'food_stall',
+        name: 'Pop-Up Food Stall',
+        description: 'A temporary stall selling street food like burgers or tacos',
+        basePrice: 1000.0,
+        baseIncome: 3.0,
+        level: 0,
+        incomeInterval: 1,
+        unlocked: true,
+        icon: Icons.fastfood,
+        levels: [
+          // Level 1
+          BusinessLevel(
+            cost: 1000.0,
+            incomePerSecond: 3.0,
+            description: 'Basic stall',
+          ),
+          // Level 2
+          BusinessLevel(
+            cost: 2000.0,
+            incomePerSecond: 7.2,
+            description: 'Better grill',
+          ),
+          // Level 3
+          BusinessLevel(
+            cost: 4000.0,
+            incomePerSecond: 18.0,
+            description: 'Menu expansion',
+          ),
+          // Level 4
+          BusinessLevel(
+            cost: 8000.0,
+            incomePerSecond: 45.0,
+            description: 'More staff',
+          ),
+          // Level 5
+          BusinessLevel(
+            cost: 16000.0,
+            incomePerSecond: 114.0,
+            description: 'Branded tent',
+          ),
+          // Level 6
+          BusinessLevel(
+            cost: 32000.0,
+            incomePerSecond: 285.0,
+            description: 'Weekend markets',
+          ),
+          // Level 7
+          BusinessLevel(
+            cost: 64000.0,
+            incomePerSecond: 720.0,
+            description: 'Food truck add-on',
+          ),
+          // Level 8
+          BusinessLevel(
+            cost: 128000.0,
+            incomePerSecond: 1800.0,
+            description: 'Multi-city stalls',
+          ),
+          // Level 9
+          BusinessLevel(
+            cost: 256000.0,
+            incomePerSecond: 4500.0,
+            description: 'Catering gigs',
+          ),
+          // Level 10
+          BusinessLevel(
+            cost: 512000.0,
+            incomePerSecond: 11250.0,
+            description: 'Chain operation',
+          ),
+        ],
+      ),
+      
+      // 3. Boutique Coffee Roaster
+      Business(
+        id: 'coffee_roaster',
+        name: 'Boutique Coffee Roaster',
+        description: 'A small-batch coffee roasting and retail business',
+        basePrice:
+        5000.0,
+        baseIncome: 12.0,
+        level: 0,
+        incomeInterval: 1,
+        unlocked: true,
+        icon: Icons.coffee,
+        levels: [
+          // Level 1
+          BusinessLevel(
+            cost: 5000.0,
+            incomePerSecond: 12.0,
+            description: 'Home roaster',
+          ),
+          // Level 2
+          BusinessLevel(
+            cost: 10000.0,
+            incomePerSecond: 30.0,
+            description: 'Premium beans',
+          ),
+          // Level 3
+          BusinessLevel(
+            cost: 20000.0,
+            incomePerSecond: 75.0,
+            description: 'Cafe counter',
+          ),
+          // Level 4
+          BusinessLevel(
+            cost: 40000.0,
+            incomePerSecond: 180.0,
+            description: 'Wholesale deals',
+          ),
+          // Level 5
+          BusinessLevel(
+            cost: 80000.0,
+            incomePerSecond: 450.0,
+            description: 'Roasting machine',
+          ),
+          // Level 6
+          BusinessLevel(
+            cost: 160000.0,
+            incomePerSecond: 1125.0,
+            description: 'Local chain',
+          ),
+          // Level 7
+          BusinessLevel(
+            cost: 320000.0,
+            incomePerSecond: 2820.0,
+            description: 'Online store',
+          ),
+          // Level 8
+          BusinessLevel(
+            cost: 640000.0,
+            incomePerSecond: 7050.0,
+            description: 'Brand licensing',
+          ),
+          // Level 9
+          BusinessLevel(
+            cost: 1280000.0,
+            incomePerSecond: 17625.0,
+            description: 'Export market',
+          ),
+          // Level 10
+          BusinessLevel(
+            cost: 2560000.0,
+            incomePerSecond: 44100.0,
+            description: 'Global supplier',
+          ),
+        ],
+      ),
+      
+      // 4. Fitness Studio
+      Business(
+        id: 'fitness_studio',
+        name: 'Fitness Studio',
+        description: 'A gym offering classes and personal training',
+        basePrice: 20000.0,
+        baseIncome: 60.0,
+        level: 0,
+        incomeInterval: 1,
+        unlocked: false,
+        icon: Icons.fitness_center,
+        levels: [
+          // Level 1
+          BusinessLevel(
+            cost: 20000.0,
+            incomePerSecond: 60.0,
+            description: 'Small space',
+          ),
+          // Level 2
+          BusinessLevel(
+            cost: 40000.0,
+            incomePerSecond: 150.0,
+            description: 'New equipment',
+          ),
+          // Level 3
+          BusinessLevel(
+            cost: 80000.0,
+            incomePerSecond: 375.0,
+            description: 'Group classes',
+          ),
+          // Level 4
+          BusinessLevel(
+            cost: 160000.0,
+            incomePerSecond: 900.0,
+            description: 'More trainers',
+          ),
+          // Level 5
+          BusinessLevel(
+            cost: 320000.0,
+            incomePerSecond: 2250.0,
+            description: 'Expansion',
+          ),
+          // Level 6
+          BusinessLevel(
+            cost: 640000.0,
+            incomePerSecond: 5625.0,
+            description: 'App membership',
+          ),
+          // Level 7
+          BusinessLevel(
+            cost: 1280000.0,
+            incomePerSecond: 14100.0,
+            description: 'Second location',
+          ),
+          // Level 8
+          BusinessLevel(
+            cost: 2560000.0,
+            incomePerSecond: 35250.0,
+            description: 'Franchise rights',
+          ),
+          // Level 9
+          BusinessLevel(
+            cost: 5120000.0,
+            incomePerSecond: 88200.0,
+            description: 'Celebrity endorsement',
+          ),
+          // Level 10
+          BusinessLevel(
+            cost: 10240000.0,
+            incomePerSecond: 220500.0,
+            description: 'National chain',
+          ),
+        ],
+      ),
+      
+      // 5. E-Commerce Store
+      Business(
+        id: 'ecommerce_store',
+        name: 'E-Commerce Store',
+        description: 'An online shop selling niche products like gadgets or apparel',
+        basePrice: 100000.0,
+        baseIncome: 300.0,
+        level: 0,
+        incomeInterval: 1,
+        unlocked: false,
+        icon: Icons.shopping_basket,
+        levels: [
+          // Level 1
+          BusinessLevel(
+            cost: 100000.0,
+            incomePerSecond: 300.0,
+            description: 'Basic website',
+          ),
+          // Level 2
+          BusinessLevel(
+            cost: 200000.0,
+            incomePerSecond: 750.0,
+            description: 'SEO boost',
+          ),
+          // Level 3
+          BusinessLevel(
+            cost: 400000.0,
+            incomePerSecond: 1875.0,
+            description: 'Wider inventory',
+          ),
+          // Level 4
+          BusinessLevel(
+            cost: 800000.0,
+            incomePerSecond: 4680.0,
+            description: 'Faster shipping',
+          ),
+          // Level 5
+          BusinessLevel(
+            cost: 1600000.0,
+            incomePerSecond: 11700.0,
+            description: 'Ad campaigns',
+          ),
+          // Level 6
+          BusinessLevel(
+            cost: 3200000.0,
+            incomePerSecond: 29250.0,
+            description: 'Mobile app',
+          ),
+          // Level 7
+          BusinessLevel(
+            cost: 6400000.0,
+            incomePerSecond: 73200.0,
+            description: 'Warehouse',
+          ),
+          // Level 8
+          BusinessLevel(
+            cost: 12800000.0,
+            incomePerSecond: 183000.0,
+            description: 'Multi-brand',
+          ),
+          // Level 9
+          BusinessLevel(
+            cost: 25600000.0,
+            incomePerSecond: 457500.0,
+            description: 'Global reach',
+          ),
+          // Level 10
+          BusinessLevel(
+            cost: 51200000.0,
+            incomePerSecond: 1140000.0,
+            description: 'Market leader',
+          ),
+        ],
+      ),
+      
+      // 6. Craft Brewery
+      Business(
+        id: 'craft_brewery',
+        name: 'Craft Brewery',
+        description: 'A brewery producing artisanal beers for local and regional sale',
+        basePrice: 500000.0,
+        baseIncome: 1200.0,
+        level: 0,
+        incomeInterval: 1,
+        unlocked: false,
+        icon: Icons.sports_bar,
+        levels: [
+          // Level 1
+          BusinessLevel(
+            cost: 500000.0,
+            incomePerSecond: 1200.0,
+            description: 'Small batch',
+          ),
+          // Level 2
+          BusinessLevel(
+            cost: 1000000.0,
+            incomePerSecond: 3000.0,
+            description: 'Tasting room',
+          ),
+          // Level 3
+          BusinessLevel(
+            cost: 2000000.0,
+            incomePerSecond: 7500.0,
+            description: 'New flavors',
+          ),
+          // Level 4
+          BusinessLevel(
+            cost: 4000000.0,
+            incomePerSecond: 18750.0,
+            description: 'Bigger tanks',
+          ),
+          // Level 5
+          BusinessLevel(
+            cost: 8000000.0,
+            incomePerSecond: 46875.0,
+            description: 'Distribution',
+          ),
+          // Level 6
+          BusinessLevel(
+            cost: 16000000.0,
+            incomePerSecond: 117000.0,
+            description: 'Pub chain',
+          ),
+          // Level 7
+          BusinessLevel(
+            cost: 32000000.0,
+            incomePerSecond: 292500.0,
+            description: 'Canning line',
+          ),
+          // Level 8
+          BusinessLevel(
+            cost: 64000000.0,
+            incomePerSecond: 732000.0,
+            description: 'National sales',
+          ),
+          // Level 9
+          BusinessLevel(
+            cost: 128000000.0,
+            incomePerSecond: 1830000.0,
+            description: 'Export deals',
+          ),
+          // Level 10
+          BusinessLevel(
+            cost: 256000000.0,
+            incomePerSecond: 4572000.0,
+            description: 'Industry giant',
+          ),
+        ],
+      ),
+      
+      // 7. Boutique Hotel
+      Business(
+        id: 'boutique_hotel',
+        name: 'Boutique Hotel',
+        description: 'A stylish hotel catering to travelers and locals',
+        basePrice: 2000000.0,
+        baseIncome: 6000.0,
+        level: 0,
+        incomeInterval: 1,
+        unlocked: false,
+        icon: Icons.hotel,
+        levels: [
+          // Level 1
+          BusinessLevel(
+            cost: 2000000.0,
+            incomePerSecond: 6000.0,
+            description: 'Small property',
+          ),
+          // Level 2
+          BusinessLevel(
+            cost: 4000000.0,
+            incomePerSecond: 15000.0,
+            description: 'More rooms',
+          ),
+          // Level 3
+          BusinessLevel(
+            cost: 8000000.0,
+            incomePerSecond: 37500.0,
+            description: 'Restaurant',
+          ),
+          // Level 4
+          BusinessLevel(
+            cost: 16000000.0,
+            incomePerSecond: 93750.0,
+            description: 'Spa add-on',
+          ),
+          // Level 5
+          BusinessLevel(
+            cost: 32000000.0,
+            incomePerSecond: 234375.0,
+            description: 'Luxury suites',
+          ),
+          // Level 6
+          BusinessLevel(
+            cost: 64000000.0,
+            incomePerSecond: 585600.0,
+            description: 'Event space',
+          ),
+          // Level 7
+          BusinessLevel(
+            cost: 128000000.0,
+            incomePerSecond: 1464000.0,
+            description: 'Second location',
+          ),
+          // Level 8
+          BusinessLevel(
+            cost: 256000000.0,
+            incomePerSecond: 3660000.0,
+            description: 'Chain branding',
+          ),
+          // Level 9
+          BusinessLevel(
+            cost: 512000000.0,
+            incomePerSecond: 9150000.0,
+            description: 'Global presence',
+          ),
+          // Level 10
+          BusinessLevel(
+            cost: 1000000000.0,
+            incomePerSecond: 22860000.0,
+            description: 'Luxury empire',
+          ),
+        ],
+      ),
+      
+      // 8. Film Production Studio
+      Business(
+        id: 'film_studio',
+        name: 'Film Production Studio',
+        description: 'A studio making indie films and streaming content',
+        basePrice: 10000000.0,
+        baseIncome: 30000.0,
+        level: 0,
+        incomeInterval: 1,
+        unlocked: false,
+        icon: Icons.movie,
+        levels: [
+          // Level 1
+          BusinessLevel(
+            cost: 10000000.0,
+            incomePerSecond: 30000.0,
+            description: 'Small crew',
+          ),
+          // Level 2
+          BusinessLevel(
+            cost: 20000000.0,
+            incomePerSecond: 75000.0,
+            description: 'Better gear',
+          ),
+          // Level 3
+          BusinessLevel(
+            cost: 40000000.0,
+            incomePerSecond: 187500.0,
+            description: 'Bigger casts',
+          ),
+          // Level 4
+          BusinessLevel(
+            cost: 80000000.0,
+            incomePerSecond: 468750.0,
+            description: 'Studio lot',
+          ),
+          // Level 5
+          BusinessLevel(
+            cost: 160000000.0,
+            incomePerSecond: 1170000.0,
+            description: 'Streaming deal',
+          ),
+          // Level 6
+          BusinessLevel(
+            cost: 320000000.0,
+            incomePerSecond: 2928000.0,
+            description: 'Blockbusters',
+          ),
+          // Level 7
+          BusinessLevel(
+            cost: 640000000.0,
+            incomePerSecond: 7320000.0,
+            description: 'Franchise IP',
+          ),
+          // Level 8
+          BusinessLevel(
+            cost: 1280000000.0,
+            incomePerSecond: 18300000.0,
+            description: 'Global releases',
+          ),
+          // Level 9
+          BusinessLevel(
+            cost: 2560000000.0,
+            incomePerSecond: 45750000.0,
+            description: 'Awards buzz',
+          ),
+          // Level 10
+          BusinessLevel(
+            cost: 5120000000.0,
+            incomePerSecond: 114000000.0,
+            description: 'Media titan',
+          ),
+        ],
+      ),
+      
+      // 9. Logistics Company
+      Business(
+        id: 'logistics_company',
+        name: 'Logistics Company',
+        description: 'A freight and delivery service for businesses',
+        basePrice: 50000000.0,
+        baseIncome: 150000.0,
+        level: 0,
+        incomeInterval: 1,
+        unlocked: false,
+        icon: Icons.local_shipping,
+        levels: [
+          // Level 1
+          BusinessLevel(
+            cost: 50000000.0,
+            incomePerSecond: 150000.0,
+            description: 'Few trucks',
+          ),
+          // Level 2
+          BusinessLevel(
+            cost: 100000000.0,
+            incomePerSecond: 375000.0,
+            description: 'More routes',
+          ),
+          // Level 3
+          BusinessLevel(
+            cost: 200000000.0,
+            incomePerSecond: 936000.0,
+            description: 'Warehouse',
+          ),
+          // Level 4
+          BusinessLevel(
+            cost: 400000000.0,
+            incomePerSecond: 2340000.0,
+            description: 'Fleet upgrade',
+          ),
+          // Level 5
+          BusinessLevel(
+            cost: 800000000.0,
+            incomePerSecond: 5850000.0,
+            description: 'Air shipping',
+          ),
+          // Level 6
+          BusinessLevel(
+            cost: 1600000000.0,
+            incomePerSecond: 14640000.0,
+            description: 'Automation',
+          ),
+          // Level 7
+          BusinessLevel(
+            cost: 3200000000.0,
+            incomePerSecond: 36600000.0,
+            description: 'Regional hubs',
+          ),
+          // Level 8
+          BusinessLevel(
+            cost: 6400000000.0,
+            incomePerSecond: 91500000.0,
+            description: 'National scale',
+          ),
+          // Level 9
+          BusinessLevel(
+            cost: 12800000000.0,
+            incomePerSecond: 228600000.0,
+            description: 'Global network',
+          ),
+          // Level 10
+          BusinessLevel(
+            cost: 25600000000.0,
+            incomePerSecond: 571200000.0,
+            description: 'Industry leader',
+          ),
+        ],
+      ),
+      
+      // 10. Luxury Real Estate Developer
+      Business(
+        id: 'real_estate_developer',
+        name: 'Luxury Real Estate Developer',
+        description: 'Builds and sells high-end homes and condos',
+        basePrice: 250000000.0,
+        baseIncome: 600000.0,
+        level: 0,
+        incomeInterval: 1,
+        unlocked: false,
+        icon: Icons.apartment,
+        levels: [
+          // Level 1
+          BusinessLevel(
+            cost: 250000000.0,
+            incomePerSecond: 600000.0,
+            description: 'Single project',
+          ),
+          // Level 2
+          BusinessLevel(
+            cost: 500000000.0,
+            incomePerSecond: 1500000.0,
+            description: 'Gated community',
+          ),
+          // Level 3
+          BusinessLevel(
+            cost: 1000000000.0,
+            incomePerSecond: 3750000.0,
+            description: 'Luxury towers',
+          ),
+          // Level 4
+          BusinessLevel(
+            cost: 2000000000.0,
+            incomePerSecond: 9360000.0,
+            description: 'Beachfront',
+          ),
+          // Level 5
+          BusinessLevel(
+            cost: 4000000000.0,
+            incomePerSecond: 23400000.0,
+            description: 'Smart homes',
+          ),
+          // Level 6
+          BusinessLevel(
+            cost: 8000000000.0,
+            incomePerSecond: 58500000.0,
+            description: 'City expansion',
+          ),
+          // Level 7
+          BusinessLevel(
+            cost: 16000000000.0,
+            incomePerSecond: 146400000.0,
+            description: 'Resort chain',
+          ),
+          // Level 8
+          BusinessLevel(
+            cost: 32000000000.0,
+            incomePerSecond: 366000000.0,
+            description: 'Global brand',
+          ),
+          // Level 9
+          BusinessLevel(
+            cost: 64000000000.0,
+            incomePerSecond: 912000000.0,
+            description: 'Billionaire clients',
+          ),
+          // Level 10
+          BusinessLevel(
+            cost: 128000000000.0,
+            incomePerSecond: 2286000000.0,
+            description: 'Real estate empire',
+          ),
+        ],
+      ),
+    ];
+  }

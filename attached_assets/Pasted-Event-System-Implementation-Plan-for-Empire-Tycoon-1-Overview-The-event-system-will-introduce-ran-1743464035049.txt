@@ -1,0 +1,734 @@
+Event System Implementation Plan for Empire Tycoon
+1. Overview
+The event system will introduce random, disruptive events that impact businesses and real estate properties in Empire Tycoon, adding challenge and engagement by temporarily reducing their income to -25% of normal income until resolved.
+
+2. Data Structures
+2.1 GameEvent Class
+class GameEvent {
+  final String id;           // Unique identifier for the event
+  final String name;         // Display name of the event
+  final String description;  // Detailed description
+  final EventType type;      // Business or Locale
+  final String targetId;     // ID of the affected business or locale
+  final DateTime startTime;  // When the event started
+  final int durationMinutes; // How long the event lasts in minutes
+  final List<EventResolution> resolutionOptions; // Ways to resolve the event
+  bool isResolved;           // Whether the event has been resolved
+  
+  GameEvent({
+    required this.id,
+    required this.name,
+    required this.description,
+    required this.type,
+    required this.targetId,
+    required this.startTime,
+    this.durationMinutes = 60, // Default 1 hour duration
+    required this.resolutionOptions,
+    this.isResolved = false,
+  });
+  
+  // Calculate whether the event has expired based on duration
+  bool isExpired() {
+    return isResolved || DateTime.now().difference(startTime).inMinutes >= durationMinutes;
+  }
+  
+  // Time remaining in minutes
+  int getTimeRemainingMinutes() {
+    if (isResolved) return 0;
+    int elapsed = DateTime.now().difference(startTime).inMinutes;
+    return elapsed >= durationMinutes ? 0 : durationMinutes - elapsed;
+  }
+  
+  // Convert to JSON for persistence
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'description': description,
+      'type': type.toString(),
+      'targetId': targetId,
+      'startTime': startTime.toIso8601String(),
+      'durationMinutes': durationMinutes,
+      'resolutionOptions': resolutionOptions.map((r) => r.toJson()).toList(),
+      'isResolved': isResolved,
+    };
+  }
+  
+  // Create from JSON for loading from persistence
+  factory GameEvent.fromJson(Map<String, dynamic> json) {
+    return GameEvent(
+      id: json['id'],
+      name: json['name'],
+      description: json['description'],
+      type: json['type'] == 'EventType.business' ? EventType.business : EventType.locale,
+      targetId: json['targetId'],
+      startTime: DateTime.parse(json['startTime']),
+      durationMinutes: json['durationMinutes'],
+      resolutionOptions: (json['resolutionOptions'] as List)
+          .map((r) => EventResolution.fromJson(r))
+          .toList(),
+      isResolved: json['isResolved'],
+    );
+  }
+}
+2.2 EventType Enum
+enum EventType {
+  business,  // Affects a single business
+  locale     // Affects properties in a locale
+}
+2.3 EventResolution Class
+class EventResolution {
+  final EventResolutionType type;
+  final double fee;          // Optional - only used for fee-based resolution
+  final int tapCount;        // Optional - only used for tap challenge resolution
+  
+  EventResolution({
+    required this.type,
+    this.fee = 0.0,
+    this.tapCount = 200,
+  });
+  
+  // Convert to JSON for persistence
+  Map<String, dynamic> toJson() {
+    return {
+      'type': type.toString(),
+      'fee': fee,
+      'tapCount': tapCount,
+    };
+  }
+  
+  // Create from JSON for loading from persistence
+  factory EventResolution.fromJson(Map<String, dynamic> json) {
+    return EventResolution(
+      type: EventResolutionType.values.firstWhere(
+        (e) => e.toString() == json['type'],
+        orElse: () => EventResolutionType.time,
+      ),
+      fee: json['fee'] ?? 0.0,
+      tapCount: json['tapCount'] ?? 200,
+    );
+  }
+}
+2.4 EventResolutionType Enum
+enum EventResolutionType {
+  time,   // Automatic resolution after time expires
+  ad,     // Watch an ad to resolve
+  fee,    // Pay a fee to resolve
+  tap     // Tap challenge to resolve
+}
+2.5 Event Data Collections
+The events defined in the requirements would be organized as follows:
+
+// Business Events - Map of business ID to list of possible events for that business
+Map<String, List<Map<String, String>>> businessEvents = {
+  'mobile_car_wash': [
+    {'name': 'Van Breakdown', 'description': 'Your van has broken down, halting operations.'},
+    {'name': 'Water Supply Issue', 'description': 'A water shortage is stopping your washes.'},
+    {'name': 'Customer Complaint', 'description': 'Negative reviews are driving customers away.'},
+    {'name': 'Staff Shortage', 'description': 'Staff called in sick, reducing capacity.'},
+    {'name': 'Equipment Failure', 'description': 'Your pressure washer failed, stopping work.'},
+  ],
+  // ... Events for other businesses
+};
+// Locale Events - Map of locale ID to list of possible events for that locale
+Map<String, List<Map<String, String>>> localeEvents = {
+  'rural_kenya': [
+    {'name': 'Drought', 'description': 'A drought has damaged your properties.'},
+    {'name': 'Infrastructure Failure', 'description': 'Road damage limits access.'},
+    {'name': 'Economic Downturn', 'description': 'Local economy slump reduces income.'},
+  ],
+  // ... Events for other locales
+};
+3. Game State Additions
+We'll add these properties to the GameState class:
+
+// In GameState class:
+// Event System
+List<GameEvent> activeEvents = [];                // Currently active events
+DateTime? lastEventTime;                          // When the last event occurred
+bool eventsUnlocked = false;                      // Whether events are unlocked
+int businessesOwnedCount = 0;                     // Track number of businesses owned
+int localesWithPropertiesCount = 0;               // Track number of locales with properties
+4. Core Functions
+4.1 Event Trigger Logic
+// Check if events should be unlocked
+void _checkEventUnlockConditions() {
+  // Count businesses owned
+  businessesOwnedCount = businesses.where((b) => b.level > 0).length;
+  
+  // Count locales with properties
+  localesWithPropertiesCount = 0;
+  for (var locale in realEstateLocales) {
+    if (locale.getTotalPropertiesOwned() > 0) {
+      localesWithPropertiesCount++;
+    }
+  }
+  
+  // Check if we meet the unlock conditions
+  if (!eventsUnlocked && 
+      (businessesOwnedCount >= 4 || localesWithPropertiesCount >= 2)) {
+    eventsUnlocked = true;
+    
+    // Schedule first event for 30 minutes from now
+    lastEventTime = DateTime.now();
+  }
+}
+// Check if a new event should be triggered
+void _checkEventTriggers() {
+  if (!eventsUnlocked) return;
+  
+  DateTime now = DateTime.now();
+  
+  // First event happens 30 minutes after unlock
+  if (lastEventTime == null) {
+    lastEventTime = now;
+    return;
+  }
+  
+  // Don't trigger if we already have 2 active events
+  if (activeEvents.length >= 2) return;
+  
+  // Check the last event time
+  int minutesSinceLastEvent = now.difference(lastEventTime!).inMinutes;
+  
+  // Ensure minimum 15 minute gap between events
+  if (minutesSinceLastEvent < 15) return;
+  
+  // Get count of events in the last hour
+  int eventsInLastHour = 0;
+  for (var event in activeEvents) {
+    if (now.difference(event.startTime).inMinutes < 60) {
+      eventsInLastHour++;
+    }
+  }
+  
+  // Maximum of 2 events per hour
+  if (eventsInLastHour >= 2) return;
+  
+  // Random chance to trigger a new event (increases with time since last event)
+  double triggerChance = 0.02 + (minutesSinceLastEvent / 300); // Base chance + time factor
+  if (Random().nextDouble() < triggerChance) {
+    _generateRandomEvent();
+    lastEventTime = now;
+  }
+}
+4.2 Event Generation
+// Generate a random event
+void _generateRandomEvent() {
+  // 50% chance for business event, 50% for locale event
+  bool isBusinessEvent = Random().nextBool();
+  
+  if (isBusinessEvent) {
+    _generateBusinessEvent();
+  } else {
+    _generateLocaleEvent();
+  }
+}
+// Generate a business event
+void _generateBusinessEvent() {
+  // Get businesses that are owned (level > 0)
+  List<Business> ownedBusinesses = businesses.where((b) => b.level > 0).toList();
+  if (ownedBusinesses.isEmpty) return;
+  
+  // Select a random business
+  Business business = ownedBusinesses[Random().nextInt(ownedBusinesses.length)];
+  
+  // Check if there's already an active event for this business
+  bool alreadyHasEvent = activeEvents.any((e) => 
+      e.type == EventType.business && e.targetId == business.id);
+  if (alreadyHasEvent) return;
+  
+  // Get event list for this business type
+  List<Map<String, String>>? eventList = businessEvents[business.id];
+  if (eventList == null || eventList.isEmpty) return;
+  
+  // Select a random event
+  Map<String, String> eventData = eventList[Random().nextInt(eventList.length)];
+  
+  // Calculate resolution fee (50% of total investment in the business)
+  double resolutionFee = business.getCurrentValue() * 0.5;
+  
+  // Create the event
+  GameEvent event = GameEvent(
+    id: 'event_${DateTime.now().millisecondsSinceEpoch}',
+    name: eventData['name'] ?? 'Business Disruption',
+    description: eventData['description'] ?? 'A problem has occurred at your business.',
+    type: EventType.business,
+    targetId: business.id,
+    startTime: DateTime.now(),
+    resolutionOptions: [
+      EventResolution(type: EventResolutionType.time), // Auto-resolve after 1 hour
+      EventResolution(type: EventResolutionType.ad),   // Watch ad to resolve
+      EventResolution(type: EventResolutionType.fee, fee: resolutionFee), // Pay fee
+      EventResolution(type: EventResolutionType.tap, tapCount: 200), // Tap challenge
+    ],
+  );
+  
+  // Add to active events
+  activeEvents.add(event);
+  notifyListeners();
+}
+// Generate a locale event
+void _generateLocaleEvent() {
+  // Get locales with owned properties
+  List<RealEstateLocale> localesWithProperties = [];
+  for (var locale in realEstateLocales) {
+    if (locale.getTotalPropertiesOwned() > 0) {
+      localesWithProperties.add(locale);
+    }
+  }
+  if (localesWithProperties.isEmpty) return;
+  
+  // Select a random locale
+  RealEstateLocale locale = localesWithProperties[Random().nextInt(localesWithProperties.length)];
+  
+  // Check if there's already an active event for this locale
+  bool alreadyHasEvent = activeEvents.any((e) => 
+      e.type == EventType.locale && e.targetId == locale.id);
+  if (alreadyHasEvent) return;
+  
+  // Get event list for this locale
+  List<Map<String, String>>? eventList = localeEvents[locale.id];
+  if (eventList == null || eventList.isEmpty) return;
+  
+  // Select a random event
+  Map<String, String> eventData = eventList[Random().nextInt(eventList.length)];
+  
+  // Get the top 50% of properties by value
+  List<RealEstateProperty> affectedProperties = _getTopPropertiesByValue(locale);
+  
+  // Calculate resolution fee (50% of the sum of affected properties' prices)
+  double resolutionFee = 0.0;
+  for (var property in affectedProperties) {
+    resolutionFee += property.purchasePrice * property.owned;
+  }
+  resolutionFee *= 0.5;
+  
+  // Create the event
+  GameEvent event = GameEvent(
+    id: 'event_${DateTime.now().millisecondsSinceEpoch}',
+    name: eventData['name'] ?? 'Locale Disruption',
+    description: eventData['description'] ?? 'A problem has occurred in this locale.',
+    type: EventType.locale,
+    targetId: locale.id,
+    startTime: DateTime.now(),
+    resolutionOptions: [
+      EventResolution(type: EventResolutionType.time), // Auto-resolve after 1 hour
+      EventResolution(type: EventResolutionType.ad),   // Watch ad to resolve
+      EventResolution(type: EventResolutionType.fee, fee: resolutionFee), // Pay fee
+      EventResolution(type: EventResolutionType.tap, tapCount: 200), // Tap challenge
+    ],
+  );
+  
+  // Add to active events
+  activeEvents.add(event);
+  notifyListeners();
+}
+// Get the top 50% of properties by value in a locale
+List<RealEstateProperty> _getTopPropertiesByValue(RealEstateLocale locale) {
+  // Filter to only owned properties
+  List<RealEstateProperty> ownedProperties = locale.properties
+      .where((p) => p.owned > 0)
+      .toList();
+  
+  // Sort by purchase price (descending)
+  ownedProperties.sort((a, b) => b.purchasePrice.compareTo(a.purchasePrice));
+  
+  // Take the top 50%
+  int count = (ownedProperties.length / 2).ceil();
+  return ownedProperties.take(count).toList();
+}
+4.3 Event Management
+// Update active events (check for expired events)
+void _updateEvents() {
+  if (activeEvents.isEmpty) return;
+  
+  bool eventsChanged = false;
+  
+  // Check for expired events
+  for (int i = activeEvents.length - 1; i >= 0; i--) {
+    if (activeEvents[i].isExpired()) {
+      // Resolve the event automatically
+      activeEvents[i].isResolved = true;
+      activeEvents.removeAt(i);
+      eventsChanged = true;
+    }
+  }
+  
+  if (eventsChanged) {
+    notifyListeners();
+  }
+}
+// Resolve an event with a specific resolution method
+void resolveEvent(String eventId, EventResolutionType resolutionType) {
+  int eventIndex = activeEvents.indexWhere((e) => e.id == eventId);
+  if (eventIndex == -1) return;
+  
+  GameEvent event = activeEvents[eventIndex];
+  
+  // Check if this resolution type is available
+  bool hasResolutionType = event.resolutionOptions
+      .any((r) => r.type == resolutionType);
+  if (!hasResolutionType) return;
+  
+  // Handle different resolution types
+  switch (resolutionType) {
+    case EventResolutionType.time:
+      // Do nothing - will auto-resolve when time is up
+      return;
+      
+    case EventResolutionType.ad:
+      // Logic for watching ad would be implemented in UI
+      // Here we just mark as resolved
+      event.isResolved = true;
+      activeEvents.removeAt(eventIndex);
+      break;
+      
+    case EventResolutionType.fee:
+      // Find the fee amount
+      double fee = event.resolutionOptions
+          .firstWhere((r) => r.type == EventResolutionType.fee)
+          .fee;
+      
+      // Check if player has enough money
+      if (money < fee) return;
+      
+      // Deduct the fee
+      money -= fee;
+      
+      // Resolve the event
+      event.isResolved = true;
+      activeEvents.removeAt(eventIndex);
+      break;
+      
+    case EventResolutionType.tap:
+      // Tap challenge is handled in UI
+      // When the player completes the challenge, call this method
+      event.isResolved = true;
+      activeEvents.removeAt(eventIndex);
+      break;
+  }
+  
+  notifyListeners();
+}
+4.4 Income Modification
+// Modify the existing getCurrentIncome method in Business class
+double getCurrentIncome() {
+  if (level <= 0) return 0.0; // Not owned yet
+  double baseIncome = levels[level-1].incomePerSecond * incomeInterval;
+  
+  // Check if there's an active event affecting this business
+  if (gameState.hasActiveEventForBusiness(id)) {
+    // Apply event penalty: -25% of normal income
+    return baseIncome * -0.25;
+  }
+  
+  return baseIncome;
+}
+// Add method to GameState to check for business events
+bool hasActiveEventForBusiness(String businessId) {
+  return activeEvents.any((e) => 
+      !e.isResolved && 
+      e.type == EventType.business && 
+      e.targetId == businessId);
+}
+// Modify the getTotalIncomePerSecond method in RealEstateProperty class
+double getTotalIncomePerSecond() {
+  double baseIncome = cashFlowPerSecond * owned;
+  
+  // Check if there's an active event affecting this locale
+  if (locale != null && gameState.isPropertyAffectedByLocaleEvent(locale.id, this)) {
+    // Apply event penalty: -25% of normal income
+    return baseIncome * -0.25;
+  }
+  
+  return baseIncome;
+}
+// Add method to check if a property is affected by a locale event
+bool isPropertyAffectedByLocaleEvent(String localeId, RealEstateProperty property) {
+  // Check if there's an active event for this locale
+  bool hasEvent = activeEvents.any((e) => 
+      !e.isResolved && 
+      e.type == EventType.locale && 
+      e.targetId == localeId);
+      
+  if (!hasEvent) return false;
+  
+  // Check if this property is in the top 50% by value
+  RealEstateLocale locale = realEstateLocales.firstWhere((l) => l.id == localeId);
+  List<RealEstateProperty> topProperties = _getTopPropertiesByValue(locale);
+  
+  return topProperties.any((p) => p.id == property.id);
+}
+4.5 Integrations
+// Add to _updateGameState method to check and process events
+void _updateGameState() {
+  DateTime now = DateTime.now();
+  
+  // Existing code...
+  
+  // Check event unlock conditions
+  _checkEventUnlockConditions();
+  
+  // Process events if unlocked
+  if (eventsUnlocked) {
+    _updateEvents();      // Update existing events
+    _checkEventTriggers(); // Check for new events
+  }
+  
+  // Rest of existing code...
+}
+// Update serializeGameState method to save event data
+Map<String, dynamic> serializeGameState() {
+  Map<String, dynamic> data = {
+    // Existing fields...
+    
+    // Event system data
+    'eventsUnlocked': eventsUnlocked,
+    'lastEventTime': lastEventTime?.toIso8601String(),
+    'activeEvents': activeEvents.map((e) => e.toJson()).toList(),
+  };
+  
+  return data;
+}
+// Update deserializeGameState method to load event data
+void deserializeGameState(Map<String, dynamic> json) {
+  // Existing code...
+  
+  // Load event system data
+  eventsUnlocked = json['eventsUnlocked'] ?? false;
+  if (json['lastEventTime'] != null) {
+    lastEventTime = DateTime.parse(json['lastEventTime']);
+  }
+  
+  activeEvents = [];
+  if (json['activeEvents'] != null) {
+    List<dynamic> eventData = json['activeEvents'];
+    for (var event in eventData) {
+      activeEvents.add(GameEvent.fromJson(event));
+    }
+  }
+  
+  // Rest of existing code...
+}
+5. UI Components
+5.1 Event Notification
+When an event occurs, we'll need to display a notification to inform the player.
+
+// In some UI service or manager
+void showEventNotification(BuildContext context, GameEvent event) {
+  showDialog(
+    context: context,
+    builder: (context) => EventNotificationDialog(event: event),
+  );
+}
+5.2 Business and Property Indicators
+For businesses and properties affected by events, we'll need to update the UI to show visual indicators.
+
+// In BusinessItem widget
+Widget build(BuildContext context) {
+  final gameState = Provider.of<GameState>(context);
+  final bool hasEvent = gameState.hasActiveEventForBusiness(business.id);
+  
+  return Container(
+    decoration: BoxDecoration(
+      // Apply red border or other visual indicator if has event
+      border: hasEvent ? Border.all(color: Colors.red, width: 2) : null,
+    ),
+    child: Column(
+      children: [
+        // Existing business display code...
+        
+        // Add event indicator if needed
+        if (hasEvent)
+          Row(
+            children: [
+              Icon(Icons.warning, color: Colors.red),
+              Text('Income reduced due to event!', style: TextStyle(color: Colors.red)),
+            ],
+          ),
+      ],
+    ),
+  );
+}
+5.3 Event Resolution UI
+When a player wants to resolve an event, they'll need a UI that presents the resolution options:
+
+// Example of an event resolution dialog
+class EventResolutionDialog extends StatelessWidget {
+  final GameEvent event;
+  
+  const EventResolutionDialog({Key? key, required this.event}) : super(key: key);
+  
+  @override
+  Widget build(BuildContext context) {
+    final gameState = Provider.of<GameState>(context);
+    
+    return AlertDialog(
+      title: Text('Resolve ${event.name}'),
+      content: Column(
+        children: [
+          Text(event.description),
+          SizedBox(height: 10),
+          Text('Choose a resolution method:'),
+          
+          // Time-based resolution
+          ListTile(
+            leading: Icon(Icons.access_time),
+            title: Text('Wait it out'),
+            subtitle: Text('Resolves in ${event.getTimeRemainingMinutes()} minutes'),
+            onTap: () => Navigator.of(context).pop(),
+          ),
+          
+          // Ad-based resolution
+          ListTile(
+            leading: Icon(Icons.video_library),
+            title: Text('Watch an ad'),
+            subtitle: Text('Immediately resolves the event'),
+            onTap: () {
+              // Logic to show ad would go here
+              // On ad completion:
+              gameState.resolveEvent(event.id, EventResolutionType.ad);
+              Navigator.of(context).pop();
+            },
+          ),
+          
+          // Fee-based resolution
+          ListTile(
+            leading: Icon(Icons.attach_money),
+            title: Text('Pay a fee'),
+            subtitle: Text('Pay \$${formatNumber(event.resolutionOptions
+                .firstWhere((r) => r.type == EventResolutionType.fee).fee)}'),
+            onTap: () {
+              gameState.resolveEvent(event.id, EventResolutionType.fee);
+              Navigator.of(context).pop();
+            },
+          ),
+          
+          // Tap challenge resolution
+          ListTile(
+            leading: Icon(Icons.touch_app),
+            title: Text('Tap challenge'),
+            subtitle: Text('Tap 200 times to resolve'),
+            onTap: () {
+              Navigator.of(context).pop();
+              // Show tap challenge UI
+              showDialog(
+                context: context,
+                builder: (context) => TapChallengeDialog(event: event),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+5.4 Tap Challenge UI
+class TapChallengeDialog extends StatefulWidget {
+  final GameEvent event;
+  
+  const TapChallengeDialog({Key? key, required this.event}) : super(key: key);
+  
+  @override
+  _TapChallengeDialogState createState() => _TapChallengeDialogState();
+}
+class _TapChallengeDialogState extends State<TapChallengeDialog> {
+  int taps = 0;
+  int requiredTaps = 200;
+  
+  @override
+  void initState() {
+    super.initState();
+    requiredTaps = widget.event.resolutionOptions
+        .firstWhere((r) => r.type == EventResolutionType.tap)
+        .tapCount;
+  }
+  
+  void _handleTap() {
+    setState(() {
+      taps++;
+      if (taps >= requiredTaps) {
+        // Challenge completed
+        Provider.of<GameState>(context, listen: false)
+            .resolveEvent(widget.event.id, EventResolutionType.tap);
+        Navigator.of(context).pop();
+      }
+    });
+  }
+  
+  @override
+  Widget build(BuildContext context) {
+    double progress = taps / requiredTaps;
+    
+    return AlertDialog(
+      title: Text('Tap Challenge'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text('Tap $requiredTaps times to resolve the event'),
+          SizedBox(height: 10),
+          Text('Taps: $taps / $requiredTaps'),
+          LinearProgressIndicator(value: progress),
+          SizedBox(height: 20),
+          GestureDetector(
+            onTap: _handleTap,
+            child: Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                color: Colors.blue,
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                child: Text(
+                  'TAP',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+6. Dependencies and Integration Points
+6.1 Direct Dependencies
+The event system will directly interact with the following components:
+
+GameState: Core game state where all data is managed
+Business: For applying income penalties to businesses affected by events
+RealEstateProperty/RealEstateLocale: For applying income penalties to properties affected by events
+UI Components: For displaying events and resolution options
+6.2 Integration Points
+_updateGameState(): Add event checking and processing
+calculateTotalIncomePerSecond(): Connect to income calculation
+serializeGameState() / deserializeGameState(): For persistence
+UI Widgets: Update to display event indicators
+6.3 Modification to Existing Components
+Business.getCurrentIncome(): Modify to check for active events
+RealEstateProperty.getTotalIncomePerSecond(): Modify to check for active events
+Business/Property UI: Add visual indicators for active events
+7. Implementation Steps
+Add new classes and enums (GameEvent, EventType, EventResolution, etc.)
+Add event data collections (businessEvents, localeEvents)
+Modify GameState to add event-related properties
+Implement event trigger and management functions
+Modify income calculation functions to include event penalties
+Update persistence (serialize/deserialize) to include event data
+Create UI components for event notifications and resolution
+Add visual indicators to affected businesses and properties
+Test different event scenarios and resolutions
+8. Testing Strategy
+Test unlocking conditions (4 businesses or 2 locales with properties)
+Test event generation timing (30 min after unlock, then random with constraints)
+Test income penalty calculations (-25% of normal income)
+Test each resolution method (time, ad, fee, tap challenge)
+Test persistence (events should persist across game saves/loads)
+Test UI indicators and notifications
+Test edge cases (e.g., event occurring during offline time)
+This implementation plan provides a detailed blueprint for adding the event system to Empire Tycoon, with all the necessary components, data structures, and integration points outlined.

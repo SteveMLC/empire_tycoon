@@ -1,0 +1,462 @@
+Below is a revised version of the Global Real Estate Investment system for Empire Tycoon, where each of the 10 housing options per locale is now an individual, standalone property type that players can purchase separately, rather than upgrades. This maintains the progression from affordable to premium properties within each locale, reflecting regional affordability and uniqueness. Costs and cash flow are adjusted slightly to ensure balance as standalone investments, while keeping the system complementary to businesses.
+Framework Recap for Global Real Estate
+Core Concept: Players can buy unique real estate properties in 20 global locales, each with 10 distinct property types. Costs and income scale with regional economics (e.g., Rural Kenya is cheapest, Hong Kong is priciest).  
+
+Mechanics:  
+Purchase Price: Cost to buy each property type.  
+
+Cash Flow: Passive income per second, increasing with costlier properties.  
+
+Progression: 10 property types per locale, from basic to luxury, with no upgrades—each is a separate purchase.  
+
+Unlocks: Real estate unlocks after the first business ($250), with the cheapest property at $500.
+Developer Notes:  
+UI: “Real Estate” tab with a world map; each locale lists 10 buyable properties.  
+
+Economy: Cash flow is slightly lower than businesses to keep them secondary early on.  
+
+Players can own multiple properties per locale (e.g., buy all 10 in Rural Kenya).
+20 Locales with 10 Standalone Property Types Each
+1. Rural Kenya
+Theme: Traditional and rural African homes.
+Mud Hut - $500 | $0.5/sec  
+
+Thatched Cottage - $1,000 | $1/sec  
+
+Brick Shack - $2,500 | $2.5/sec  
+
+Solar-Powered Hut - $5,000 | $5/sec  
+
+Village Compound - $10,000 | $10/sec  
+
+Eco-Lodge - $25,000 | $25/sec  
+
+Farmhouse - $50,000 | $50/sec  
+
+Safari Retreat - $100,000 | $100/sec  
+
+Rural Estate - $250,000 | $250/sec  
+
+Conservation Villa - $500,000 | $500/sec
+2. Lagos, Nigeria
+Theme: Urban growth and modern apartments.
+Tin-Roof Shack - $1,000 | $1/sec  
+
+Concrete Flat - $2,000 | $2/sec  
+
+Small Apartment - $5,000 | $5/sec  
+
+Duplex - $10,000 | $10/sec  
+
+Mid-Rise Block - $25,000 | $25/sec  
+
+Gated Complex - $50,000 | $50/sec  
+
+High-Rise Tower - $100,000 | $100/sec  
+
+Luxury Condo - $250,000 | $250/sec  
+
+Business Loft - $500,000 | $500/sec  
+
+Skyline Penthouse - $1M | $1,000/sec
+3. Cape Town, South Africa
+Theme: Coastal and scenic properties.
+Beach Shack - $5,000 | $5/sec  
+
+Wooden Bungalow - $10,000 | $10/sec  
+
+Cliffside Cottage - $25,000 | $25/sec  
+
+Seaview Villa - $50,000 | $50/sec  
+
+Modern Beach House - $100,000 | $100/sec  
+
+Coastal Estate - $250,000 | $250/sec  
+
+Luxury Retreat - $500,000 | $500/sec  
+
+Oceanfront Mansion - $1M | $1,000/sec  
+
+Vineyard Manor - $2.5M | $2,500/sec  
+
+Cape Peninsula Chateau - $5M | $5,000/sec
+4. Rural Thailand
+Theme: Tropical and bamboo-based homes.
+Bamboo Hut - $750 | $0.75/sec  
+
+Stilt House - $1,500 | $1.5/sec  
+
+Teak Cabin - $3,000 | $3/sec  
+
+Rice Farmhouse - $7,500 | $7.5/sec  
+
+Jungle Bungalow - $15,000 | $15/sec  
+
+Riverside Villa - $30,000 | $30/sec  
+
+Eco-Resort - $75,000 | $75/sec  
+
+Hilltop Retreat - $150,000 | $150/sec  
+
+Teak Mansion - $300,000 | $300/sec  
+
+Tropical Estate - $750,000 | $750/sec
+5. Mumbai, India
+Theme: Dense urban housing with cultural flair.
+Slum Tenement - $2,000 | $2/sec  
+
+Concrete Flat - $4,000 | $4/sec  
+
+Small Apartment - $10,000 | $10/sec  
+
+Mid-Tier Condo - $20,000 | $20/sec  
+
+Bollywood Loft - $50,000 | $50/sec  
+
+High-Rise Unit - $100,000 | $100/sec  
+
+Gated Tower - $250,000 | $250/sec  
+
+Luxury Flat - $500,000 | $500/sec  
+
+Seafront Penthouse - $1M | $1,000/sec  
+
+Mumbai Skyscraper - $2M | $2,000/sec
+6. Ho Chi Minh City, Vietnam
+Theme: Emerging urban and riverfront homes.
+Shophouse - $3,000 | $3/sec  
+
+Narrow Flat - $6,000 | $6/sec  
+
+Riverside Hut - $15,000 | $15/sec  
+
+Modern Apartment - $30,000 | $30/sec  
+
+Condo Unit - $75,000 | $75/sec  
+
+Riverfront Villa - $150,000 | $150/sec  
+
+High-Rise Suite - $300,000 | $300/sec  
+
+Luxury Tower - $750,000 | $750/sec  
+
+Business Loft - $1.5M | $1,500/sec  
+
+Saigon Skyline Estate - $3M | $3,000/sec
+7. Singapore
+Theme: Ultra-modern, high-density urban living.
+HDB Flat - $50,000 | $50/sec  
+
+Condo Unit - $100,000 | $100/sec  
+
+Executive Apartment - $250,000 | $250/sec  
+
+Sky Terrace - $500,000 | $500/sec  
+
+Luxury Condo - $1M | $1,000/sec  
+
+Marina View Suite - $2.5M | $2,500/sec  
+
+Penthouse Tower - $5M | $5,000/sec  
+
+Sky Villa - $10M | $10,000/sec  
+
+Billionaire Loft - $25M | $25,000/sec  
+
+Iconic Skyscraper - $50M | $50,000/sec
+8. Hong Kong
+Theme: Compact, premium urban properties.
+Micro-Flat - $75,000 | $75/sec  
+
+Small Apartment - $150,000 | $150/sec  
+
+Mid-Rise Unit - $300,000 | $300/sec  
+
+Harbor View Flat - $750,000 | $750/sec  
+
+Luxury Condo - $1.5M | $1,500/sec  
+
+Peak Villa - $3M | $3,000/sec  
+
+Skyline Suite - $7.5M | $7,500/sec  
+
+Penthouse Tower - $15M | $15,000/sec  
+
+Billionaire Mansion - $30M | $30,000/sec  
+
+Victoria Peak Estate - $75M | $75,000/sec
+9. Lisbon, Portugal
+Theme: Historic and coastal European homes.
+Stone Cottage - $10,000 | $10/sec  
+
+Townhouse - $20,000 | $20/sec  
+
+Riverside Flat - $50,000 | $50/sec  
+
+Renovated Villa - $100,000 | $100/sec  
+
+Coastal Bungalow - $250,000 | $250/sec  
+
+Luxury Apartment - $500,000 | $500/sec  
+
+Historic Manor - $1M | $1,000/sec  
+
+Seaside Mansion - $2.5M | $2,500/sec  
+
+Cliffside Estate - $5M | $5,000/sec  
+
+Lisbon Palace - $10M | $10,000/sec
+10. Bucharest, Romania
+Theme: Affordable Eastern European urban growth.
+Panel Flat - $7,500 | $7.5/sec  
+
+Brick Apartment - $15,000 | $15/sec  
+
+Modern Condo - $30,000 | $30/sec  
+
+Renovated Loft - $75,000 | $75/sec  
+
+Gated Unit - $150,000 | $150/sec  
+
+High-Rise Suite - $300,000 | $300/sec  
+
+Luxury Flat - $750,000 | $750/sec  
+
+Urban Villa - $1.5M | $1,500/sec  
+
+City Penthouse - $3M | $3,000/sec  
+
+Bucharest Tower - $7.5M | $7,500/sec
+11. Berlin, Germany
+Theme: Creative and industrial-chic properties.
+Studio Flat - $25,000 | $25/sec  
+
+Loft Space - $50,000 | $50/sec  
+
+Renovated Warehouse - $100,000 | $100/sec  
+
+Modern Apartment - $250,000 | $250/sec  
+
+Artist Condo - $500,000 | $500/sec  
+
+Riverfront Suite - $1M | $1,000/sec  
+
+Luxury Loft - $2.5M | $2,500/sec  
+
+High-Rise Tower - $5M | $5,000/sec  
+
+Tech Villa - $10M | $10,000/sec  
+
+Berlin Skyline Estate - $25M | $25,000/sec
+12. London, UK
+Theme: Historic and ultra-premium urban homes.
+Council Flat - $40,000 | $40/sec  
+
+Terraced House - $80,000 | $80/sec  
+
+Georgian Townhouse - $200,000 | $200/sec  
+
+Modern Condo - $400,000 | $400/sec  
+
+Riverside Apartment - $1M | $1,000/sec  
+
+Luxury Flat - $2M | $2,000/sec  
+
+Mayfair Mansion - $5M | $5,000/sec  
+
+Skyline Penthouse - $10M | $10,000/sec  
+
+Historic Estate - $25M | $25,000/sec  
+
+London Iconic Tower - $50M | $50,000/sec
+13. Rural Mexico
+Theme: Rustic and affordable Latin American homes.
+Adobe Hut - $600 | $0.6/sec  
+
+Clay House - $1,200 | $1.2/sec  
+
+Brick Cottage - $3,000 | $3/sec  
+
+Hacienda Bungalow - $6,000 | $6/sec  
+
+Village Flat - $15,000 | $15/sec  
+
+Rural Villa - $30,000 | $30/sec  
+
+Eco-Casa - $75,000 | $75/sec  
+
+Farmstead - $150,000 | $150/sec  
+
+Countryside Estate - $300,000 | $300/sec  
+
+Hacienda Grande - $600,000 | $600/sec
+14. Mexico City, Mexico
+Theme: Urban sprawl with colonial charm.
+Barrio Flat - $4,000 | $4/sec  
+
+Concrete Unit - $8,000 | $8/sec  
+
+Colonial House - $20,000 | $20/sec  
+
+Mid-Rise Apartment - $40,000 | $40/sec  
+
+Gated Condo - $100,000 | $100/sec  
+
+Modern Loft - $200,000 | $200/sec  
+
+Luxury Suite - $500,000 | $500/sec  
+
+High-Rise Tower - $1M | $1,000/sec  
+
+Historic Penthouse - $2M | $2,000/sec  
+
+Mexico City Skyline - $4M | $4,000/sec
+15. Miami, Florida
+Theme: Coastal and flashy U.S. properties.
+Beach Condo - $30,000 | $30/sec  
+
+Bungalow - $60,000 | $60/sec  
+
+Oceanfront Flat - $150,000 | $150/sec  
+
+Modern Villa - $300,000 | $300/sec  
+
+Luxury Condo - $750,000 | $750/sec  
+
+Miami Beach House - $1.5M | $1,500/sec  
+
+High-Rise Suite - $3M | $3,000/sec  
+
+Skyline Penthouse - $7.5M | $7,500/sec  
+
+Waterfront Mansion - $15M | $15,000/sec  
+
+Miami Iconic Estate - $30M | $30,000/sec
+16. New York City, NY
+Theme: Iconic U.S. urban real estate.
+Studio Apartment - $60,000 | $60/sec  
+
+Brownstone Flat - $120,000 | $120/sec  
+
+Midtown Condo - $300,000 | $300/sec  
+
+Luxury Loft - $600,000 | $600/sec  
+
+High-Rise Unit - $1.5M | $1,500/sec  
+
+Manhattan Suite - $3M | $3,000/sec  
+
+Skyline Penthouse - $7.5M | $7,500/sec  
+
+Central Park View - $15M | $15,000/sec  
+
+Billionaire Tower - $30M | $30,000/sec  
+
+NYC Landmark Estate - $60M | $60,000/sec
+17. Los Angeles, CA
+Theme: Hollywood and luxury U.S. homes.
+Studio Bungalow - $50,000 | $50/sec  
+
+Hillside Flat - $100,000 | $100/sec  
+
+Modern Condo - $250,000 | $250/sec  
+
+Hollywood Villa - $500,000 | $500/sec  
+
+Luxury Loft - $1M | $1,000/sec  
+
+Beverly Hills House - $2.5M | $2,500/sec  
+
+Celebrity Mansion - $5M | $5,000/sec  
+
+Skyline Penthouse - $10M | $10,000/sec  
+
+Oceanfront Estate - $25M | $25,000/sec  
+
+LA Iconic Compound - $50M | $50,000/sec
+18. Lima, Peru
+Theme: Andean urban and coastal homes.
+Adobe Flat - $2,500 | $2.5/sec  
+
+Brick House - $5,000 | $5/sec  
+
+Coastal Shack - $12,500 | $12.5/sec  
+
+Modern Apartment - $25,000 | $25/sec  
+
+Gated Unit - $50,000 | $50/sec  
+
+Andean Villa - $125,000 | $125/sec  
+
+Luxury Condo - $250,000 | $250/sec  
+
+High-Rise Suite - $500,000 | $500/sec  
+
+Oceanfront Loft - $1M | $1,000/sec  
+
+Lima Skyline Estate - $2.5M | $2,500/sec
+19. Sao Paulo, Brazil
+Theme: Sprawling South American metropolis.
+Favela Hut - $3,500 | $3.5/sec  
+
+Concrete Flat - $7,000 | $7/sec  
+
+Small Apartment - $17,500 | $17.5/sec  
+
+Mid-Rise Condo - $35,000 | $35/sec  
+
+Gated Tower - $75,000 | $75/sec  
+
+Luxury Unit - $150,000 | $150/sec  
+
+High-Rise Suite - $375,000 | $375/sec  
+
+Skyline Penthouse - $750,000 | $750/sec  
+
+Business Loft - $1.5M | $1,500/sec  
+
+Sao Paulo Iconic Tower - $3M | $3,000/sec
+20. Dubai, UAE
+Theme: Flashy desert luxury properties.
+Desert Apartment - $35,000 | $35/sec  
+
+Modern Condo - $70,000 | $70/sec  
+
+Palm Villa - $175,000 | $175/sec  
+
+Luxury Flat - $350,000 | $350/sec  
+
+High-Rise Suite - $750,000 | $750/sec  
+
+Burj Tower Unit - $1.5M | $1,500/sec  
+
+Skyline Mansion - $3.75M | $3,750/sec  
+
+Island Retreat - $7.5M | $7,500/sec  
+
+Billionaire Penthouse - $15M | $15,000/sec  
+
+Dubai Iconic Skyscraper - $35M | $35,000/sec
+Developer Implementation Notes
+Economy Balance:  
+Cheapest property: $500 (Rural Kenya Mud Hut) aligns with post-hustle income ($250 business → $500 property).  
+
+Cash flow scales roughly with cost (e.g., $1,000 = $1/sec, $1M = $1,000/sec), slightly below businesses to keep them secondary early-game.  
+
+Late-game properties (e.g., Hong Kong’s Victoria Peak Estate at $75M/$75k/sec) complement high-end businesses ($50M+).
+Data Structure:  
+Locale object: {name, properties[]}.  
+
+Property object: {name, purchasePrice, cashFlowPerSec}.  
+
+Store all 10 properties per locale in a static table.
+UI Flow:  
+World map with 20 pins (color-coded by cost: green for cheap, red for expensive).  
+
+Each locale lists 10 properties with “Buy” buttons, showing cost and cash flow. Players can own multiple properties (e.g., all 10 in one locale).
+Visuals:  
+Unique icons per property (e.g., mud hut for Rural Kenya, glass tower for Dubai).  
+
+No upgrade visuals needed—each property is a standalone asset.
+This revised system offers 200 unique real estate options across 20 locales, each buyable as a standalone investment. It keeps the global flavor and regional affordability intact, giving players flexibility to diversify their portfolio. Let me know if you need further refinements!
+

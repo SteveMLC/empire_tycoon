@@ -1,0 +1,148 @@
+2025-04-08 16:48:04.88
+3fbbac8f
+User
+/nix/store/yk06k2xi481mkz7lbnqip2178l547ihl-flutter-wrapped-3.22.0-sdk-links/packages/flutter/lib/src/semantics/semantics.dart:21:1:
+2025-04-08 16:48:04.88
+3fbbac8f
+User
+Error: Error when reading '../.pub-cache/hosted/pub.dev/vector_math-2.1.4/lib/vector_math_64.dart': Error reading '../.pub-cache/hosted/pub.dev/vector_math-2.1.4/lib/vector_math_64.dart' (No such file or directory)
+2025-04-08 16:48:04.88
+3fbbac8f
+User
+export 'package:vector_math/vector_math_64.dart' show Matrix4;
+2025-04-08 16:48:04.88
+3fbbac8f
+User
+^
+2025-04-08 16:48:04.88
+3fbbac8f
+User
+/nix/store/yk06k2xi481mkz7lbnqip2178l547ihl-flutter-wrapped-3.22.0-sdk-links/packages/flutter/lib/src/widgets/router.dart:8:8:
+2025-04-08 16:48:04.88
+3fbbac8f
+User
+Error: Error when reading '../.pub-cache/hosted/pub.dev/collection-1.18.0/lib/collection.dart': Error reading '../.pub-cache/hosted/pub.dev/collection-1.18.0/lib/collection.dart' (No such file or directory)
+2025-04-08 16:48:04.88
+3fbbac8f
+User
+import 'package:collection/collection.dart';
+2025-04-08 16:48:04.88
+3fbbac8f
+User
+^
+2025-04-08 16:48:04.88
+3fbbac8f
+User
+/nix/store/yk06k2xi481mkz7lbnqip2178l547ihl-flutter-wrapped-3.22.0-sdk-links/packages/flutter/lib/src/scheduler/binding.dart:10:8:
+2025-04-08 16:48:04.88
+3fbbac8f
+User
+Error: Error when reading '../.pub-cache/hosted/pub.dev/collection-1.18.0/lib/collection.dart': Error reading '../.pub-cache/hosted/pub.dev/collection-1.18.0/lib/collection.dart' (No such file or directory)
+2025-04-08 16:48:04.88
+3fbbac8f
+User
+import 'package:collection/collection.dart' show HeapPriorityQueue, PriorityQueue;
+2025-04-08 16:48:04.88
+3fbbac8f
+User
+^
+2025-04-08 16:48:04.88
+3fbbac8f
+User
+/nix/store/yk06k2xi481mkz7lbnqip2178l547ihl-flutter-wrapped-3.22.0-sdk-links/packages/flutter/lib/src/semantics/semantics.dart:8:8:
+2025-04-08 16:48:04.88
+3fbbac8f
+User
+Error: Error when reading '../.pub-cache/hosted/pub.dev/collection-1.18.0/lib/collection.dart': Error reading '../.pub-cache/hosted/pub.dev/collection-1.18.0/lib/collection.dart' (No such file or directory)
+2025-04-08 16:48:04.88
+3fbbac8f
+User
+^
+2025-04-08 16:48:04.88
+3fbbac8f
+User
+/nix/store/yk06k2xi481mkz7lbnqip2178l547ihl-flutter-wrapped-3.22.0-sdk-links/packages/flutter/lib/src/widgets/widget_inspector.dart:26:8:
+2025-04-08 16:48:04.88
+3fbbac8f
+User
+Error: Error when reading '../.pub-cache/hosted/pub.dev/meta-1.12.0/lib/meta_meta.dart': Error reading '../.pub-cache/hosted/pub.dev/meta-1.12.0/lib/meta_meta.dart' (No such file or directory)
+2025-04-08 16:48:04.88
+3fbbac8f
+User
+import 'package:meta/meta_meta.dart';
+2025-04-08 16:48:04.88
+3fbbac8f
+User
+^
+2025-04-08 16:48:04.88
+3fbbac8f
+User
+lib/main.dart:16:9:
+2025-04-08 16:48:04.88
+3fbbac8f
+User
+final SharedPreferences prefs;
+2025-04-08 16:48:04.88
+3fbbac8f
+User
+^^^^^^^^^^^^^^^^^
+2025-04-08 16:48:04.88
+3fbbac8f
+User
+lib/services/game_service.dart:14:9:
+2025-04-08 16:48:04.88
+3fbbac8f
+User
+final SharedPreferences _prefs;
+2025-04-08 16:48:04.88
+3fbbac8f
+User
+^^^^^^^^^^^^^^^^^
+2025-04-08 16:48:04.88
+3fbbac8f
+User
+/nix/store/yk06k2xi481mkz7lbnqip2178l547ihl-flutter-wrapped-3.22.0-sdk-links/packages/flutter/lib/src/material/color_scheme.dart:1758:17:
+2025-04-08 16:48:04.88
+3fbbac8f
+User
+Error: Type 'QuantizerResult' not found.
+2025-04-08 16:48:04.88
+3fbbac8f
+User
+/nix/store/yk06k2xi481mkz7lbnqip2178l547ihl-flutter-wrapped-3.22.0-sdk-links/packages/flutter/lib/src/material/ink_decoration.dart:401:36:
+2025-04-08 16:48:04.88
+3fbbac8f
+User
+void paintFeature(Canvas canvas, Matrix4 transform) {
+2025-04-08 16:48:04.88
+3fbbac8f
+User
+Error: Type 'Matrix4' not found.
+2025-04-08 16:48:04.88
+3fbbac8f
+User
+Error: Type 'Vector2' not found.
+2025-04-08 16:48:04.88
+3fbbac8f
+User
+Error: Type 'Matrix4' not found.
+2025-04-08 16:48:04.88
+3fbbac8f
+User
+^^^^^^^
+2025-04-08 16:48:04.88
+3fbbac8f
+User
+/nix/store/yk06k2xi481mkz7lbnqip2178l547ihl-flutter-wrapped-3.22.0-sdk-links/packages/flutter/lib/src/material/ink_sparkle.dart:386:14:
+2025-04-08 16:48:04.88
+3fbbac8f
+User
+^^^^^^^
+2025-04-08 16:48:04.88
+3fbbac8f
+User
+/nix/store/yk06k2xi481mkz7lbnqip2178l547ihl-flutter-wrapped-3.22.0-sdk-links/packages/flutter/lib/src/rendering/box.dart:881:5:
+2025-04-08 16:48:04.88
+3fbbac8f
+User
+^^^^^^^

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200px" height="200px" viewBox="0 0 200 200" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <!-- Main building background -->
+  <rect x="60" y="50" width="80" height="120" rx="5" fill="#1B5E20" />
+  
+  <!-- Building windows -->
+  <rect x="70" y="60" width="15" height="15" rx="2" fill="#E8F5E9" />
+  <rect x="95" y="60" width="15" height="15" rx="2" fill="#E8F5E9" />
+  <rect x="115" y="60" width="15" height="15" rx="2" fill="#E8F5E9" />
+  
+  <rect x="70" y="85" width="15" height="15" rx="2" fill="#E8F5E9" />
+  <rect x="95" y="85" width="15" height="15" rx="2" fill="#E8F5E9" />
+  <rect x="115" y="85" width="15" height="15" rx="2" fill="#E8F5E9" />
+  
+  <rect x="70" y="110" width="15" height="15" rx="2" fill="#E8F5E9" />
+  <rect x="95" y="110" width="15" height="15" rx="2" fill="#E8F5E9" />
+  <rect x="115" y="110" width="15" height="15" rx="2" fill="#E8F5E9" />
+  
+  <!-- Building entrance -->
+  <rect x="90" y="140" width="20" height="30" rx="2" fill="#81C784" />
+  
+  <!-- Skyscraper left -->
+  <rect x="30" y="70" width="20" height="100" rx="2" fill="#2E7D32" />
+  
+  <!-- Skyscraper windows left -->
+  <rect x="35" y="80" width="10" height="5" rx="1" fill="#E8F5E9" />
+  <rect x="35" y="95" width="10" height="5" rx="1" fill="#E8F5E9" />
+  <rect x="35" y="110" width="10" height="5" rx="1" fill="#E8F5E9" />
+  <rect x="35" y="125" width="10" height="5" rx="1" fill="#E8F5E9" />
+  <rect x="35" y="140" width="10" height="5" rx="1" fill="#E8F5E9" />
+  <rect x="35" y="155" width="10" height="5" rx="1" fill="#E8F5E9" />
+  
+  <!-- Skyscraper right -->
+  <rect x="150" y="80" width="20" height="90" rx="2" fill="#2E7D32" />
+  
+  <!-- Skyscraper windows right -->
+  <rect x="155" y="90" width="10" height="5" rx="1" fill="#E8F5E9" />
+  <rect x="155" y="105" width="10" height="5" rx="1" fill="#E8F5E9" />
+  <rect x="155" y="120" width="10" height="5" rx="1" fill="#E8F5E9" />
+  <rect x="155" y="135" width="10" height="5" rx="1" fill="#E8F5E9" />
+  <rect x="155" y="150" width="10" height="5" rx="1" fill="#E8F5E9" />
+  
+  <!-- Money sign -->
+  <circle cx="100" cy="35" r="20" fill="#66BB6A" />
+  <path d="M 100 25 L 100 45 M 95 28 L 105 28 M 95 42 L 105 42" 
+        stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" />
+  
+  <!-- Building top decoration -->
+  <polygon points="60,50 100,20 140,50" fill="#388E3C" />
+  
+  <!-- Gold coins scattered around -->
+  <circle cx="40" cy="160" r="8" fill="#FFC107" />
+  <circle cx="160" cy="165" r="7" fill="#FFC107" />
+  <circle cx="135" cy="180" r="6" fill="#FFC107" />
+  <circle cx="65" cy="175" r="7" fill="#FFC107" />
+</svg>

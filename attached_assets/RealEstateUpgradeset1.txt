@@ -1,0 +1,167 @@
+"Locale","Property ID","Property Name","Purchase Price","Base Income (/s)","Upgrade Description","Upgrade Cost","New Income (/s)"
+"Miami, Florida","luxury_condo_miami","Luxury Condo",750000.0,1162.5,"Home Theater",525000.0,2673.75
+"Miami, Florida","miami_beach_house","Miami Beach House",1500000.0,2475.0,"Sea Deck",450000.0,3217.5
+"Miami, Florida","miami_beach_house","Miami Beach House",1500000.0,2475.0,"Infinity Pool",750000.0,4207.5
+"Miami, Florida","miami_beach_house","Miami Beach House",1500000.0,2475.0,"Smart Security",1050000.0,5692.5
+"Miami, Florida","high_rise_suite_miami","High-Rise Suite",3000000.0,5250.0,"Sky Lounge",900000.0,6825.0
+"Miami, Florida","high_rise_suite_miami","High-Rise Suite",3000000.0,5250.0,"Private Terrace",1500000.0,8925.0
+"Miami, Florida","high_rise_suite_miami","High-Rise Suite",3000000.0,5250.0,"Luxury Spa",2100000.0,12075.0
+"Miami, Florida","skyline_penthouse_miami","Skyline Penthouse",7500000.0,13875.0,"Rooftop Pool",2250000.0,18037.5
+"Miami, Florida","skyline_penthouse_miami","Skyline Penthouse",7500000.0,13875.0,"Smart Home System",3750000.0,23587.5
+"Miami, Florida","skyline_penthouse_miami","Skyline Penthouse",7500000.0,13875.0,"Private Elevator",5250000.0,31912.5
+"Miami, Florida","waterfront_mansion","Waterfront Mansion",15000000.0,29250.0,"Private Dock",4500000.0,38025.0
+"Miami, Florida","waterfront_mansion","Waterfront Mansion",15000000.0,29250.0,"Helipad",7500000.0,49725.0
+"Miami, Florida","waterfront_mansion","Waterfront Mansion",15000000.0,29250.0,"Luxury Cinema",10500000.0,67275.0
+"Miami, Florida","miami_iconic_estate","Miami Iconic Estate",30000000.0,61500.0,"Sky Terrace",9000000.0,79950.0
+"Miami, Florida","miami_iconic_estate","Miami Iconic Estate",30000000.0,61500.0,"Helipad",15000000.0,104550.0
+"Miami, Florida","miami_iconic_estate","Miami Iconic Estate",30000000.0,61500.0,"Private Spa",21000000.0,141450.0
+"New York City, NY","studio_apartment","Studio Apartment",60000.0,69.0,"Loft Bed",18000.0,89.7
+"New York City, NY","studio_apartment","Studio Apartment",60000.0,69.0,"Smart Storage",30000.0,117.3
+"New York City, NY","studio_apartment","Studio Apartment",60000.0,69.0,"AC Unit",42000.0,158.7
+"New York City, NY","brownstone_flat","Brownstone Flat",120000.0,150.0,"Restored Facade",36000.0,195.0
+"New York City, NY","brownstone_flat","Brownstone Flat",120000.0,150.0,"Fireplace",60000.0,255.0
+"New York City, NY","brownstone_flat","Brownstone Flat",120000.0,150.0,"Smart Heating",84000.0,345.0
+"New York City, NY","midtown_condo","Midtown Condo",300000.0,405.0,"Balcony",90000.0,526.5
+"New York City, NY","midtown_condo","Midtown Condo",300000.0,405.0,"Smart Lights",150000.0,688.5
+"New York City, NY","midtown_condo","Midtown Condo",300000.0,405.0,"Luxury Kitchen",210000.0,931.5
+"New York City, NY","luxury_loft_nyc","Luxury Loft",600000.0,870.0,"Exposed Brick",180000.0,1131.0
+"New York City, NY","luxury_loft_nyc","Luxury Loft",600000.0,870.0,"Open Plan",300000.0,1479.0
+"New York City, NY","luxury_loft_nyc","Luxury Loft",600000.0,870.0,"Rooftop Terrace",420000.0,2001.0
+"New York City, NY","high_rise_unit_nyc","High-Rise Unit",1500000.0,2325.0,"Panoramic Windows",450000.0,3022.5
+"New York City, NY","high_rise_unit_nyc","High-Rise Unit",1500000.0,2325.0,"Private Gym",750000.0,3952.5
+"New York City, NY","high_rise_unit_nyc","High-Rise Unit",1500000.0,2325.0,"Smart Security",1050000.0,5347.5
+"New York City, NY","manhattan_suite","Manhattan Suite",3000000.0,4950.0,"Sky Deck",900000.0,6435.0
+"New York City, NY","manhattan_suite","Manhattan Suite",3000000.0,4950.0,"Home Theater",1500000.0,8415.0
+"New York City, NY","manhattan_suite","Manhattan Suite",3000000.0,4950.0,"Luxury Bath",2100000.0,11385.0
+"New York City, NY","skyline_penthouse_nyc","Skyline Penthouse",7500000.0,13125.0,"Rooftop Pool",2250000.0,17062.5
+"New York City, NY","skyline_penthouse_nyc","Skyline Penthouse",7500000.0,13125.0,"Smart Home System",3750000.0,22312.5
+"New York City, NY","skyline_penthouse_nyc","Skyline Penthouse",7500000.0,13125.0,"Private Elevator",5250000.0,30187.5
+"New York City, NY","central_park_view","Central Park View",15000000.0,27750.0,"Panoramic Lounge",4500000.0,36075.0
+"New York City, NY","central_park_view","Central Park View",15000000.0,27750.0,"Helipad",7500000.0,47175.0
+"New York City, NY","central_park_view","Central Park View",15000000.0,27750.0,"Luxury Spa",10500000.0,63825.0
+"New York City, NY","billionaire_tower","Billionaire Tower",30000000.0,58500.0,"Sky Lounge",9000000.0,76050.0
+"New York City, NY","billionaire_tower","Billionaire Tower",30000000.0,58500.0,"Helipad",15000000.0,99450.0
+"New York City, NY","billionaire_tower","Billionaire Tower",30000000.0,58500.0,"Private Cinema",21000000.0,134550.0
+"New York City, NY","nyc_landmark_estate","NYC Landmark Estate",60000000.0,123000.0,"Grand Terrace",18000000.0,159900.0
+"New York City, NY","nyc_landmark_estate","NYC Landmark Estate",60000000.0,123000.0,"Helipad",30000000.0,209100.0
+"New York City, NY","nyc_landmark_estate","NYC Landmark Estate",60000000.0,123000.0,"Luxury Suites",42000000.0,282900.0
+"Los Angeles, CA","studio_bungalow","Studio Bungalow",50000.0,57.5,"Patio",15000.0,74.75
+"Los Angeles, CA","studio_bungalow","Studio Bungalow",50000.0,57.5,"Solar Panels",25000.0,97.75
+"Los Angeles, CA","studio_bungalow","Studio Bungalow",50000.0,57.5,"AC Unit",35000.0,132.25
+"Los Angeles, CA","hillside_flat","Hillside Flat",100000.0,125.0,"Deck Extension",30000.0,162.5
+"Los Angeles, CA","hillside_flat","Hillside Flat",100000.0,125.0,"Smart Lights",50000.0,212.5
+"Los Angeles, CA","hillside_flat","Hillside Flat",100000.0,125.0,"Kitchen Upgrade",70000.0,287.5
+"Los Angeles, CA","modern_condo_la","Modern Condo",250000.0,337.5,"Balcony Garden",75000.0,438.75
+"Los Angeles, CA","modern_condo_la","Modern Condo",250000.0,337.5,"Smart AC",125000.0,573.75
+"Los Angeles, CA","modern_condo_la","Modern Condo",250000.0,337.5,"Luxury Bath",175000.0,776.25
+"Los Angeles, CA","hollywood_villa","Hollywood Villa",500000.0,725.0,"Pool Addition",150000.0,942.5
+"Los Angeles, CA","hollywood_villa","Hollywood Villa",500000.0,725.0,"Home Theater",250000.0,1232.5
+"Los Angeles, CA","hollywood_villa","Hollywood Villa",500000.0,725.0,"Smart Security",350000.0,1667.5
+"Los Angeles, CA","luxury_loft_la","Luxury Loft",1000000.0,1550.0,"Exposed Brick",300000.0,2015.0
+"Los Angeles, CA","luxury_loft_la","Luxury Loft",1000000.0,1550.0,"Rooftop Terrace",500000.0,2635.0
+"Los Angeles, CA","luxury_loft_la","Luxury Loft",1000000.0,1550.0,"Private Gym",700000.0,3565.0
+"Los Angeles, CA","beverly_hills_house","Beverly Hills House",2500000.0,4125.0,"Infinity Pool",750000.0,5362.5
+"Los Angeles, CA","beverly_hills_house","Beverly Hills House",2500000.0,4125.0,"Smart Home System",1250000.0,7012.5
+"Los Angeles, CA","beverly_hills_house","Beverly Hills House",2500000.0,4125.0,"Luxury Spa",1750000.0,9487.5
+"Los Angeles, CA","celebrity_mansion","Celebrity Mansion",5000000.0,8750.0,"Private Studio",1500000.0,11375.0
+"Los Angeles, CA","celebrity_mansion","Celebrity Mansion",5000000.0,8750.0,"Rooftop Pool",2500000.0,14875.0
+"Los Angeles, CA","celebrity_mansion","Celebrity Mansion",5000000.0,8750.0,"Luxury Cinema",3500000.0,20125.0
+"Los Angeles, CA","skyline_penthouse_la","Skyline Penthouse",10000000.0,18500.0,"Sky Lounge",3000000.0,24050.0
+"Los Angeles, CA","skyline_penthouse_la","Skyline Penthouse",10000000.0,18500.0,"Helipad",5000000.0,31450.0
+"Los Angeles, CA","skyline_penthouse_la","Skyline Penthouse",10000000.0,18500.0,"Private Elevator",7000000.0,42550.0
+"Los Angeles, CA","oceanfront_estate","Oceanfront Estate",25000000.0,48750.0,"Private Beach",7500000.0,63375.0
+"Los Angeles, CA","oceanfront_estate","Oceanfront Estate",25000000.0,48750.0,"Helipad",12500000.0,82875.0
+"Los Angeles, CA","oceanfront_estate","Oceanfront Estate",25000000.0,48750.0,"Luxury Suites",17500000.0,112125.0
+"Los Angeles, CA","la_iconic_compound","LA Iconic Compound",50000000.0,102500.0,"Grand Terrace",15000000.0,133250.0
+"Los Angeles, CA","la_iconic_compound","LA Iconic Compound",50000000.0,102500.0,"Helipad",25000000.0,174250.0
+"Los Angeles, CA","la_iconic_compound","LA Iconic Compound",50000000.0,102500.0,"Private Spa",35000000.0,235750.0
+"Lima, Peru","adobe_flat","Adobe Flat",2500.0,2.875,"Clay Roof",750.0,3.74
+"Lima, Peru","adobe_flat","Adobe Flat",2500.0,2.875,"Wooden Door",1250.0,4.89
+"Lima, Peru","adobe_flat","Adobe Flat",2500.0,2.875,"Water Pump",1750.0,6.61
+"Lima, Peru","brick_house_lima","Brick House",5000.0,6.25,"Tile Floor",1500.0,8.13
+"Lima, Peru","brick_house_lima","Brick House",5000.0,6.25,"Solar Lanterns",2500.0,10.63
+"Lima, Peru","brick_house_lima","Brick House",5000.0,6.25,"Rainwater Tank",3500.0,14.38
+"Lima, Peru","coastal_shack","Coastal Shack",12500.0,16.875,"Deck Extension",3750.0,21.94
+"Lima, Peru","coastal_shack","Coastal Shack",12500.0,16.875,"Waterproof Roof",6250.0,28.69
+"Lima, Peru","coastal_shack","Coastal Shack",12500.0,16.875,"Solar Panels",8750.0,38.81
+"Lima, Peru","modern_apartment_lima","Modern Apartment",25000.0,36.25,"Balcony",7500.0,47.13
+"Lima, Peru","modern_apartment_lima","Modern Apartment",25000.0,36.25,"Smart Lights",12500.0,61.63
+"Lima, Peru","modern_apartment_lima","Modern Apartment",25000.0,36.25,"AC Unit",17500.0,83.38
+"Lima, Peru","gated_unit_lima","Gated Unit",50000.0,77.5,"Security Gate",15000.0,100.75
+"Lima, Peru","gated_unit_lima","Gated Unit",50000.0,77.5,"Pool Addition",25000.0,131.75
+"Lima, Peru","gated_unit_lima","Gated Unit",50000.0,77.5,"Smart AC",35000.0,178.25
+"Lima, Peru","andean_villa","Andean Villa",125000.0,206.25,"Terrace Garden",37500.0,268.13
+"Lima, Peru","andean_villa","Andean Villa",125000.0,206.25,"Solar Water Heater",62500.0,350.63
+"Lima, Peru","andean_villa","Andean Villa",125000.0,206.25,"Luxury Bath",87500.0,474.38
+"Lima, Peru","luxury_condo_lima","Luxury Condo",250000.0,437.5,"Marble Floors",75000.0,568.75
+"Lima, Peru","luxury_condo_lima","Luxury Condo",250000.0,437.5,"Rooftop Terrace",125000.0,743.75
+"Lima, Peru","luxury_condo_lima","Luxury Condo",250000.0,437.5,"Home Theater",175000.0,1006.25
+"Lima, Peru","high_rise_suite_lima","High-Rise Suite",500000.0,925.0,"Panoramic Windows",150000.0,1202.5
+"Lima, Peru","high_rise_suite_lima","High-Rise Suite",500000.0,925.0,"Private Gym",250000.0,1572.5
+"Lima, Peru","high_rise_suite_lima","High-Rise Suite",500000.0,925.0,"Smart Security",350000.0,2127.5
+"Lima, Peru","oceanfront_loft","Oceanfront Loft",1000000.0,1950.0,"Sea Deck",300000.0,2535.0
+"Lima, Peru","oceanfront_loft","Oceanfront Loft",1000000.0,1950.0,"Infinity Pool",500000.0,3315.0
+"Lima, Peru","oceanfront_loft","Oceanfront Loft",1000000.0,1950.0,"Luxury Spa",700000.0,4485.0
+"Lima, Peru","lima_skyline_estate","Lima Skyline Estate",2500000.0,5125.0,"Sky Lounge",750000.0,6662.5
+"Lima, Peru","lima_skyline_estate","Lima Skyline Estate",2500000.0,5125.0,"Rooftop Pool",1250000.0,8712.5
+"Lima, Peru","lima_skyline_estate","Lima Skyline Estate",2500000.0,5125.0,"Private Elevator",1750000.0,11787.5
+"Sao Paulo, Brazil","favela_hut","Favela Hut",3500.0,4.025,"Brick Walls",1050.0,5.23
+"Sao Paulo, Brazil","favela_hut","Favela Hut",3500.0,4.025,"Tin Roof",1750.0,6.84
+"Sao Paulo, Brazil","favela_hut","Favela Hut",3500.0,4.025,"Water Pump",2450.0,9.26
+"Sao Paulo, Brazil","concrete_flat_sao_paulo","Concrete Flat",7000.0,8.75,"Window Grilles",2100.0,11.38
+"Sao Paulo, Brazil","concrete_flat_sao_paulo","Concrete Flat",7000.0,8.75,"Ceiling Fans",3500.0,14.88
+"Sao Paulo, Brazil","concrete_flat_sao_paulo","Concrete Flat",7000.0,8.75,"AC Unit",4900.0,20.13
+"Sao Paulo, Brazil","small_apartment_sao_paulo","Small Apartment",17500.0,23.625,"Balcony",5250.0,30.71
+"Sao Paulo, Brazil","small_apartment_sao_paulo","Small Apartment",17500.0,23.625,"Kitchenette",8750.0,40.16
+"Sao Paulo, Brazil","small_apartment_sao_paulo","Small Apartment",17500.0,23.625,"Solar Panels",12250.0,54.34
+"Sao Paulo, Brazil","mid_rise_condo","Mid-Rise Condo",35000.0,50.75,"Security Door",10500.0,65.98
+"Sao Paulo, Brazil","mid_rise_condo","Mid-Rise Condo",35000.0,50.75,"Smart Lights",17500.0,86.28
+"Sao Paulo, Brazil","mid_rise_condo","Mid-Rise Condo",35000.0,50.75,"Rooftop Access",24500.0,116.73
+"Sao Paulo, Brazil","gated_tower_sao_paulo","Gated Tower",75000.0,116.25,"Security Gate",22500.0,151.13
+"Sao Paulo, Brazil","gated_tower_sao_paulo","Gated Tower",75000.0,116.25,"Pool Addition",37500.0,197.63
+"Sao Paulo, Brazil","gated_tower_sao_paulo","Gated Tower",75000.0,116.25,"Gym Room",52500.0,267.38
+"Sao Paulo, Brazil","luxury_unit","Luxury Unit",150000.0,247.5,"Marble Floors",45000.0,321.75
+"Sao Paulo, Brazil","luxury_unit","Luxury Unit",150000.0,247.5,"Private Terrace",75000.0,420.75
+"Sao Paulo, Brazil","luxury_unit","Luxury Unit",150000.0,247.5,"Smart AC",105000.0,569.25
+"Sao Paulo, Brazil","high_rise_suite_sao_paulo","High-Rise Suite",375000.0,656.25,"Panoramic Windows",112500.0,853.13
+"Sao Paulo, Brazil","high_rise_suite_sao_paulo","High-Rise Suite",375000.0,656.25,"Home Theater",187500.0,1115.63
+"Sao Paulo, Brazil","high_rise_suite_sao_paulo","High-Rise Suite",375000.0,656.25,"Luxury Bath",262500.0,1509.38
+"Sao Paulo, Brazil","skyline_penthouse_sao_paulo","Skyline Penthouse",750000.0,1387.5,"Rooftop Pool",225000.0,1803.75
+"Sao Paulo, Brazil","skyline_penthouse_sao_paulo","Skyline Penthouse",750000.0,1387.5,"Smart Home System",375000.0,2358.75
+"Sao Paulo, Brazil","skyline_penthouse_sao_paulo","Skyline Penthouse",750000.0,1387.5,"Private Gym",525000.0,3191.25
+"Sao Paulo, Brazil","business_loft_sao_paulo","Business Loft",1500000.0,2925.0,"Office Space",450000.0,3802.5
+"Sao Paulo, Brazil","business_loft_sao_paulo","Business Loft",1500000.0,2925.0,"High-Speed WiFi",750000.0,4972.5
+"Sao Paulo, Brazil","business_loft_sao_paulo","Business Loft",1500000.0,2925.0,"Rooftop Lounge",1050000.0,6727.5
+"Sao Paulo, Brazil","sao_paulo_iconic_tower","Sao Paulo Iconic Tower",3000000.0,6150.0,"Sky Terrace",900000.0,7995.0
+"Sao Paulo, Brazil","sao_paulo_iconic_tower","Sao Paulo Iconic Tower",3000000.0,6150.0,"Private Pool",1500000.0,10455.0
+"Sao Paulo, Brazil","sao_paulo_iconic_tower","Sao Paulo Iconic Tower",3000000.0,6150.0,"Luxury Spa",2100000.0,14145.0
+"Dubai, UAE","desert_apartment","Desert Apartment",35000.0,40.25,"Smart Cooling",10500.0,52.33
+"Dubai, UAE","desert_apartment","Desert Apartment",35000.0,40.25,"Balcony",17500.0,68.43
+"Dubai, UAE","desert_apartment","Desert Apartment",35000.0,40.25,"Luxury Kitchen",24500.0,92.58
+"Dubai, UAE","modern_condo_dubai","Modern Condo",70000.0,87.5,"Glass Walls",21000.0,113.75
+"Dubai, UAE","modern_condo_dubai","Modern Condo",70000.0,87.5,"Smart Lights",35000.0,148.75
+"Dubai, UAE","modern_condo_dubai","Modern Condo",70000.0,87.5,"Rooftop Access",49000.0,201.25
+"Dubai, UAE","palm_villa","Palm Villa",175000.0,262.5,"Private Garden",52500.0,341.25
+"Dubai, UAE","palm_villa","Palm Villa",175000.0,262.5,"Pool Addition",87500.0,446.25
+"Dubai, UAE","palm_villa","Palm Villa",175000.0,262.5,"Smart AC",122500.0,603.75
+"Dubai, UAE","luxury_flat_dubai","Luxury Flat",350000.0,507.5,"Marble Floors",105000.0,659.75
+"Dubai, UAE","luxury_flat_dubai","Luxury Flat",350000.0,507.5,"Home Theater",175000.0,862.75
+"Dubai, UAE","luxury_flat_dubai","Luxury Flat",350000.0,507.5,"Private Terrace",245000.0,1167.25
+"Dubai, UAE","high_rise_suite_dubai","High-Rise Suite",750000.0,1162.5,"Panoramic Windows",225000.0,1511.25
+"Dubai, UAE","high_rise_suite_dubai","High-Rise Suite",750000.0,1162.5,"Rooftop Jacuzzi",375000.0,1976.25
+"Dubai, UAE","high_rise_suite_dubai","High-Rise Suite",750000.0,1162.5,"Smart Security",525000.0,2673.75
+"Dubai, UAE","burj_tower_unit","Burj Tower Unit",1500000.0,2475.0,"Sky Deck",450000.0,3217.5
+"Dubai, UAE","burj_tower_unit","Burj Tower Unit",1500000.0,2475.0,"Infinity Pool",750000.0,4207.5
+"Dubai, UAE","burj_tower_unit","Burj Tower Unit",1500000.0,2475.0,"Luxury Bath",1050000.0,5692.5
+"Dubai, UAE","skyline_mansion","Skyline Mansion",3750000.0,6562.5,"Private Gym",1125000.0,8531.25
+"Dubai, UAE","skyline_mansion","Skyline Mansion",3750000.0,6562.5,"Smart Home System",1875000.0,11156.25
+"Dubai, UAE","skyline_mansion","Skyline Mansion",3750000.0,6562.5,"Rooftop Lounge",2625000.0,15093.75
+"Dubai, UAE","island_retreat","Island Retreat",7500000.0,13875.0,"Private Beach",2250000.0,18037.5
+"Dubai, UAE","island_retreat","Island Retreat",7500000.0,13875.0,"Infinity Pool",3750000.0,23587.5
+"Dubai, UAE","island_retreat","Island Retreat",7500000.0,13875.0,"Luxury Spa",5250000.0,31912.5
+"Dubai, UAE","billionaire_penthouse_dubai","Billionaire Penthouse",15000000.0,29250.0,"Smart Home Integration",4500000.0,38025.0
+"Dubai, UAE","billionaire_penthouse_dubai","Billionaire Penthouse",15000000.0,29250.0,"Local Art Installations",7500000.0,49725.0
+"Dubai, UAE","billionaire_penthouse_dubai","Billionaire Penthouse",15000000.0,29250.0,"Helipad",10500000.0,67275.0
+"Dubai, UAE","dubai_iconic_skyscraper","Dubai Iconic Skyscraper",35000000.0,71750.0,"Sky Lounge",10500000.0,93275.0
+"Dubai, UAE","dubai_iconic_skyscraper","Dubai Iconic Skyscraper",35000000.0,71750.0,"Helipad",17500000.0,121975.0
+"Dubai, UAE","dubai_iconic_skyscraper","Dubai Iconic Skyscraper",35000000.0,71750.0,"Private Cinema",24500000.0,165025.0

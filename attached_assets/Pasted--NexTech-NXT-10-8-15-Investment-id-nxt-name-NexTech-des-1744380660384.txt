@@ -1,0 +1,355 @@
+[
+  // NexTech - NXT - $10 - ($8-$15)
+  Investment(
+    id: 'nxt',
+    name: 'NexTech',
+    description: 'A tech firm specializing in AI software.',
+    currentPrice: 10.0,
+    basePrice: 10.0,
+    volatility: 0.15, // Based on range of $8-$15
+    trend: 0.02, // Slight positive trend
+    owned: 0,
+    icon: Icons.computer,
+    color: Colors.blue,
+    priceHistory: List.generate(7, (_) => 10.0),
+    category: 'Technology',
+    marketCap: 2.5, // Small-cap tech firm, moderate volatility
+  ),
+
+  // GreenVolt - GRV - $25 - ($20-$35)
+  Investment(
+    id: 'grv',
+    name: 'GreenVolt',
+    description: 'Renewable energy company with steady growth.',
+    currentPrice: 25.0,
+    basePrice: 25.0,
+    volatility: 0.12, // Based on range of $20-$35
+    trend: 0.03, // Good steady trend
+    owned: 0,
+    icon: Icons.eco,
+    color: Colors.green,
+    priceHistory: List.generate(7, (_) => 25.0),
+    category: 'Energy',
+    marketCap: 5.0, // Mid-size energy firm, stable growth
+  ),
+
+  // MegaFreight - MFT - $50 - ($40-$70)
+  Investment(
+    id: 'mft',
+    name: 'MegaFreight',
+    description: 'Logistics and shipping giant.',
+    currentPrice: 50.0,
+    basePrice: 50.0,
+    volatility: 0.15, // Based on range of $40-$70
+    trend: 0.01, // Modest trend
+    owned: 0,
+    icon: Icons.local_shipping,
+    color: Colors.blueGrey,
+    priceHistory: List.generate(7, (_) => 50.0),
+    category: 'Transportation',
+    marketCap: 10.0, // Larger logistics firm, stable operations
+  ),
+
+  // LuxWear - LXW - $100 - ($80-$130)
+  Investment(
+    id: 'lxw',
+    name: 'LuxWear',
+    description: 'High-end fashion brand with trendy spikes.',
+    currentPrice: 100.0,
+    basePrice: 100.0,
+    volatility: 0.20, // Based on range and "trendy spikes"
+    trend: 0.02, // Fashion trends come and go
+    owned: 0,
+    icon: Icons.diamond_outlined,
+    color: Colors.pink,
+    priceHistory: List.generate(7, (_) => 100.0),
+    category: 'Fashion',
+    marketCap: 8.0, // Fashion brand, volatile but premium
+  ),
+
+  // StarForge - STF - $500 - ($400-$700)
+  Investment(
+    id: 'stf',
+    name: 'StarForge',
+    description: 'Space exploration company with high risk/reward.',
+    currentPrice: 500.0,
+    basePrice: 500.0,
+    volatility: 0.25, // High risk/reward profile
+    trend: 0.04, // Strong growth potential
+    owned: 0,
+    icon: Icons.rocket_launch,
+    color: Colors.deepPurple,
+    priceHistory: List.generate(7, (_) => 500.0),
+    category: 'Aerospace',
+    marketCap: 15.0, // Speculative space firm, high growth potential
+  ),
+
+  // CRYPTOCURRENCIES
+
+  // BitCoinLite - BCL - $50 - ($30-$80)
+  Investment(
+    id: 'bcl',
+    name: 'BitCoinLite',
+    description: 'A beginner-friendly crypto with moderate swings.',
+    currentPrice: 50.0,
+    basePrice: 50.0,
+    volatility: 0.30, // Moderate crypto swings
+    trend: 0.02, // Modest trend
+    owned: 0,
+    icon: Icons.currency_bitcoin,
+    color: Colors.amber,
+    priceHistory: List.generate(7, (_) => 50.0),
+    category: 'Cryptocurrency',
+    marketCap: 1.0, // Smaller crypto, high volatility
+  ),
+
+  // EtherCore - ETC - $200 - ($150-$300)
+  Investment(
+    id: 'etc',
+    name: 'EtherCore',
+    description: 'A blockchain platform with growing adoption.',
+    currentPrice: 200.0,
+    basePrice: 200.0,
+    volatility: 0.25, // Based on price range
+    trend: 0.03, // Growing adoption implies positive trend
+    owned: 0,
+    icon: Icons.hub,
+    color: Colors.blue.shade800,
+    priceHistory: List.generate(7, (_) => 200.0),
+    category: 'Cryptocurrency',
+    marketCap: 4.0, // Mid-tier crypto with platform potential
+  ),
+
+  // MoonToken - MTK - $10 - ($5-$20)
+  Investment(
+    id: 'mtk',
+    name: 'MoonToken',
+    description: 'A meme coin with wild volatility.',
+    currentPrice: 10.0,
+    basePrice: 10.0,
+    volatility: 0.50, // Wild volatility as described
+    trend: -0.01, // Slight negative trend overall due to meme status
+    owned: 0,
+    icon: Icons.nightlight_round,
+    color: Colors.purple.shade300,
+    priceHistory: List.generate(7, (_) => 10.0),
+    category: 'Cryptocurrency',
+    marketCap: 0.5, // Tiny meme coin, speculative
+  ),
+
+  // StableX - SBX - $100 - ($95-$105)
+  Investment(
+    id: 'sbx',
+    name: 'StableX',
+    description: 'A low-risk crypto pegged to real-world value.',
+    currentPrice: 100.0,
+    basePrice: 100.0,
+    volatility: 0.03, // Very low volatility (stablecoin)
+    trend: 0.001, // Minimal trend (near zero)
+    owned: 0,
+    icon: Icons.lock,
+    color: Colors.teal,
+    priceHistory: List.generate(7, (_) => 100.0),
+    category: 'Cryptocurrency',
+    marketCap: 3.0, // Stablecoin with broader adoption
+  ),
+
+  // QuantumBit - QBT - $1,000 - ($700-$1,500)
+  Investment(
+    id: 'qbt',
+    name: 'QuantumBit',
+    description: 'Cutting-edge crypto tied to quantum computing.',
+    currentPrice: 1000.0,
+    basePrice: 1000.0,
+    volatility: 0.35, // High volatility based on range
+    trend: 0.05, // Strong positive trend (cutting-edge tech)
+    owned: 0,
+    icon: Icons.pending,
+    color: Colors.cyan.shade700,
+    priceHistory: List.generate(7, (_) => 1000.0),
+    category: 'Cryptocurrency',
+    marketCap: 7.0, // High-spec crypto, niche but growing
+  ),
+
+  // DIVIDEND INVESTMENTS
+
+  // BioTech Innovators Fund - $500 - ($400-$600) - $0.63/sec
+  Investment(
+    id: 'btf',
+    name: 'BioTech Innovators Fund',
+    description: 'Fund for biotech startups in gene therapy and vaccines.',
+    currentPrice: 500.0,
+    basePrice: 500.0,
+    volatility: 0.20, // Based on price range $400-$600
+    trend: 0.03, // Positive trend for biotech
+    owned: 0,
+    icon: Icons.healing,
+    color: Colors.lightBlue.shade700,
+    priceHistory: List.generate(7, (_) => 500.0),
+    category: 'Healthcare',
+    dividendPerSecond: 1.89, // Income per second per share
+    marketCap: 20.0, // Biotech fund, broader and stable
+  ),
+
+  // Streaming Media ETF - $2,000 - ($1,600-$2,400) - $2.52/sec
+  Investment(
+    id: 'sme',
+    name: 'Streaming Media ETF',
+    description: 'ETF of streaming platforms and content creators.',
+    currentPrice: 2000.0,
+    basePrice: 2000.0,
+    volatility: 0.20, // Based on price range
+    trend: 0.04, // Strong trend for streaming
+    owned: 0,
+    icon: Icons.live_tv,
+    color: Colors.red.shade700,
+    priceHistory: List.generate(7, (_) => 2000.0),
+    category: 'Entertainment',
+    dividendPerSecond: 7.56,
+    marketCap: 50.0, // Large ETF, broad streaming market
+  ),
+
+  // Sustainable Agriculture Bonds - $10,000 - ($9,000-$11,000) - $12.6/sec
+  Investment(
+    id: 'sab',
+    name: 'Sustainable Agriculture Bonds',
+    description: 'Bonds for organic farming and sustainable food production.',
+    currentPrice: 10000.0,
+    basePrice: 10000.0,
+    volatility: 0.10, // Bonds are relatively stable
+    trend: 0.02, // Modest trend
+    owned: 0,
+    icon: Icons.agriculture,
+    color: Colors.green.shade800,
+    priceHistory: List.generate(7, (_) => 10000.0),
+    category: 'Agriculture',
+    dividendPerSecond: 39,
+    marketCap: 75.0, // Stable bonds, large-scale agriculture
+  ),
+
+  // Global Tourism Index - $50,000 - ($40,000-$60,000) - $63/sec
+  Investment(
+    id: 'gti',
+    name: 'Global Tourism Index',
+    description: 'Index fund of major tourism companies.',
+    currentPrice: 50000.0,
+    basePrice: 50000.0,
+    volatility: 0.20, // Based on price range
+    trend: 0.03, // Modest positive trend
+    owned: 0,
+    icon: Icons.flight,
+    color: Colors.amber.shade800,
+    priceHistory: List.generate(7, (_) => 50000.0),
+    category: 'Tourism',
+    dividendPerSecond: 191,
+    marketCap: 100.0, // Broad tourism index, significant scale
+  ),
+
+  // Urban REIT - $200,000 - ($180,000-$220,000) - $252/sec
+  Investment(
+    id: 'urt',
+    name: 'Urban REIT',
+    description: 'REIT for urban commercial properties.',
+    currentPrice: 200000.0,
+    basePrice: 200000.0,
+    volatility: 0.10, // REITs tend to be more stable
+    trend: 0.02, // Modest trend
+    owned: 0,
+    icon: Icons.business,
+    color: Colors.brown.shade600,
+    priceHistory: List.generate(7, (_) => 200000.0),
+    category: 'REITs',
+    dividendPerSecond: 762,
+    marketCap: 150.0, // Large REIT, stable urban properties
+  ),
+
+  // Virtual Reality Ventures - $1M - ($700,000-$1,300,000) - $1,260/sec
+  Investment(
+    id: 'vrv',
+    name: 'Virtual Reality Ventures',
+    description: 'Stocks in VR gaming and entertainment companies.',
+    currentPrice: 1000000.0,
+    basePrice: 1000000.0,
+    volatility: 0.30, // High volatility based on range
+    trend: 0.05, // Strong trend for emerging tech
+    owned: 0,
+    icon: Icons.vrpano,
+    color: Colors.deepPurple.shade600,
+    priceHistory: List.generate(7, (_) => 1000000.0),
+    category: 'Entertainment',
+    dividendPerSecond: 3900,
+    marketCap: 80.0, // Emerging VR market, high growth
+  ),
+
+  // Medical Robotics Corp - $5M - ($4M-$6M) - $6,300/sec
+  Investment(
+    id: 'mrc',
+    name: 'Medical Robotics Corp',
+    description: 'Company producing robotic surgery and AI diagnostics.',
+    currentPrice: 5000000.0,
+    basePrice: 5000000.0,
+    volatility: 0.20, // Based on price range
+    trend: 0.04, // Strong trend for medical tech
+    owned: 0,
+    icon: Icons.biotech,
+    color: Colors.blue.shade800,
+    priceHistory: List.generate(7, (_) => 5000000.0),
+    category: 'Healthcare',
+    dividendPerSecond: 19500.0,
+    marketCap: 200.0, // Large medical tech firm, specialized
+  ),
+
+  // AgroTech Futures - $20M - ($14M-$26M) - $25,200/sec
+  Investment(
+    id: 'atf',
+    name: 'AgroTech Futures',
+    description: 'Futures on agrotech firms in vertical farming.',
+    currentPrice: 20000000.0,
+    basePrice: 20000000.0,
+    volatility: 0.30, // High volatility for futures
+    trend: 0.03, // Positive trend
+    owned: 0,
+    icon: Icons.eco,
+    color: Colors.lightGreen.shade800,
+    priceHistory: List.generate(7, (_) => 20000000.0),
+    category: 'Agriculture',
+    dividendPerSecond: 83000,
+    marketCap: 120.0, // Futures market, speculative but broad
+  ),
+
+  // Luxury Resort REIT - $100M - ($90M-$110M) - $126,000/sec
+  Investment(
+    id: 'lrr',
+    name: 'Luxury Resort REIT',
+    description: 'REIT for luxury resorts and vacation properties.',
+    currentPrice: 100000000.0,
+    basePrice: 100000000.0,
+    volatility: 0.10, // REITs tend to be more stable
+    trend: 0.02, // Modest trend
+    owned: 0,
+    icon: Icons.beach_access,
+    color: Colors.teal.shade600,
+    priceHistory: List.generate(7, (_) => 100000000.0),
+    category: 'REITs',
+    dividendPerSecond: 385000,
+    marketCap: 300.0, // Massive REIT, premium properties
+  ),
+
+  // Adventure Travel Holdings - $500M - ($400M-$600M) - $630,000/sec
+  Investment(
+    id: 'ath',
+    name: 'Adventure Travel Holdings',
+    description: 'Holdings in adventure travel and eco-tourism operators.',
+    currentPrice: 500000000.0,
+    basePrice: 500000000.0,
+    volatility: 0.20, // Based on price range
+    trend: 0.03, // Modest trend
+    owned: 0,
+    icon: Icons.terrain,
+    color: Colors.orange.shade800,
+    priceHistory: List.generate(7, (_) => 500000000.0),
+    category: 'Tourism',
+    dividendPerSecond: 1900000,
+    marketCap: 500.0, // Huge tourism holdings, global reach
+  ),
+];

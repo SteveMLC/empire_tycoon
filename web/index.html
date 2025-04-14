@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base href="/">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="Empire Tycoon - Build your global business empire! A sophisticated idle tycoon game that simulates entrepreneurship across diverse worldwide locales.">
+
+  <!-- iOS meta tags & icons -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="Empire Tycoon">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+  
+  <!-- Icons for various platforms -->
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/Icon-192.png">
+  <link rel="icon" type="image/png" sizes="512x512" href="icons/Icon-512.png">
+  <link rel="mask-icon" href="icons/Icon-maskable-192.png" color="#2E7D32">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="favicon.png"/>
+
+  <!-- Material Icons Font -->
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  
+  <title>Empire Tycoon</title>
+  <link rel="manifest" href="manifest.json">
+  
+  <!-- Set system font preference for Flutter content -->
+  <style>
+    /* Apply system fonts to Flutter content area */
+    #flutter_target, flt-glass-pane {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif !important;
+    }
+    
+    /* Override Roboto font when on web */
+    @media screen {
+      body {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      }
+      /* These selectors target Flutter-rendered text in web mode */
+      flt-scene, flt-scene-host {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif !important;
+      }
+    }
+  </style>
+
+  <!-- Animated loading screen styles -->
+  <style>
+    .loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #f5f5f5 0%, #e0f2e0 100%);
+      font-family: Arial, sans-serif;
+      z-index: 9999;
+      transition: opacity 0.8s ease-in-out;
+      overflow: hidden;
+    }
+    .loading-logo-container {
+      position: relative;
+      width: 200px;
+      height: 200px;
+      margin-bottom: 24px;
+      animation: logoEntrance 1.5s ease-out forwards;
+      opacity: 0;
+      transform: scale(0.5);
+    }
+    .loading-logo-pulse {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background-color: rgba(46, 125, 50, 0.2);
+      animation: pulse 2s infinite;
+      z-index: -1;
+    }
+    .loading-logo {
+      width: 100%;
+      height: 100%;
+    }
+    .loading-text {
+      font-size: 28px;
+      color: #2E7D32;
+      margin-bottom: 20px;
+      font-weight: bold;
+      animation: fadeInUp 1s ease-out 0.5s forwards;
+      opacity: 0;
+      transform: translateY(20px);
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+    }
+    .loading-spinner {
+      width: 60px;
+      height: 60px;
+      border: 5px solid rgba(46, 125, 50, 0.1);
+      border-top: 5px solid #2E7D32;
+      border-radius: 50%;
+      animation: spin 1.5s linear infinite;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .loading-subtext {
+      font-size: 16px;
+      color: #4a4a4a;
+      animation: fadeIn 1s ease-out 0.8s forwards;
+      opacity: 0;
+      max-width: 300px;
+      text-align: center;
+      line-height: 1.4;
+    }
+    .retry-button {
+      margin-top: 24px;
+      padding: 12px 24px;
+      background-color: #2E7D32;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      transition: all 0.3s ease;
+      animation: fadeIn 1s ease-out 1s forwards;
+      opacity: 0;
+    }
+    .retry-button:hover {
+      background-color: #1B5E20;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    .error-display {
+      color: #d32f2f;
+    }
+    .loading-progress {
+      width: 200px;
+      height: 4px;
+      background-color: rgba(46, 125, 50, 0.2);
+      border-radius: 2px;
+      overflow: hidden;
+      margin-bottom: 16px;
+      animation: fadeIn 1s ease-out 0.8s forwards;
+      opacity: 0;
+    }
+    .loading-progress-bar {
+      height: 100%;
+      width: 0%;
+      background-color: #2E7D32;
+      animation: loadProgress 20s ease-in-out forwards;
+    }
+    .coin {
+      position: absolute;
+      background-color: #FFC107;
+      border-radius: 50%;
+      opacity: 0;
+      animation: floatCoin 8s infinite;
+    }
+    
+    /* Animations */
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    @keyframes pulse {
+      0% { transform: scale(0.95); opacity: 0.7; }
+      50% { transform: scale(1.05); opacity: 0.3; }
+      100% { transform: scale(0.95); opacity: 0.7; }
+    }
+    @keyframes fadeIn {
+      0% { opacity: 0; }
+      100% { opacity: 1; }
+    }
+    @keyframes fadeInUp {
+      0% { opacity: 0; transform: translateY(20px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes logoEntrance {
+      0% { opacity: 0; transform: scale(0.5) rotate(-10deg); }
+      30% { opacity: 1; transform: scale(1.1) rotate(5deg); }
+      100% { opacity: 1; transform: scale(1) rotate(0deg); }
+    }
+    @keyframes loadProgress {
+      0% { width: 0%; }
+      10% { width: 20%; }
+      30% { width: 40%; }
+      50% { width: 60%; }
+      70% { width: 80%; }
+      100% { width: 100%; }
+    }
+    @keyframes floatCoin {
+      0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+      10% { opacity: 0.8; }
+      90% { opacity: 0.8; }
+      100% { transform: translateY(-100vh) rotate(360deg); opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Animated Loading UI with SVG Logo -->
+  <div id="loading" class="loading">
+    <!-- Floating coins animation -->
+    <div id="coins-container"></div>
+    
+    <!-- Logo with pulse effect -->
+    <div class="loading-logo-container">
+      <div class="loading-logo-pulse"></div>
+      <object id="loading-logo" class="loading-logo" type="image/svg+xml" data="assets/empire_logo.svg"></object>
+    </div>
+    
+    <!-- Text elements with animations -->
+    <div id="loading-text" class="loading-text">Empire Tycoon</div>
+    
+    <!-- Progress bar -->
+    <div class="loading-progress">
+      <div class="loading-progress-bar"></div>
+    </div>
+    
+    <div id="loading-spinner" class="loading-spinner"></div>
+    <div id="loading-subtext" class="loading-subtext">Building your business empire...</div>
+  </div>
+  
+  <!-- Script to add floating coins -->
+  <script>
+    function addFloatingCoins() {
+      const container = document.getElementById('coins-container');
+      const numCoins = 8;
+      
+      for (let i = 0; i < numCoins; i++) {
+        const coin = document.createElement('div');
+        coin.className = 'coin';
+        
+        // Random size between 8px and 16px
+        const size = Math.floor(Math.random() * 8) + 8;
+        coin.style.width = size + 'px';
+        coin.style.height = size + 'px';
+        
+        // Random position
+        coin.style.left = Math.floor(Math.random() * 90) + 5 + '%';
+        coin.style.bottom = '-20px';
+        
+        // Random delay and duration
+        const delay = Math.random() * 5;
+        const duration = Math.random() * 3 + 5; // 5-8s
+        coin.style.animationDelay = delay + 's';
+        coin.style.animationDuration = duration + 's';
+        
+        container.appendChild(coin);
+      }
+    }
+    
+    // Add coins when the page loads
+    document.addEventListener('DOMContentLoaded', addFloatingCoins);
+  </script>
+
+  <!-- Load our fallback polyfills and error handlers first -->
+  <script src="vector_math_polyfill.js"></script>
+  <script src="characters_polyfill.js"></script>
+  <script src="flutter_error_handler.js"></script>
+  
+  <!-- Simple direct loading of Flutter app -->
+  <script>
+    // Error handling function
+    function showError(message) {
+      // Update UI to show error
+      const logoContainer = document.querySelector('.loading-logo-container');
+      if (logoContainer) {
+        // Remove current logo and pulse effect
+        logoContainer.innerHTML = '';
+        
+        // Add error icon
+        const errorIcon = document.createElement('div');
+        errorIcon.innerHTML = '⚠️';
+        errorIcon.style.fontSize = '80px';
+        errorIcon.style.color = '#d32f2f';
+        errorIcon.style.display = 'flex';
+        errorIcon.style.justifyContent = 'center';
+        errorIcon.style.alignItems = 'center';
+        errorIcon.style.width = '100%';
+        errorIcon.style.height = '100%';
+        logoContainer.appendChild(errorIcon);
+      }
+      
+      // Update text elements
+      document.getElementById('loading-text').innerText = 'Error Loading App';
+      document.getElementById('loading-text').style.color = '#d32f2f';
+      document.getElementById('loading-spinner').style.display = 'none';
+      
+      // Hide progress bar
+      const progressBar = document.querySelector('.loading-progress');
+      if (progressBar) {
+        progressBar.style.display = 'none';
+      }
+      
+      // Show error message
+      document.getElementById('loading-subtext').innerHTML = message + 
+        '<br><br>Please try:<br>1. Refreshing the page<br>2. Using a different browser';
+      document.getElementById('loading-subtext').style.color = '#d32f2f';
+      
+      // Add retry button if not already present
+      if (!document.querySelector('.retry-button')) {
+        var button = document.createElement('button');
+        button.innerText = 'Try Again';
+        button.className = 'retry-button';
+        button.onclick = function() {
+          window.location.reload();
+        };
+        document.getElementById('loading').appendChild(button);
+      }
+    }
+
+    // Global error handling as a fallback to our dedicated error handler
+    window.addEventListener('error', function(e) {
+      console.error('Global error:', e);
+      
+      // Skip errors related to Vector2/Matrix4 - our dedicated handler takes care of these
+      if (e.message && (
+          e.message.includes('Vector2') || 
+          e.message.includes('Matrix4') ||
+          e.message.includes('vector_math') ||
+          e.message.includes('characters') ||
+          e.message.includes('collection') ||
+          e.message.includes('meta')
+      )) {
+        console.log('Dependency error detected, letting dedicated handler manage it');
+        return;
+      }
+      
+      // Don't show error for main.dart.js errors as they are handled separately
+      if (!e.filename || !e.filename.includes('main.dart.js')) {
+        showError('App initialization error: ' + e.message);
+      }
+    });
+    
+    window.addEventListener('unhandledrejection', function(event) {
+      console.error('Unhandled Promise Rejection:', event.reason);
+      
+      // Skip dependency-related promise rejections
+      const errorMsg = event.reason?.message || '';
+      if (errorMsg && (
+          errorMsg.includes('Vector2') || 
+          errorMsg.includes('Matrix4') ||
+          errorMsg.includes('vector_math') ||
+          errorMsg.includes('characters') ||
+          errorMsg.includes('collection') ||
+          errorMsg.includes('meta')
+      )) {
+        console.log('Dependency promise rejection detected, letting dedicated handler manage it');
+        return;
+      }
+      
+      showError('Failed to initialize: ' + (errorMsg || 'Unknown rejection'));
+    });
+
+    // Load the app directly
+    window.addEventListener('load', function() {
+      var loading = document.getElementById('loading');
+      
+      // Timeout after 30 seconds
+      var timeout = setTimeout(function() {
+        showError('Loading timed out after 30 seconds.');
+      }, 30000);
+      
+      try {
+        // Log activity
+        console.log('Loading Flutter app directly');
+        
+        // Check for vector_math in window - if present, likely no need to reload
+        if (window.vector_math) {
+          console.log('vector_math already present in window');
+        }
+        
+        // First load Flutter.js to ensure framework is available
+        var flutterScript = document.createElement('script');
+        flutterScript.src = 'flutter.js';
+        flutterScript.type = 'application/javascript';
+        
+        flutterScript.onload = function() {
+          console.log('Flutter.js loaded, proceeding with main.dart.js');
+          
+          // After Flutter.js is loaded, load main.dart.js
+          var mainScript = document.createElement('script');
+          mainScript.src = 'main.dart.js';
+          mainScript.type = 'application/javascript';
+          
+          // Set up success handler
+          mainScript.onload = function() {
+            console.log('App loaded successfully');
+            // Hide loading screen
+            clearTimeout(timeout);
+            loading.style.opacity = '0';
+            setTimeout(function() {
+              loading.style.display = 'none';
+            }, 500);
+          };
+          
+          // Set up error handler
+          mainScript.onerror = function(e) {
+            console.error('Failed to load main.dart.js:', e);
+            showError('Failed to load application code. Please check console for details.');
+            clearTimeout(timeout);
+          };
+          
+          // Add the main script to the body
+          document.body.appendChild(mainScript);
+        };
+        
+        // Set up error handler for Flutter.js
+        flutterScript.onerror = function(e) {
+          console.error('Failed to load flutter.js:', e);
+          showError('Failed to load Flutter framework. Please check console for details.');
+          clearTimeout(timeout);
+        };
+        
+        // Add the Flutter script to the body
+        document.body.appendChild(flutterScript);
+      } catch (e) {
+        console.error('Error during app initialization:', e);
+        showError('App initialization failed: ' + e.message);
+        clearTimeout(timeout);
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,435 @@
+"Locale","Property ID","Property Name","Purchase Price","Base Income (/s)","Upgrade Description","Upgrade Cost","New Income (/s)"
+"Rural Kenya","mud_hut","Mud Hut",500.0,0.575,"Thatch Floor",150.0,0.75
+"Rural Kenya","mud_hut","Mud Hut",500.0,0.575,"Shelving",250.0,1.00
+"Rural Kenya","mud_hut","Mud Hut",500.0,0.575,"Running Water",350.0,1.40
+"Rural Kenya","thatched_cottage","Thatched Cottage",1000.0,1.25,"Mud Brick Walls",300.0,1.63
+"Rural Kenya","thatched_cottage","Thatched Cottage",1000.0,1.25,"Wooden Door",500.0,2.13
+"Rural Kenya","thatched_cottage","Thatched Cottage",1000.0,1.25,"Rainwater Tank",700.0,2.88
+"Rural Kenya","brick_shack","Brick Shack",2500.0,3.375,"Tin Roof",750.0,4.39
+"Rural Kenya","brick_shack","Brick Shack",2500.0,3.375,"Concrete Floor",1250.0,5.74
+"Rural Kenya","brick_shack","Brick Shack",2500.0,3.375,"Solar Lanterns",1750.0,7.76
+"Rural Kenya","solar_powered_hut","Solar-Powered Hut",5000.0,7.25,"Extra Panels",1500.0,9.43
+"Rural Kenya","solar_powered_hut","Solar-Powered Hut",5000.0,7.25,"Battery Storage",2500.0,12.33
+"Rural Kenya","solar_powered_hut","Solar-Powered Hut",5000.0,7.25,"Insulated Walls",3500.0,16.68
+"Rural Kenya","village_compound","Village Compound",10000.0,15.5,"Water Well",3000.0,20.15
+"Rural Kenya","village_compound","Village Compound",10000.0,15.5,"Fenced Yard",5000.0,26.35
+"Rural Kenya","village_compound","Village Compound",10000.0,15.5,"Communal Kitchen",7000.0,35.65
+"Rural Kenya","eco_lodge","Eco-Lodge",25000.0,41.25,"Solar Water Heater",7500.0,53.63
+"Rural Kenya","eco_lodge","Eco-Lodge",25000.0,41.25,"Compost System",12500.0,70.13
+"Rural Kenya","eco_lodge","Eco-Lodge",25000.0,41.25,"Rainforest Deck",17500.0,94.88
+"Rural Kenya","farmhouse","Farmhouse",50000.0,87.5,"Irrigation System",15000.0,113.75
+"Rural Kenya","farmhouse","Farmhouse",50000.0,87.5,"Livestock Barn",25000.0,148.75
+"Rural Kenya","farmhouse","Farmhouse",50000.0,87.5,"Tractor Shed",35000.0,201.25
+"Rural Kenya","safari_retreat","Safari Retreat",100000.0,185.0,"Observation Deck",30000.0,240.5
+"Rural Kenya","safari_retreat","Safari Retreat",100000.0,185.0,"Guest Cabins",50000.0,314.5
+"Rural Kenya","safari_retreat","Safari Retreat",100000.0,185.0,"Jeep Garage",70000.0,425.5
+"Rural Kenya","rural_estate","Rural Estate",250000.0,487.5,"Guest Wing",75000.0,633.75
+"Rural Kenya","rural_estate","Rural Estate",250000.0,487.5,"Private Well",125000.0,828.75
+"Rural Kenya","rural_estate","Rural Estate",250000.0,487.5,"Landscaping",175000.0,1121.25
+"Rural Kenya","conservation_villa","Conservation Villa",500000.0,1025.0,"Wildlife Fencing",150000.0,1332.5
+"Rural Kenya","conservation_villa","Conservation Villa",500000.0,1025.0,"Eco Roof",250000.0,1742.5
+"Rural Kenya","conservation_villa","Conservation Villa",500000.0,1025.0,"Solar Grid",350000.0,2357.5
+"Lagos, Nigeria","tin_roof_shack","Tin-Roof Shack",1000.0,1.15,"Reinforced Walls",300.0,1.50
+"Lagos, Nigeria","tin_roof_shack","Tin-Roof Shack",1000.0,1.15,"Solar Panel",500.0,1.96
+"Lagos, Nigeria","tin_roof_shack","Tin-Roof Shack",1000.0,1.15,"Window Frames",700.0,2.65
+"Lagos, Nigeria","concrete_flat","Concrete Flat",2000.0,2.5,"Window Shutters",600.0,3.25
+"Lagos, Nigeria","concrete_flat","Concrete Flat",2000.0,2.5,"Ceiling Fans",1000.0,4.25
+"Lagos, Nigeria","concrete_flat","Concrete Flat",2000.0,2.5,"Plumbing Upgrade",1400.0,5.75
+"Lagos, Nigeria","small_apartment","Small Apartment",5000.0,6.75,"Balcony Addition",1500.0,8.78
+"Lagos, Nigeria","small_apartment","Small Apartment",5000.0,6.75,"Kitchenette",2500.0,11.48
+"Lagos, Nigeria","small_apartment","Small Apartment",5000.0,6.75,"AC Unit",3500.0,15.53
+"Lagos, Nigeria","duplex","Duplex",10000.0,14.5,"Second Floor AC",3000.0,18.85
+"Lagos, Nigeria","duplex","Duplex",10000.0,14.5,"Carport",5000.0,24.65
+"Lagos, Nigeria","duplex","Duplex",10000.0,14.5,"Security System",7000.0,33.35
+"Lagos, Nigeria","mid_rise_block","Mid-Rise Block",25000.0,38.75,"Elevator Install",7500.0,50.38
+"Lagos, Nigeria","mid_rise_block","Mid-Rise Block",25000.0,38.75,"Rooftop Access",12500.0,65.88
+"Lagos, Nigeria","mid_rise_block","Mid-Rise Block",25000.0,38.75,"Modern Lighting",17500.0,89.13
+"Lagos, Nigeria","gated_complex","Gated Complex",50000.0,82.5,"Security Gate",15000.0,107.25
+"Lagos, Nigeria","gated_complex","Gated Complex",50000.0,82.5,"Pool Addition",25000.0,140.25
+"Lagos, Nigeria","gated_complex","Gated Complex",50000.0,82.5,"Gym Facility",35000.0,189.75
+"Lagos, Nigeria","high_rise_tower","High-Rise Tower",100000.0,175.0,"Rooftop Garden",30000.0,227.5
+"Lagos, Nigeria","high_rise_tower","High-Rise Tower",100000.0,175.0,"Smart Windows",50000.0,297.5
+"Lagos, Nigeria","high_rise_tower","High-Rise Tower",100000.0,175.0,"Concierge Desk",70000.0,402.5
+"Lagos, Nigeria","luxury_condo","Luxury Condo",250000.0,462.5,"Smart Lighting",75000.0,601.25
+"Lagos, Nigeria","luxury_condo","Luxury Condo",250000.0,462.5,"Marble Floors",125000.0,786.25
+"Lagos, Nigeria","luxury_condo","Luxury Condo",250000.0,462.5,"Private Terrace",175000.0,1063.75
+"Lagos, Nigeria","business_loft","Business Loft",500000.0,975.0,"Office Partition",150000.0,1267.5
+"Lagos, Nigeria","business_loft","Business Loft",500000.0,975.0,"High-Speed WiFi",250000.0,1657.5
+"Lagos, Nigeria","business_loft","Business Loft",500000.0,975.0,"Meeting Room",350000.0,2242.5
+"Lagos, Nigeria","skyline_penthouse","Skyline Penthouse",1000000.0,2050.0,"Panoramic Windows",300000.0,2665.0
+"Lagos, Nigeria","skyline_penthouse","Skyline Penthouse",1000000.0,2050.0,"Rooftop Jacuzzi",500000.0,3485.0
+"Lagos, Nigeria","skyline_penthouse","Skyline Penthouse",1000000.0,2050.0,"Private Elevator",700000.0,4715.0
+"Cape Town, South Africa","beach_shack","Beach Shack",5000.0,5.75,"Deck Extension",1500.0,7.48
+"Cape Town, South Africa","beach_shack","Beach Shack",5000.0,5.75,"Waterproof Roof",2500.0,9.78
+"Cape Town, South Africa","beach_shack","Beach Shack",5000.0,5.75,"Coastal Paint",3500.0,13.23
+"Cape Town, South Africa","wooden_bungalow","Wooden Bungalow",10000.0,12.5,"Solar Panels",3000.0,16.25
+"Cape Town, South Africa","wooden_bungalow","Wooden Bungalow",10000.0,12.5,"Porch Swing",5000.0,21.25
+"Cape Town, South Africa","wooden_bungalow","Wooden Bungalow",10000.0,12.5,"Storm Shutters",7000.0,28.75
+"Cape Town, South Africa","cliffside_cottage","Cliffside Cottage",25000.0,33.75,"Reinforced Rails",7500.0,43.88
+"Cape Town, South Africa","cliffside_cottage","Cliffside Cottage",25000.0,33.75,"Glass Windows",12500.0,57.38
+"Cape Town, South Africa","cliffside_cottage","Cliffside Cottage",25000.0,33.75,"Terrace Garden",17500.0,77.63
+"Cape Town, South Africa","seaview_villa","Seaview Villa",50000.0,72.5,"Glass Balcony",15000.0,94.25
+"Cape Town, South Africa","seaview_villa","Seaview Villa",50000.0,72.5,"Outdoor Kitchen",25000.0,123.25
+"Cape Town, South Africa","seaview_villa","Seaview Villa",50000.0,72.5,"Solar AC",35000.0,166.75
+"Cape Town, South Africa","modern_beach_house","Modern Beach House",100000.0,155.0,"Outdoor Shower",30000.0,201.5
+"Cape Town, South Africa","modern_beach_house","Modern Beach House",100000.0,155.0,"Smart Thermostat",50000.0,263.5
+"Cape Town, South Africa","modern_beach_house","Modern Beach House",100000.0,155.0,"Infinity Pool",70000.0,356.5
+"Cape Town, South Africa","coastal_estate","Coastal Estate",250000.0,412.5,"Private Pier",75000.0,536.25
+"Cape Town, South Africa","coastal_estate","Coastal Estate",250000.0,412.5,"Guest Suite",125000.0,701.25
+"Cape Town, South Africa","coastal_estate","Coastal Estate",250000.0,412.5,"Seaside Gazebo",175000.0,948.75
+"Cape Town, South Africa","luxury_retreat","Luxury Retreat",500000.0,875.0,"Infinity Pool",150000.0,1137.5
+"Cape Town, South Africa","luxury_retreat","Luxury Retreat",500000.0,875.0,"Wine Cellar",250000.0,1487.5
+"Cape Town, South Africa","luxury_retreat","Luxury Retreat",500000.0,875.0,"Spa Room",350000.0,2012.5
+"Cape Town, South Africa","oceanfront_mansion","Oceanfront Mansion",1000000.0,1850.0,"Helipad",300000.0,2405.0
+"Cape Town, South Africa","oceanfront_mansion","Oceanfront Mansion",1000000.0,1850.0,"Private Beach",500000.0,3145.0
+"Cape Town, South Africa","oceanfront_mansion","Oceanfront Mansion",1000000.0,1850.0,"Smart Home System",700000.0,4255.0
+"Cape Town, South Africa","vineyard_manor","Vineyard Manor",2500000.0,4875.0,"Wine Cellar",750000.0,6337.5
+"Cape Town, South Africa","vineyard_manor","Vineyard Manor",2500000.0,4875.0,"Tasting Room",1250000.0,8287.5
+"Cape Town, South Africa","vineyard_manor","Vineyard Manor",2500000.0,4875.0,"Vineyard Expansion",1750000.0,11212.5
+"Cape Town, South Africa","cape_peninsula_chateau","Cape Peninsula Chateau",5000000.0,10250.0,"Grand Terrace",1500000.0,13325.0
+"Cape Town, South Africa","cape_peninsula_chateau","Cape Peninsula Chateau",5000000.0,10250.0,"Helipad",2500000.0,17425.0
+"Cape Town, South Africa","cape_peninsula_chateau","Cape Peninsula Chateau",5000000.0,10250.0,"Private Marina",3500000.0,23575.0
+"Rural Thailand","bamboo_hut","Bamboo Hut",750.0,0.8625,"Woven Mats",225.0,1.12
+"Rural Thailand","bamboo_hut","Bamboo Hut",750.0,0.8625,"Roof Repair",375.0,1.47
+"Rural Thailand","bamboo_hut","Bamboo Hut",750.0,0.8625,"Water Pump",525.0,1.99
+"Rural Thailand","stilt_house","Stilt House",1500.0,1.875,"Reinforced Stilts",450.0,2.44
+"Rural Thailand","stilt_house","Stilt House",1500.0,1.875,"Mosquito Nets",750.0,3.19
+"Rural Thailand","stilt_house","Stilt House",1500.0,1.875,"Porch Addition",1050.0,4.31
+"Rural Thailand","teak_cabin","Teak Cabin",3000.0,4.05,"Teak Flooring",900.0,5.27
+"Rural Thailand","teak_cabin","Teak Cabin",3000.0,4.05,"Ceiling Fan",1500.0,6.89
+"Rural Thailand","teak_cabin","Teak Cabin",3000.0,4.05,"Rainwater System",2100.0,9.32
+"Rural Thailand","rice_farmhouse","Rice Farmhouse",7500.0,10.875,"Irrigation Ditch",2250.0,14.14
+"Rural Thailand","rice_farmhouse","Rice Farmhouse",7500.0,10.875,"Storage Shed",3750.0,18.49
+"Rural Thailand","rice_farmhouse","Rice Farmhouse",7500.0,10.875,"Solar Panels",5250.0,25.01
+"Rural Thailand","jungle_bungalow","Jungle Bungalow",15000.0,23.25,"Canopy Roof",4500.0,30.23
+"Rural Thailand","jungle_bungalow","Jungle Bungalow",15000.0,23.25,"Outdoor Deck",7500.0,39.53
+"Rural Thailand","jungle_bungalow","Jungle Bungalow",15000.0,23.25,"Eco Plumbing",10500.0,53.48
+"Rural Thailand","riverside_villa","Riverside Villa",30000.0,49.5,"River Deck",9000.0,64.35
+"Rural Thailand","riverside_villa","Riverside Villa",30000.0,49.5,"Fish Pond",15000.0,84.15
+"Rural Thailand","riverside_villa","Riverside Villa",30000.0,49.5,"Solar AC",21000.0,113.85
+"Rural Thailand","eco_resort","Eco-Resort",75000.0,131.25,"Solar Grid",22500.0,170.63
+"Rural Thailand","eco_resort","Eco-Resort",75000.0,131.25,"Bamboo Spa",37500.0,223.13
+"Rural Thailand","eco_resort","Eco-Resort",75000.0,131.25,"Jungle Path",52500.0,301.88
+"Rural Thailand","hilltop_retreat","Hilltop Retreat",150000.0,277.5,"View Terrace",45000.0,360.75
+"Rural Thailand","hilltop_retreat","Hilltop Retreat",150000.0,277.5,"Meditation Room",75000.0,471.75
+"Rural Thailand","hilltop_retreat","Hilltop Retreat",150000.0,277.5,"Infinity Pool",105000.0,638.25
+"Rural Thailand","teak_mansion","Teak Mansion",300000.0,585.0,"Teak Furniture",90000.0,760.5
+"Rural Thailand","teak_mansion","Teak Mansion",300000.0,585.0,"Private Garden",150000.0,994.5
+"Rural Thailand","teak_mansion","Teak Mansion",300000.0,585.0,"Smart Home",210000.0,1345.5
+"Rural Thailand","tropical_estate","Tropical Estate",750000.0,1537.5,"Orchid Garden",225000.0,1998.75
+"Rural Thailand","tropical_estate","Tropical Estate",750000.0,1537.5,"Pool Pavilion",375000.0,2613.75
+"Rural Thailand","tropical_estate","Tropical Estate",750000.0,1537.5,"Eco Cooling",525000.0,3536.25
+"Mumbai, India","slum_tenement","Slum Tenement",2000.0,2.3,"Brick Walls",600.0,2.99
+"Mumbai, India","slum_tenement","Slum Tenement",2000.0,2.3,"Tin Roof",1000.0,3.91
+"Mumbai, India","slum_tenement","Slum Tenement",2000.0,2.3,"Basic Plumbing",1400.0,5.29
+"Mumbai, India","concrete_flat_mumbai","Concrete Flat",4000.0,5.0,"Window Grilles",1200.0,6.5
+"Mumbai, India","concrete_flat_mumbai","Concrete Flat",4000.0,5.0,"Ceiling Fan",2000.0,8.5
+"Mumbai, India","concrete_flat_mumbai","Concrete Flat",4000.0,5.0,"Water Tank",2800.0,11.5
+"Mumbai, India","small_apartment_mumbai","Small Apartment",10000.0,13.5,"Balcony",3000.0,17.55
+"Mumbai, India","small_apartment_mumbai","Small Apartment",10000.0,13.5,"AC Unit",5000.0,22.95
+"Mumbai, India","small_apartment_mumbai","Small Apartment",10000.0,13.5,"Kitchen Upgrade",7000.0,31.05
+"Mumbai, India","mid_tier_condo","Mid-Tier Condo",20000.0,29.0,"Security Door",6000.0,37.7
+"Mumbai, India","mid_tier_condo","Mid-Tier Condo",20000.0,29.0,"Smart Lights",10000.0,49.3
+"Mumbai, India","mid_tier_condo","Mid-Tier Condo",20000.0,29.0,"Rooftop Access",14000.0,66.7
+"Mumbai, India","bollywood_loft","Bollywood Loft",50000.0,77.5,"Soundproofing",15000.0,100.75
+"Mumbai, India","bollywood_loft","Bollywood Loft",50000.0,77.5,"Studio Space",25000.0,131.75
+"Mumbai, India","bollywood_loft","Bollywood Loft",50000.0,77.5,"Terrace Garden",35000.0,178.25
+"Mumbai, India","high_rise_unit_mumbai","High-Rise Unit",100000.0,165.0,"Glass Walls",30000.0,214.5
+"Mumbai, India","high_rise_unit_mumbai","High-Rise Unit",100000.0,165.0,"Smart AC",50000.0,280.5
+"Mumbai, India","high_rise_unit_mumbai","High-Rise Unit",100000.0,165.0,"Private Gym",70000.0,379.5
+"Mumbai, India","gated_tower","Gated Tower",250000.0,437.5,"Security System",75000.0,568.75
+"Mumbai, India","gated_tower","Gated Tower",250000.0,437.5,"Pool Deck",125000.0,743.75
+"Mumbai, India","gated_tower","Gated Tower",250000.0,437.5,"Concierge Service",175000.0,1006.25
+"Mumbai, India","luxury_flat_mumbai","Luxury Flat",500000.0,925.0,"Marble Flooring",150000.0,1202.5
+"Mumbai, India","luxury_flat_mumbai","Luxury Flat",500000.0,925.0,"Home Theater",250000.0,1572.5
+"Mumbai, India","luxury_flat_mumbai","Luxury Flat",500000.0,925.0,"Rooftop Lounge",350000.0,2127.5
+"Mumbai, India","seafront_penthouse","Seafront Penthouse",1000000.0,1950.0,"Panoramic Windows",300000.0,2535.0
+"Mumbai, India","seafront_penthouse","Seafront Penthouse",1000000.0,1950.0,"Private Pool",500000.0,3315.0
+"Mumbai, India","seafront_penthouse","Seafront Penthouse",1000000.0,1950.0,"Smart Home",700000.0,4485.0
+"Mumbai, India","mumbai_skyscraper","Mumbai Skyscraper",2000000.0,4100.0,"Sky Lounge",600000.0,5330.0
+"Mumbai, India","mumbai_skyscraper","Mumbai Skyscraper",2000000.0,4100.0,"Helipad",1000000.0,6970.0
+"Mumbai, India","mumbai_skyscraper","Mumbai Skyscraper",2000000.0,4100.0,"Luxury Spa",1400000.0,9430.0
+"Ho Chi Minh City, Vietnam","shophouse","Shophouse",3000.0,3.45,"Storefront Sign",900.0,4.49
+"Ho Chi Minh City, Vietnam","shophouse","Shophouse",3000.0,3.45,"Second Floor",1500.0,5.87
+"Ho Chi Minh City, Vietnam","shophouse","Shophouse",3000.0,3.45,"AC Unit",2100.0,7.94
+"Ho Chi Minh City, Vietnam","narrow_flat","Narrow Flat",6000.0,7.5,"Balcony",1800.0,9.75
+"Ho Chi Minh City, Vietnam","narrow_flat","Narrow Flat",6000.0,7.5,"Ceiling Fans",3000.0,12.75
+"Ho Chi Minh City, Vietnam","narrow_flat","Narrow Flat",6000.0,7.5,"Kitchenette",4200.0,17.25
+"Ho Chi Minh City, Vietnam","riverside_hut","Riverside Hut",15000.0,20.25,"River Deck",4500.0,26.33
+"Ho Chi Minh City, Vietnam","riverside_hut","Riverside Hut",15000.0,20.25,"Solar Panels",7500.0,34.43
+"Ho Chi Minh City, Vietnam","riverside_hut","Riverside Hut",15000.0,20.25,"Waterproofing",10500.0,46.58
+"Ho Chi Minh City, Vietnam","modern_apartment_hcmc","Modern Apartment",30000.0,43.5,"Smart Lights",9000.0,56.55
+"Ho Chi Minh City, Vietnam","modern_apartment_hcmc","Modern Apartment",30000.0,43.5,"Balcony Garden",15000.0,73.95
+"Ho Chi Minh City, Vietnam","modern_apartment_hcmc","Modern Apartment",30000.0,43.5,"AC Upgrade",21000.0,100.05
+"Ho Chi Minh City, Vietnam","condo_unit_hcmc","Condo Unit",75000.0,116.25,"Security System",22500.0,151.13
+"Ho Chi Minh City, Vietnam","condo_unit_hcmc","Condo Unit",75000.0,116.25,"Rooftop Access",37500.0,197.63
+"Ho Chi Minh City, Vietnam","condo_unit_hcmc","Condo Unit",75000.0,116.25,"Gym Room",52500.0,267.38
+"Ho Chi Minh City, Vietnam","riverfront_villa","Riverfront Villa",150000.0,247.5,"Private Dock",45000.0,321.75
+"Ho Chi Minh City, Vietnam","riverfront_villa","Riverfront Villa",150000.0,247.5,"Outdoor Kitchen",75000.0,420.75
+"Ho Chi Minh City, Vietnam","riverfront_villa","Riverfront Villa",150000.0,247.5,"Smart Home",105000.0,569.25
+"Ho Chi Minh City, Vietnam","high_rise_suite_hcmc","High-Rise Suite",300000.0,525.0,"Panoramic Windows",90000.0,682.5
+"Ho Chi Minh City, Vietnam","high_rise_suite_hcmc","High-Rise Suite",300000.0,525.0,"Private Terrace",150000.0,892.5
+"Ho Chi Minh City, Vietnam","high_rise_suite_hcmc","High-Rise Suite",300000.0,525.0,"Luxury Bath",210000.0,1207.5
+"Ho Chi Minh City, Vietnam","luxury_tower_hcmc","Luxury Tower",750000.0,1387.5,"Sky Pool",225000.0,1803.75
+"Ho Chi Minh City, Vietnam","luxury_tower_hcmc","Luxury Tower",750000.0,1387.5,"Concierge Service",375000.0,2358.75
+"Ho Chi Minh City, Vietnam","luxury_tower_hcmc","Luxury Tower",750000.0,1387.5,"Smart Security",525000.0,3191.25
+"Ho Chi Minh City, Vietnam","business_loft_hcmc","Business Loft",1500000.0,2925.0,"Office Space",450000.0,3802.5
+"Ho Chi Minh City, Vietnam","business_loft_hcmc","Business Loft",1500000.0,2925.0,"High-Speed WiFi",750000.0,4972.5
+"Ho Chi Minh City, Vietnam","business_loft_hcmc","Business Loft",1500000.0,2925.0,"Rooftop Lounge",1050000.0,6727.5
+"Ho Chi Minh City, Vietnam","saigon_skyline_estate","Saigon Skyline Estate",3000000.0,6150.0,"Sky Terrace",900000.0,7995.0
+"Ho Chi Minh City, Vietnam","saigon_skyline_estate","Saigon Skyline Estate",3000000.0,6150.0,"Helipad",1500000.0,10455.0
+"Ho Chi Minh City, Vietnam","saigon_skyline_estate","Saigon Skyline Estate",3000000.0,6150.0,"Private Spa",2100000.0,14145.0
+"Singapore","hdb_flat","HDB Flat",50000.0,57.5,"Smart Lighting",15000.0,74.75
+"Singapore","hdb_flat","HDB Flat",50000.0,57.5,"Balcony Upgrade",25000.0,97.75
+"Singapore","hdb_flat","HDB Flat",50000.0,57.5,"AC System",35000.0,132.25
+"Singapore","condo_unit_singapore","Condo Unit",100000.0,125.0,"Security System",30000.0,162.5
+"Singapore","condo_unit_singapore","Condo Unit",100000.0,125.0,"Pool Access",50000.0,212.5
+"Singapore","condo_unit_singapore","Condo Unit",100000.0,125.0,"Smart Home",70000.0,287.5
+"Singapore","executive_apartment","Executive Apartment",250000.0,337.5,"Glass Walls",75000.0,438.75
+"Singapore","executive_apartment","Executive Apartment",250000.0,337.5,"Private Gym",125000.0,573.75
+"Singapore","executive_apartment","Executive Apartment",250000.0,337.5,"Rooftop Deck",175000.0,776.25
+"Singapore","sky_terrace","Sky Terrace",500000.0,725.0,"Panoramic Windows",150000.0,942.5
+"Singapore","sky_terrace","Sky Terrace",500000.0,725.0,"Terrace Garden",250000.0,1232.5
+"Singapore","sky_terrace","Sky Terrace",500000.0,725.0,"Luxury Kitchen",350000.0,1667.5
+"Singapore","luxury_condo_singapore","Luxury Condo",1000000.0,1550.0,"Marble Floors",300000.0,2015.0
+"Singapore","luxury_condo_singapore","Luxury Condo",1000000.0,1550.0,"Private Pool",500000.0,2635.0
+"Singapore","luxury_condo_singapore","Luxury Condo",1000000.0,1550.0,"Smart Security",700000.0,3565.0
+"Singapore","marina_view_suite","Marina View Suite",2500000.0,4125.0,"Sky Deck",750000.0,5362.5
+"Singapore","marina_view_suite","Marina View Suite",2500000.0,4125.0,"Home Theater",1250000.0,7012.5
+"Singapore","marina_view_suite","Marina View Suite",2500000.0,4125.0,"Concierge Service",1750000.0,9487.5
+"Singapore","penthouse_tower_singapore","Penthouse Tower",5000000.0,8750.0,"Rooftop Pool",1500000.0,11375.0
+"Singapore","penthouse_tower_singapore","Penthouse Tower",5000000.0,8750.0,"Smart Home System",2500000.0,14875.0
+"Singapore","penthouse_tower_singapore","Penthouse Tower",5000000.0,8750.0,"Private Elevator",3500000.0,20125.0
+"Singapore","sky_villa","Sky Villa",10000000.0,18500.0,"Infinity Pool",3000000.0,24050.0
+"Singapore","sky_villa","Sky Villa",10000000.0,18500.0,"Helipad",5000000.0,31450.0
+"Singapore","sky_villa","Sky Villa",10000000.0,18500.0,"Luxury Spa",7000000.0,42550.0
+"Singapore","billionaire_loft_singapore","Billionaire Loft",25000000.0,48750.0,"Sky Lounge",7500000.0,63375.0
+"Singapore","billionaire_loft_singapore","Billionaire Loft",25000000.0,48750.0,"Helipad",12500000.0,82875.0
+"Singapore","billionaire_loft_singapore","Billionaire Loft",25000000.0,48750.0,"Private Cinema",17500000.0,112125.0
+"Singapore","iconic_skyscraper_singapore","Iconic Skyscraper",50000000.0,102500.0,"Sky Bridge",15000000.0,133250.0
+"Singapore","iconic_skyscraper_singapore","Iconic Skyscraper",50000000.0,102500.0,"Helipad",25000000.0,174250.0
+"Singapore","iconic_skyscraper_singapore","Iconic Skyscraper",50000000.0,102500.0,"Luxury Suites",35000000.0,235750.0
+"Hong Kong","micro_flat","Micro-Flat",75000.0,86.25,"Foldable Furniture",22500.0,112.13
+"Hong Kong","micro_flat","Micro-Flat",75000.0,86.25,"Smart Storage",37500.0,146.63
+"Hong Kong","micro_flat","Micro-Flat",75000.0,86.25,"AC Unit",52500.0,198.38
+"Hong Kong","small_apartment_hk","Small Apartment",150000.0,187.5,"Balcony",45000.0,243.75
+"Hong Kong","small_apartment_hk","Small Apartment",150000.0,187.5,"Smart Lights",75000.0,318.75
+"Hong Kong","small_apartment_hk","Small Apartment",150000.0,187.5,"Kitchen Upgrade",105000.0,431.25
+"Hong Kong","mid_rise_unit","Mid-Rise Unit",300000.0,405.0,"Security System",90000.0,526.5
+"Hong Kong","mid_rise_unit","Mid-Rise Unit",300000.0,405.0,"Rooftop Access",150000.0,688.5
+"Hong Kong","mid_rise_unit","Mid-Rise Unit",300000.0,405.0,"Smart AC",210000.0,931.5
+"Hong Kong","harbor_view_flat","Harbor View Flat",750000.0,1087.5,"Glass Walls",225000.0,1413.75
+"Hong Kong","harbor_view_flat","Harbor View Flat",750000.0,1087.5,"Private Terrace",375000.0,1848.75
+"Hong Kong","harbor_view_flat","Harbor View Flat",750000.0,1087.5,"Luxury Bath",525000.0,2501.25
+"Hong Kong","luxury_condo_hk","Luxury Condo",1500000.0,2325.0,"Marble Floors",450000.0,3022.5
+"Hong Kong","luxury_condo_hk","Luxury Condo",1500000.0,2325.0,"Home Theater",750000.0,3952.5
+"Hong Kong","luxury_condo_hk","Luxury Condo",1500000.0,2325.0,"Smart Security",1050000.0,5347.5
+"Hong Kong","peak_villa","Peak Villa",3000000.0,4950.0,"Sky Deck",900000.0,6435.0
+"Hong Kong","peak_villa","Peak Villa",3000000.0,4950.0,"Private Pool",1500000.0,8415.0
+"Hong Kong","peak_villa","Peak Villa",3000000.0,4950.0,"Panoramic Lounge",2100000.0,11385.0
+"Hong Kong","skyline_suite_hk","Skyline Suite",7500000.0,13125.0,"Rooftop Pool",2250000.0,17062.5
+"Hong Kong","skyline_suite_hk","Skyline Suite",7500000.0,13125.0,"Smart Home System",3750000.0,22312.5
+"Hong Kong","skyline_suite_hk","Skyline Suite",7500000.0,13125.0,"Private Elevator",5250000.0,30187.5
+"Hong Kong","penthouse_tower_hk","Penthouse Tower",15000000.0,27750.0,"Infinity Pool",4500000.0,36075.0
+"Hong Kong","penthouse_tower_hk","Penthouse Tower",15000000.0,27750.0,"Helipad",7500000.0,47175.0
+"Hong Kong","penthouse_tower_hk","Penthouse Tower",15000000.0,27750.0,"Luxury Spa",10500000.0,63825.0
+"Hong Kong","billionaire_mansion","Billionaire Mansion",30000000.0,58500.0,"Sky Lounge",9000000.0,76050.0
+"Hong Kong","billionaire_mansion","Billionaire Mansion",30000000.0,58500.0,"Helipad",15000000.0,99450.0
+"Hong Kong","billionaire_mansion","Billionaire Mansion",30000000.0,58500.0,"Private Cinema",21000000.0,134550.0
+"Hong Kong","victoria_peak_estate","Victoria Peak Estate",75000000.0,153750.0,"Grand Terrace",22500000.0,199875.0
+"Hong Kong","victoria_peak_estate","Victoria Peak Estate",75000000.0,153750.0,"Helipad",37500000.0,261375.0
+"Hong Kong","victoria_peak_estate","Victoria Peak Estate",75000000.0,153750.0,"Luxury Suites",52500000.0,353625.0
+"Lisbon, Portugal","stone_cottage","Stone Cottage",10000.0,11.5,"Wooden Beams",3000.0,14.95
+"Lisbon, Portugal","stone_cottage","Stone Cottage",10000.0,11.5,"Fireplace",5000.0,19.55
+"Lisbon, Portugal","stone_cottage","Stone Cottage",10000.0,11.5,"Tile Roof",7000.0,26.45
+"Lisbon, Portugal","townhouse","Townhouse",20000.0,25.0,"Balcony",6000.0,32.5
+"Lisbon, Portugal","townhouse","Townhouse",20000.0,25.0,"Modern Kitchen",10000.0,42.5
+"Lisbon, Portugal","townhouse","Townhouse",20000.0,25.0,"Solar Panels",14000.0,57.5
+"Lisbon, Portugal","riverside_flat","Riverside Flat",50000.0,67.5,"River View Windows",15000.0,87.75
+"Lisbon, Portugal","riverside_flat","Riverside Flat",50000.0,67.5,"Terrace",25000.0,114.75
+"Lisbon, Portugal","riverside_flat","Riverside Flat",50000.0,67.5,"Smart AC",35000.0,155.25
+"Lisbon, Portugal","renovated_villa","Renovated Villa",100000.0,145.0,"Garden Patio",30000.0,188.5
+"Lisbon, Portugal","renovated_villa","Renovated Villa",100000.0,145.0,"Pool Addition",50000.0,246.5
+"Lisbon, Portugal","renovated_villa","Renovated Villa",100000.0,145.0,"Wine Cellar",70000.0,333.5
+"Lisbon, Portugal","coastal_bungalow","Coastal Bungalow",250000.0,387.5,"Sea Deck",75000.0,503.75
+"Lisbon, Portugal","coastal_bungalow","Coastal Bungalow",250000.0,387.5,"Outdoor Shower",125000.0,658.75
+"Lisbon, Portugal","coastal_bungalow","Coastal Bungalow",250000.0,387.5,"Smart Home",175000.0,891.25
+"Lisbon, Portugal","luxury_apartment_lisbon","Luxury Apartment",500000.0,825.0,"Marble Floors",150000.0,1072.5
+"Lisbon, Portugal","luxury_apartment_lisbon","Luxury Apartment",500000.0,825.0,"Rooftop Terrace",250000.0,1402.5
+"Lisbon, Portugal","luxury_apartment_lisbon","Luxury Apartment",500000.0,825.0,"Private Gym",350000.0,1897.5
+"Lisbon, Portugal","historic_manor","Historic Manor",1000000.0,1750.0,"Restored Facade",300000.0,2275.0
+"Lisbon, Portugal","historic_manor","Historic Manor",1000000.0,1750.0,"Grand Hall",500000.0,2975.0
+"Lisbon, Portugal","historic_manor","Historic Manor",1000000.0,1750.0,"Luxury Spa",700000.0,4025.0
+"Lisbon, Portugal","seaside_mansion","Seaside Mansion",2500000.0,4625.0,"Private Beach",750000.0,6012.5
+"Lisbon, Portugal","seaside_mansion","Seaside Mansion",2500000.0,4625.0,"Infinity Pool",1250000.0,7862.5
+"Lisbon, Portugal","seaside_mansion","Seaside Mansion",2500000.0,4625.0,"Smart Security",1750000.0,10637.5
+"Lisbon, Portugal","cliffside_estate","Cliffside Estate",5000000.0,9750.0,"Sky Terrace",1500000.0,12675.0
+"Lisbon, Portugal","cliffside_estate","Cliffside Estate",5000000.0,9750.0,"Helipad",2500000.0,16575.0
+"Lisbon, Portugal","cliffside_estate","Cliffside Estate",5000000.0,9750.0,"Private Marina",3500000.0,22425.0
+"Lisbon, Portugal","lisbon_palace","Lisbon Palace",10000000.0,20500.0,"Grand Ballroom",3000000.0,26650.0
+"Lisbon, Portugal","lisbon_palace","Lisbon Palace",10000000.0,20500.0,"Helipad",5000000.0,34850.0
+"Lisbon, Portugal","lisbon_palace","Lisbon Palace",10000000.0,20500.0,"Luxury Suites",7000000.0,47150.0
+"Bucharest, Romania","panel_flat","Panel Flat",7500.0,8.625,"Insulation",2250.0,11.21
+"Bucharest, Romania","panel_flat","Panel Flat",7500.0,8.625,"New Windows",3750.0,14.66
+"Bucharest, Romania","panel_flat","Panel Flat",7500.0,8.625,"AC Unit",5250.0,19.84
+"Bucharest, Romania","brick_apartment","Brick Apartment",15000.0,18.75,"Balcony",4500.0,24.38
+"Bucharest, Romania","brick_apartment","Brick Apartment",15000.0,18.75,"Modern Kitchen",7500.0,31.88
+"Bucharest, Romania","brick_apartment","Brick Apartment",15000.0,18.75,"Solar Panels",10500.0,43.13
+"Bucharest, Romania","modern_condo_bucharest","Modern Condo",30000.0,40.5,"Security System",9000.0,52.65
+"Bucharest, Romania","modern_condo_bucharest","Modern Condo",30000.0,40.5,"Rooftop Access",15000.0,68.85
+"Bucharest, Romania","modern_condo_bucharest","Modern Condo",30000.0,40.5,"Smart AC",21000.0,93.15
+"Bucharest, Romania","renovated_loft","Renovated Loft",75000.0,108.75,"Exposed Brick",22500.0,141.38
+"Bucharest, Romania","renovated_loft","Renovated Loft",75000.0,108.75,"Open Plan",37500.0,184.88
+"Bucharest, Romania","renovated_loft","Renovated Loft",75000.0,108.75,"Luxury Bath",52500.0,250.13
+"Bucharest, Romania","gated_unit","Gated Unit",150000.0,232.5,"Security Gate",45000.0,302.25
+"Bucharest, Romania","gated_unit","Gated Unit",150000.0,232.5,"Pool Addition",75000.0,395.25
+"Bucharest, Romania","gated_unit","Gated Unit",150000.0,232.5,"Smart Home",105000.0,534.75
+"Bucharest, Romania","high_rise_suite_bucharest","High-Rise Suite",300000.0,495.0,"Panoramic Windows",90000.0,643.5
+"Bucharest, Romania","high_rise_suite_bucharest","High-Rise Suite",300000.0,495.0,"Private Terrace",150000.0,841.5
+"Bucharest, Romania","high_rise_suite_bucharest","High-Rise Suite",300000.0,495.0,"Gym Room",210000.0,1138.5
+"Bucharest, Romania","luxury_flat_bucharest","Luxury Flat",750000.0,1312.5,"Marble Floors",225000.0,1706.25
+"Bucharest, Romania","luxury_flat_bucharest","Luxury Flat",750000.0,1312.5,"Home Theater",375000.0,2231.25
+"Bucharest, Romania","luxury_flat_bucharest","Luxury Flat",750000.0,1312.5,"Rooftop Lounge",525000.0,3018.75
+"Bucharest, Romania","urban_villa","Urban Villa",1500000.0,2775.0,"Private Garden",450000.0,3607.5
+"Bucharest, Romania","urban_villa","Urban Villa",1500000.0,2775.0,"Infinity Pool",750000.0,4717.5
+"Bucharest, Romania","urban_villa","Urban Villa",1500000.0,2775.0,"Smart Security",1050000.0,6382.5
+"Bucharest, Romania","city_penthouse","City Penthouse",3000000.0,5850.0,"Sky Deck",900000.0,7605.0
+"Bucharest, Romania","city_penthouse","City Penthouse",3000000.0,5850.0,"Private Pool",1500000.0,9945.0
+"Bucharest, Romania","city_penthouse","City Penthouse",3000000.0,5850.0,"Luxury Spa",2100000.0,13455.0
+"Bucharest, Romania","bucharest_tower","Bucharest Tower",7500000.0,15375.0,"Sky Lounge",2250000.0,19987.5
+"Bucharest, Romania","bucharest_tower","Bucharest Tower",7500000.0,15375.0,"Helipad",3750000.0,26137.5
+"Bucharest, Romania","bucharest_tower","Bucharest Tower",7500000.0,15375.0,"Private Elevator",5250000.0,35362.5
+"Berlin, Germany","studio_flat","Studio Flat",25000.0,28.75,"Loft Bed",7500.0,37.38
+"Berlin, Germany","studio_flat","Studio Flat",25000.0,28.75,"Smart Storage",12500.0,48.88
+"Berlin, Germany","studio_flat","Studio Flat",25000.0,28.75,"AC Unit",17500.0,66.13
+"Berlin, Germany","loft_space","Loft Space",50000.0,62.5,"Exposed Brick",15000.0,81.25
+"Berlin, Germany","loft_space","Loft Space",50000.0,62.5,"Open Plan",25000.0,106.25
+"Berlin, Germany","loft_space","Loft Space",50000.0,62.5,"Skylights",35000.0,143.75
+"Berlin, Germany","renovated_warehouse","Renovated Warehouse",100000.0,135.0,"Industrial Windows",30000.0,175.5
+"Berlin, Germany","renovated_warehouse","Renovated Warehouse",100000.0,135.0,"Mezzanine",50000.0,229.5
+"Berlin, Germany","renovated_warehouse","Renovated Warehouse",100000.0,135.0,"Smart Heating",70000.0,310.5
+"Berlin, Germany","modern_apartment_berlin","Modern Apartment",250000.0,362.5,"Balcony Garden",75000.0,471.25
+"Berlin, Germany","modern_apartment_berlin","Modern Apartment",250000.0,362.5,"Smart AC",125000.0,616.25
+"Berlin, Germany","modern_apartment_berlin","Modern Apartment",250000.0,362.5,"Luxury Kitchen",175000.0,833.75
+"Berlin, Germany","artist_condo","Artist Condo",500000.0,775.0,"Studio Space",150000.0,1007.5
+"Berlin, Germany","artist_condo","Artist Condo",500000.0,775.0,"Rooftop Terrace",250000.0,1317.5
+"Berlin, Germany","artist_condo","Artist Condo",500000.0,775.0,"Soundproofing",350000.0,1782.5
+"Berlin, Germany","riverfront_suite","Riverfront Suite",1000000.0,1650.0,"River Deck",300000.0,2145.0
+"Berlin, Germany","riverfront_suite","Riverfront Suite",1000000.0,1650.0,"Private Gym",500000.0,2805.0
+"Berlin, Germany","riverfront_suite","Riverfront Suite",1000000.0,1650.0,"Smart Home",700000.0,3795.0
+"Berlin, Germany","luxury_loft","Luxury Loft",2500000.0,4375.0,"Sky Windows",750000.0,5687.5
+"Berlin, Germany","luxury_loft","Luxury Loft",2500000.0,4375.0,"Home Theater",1250000.0,7437.5
+"Berlin, Germany","luxury_loft","Luxury Loft",2500000.0,4375.0,"Private Pool",1750000.0,10062.5
+"Berlin, Germany","high_rise_tower_berlin","High-Rise Tower",5000000.0,9250.0,"Sky Lounge",1500000.0,12025.0
+"Berlin, Germany","high_rise_tower_berlin","High-Rise Tower",5000000.0,9250.0,"Helipad",2500000.0,15725.0
+"Berlin, Germany","high_rise_tower_berlin","High-Rise Tower",5000000.0,9250.0,"Luxury Spa",3500000.0,21275.0
+"Berlin, Germany","tech_villa","Tech Villa",10000000.0,19500.0,"Smart Home System",3000000.0,25350.0
+"Berlin, Germany","tech_villa","Tech Villa",10000000.0,19500.0,"Helipad",5000000.0,33150.0
+"Berlin, Germany","tech_villa","Tech Villa",10000000.0,19500.0,"Private Cinema",7000000.0,44850.0
+"Berlin, Germany","berlin_skyline_estate","Berlin Skyline Estate",25000000.0,48750.0,"Sky Terrace",7500000.0,63375.0
+"Berlin, Germany","berlin_skyline_estate","Berlin Skyline Estate",25000000.0,48750.0,"Helipad",12500000.0,82875.0
+"Berlin, Germany","berlin_skyline_estate","Berlin Skyline Estate",25000000.0,48750.0,"Luxury Suites",17500000.0,112125.0
+"London, UK","council_flat","Council Flat",40000.0,46.0,"Insulation",12000.0,59.8
+"London, UK","council_flat","Council Flat",40000.0,46.0,"New Windows",20000.0,78.2
+"London, UK","council_flat","Council Flat",40000.0,46.0,"Smart Heating",28000.0,105.8
+"London, UK","terraced_house","Terraced House",80000.0,100.0,"Back Garden",24000.0,130.0
+"London, UK","terraced_house","Terraced House",80000.0,100.0,"Loft Conversion",40000.0,170.0
+"London, UK","terraced_house","Terraced House",80000.0,100.0,"Modern Kitchen",56000.0,230.0
+"London, UK","georgian_townhouse","Georgian Townhouse",200000.0,270.0,"Restored Facade",60000.0,351.0
+"London, UK","georgian_townhouse","Georgian Townhouse",200000.0,270.0,"Fireplace",100000.0,459.0
+"London, UK","georgian_townhouse","Georgian Townhouse",200000.0,270.0,"Smart AC",140000.0,621.0
+"London, UK","modern_condo_london","Modern Condo",400000.0,580.0,"Balcony Garden",120000.0,754.0
+"London, UK","modern_condo_london","Modern Condo",400000.0,580.0,"Smart Home",200000.0,986.0
+"London, UK","modern_condo_london","Modern Condo",400000.0,580.0,"Luxury Bath",280000.0,1334.0
+"London, UK","riverside_apartment","Riverside Apartment",1000000.0,1550.0,"River Deck",300000.0,2015.0
+"London, UK","riverside_apartment","Riverside Apartment",1000000.0,1550.0,"Private Gym",500000.0,2635.0
+"London, UK","riverside_apartment","Riverside Apartment",1000000.0,1550.0,"Smart Security",700000.0,3565.0
+"London, UK","luxury_flat_london","Luxury Flat",2000000.0,3300.0,"Marble Floors",600000.0,4290.0
+"London, UK","luxury_flat_london","Luxury Flat",2000000.0,3300.0,"Rooftop Terrace",1000000.0,5610.0
+"London, UK","luxury_flat_london","Luxury Flat",2000000.0,3300.0,"Home Theater",1400000.0,7590.0
+"London, UK","mayfair_mansion","Mayfair Mansion",5000000.0,8750.0,"Grand Hall",1500000.0,11375.0
+"London, UK","mayfair_mansion","Mayfair Mansion",5000000.0,8750.0,"Private Pool",2500000.0,14875.0
+"London, UK","mayfair_mansion","Mayfair Mansion",5000000.0,8750.0,"Luxury Spa",3500000.0,20125.0
+"London, UK","skyline_penthouse_london","Skyline Penthouse",10000000.0,18500.0,"Sky Lounge",3000000.0,24050.0
+"London, UK","skyline_penthouse_london","Skyline Penthouse",10000000.0,18500.0,"Helipad",5000000.0,31450.0
+"London, UK","skyline_penthouse_london","Skyline Penthouse",10000000.0,18500.0,"Private Cinema",7000000.0,42550.0
+"London, UK","historic_estate","Historic Estate",25000000.0,48750.0,"Restored Gardens",7500000.0,63375.0
+"London, UK","historic_estate","Historic Estate",25000000.0,48750.0,"Helipad",12500000.0,82875.0
+"London, UK","historic_estate","Historic Estate",25000000.0,48750.0,"Luxury Suites",17500000.0,112125.0
+"London, UK","london_iconic_tower","London Iconic Tower",50000000.0,102500.0,"Sky Bridge",15000000.0,133250.0
+"London, UK","london_iconic_tower","London Iconic Tower",50000000.0,102500.0,"Helipad",25000000.0,174250.0
+"London, UK","london_iconic_tower","London Iconic Tower",50000000.0,102500.0,"Private Spa",35000000.0,235750.0
+"Rural Mexico","adobe_hut","Adobe Hut",600.0,0.69,"Clay Roof",180.0,0.9
+"Rural Mexico","adobe_hut","Adobe Hut",600.0,0.69,"Wooden Door",300.0,1.17
+"Rural Mexico","adobe_hut","Adobe Hut",600.0,0.69,"Water Pump",420.0,1.59
+"Rural Mexico","clay_house","Clay House",1200.0,1.5,"Tile Floor",360.0,1.95
+"Rural Mexico","clay_house","Clay House",1200.0,1.5,"Solar Lanterns",600.0,2.55
+"Rural Mexico","clay_house","Clay House",1200.0,1.5,"Rainwater Tank",840.0,3.45
+"Rural Mexico","brick_cottage_mexico","Brick Cottage",3000.0,4.05,"Tin Roof",900.0,5.27
+"Rural Mexico","brick_cottage_mexico","Brick Cottage",3000.0,4.05,"Patio",1500.0,6.89
+"Rural Mexico","brick_cottage_mexico","Brick Cottage",3000.0,4.05,"Solar Panels",2100.0,9.32
+"Rural Mexico","hacienda_bungalow","Hacienda Bungalow",6000.0,8.7,"Courtyard",1800.0,11.31
+"Rural Mexico","hacienda_bungalow","Hacienda Bungalow",6000.0,8.7,"Tile Roof",3000.0,14.79
+"Rural Mexico","hacienda_bungalow","Hacienda Bungalow",6000.0,8.7,"AC Unit",4200.0,19.99
+"Rural Mexico","village_flat","Village Flat",15000.0,23.25,"Balcony",4500.0,30.23
+"Rural Mexico","village_flat","Village Flat",15000.0,23.25,"Kitchen Upgrade",7500.0,39.53
+"Rural Mexico","village_flat","Village Flat",15000.0,23.25,"Solar Water Heater",10500.0,53.48
+"Rural Mexico","rural_villa","Rural Villa",30000.0,49.5,"Garden Patio",9000.0,64.35
+"Rural Mexico","rural_villa","Rural Villa",30000.0,49.5,"Pool Addition",15000.0,84.15
+"Rural Mexico","rural_villa","Rural Villa",30000.0,49.5,"Smart AC",21000.0,113.85
+"Rural Mexico","eco_casa","Eco-Casa",75000.0,131.25,"Solar Grid",22500.0,170.63
+"Rural Mexico","eco_casa","Eco-Casa",75000.0,131.25,"Compost System",37500.0,223.13
+"Rural Mexico","eco_casa","Eco-Casa",75000.0,131.25,"Rainforest Deck",52500.0,301.88
+"Rural Mexico","farmstead","Farmstead",150000.0,277.5,"Irrigation System",45000.0,360.75
+"Rural Mexico","farmstead","Farmstead",150000.0,277.5,"Livestock Barn",75000.0,471.75
+"Rural Mexico","farmstead","Farmstead",150000.0,277.5,"Tractor Shed",105000.0,638.25
+"Rural Mexico","countryside_estate","Countryside Estate",300000.0,585.0,"Guest Wing",90000.0,760.5
+"Rural Mexico","countryside_estate","Countryside Estate",300000.0,585.0,"Private Well",150000.0,994.5
+"Rural Mexico","countryside_estate","Countryside Estate",300000.0,585.0,"Smart Home",210000.0,1345.5
+"Rural Mexico","hacienda_grande","Hacienda Grande",600000.0,1230.0,"Grand Courtyard",180000.0,1599.0
+"Rural Mexico","hacienda_grande","Hacienda Grande",600000.0,1230.0,"Infinity Pool",300000.0,2091.0
+"Rural Mexico","hacienda_grande","Hacienda Grande",600000.0,1230.0,"Luxury Spa",420000.0,2829.0
+"Mexico City, Mexico","barrio_flat","Barrio Flat",4000.0,4.6,"Brick Walls",1200.0,5.98
+"Mexico City, Mexico","barrio_flat","Barrio Flat",4000.0,4.6,"Tin Roof",2000.0,7.82
+"Mexico City, Mexico","barrio_flat","Barrio Flat",4000.0,4.6,"Water Tank",2800.0,10.58
+"Mexico City, Mexico","concrete_unit_mexico","Concrete Unit",8000.0,10.0,"Window Grilles",2400.0,13.0
+"Mexico City, Mexico","concrete_unit_mexico","Concrete Unit",8000.0,10.0,"Ceiling Fans",4000.0,17.0
+"Mexico City, Mexico","concrete_unit_mexico","Concrete Unit",8000.0,10.0,"AC Unit",5600.0,23.0
+"Mexico City, Mexico","colonial_house","Colonial House",20000.0,27.0,"Restored Facade",6000.0,35.1
+"Mexico City, Mexico","colonial_house","Colonial House",20000.0,27.0,"Courtyard",10000.0,45.9
+"Mexico City, Mexico","colonial_house","Colonial House",20000.0,27.0,"Solar Panels",14000.0,62.1
+"Mexico City, Mexico","mid_rise_apartment","Mid-Rise Apartment",40000.0,58.0,"Balcony",12000.0,75.4
+"Mexico City, Mexico","mid_rise_apartment","Mid-Rise Apartment",40000.0,58.0,"Smart Lights",20000.0,98.6
+"Mexico City, Mexico","mid_rise_apartment","Mid-Rise Apartment",40000.0,58.0,"Rooftop Access",28000.0,133.4
+"Mexico City, Mexico","gated_condo","Gated Condo",100000.0,155.0,"Security Gate",30000.0,201.5
+"Mexico City, Mexico","gated_condo","Gated Condo",100000.0,155.0,"Pool Addition",50000.0,263.5
+"Mexico City, Mexico","gated_condo","Gated Condo",100000.0,155.0,"Smart AC",70000.0,356.5
+"Mexico City, Mexico","modern_loft_mexico","Modern Loft",200000.0,330.0,"Exposed Brick",60000.0,429.0
+"Mexico City, Mexico","modern_loft_mexico","Modern Loft",200000.0,330.0,"Open Plan",100000.0,561.0
+"Mexico City, Mexico","modern_loft_mexico","Modern Loft",200000.0,330.0,"Luxury Bath",140000.0,759.0
+"Mexico City, Mexico","luxury_suite_mexico","Luxury Suite",500000.0,875.0,"Marble Floors",150000.0,1137.5
+"Mexico City, Mexico","luxury_suite_mexico","Luxury Suite",500000.0,875.0,"Private Terrace",250000.0,1487.5
+"Mexico City, Mexico","luxury_suite_mexico","Luxury Suite",500000.0,875.0,"Home Theater",350000.0,2012.5
+"Mexico City, Mexico","high_rise_tower_mexico","High-Rise Tower",1000000.0,1850.0,"Sky Lounge",300000.0,2405.0
+"Mexico City, Mexico","high_rise_tower_mexico","High-Rise Tower",1000000.0,1850.0,"Rooftop Pool",500000.0,3145.0
+"Mexico City, Mexico","high_rise_tower_mexico","High-Rise Tower",1000000.0,1850.0,"Smart Security",700000.0,4255.0
+"Mexico City, Mexico","historic_penthouse","Historic Penthouse",2000000.0,3900.0,"Restored Facade",600000.0,5070.0
+"Mexico City, Mexico","historic_penthouse","Historic Penthouse",2000000.0,3900.0,"Private Pool",1000000.0,6630.0
+"Mexico City, Mexico","historic_penthouse","Historic Penthouse",2000000.0,3900.0,"Luxury Spa",1400000.0,8970.0
+"Mexico City, Mexico","mexico_city_skyline","Mexico City Skyline",4000000.0,8200.0,"Sky Terrace",1200000.0,10660.0
+"Mexico City, Mexico","mexico_city_skyline","Mexico City Skyline",4000000.0,8200.0,"Helipad",2000000.0,13940.0
+"Mexico City, Mexico","mexico_city_skyline","Mexico City Skyline",4000000.0,8200.0,"Private Elevator",2800000.0,18860.0
+"Miami, Florida","beach_condo","Beach Condo",30000.0,34.5,"Deck Extension",9000.0,44.85
+"Miami, Florida","beach_condo","Beach Condo",30000.0,34.5,"Waterproof Roof",15000.0,58.65
+"Miami, Florida","beach_condo","Beach Condo",30000.0,34.5,"Smart AC",21000.0,79.35
+"Miami, Florida","bungalow","Bungalow",60000.0,75.0,"Porch Swing",18000.0,97.5
+"Miami, Florida","bungalow","Bungalow",60000.0,75.0,"Solar Panels",30000.0,127.5
+"Miami, Florida","bungalow","Bungalow",60000.0,75.0,"Outdoor Kitchen",42000.0,172.5
+"Miami, Florida","oceanfront_flat","Oceanfront Flat",150000.0,202.5,"Sea View Windows",45000.0,263.25
+"Miami, Florida","oceanfront_flat","Oceanfront Flat",150000.0,202.5,"Balcony Garden",75000.0,344.25
+"Miami, Florida","oceanfront_flat","Oceanfront Flat",150000.0,202.5,"Luxury Bath",105000.0,465.75
+"Miami, Florida","modern_villa_miami","Modern Villa",300000.0,435.0,"Pool Addition",90000.0,565.5
+"Miami, Florida","modern_villa_miami","Modern Villa",300000.0,435.0,"Smart Home",150000.0,739.5
+"Miami, Florida","modern_villa_miami","Modern Villa",300000.0,435.0,"Private Gym",210000.0,1000.5
+"Miami, Florida","luxury_condo_miami","Luxury Condo",750000.0,1162.5,"Marble Floors",225000.0,1511.25
+"Miami, Florida","luxury_condo_miami","Luxury Condo",750000.0,1162.5,"Rooftop Terrace",375000.

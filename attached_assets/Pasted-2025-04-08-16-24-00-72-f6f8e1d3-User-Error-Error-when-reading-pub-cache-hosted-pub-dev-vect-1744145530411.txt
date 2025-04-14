@@ -1,0 +1,120 @@
+2025-04-08 16:24:00.72
+f6f8e1d3
+User
+Error: Error when reading '../.pub-cache/hosted/pub.dev/vector_math-2.1.4/lib/vector_math_64.dart': Error reading '../.pub-cache/hosted/pub.dev/vector_math-2.1.4/lib/vector_math_64.dart' (No such file or directory)
+2025-04-08 16:24:00.72
+f6f8e1d3
+User
+import 'package:vector_math/vector_math_64.dart';
+2025-04-08 16:24:00.72
+f6f8e1d3
+User
+^
+2025-04-08 16:24:00.72
+f6f8e1d3
+User
+/nix/store/yk06k2xi481mkz7lbnqip2178l547ihl-flutter-wrapped-3.22.0-sdk-links/packages/flutter/lib/src/services/text_boundary.dart:7:8:
+2025-04-08 16:24:00.72
+f6f8e1d3
+User
+Error: Error when reading '../.pub-cache/hosted/pub.dev/characters-1.3.0/lib/characters.dart': Error reading '../.pub-cache/hosted/pub.dev/characters-1.3.0/lib/characters.dart' (No such file or directory)
+2025-04-08 16:24:00.72
+f6f8e1d3
+User
+import 'package:characters/characters.dart' show CharacterRange;
+2025-04-08 16:24:00.72
+f6f8e1d3
+User
+^
+2025-04-08 16:24:00.72
+f6f8e1d3
+User
+/nix/store/yk06k2xi481mkz7lbnqip2178l547ihl-flutter-wrapped-3.22.0-sdk-links/packages/flutter/lib/src/services/text_formatter.dart:8:8:
+2025-04-08 16:24:00.72
+f6f8e1d3
+User
+Error: Error when reading '../.pub-cache/hosted/pub.dev/characters-1.3.0/lib/characters.dart': Error reading '../.pub-cache/hosted/pub.dev/characters-1.3.0/lib/characters.dart' (No such file or directory)
+2025-04-08 16:24:00.72
+f6f8e1d3
+User
+import 'package:characters/characters.dart';
+2025-04-08 16:24:00.72
+f6f8e1d3
+User
+^
+2025-04-08 16:24:00.72
+f6f8e1d3
+User
+/nix/store/yk06k2xi481mkz7lbnqip2178l547ihl-flutter-wrapped-3.22.0-sdk-links/packages/flutter/lib/src/services/text_input.dart:17:8:
+2025-04-08 16:24:00.72
+f6f8e1d3
+User
+Error: Error when reading '../.pub-cache/hosted/pub.dev/vector_math-2.1.4/lib/vector_math_64.dart': Error reading '../.pub-cache/hosted/pub.dev/vector_math-2.1.4/lib/vector_math_64.dart' (No such file or directory)
+2025-04-08 16:24:00.72
+f6f8e1d3
+User
+import 'package:vector_math/vector_math_64.dart' show Matrix4;
+2025-04-08 16:24:00.72
+f6f8e1d3
+User
+^
+2025-04-08 16:24:00.72
+f6f8e1d3
+User
+/nix/store/yk06k2xi481mkz7lbnqip2178l547ihl-flutter-wrapped-3.22.0-sdk-links/packages/flutter/lib/src/services/text_input.dart:30:1:
+2025-04-08 16:24:00.72
+f6f8e1d3
+User
+Error: Error when reading '../.pub-cache/hosted/pub.dev/vector_math-2.1.4/lib/vector_math_64.dart': Error reading '../.pub-cache/hosted/pub.dev/vector_math-2.1.4/lib/vector_math_64.dart' (No such file or directory)
+2025-04-08 16:24:00.72
+f6f8e1d3
+User
+export 'package:vector_math/vector_math_64.dart' show Matrix4;
+2025-04-08 16:24:00.72
+f6f8e1d3
+User
+^
+2025-04-08 16:24:00.72
+f6f8e1d3
+User
+/nix/store/yk06k2xi481mkz7lbnqip2178l547ihl-flutter-wrapped-3.22.0-sdk-links/packages/flutter/lib/src/gestures/events.dart:8:8:
+2025-04-08 16:24:00.72
+f6f8e1d3
+User
+Error: Error when reading '../.pub-cache/hosted/pub.dev/vector_math-2.1.4/lib/vector_math_64.dart': Error reading '../.pub-cache/hosted/pub.dev/vector_math-2.1.4/lib/vector_math_64.dart' (No such file or directory)
+2025-04-08 16:24:00.72
+f6f8e1d3
+User
+import 'package:vector_math/vector_math_64.dart';
+2025-04-08 16:24:00.72
+f6f8e1d3
+User
+^
+2025-04-08 16:24:00.72
+f6f8e1d3
+User
+/nix/store/yk06k2xi481mkz7lbnqip2178l547ihl-flutter-wrapped-3.22.0-sdk-links/packages/flutter/lib/src/gestures/events.dart:16:1:
+2025-04-08 16:24:00.72
+f6f8e1d3
+User
+Error: Error when reading '../.pub-cache/hosted/pub.dev/vector_math-2.1.4/lib/vector_math_64.dart': Error reading '../.pub-cache/hosted/pub.dev/vector_math-2.1.4/lib/vector_math_64.dart' (No such file or directory)
+2025-04-08 16:24:00.72
+f6f8e1d3
+User
+export 'package:vector_math/vector_math_64.dart' show Matrix4;
+2025-04-08 16:24:00.72
+f6f8e1d3
+User
+^
+2025-04-08 16:24:00.72
+f6f8e1d3
+User
+/nix/store/yk06k2xi481mkz7lbnqip2178l547ihl-flutter-wrapped-3.22.0-sdk-links/packages/flutter/lib/src/gestures/hit_test.dart:7:8:
+2025-04-08 16:24:00.72
+f6f8e1d3
+User
+Error: Error when reading '../.pub-cache/hosted/pub.dev/vector_math-2.1.4/lib/vector_math_64.dart': Error reading '../.pub-cache/hosted/pub.dev/vector_math-2.1.4/lib/vector_math_64.dart' (No such file or directory)
+2025-04-08 16:24:00.72
+f6f8e1d3
+User
+import 'package:vector_math/vector_math_64.dart';

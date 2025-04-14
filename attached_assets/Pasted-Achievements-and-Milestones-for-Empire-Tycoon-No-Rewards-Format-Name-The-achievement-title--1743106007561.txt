@@ -1,0 +1,150 @@
+Achievements and Milestones for Empire Tycoon (No Rewards)
+Format:
+Name: The achievement title.
+
+Description: What the player needs to do to unlock it.
+
+Category: Progress, Wealth, or Regional.
+Progress Achievements
+Hustler’s Start  
+Description: Purchase your first property (any locale).  
+
+Category: Progress
+Landlord Rookie  
+Description: Own 10 properties across any locales.  
+
+Category: Progress
+Portfolio Builder  
+Description: Own 50 properties total.  
+
+Category: Progress
+Global Investor  
+Description: Own at least one property in all 20 locales.  
+
+Category: Progress
+Real Estate Mogul  
+Description: Own 100 properties total.  
+
+Category: Progress
+Empire Complete  
+Description: Own all 200 properties in the game.  
+
+Category: Progress
+Wealth Milestones
+First Million  
+Description: Earn $1,000,000 in total cash flow from properties.  
+
+Category: Wealth
+Billionaire Club  
+Description: Earn $1,000,000,000 in total cash flow from properties.  
+
+Category: Wealth
+Trillion Dollar Tycoon  
+Description: Earn $1,000,000,000,000 in total cash flow from properties.  
+
+Category: Wealth
+Cash Flow King  
+Description: Reach $1,000,000 per second in passive income from properties.  
+
+Category: Wealth
+Property Value Titan  
+Description: Spend $1,000,000,000 total on purchasing properties.  
+
+Category: Wealth
+Regional Achievements
+Savanna Settler (Rural Kenya)  
+Description: Own all 10 properties in Rural Kenya.  
+
+Category: Regional
+Lagos Land Baron (Lagos, Nigeria)  
+Description: Own all 10 properties in Lagos, Nigeria.  
+
+Category: Regional
+Cape Crusader (Cape Town, SA)  
+Description: Own all 10 properties in Cape Town, South Africa.  
+
+Category: Regional
+Thai Trailblazer (Rural Thailand)  
+Description: Own all 10 properties in Rural Thailand.  
+
+Category: Regional
+Mumbai Magnate (Mumbai, India)  
+Description: Own all 10 properties in Mumbai, India.  
+
+Category: Regional
+Saigon Sovereign (Ho Chi Minh City)  
+Description: Own all 10 properties in Ho Chi Minh City, Vietnam.  
+
+Category: Regional
+Singapore Sky Lord (Singapore)  
+Description: Own all 10 properties in Singapore.  
+
+Category: Regional
+Hong Kong High Roller (Hong Kong)  
+Description: Own all 10 properties in Hong Kong.  
+
+Category: Regional
+Lisbon Luminary (Lisbon, Portugal)  
+Description: Own all 10 properties in Lisbon, Portugal.  
+
+Category: Regional
+Bucharest Boss (Bucharest, Romania)  
+Description: Own all 10 properties in Bucharest, Romania.  
+
+Category: Regional
+Berlin Builder (Berlin, Germany)  
+Description: Own all 10 properties in Berlin, Germany.  
+
+Category: Regional
+London Lord (London, UK)  
+Description: Own all 10 properties in London, UK.  
+
+Category: Regional
+Mexico Maestro (Rural Mexico)  
+Description: Own all 10 properties in Rural Mexico.  
+
+Category: Regional
+Mexico City Monarch (Mexico City)  
+Description: Own all 10 properties in Mexico City, Mexico.  
+
+Category: Regional
+Miami Master (Miami, Florida)  
+Description: Own all 10 properties in Miami, Florida.  
+
+Category: Regional
+New York Emperor (New York City)  
+Description: Own all 10 properties in New York City, NY.  
+
+Category: Regional
+LA Legend (Los Angeles)  
+Description: Own all 10 properties in Los Angeles, CA.  
+
+Category: Regional
+Lima Leader (Lima, Peru)  
+Description: Own all 10 properties in Lima, Peru.  
+
+Category: Regional
+Sao Paulo Sultan (Sao Paulo, Brazil)  
+Description: Own all 10 properties in Sao Paulo, Brazil.  
+
+Category: Regional
+Dubai Dynasty (Dubai, UAE)  
+Description: Own all 10 properties in Dubai, UAE.  
+
+Category: Regional
+Developer Notes
+Implementation:  
+Store achievements in a JSON structure: {name, description, category, completed: false}.  
+
+Track via player stats (e.g., properties owned, total cash flow, locale completion).  
+
+Display in an “Achievements” tab with progress tracking (e.g., “47/50 properties” for Portfolio Builder).
+Balancing:  
+Progress achievements scale from beginner (1 property) to expert (200 properties).  
+
+Wealth milestones reflect exponential financial growth, aligning with property costs ($500 to $75M).  
+
+Regional achievements encourage exploration of all 20 locales.
+Visuals (Optional):  
+Add icons or badges later (e.g., acacia leaf for Rural Kenya, Statue of Liberty for NYC) in the same flat/cartoonish style as properties.
+

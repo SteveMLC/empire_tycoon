@@ -1,0 +1,337 @@
+Event System for Empire Tycoon
+Overview
+The event system introduces random, disruptive events that impact businesses and real estate properties in Empire Tycoon. These events reduce income to a negative value (-25% of normal income) and require player intervention to resolve, adding challenge and engagement. Events are tailored to the specific characteristics of each business and real estate locale, ensuring thematic relevance.
+Event System Structure
+Event Types:
+Business Events: Affect individual businesses (10 total in the game).
+
+Locale Events: Affect the top 50% of the most expensive real estate properties in a specific locale (20 locales listed below).
+Trigger Conditions:
+Events unlock after the player acquires the 4th business or properties in at least 2 real estate locales.
+
+The first event occurs after 30 minutes of gameplay post-unlock.
+
+Subsequent events occur randomly, with a maximum of 2 events per hour and a minimum 15-minute gap between events.
+Penalty:
+Affected businesses or properties have their income reduced to -25% of their normal income (e.g., if a business normally generates 100/sec, it now generates -25/sec, incurring a loss).
+Resolution Options:
+Automatic Resolution: Event resolves after 1 hour.
+
+Manual Resolution:
+Watch an ad to resolve immediately.
+
+Pay a fee: 50% of the total investment in the affected business or properties.
+
+Complete a challenge: Tap 200 times to resolve immediately.
+Unique Events for Businesses
+Empire Tycoon features 10 businesses, each with a pool of 5 unique events. When an event occurs, it reduces income to -25% of the normal rate until resolved. Below are the events for each business.
+1. Mobile Car Wash
+Van Breakdown: "Your van has broken down, halting operations."
+
+Water Supply Issue: "A water shortage is stopping your washes."
+
+Customer Complaint: "Negative reviews are driving customers away."
+
+Staff Shortage: "Staff called in sick, reducing capacity."
+
+Equipment Failure: "Your pressure washer failed, stopping work."
+2. Pop-Up Food Stall
+Health Inspection Failure: "A failed inspection has shut you down."
+
+Weather Disruption: "Rain is keeping customers away."
+
+Supplier Delay: "Delayed ingredients limit your menu."
+
+Equipment Malfunction: "Your grill broke, halting sales."
+
+Theft: "Inventory was stolen, stopping production."
+3. Boutique Coffee Roaster
+Bean Shortage: "A coffee bean shortage cuts production."
+
+Roaster Breakdown: "Your roaster malfunctioned, stopping output."
+
+Cafe Overcrowding: "Crowds are causing delays, losing sales."
+
+Staff Strike: "Baristas are striking, halting service."
+
+Power Outage: "A power outage shut down operations."
+4. Fitness Studio
+Equipment Failure: "Broken machines reduce capacity."
+
+Trainer Strike: "Trainers strike, canceling classes."
+
+Membership Fraud: "Fake memberships drain revenue."
+
+HVAC Failure: "No AC makes the studio unbearable."
+
+Safety Inspection: "A safety issue forces closure."
+5. E-Commerce Store
+Website Crash: "Your site is down, stopping sales."
+
+Shipping Delay: "Late deliveries lose customers."
+
+Return Surge: "High returns cut profits."
+
+Cybersecurity Breach: "A breach halts transactions."
+
+Inventory Shortage: "Out-of-stock items reduce sales."
+6. Craft Brewery
+Food Contamination: "Contamination forces a shutdown."
+
+Barrel Leak: "A leak loses product, halting sales."
+
+Licensing Issue: "A licensing problem stops production."
+
+Supply Chain Disruption: "Supply issues reduce output."
+
+Quality Control Failure: "A bad batch wastes product."
+7. Boutique Hotel
+Plumbing Issue: "Water damage closes rooms."
+
+Bad Review: "Poor reviews deter bookings."
+
+Staff Walkout: "Staff quit, reducing service."
+
+Fire Alarm Malfunction: "A false alarm evacuates guests."
+
+Pest Infestation: "Pests force a temporary closure."
+8. Film Production Studio
+Strike: "Crew strikes, halting production."
+
+Equipment Theft: "Stolen gear delays filming."
+
+Bad Script: "A flop script cuts revenue."
+
+Location Permit Issue: "Permit issues stop shooting."
+
+Weather Disruption: "Bad weather delays outdoor scenes."
+9. Logistics Company
+Major Accident: "An accident shuts down operations."
+
+Fuel Shortage: "No fuel limits truck runs."
+
+Route Blockage: "Blocked routes delay deliveries."
+
+Labor Strike: "Drivers strike, reducing capacity."
+
+Vehicle Breakdown: "Trucks break down, halting shipments."
+10. Luxury Real Estate Developer
+Construction Delay: "Delays halt property sales."
+
+Land Dispute: "Legal issues stop development."
+
+Market Crash: "A downturn reduces demand."
+
+Permit Denial: "A denied permit pauses projects."
+
+Environmental Protest: "Protests delay construction."
+Unique Events for Real Estate Locales
+The game includes 20 real estate locales, each with 3 unique events affecting the top 50% of properties by value (10 out of 20 properties per locale). Income from affected properties is reduced to -25% of normal income during the event.
+1. Rural Kenya
+Drought: "A drought has damaged your properties."
+
+Infrastructure Failure: "Road damage limits access."
+
+Economic Downturn: "Local economy slump reduces income."
+2. Lagos, Nigeria
+Power Outage: "A blackout halts property operations."
+
+Flooding: "Heavy rains flood your properties."
+
+Political Instability: "Unrest reduces property value."
+3. Cape Town, SA
+Water Shortage: "Water crisis affects usability."
+
+Wildfire: "Fires threaten your properties."
+
+Tourism Decline: "Fewer tourists cut rental income."
+4. Rural Thailand
+Flooding: "Monsoon floods damage properties."
+
+Agricultural Downturn: "Crop failure hurts local economy."
+
+Infrastructure Issue: "Water supply failure."
+5. Mumbai, India
+Monsoon Flooding: "Floods make properties unusable."
+
+Power Grid Failure: "Blackouts halt operations."
+
+Market Fluctuation: "Real estate prices drop."
+6. Ho Chi Minh City
+Typhoon: "A typhoon damages your properties."
+
+Infrastructure Overload: "Utilities fail under demand."
+
+Policy Change: "New laws reduce property income."
+7. Singapore
+Earthquake: "An earthquake causes structural damage."
+
+Regulatory Fine: "Fines for code violations."
+
+Market Oversupply: "Too many properties lower income."
+8. Hong Kong
+Typhoon: "Severe weather damages properties."
+
+Political Unrest: "Protests reduce demand."
+
+Financial Volatility: "Market swings cut income."
+9. Lisbon, Portugal
+Earthquake: "Seismic activity damages buildings."
+
+Tourism Fluctuation: "Fewer visitors reduce income."
+
+Economic Recession: "Downturn lowers property values."
+10. Bucharest, Romania
+Severe Weather: "A snowstorm damages properties."
+
+Infrastructure Issue: "Heating system failure."
+
+Political Change: "New laws affect property income."
+11. Berlin, Germany
+Tax Audit: "Unpaid taxes lead to penalties."
+
+Regulatory Change: "New rental laws reduce income."
+
+Energy Crisis: "High utility costs cut profits."
+12. London, UK
+Flooding: "Thames flooding damages properties."
+
+Brexit Impact: "Economic shifts reduce demand."
+
+Market Bubble Burst: "Property values plummet."
+13. Rural Mexico
+Hurricane: "A storm damages your properties."
+
+Agricultural Downturn: "Crop failure hurts economy."
+
+Water Supply Issue: "Drought reduces usability."
+14. Mexico City
+Earthquake: "Seismic damage to properties."
+
+Air Pollution Crisis: "Smog reduces livability."
+
+Traffic Congestion: "Gridlock limits access."
+15. Miami, Florida
+Hurricane: "Storm damage halts operations."
+
+Flooding: "Sea-level rise floods properties."
+
+Tourism Decline: "Fewer visitors cut income."
+16. New York City
+Blizzard: "Snowstorm damages properties."
+
+Power Outage: "Blackout halts operations."
+
+Market Crash: "Real estate downturn."
+17. Los Angeles
+Wildfire: "Fires threaten properties."
+
+Earthquake: "Seismic activity causes damage."
+
+Water Shortage: "Drought reduces usability."
+18. Lima, Peru
+Earthquake: "Tremors damage buildings."
+
+Political Instability: "Unrest reduces property value."
+
+Economic Downturn: "Recession cuts income."
+19. Sao Paulo, Brazil
+Flooding: "Heavy rains flood properties."
+
+Power Outage: "Blackout halts operations."
+
+Crime Wave: "Increased crime reduces value."
+20. Dubai, UAE
+Sandstorm: "Storm damages properties."
+
+Oil Price Drop: "Economic shift reduces demand."
+
+Market Bubble Burst: "Oversupply lowers income."
+Event Trigger Mechanics
+Unlock Condition: Events begin after the player unlocks the 4th business or acquires properties in 2 locales.
+
+First Event: Occurs 30 minutes after the unlock condition is met.
+
+Subsequent Events:
+Trigger randomly with a minimum 15-minute gap.
+
+Maximum of 2 events per hour.
+Event Selection:
+50% chance for a business event, 50% for a locale event.
+
+Randomly select one owned business or one locale with owned properties.
+
+Randomly pick an event from the selected business or locale's event pool.
+Penalty and Resolution Mechanics
+Penalty:
+Business: Income reduced to -25% of normal income (e.g., if normal income is 100/sec, it becomes -25/sec).
+
+Locale: Income from the top 50% of properties (by value) reduced to -25% of normal income.
+Resolution Options:
+Automatic: Resolves after 1 hour.
+
+Watch Ad: Resolves immediately.
+
+Pay Fee:
+Business: 50% of the sum of all upgrade costs up to the current level.
+
+Locale: 50% of the sum of purchase prices of affected properties.
+Challenge: Tap 200 times to resolve immediately.
+Implementation Details
+Timing Mechanism:
+Use real-time timers to track event triggers and enforce frequency constraints.
+
+Store timestamps of recent events to ensure no more than 2 events per hour and a 15-minute gap between events.
+Event Notification:
+Display a pop-up when an event occurs (e.g., "Oh no! Your Craft Brewery is shut down due to contamination! Income reduced to -25%. Resolve by: [options]").
+Visual Indicators:
+Mark affected businesses or properties with a red icon on the game map.
+Income Adjustment:
+Calculate normal income for the affected business or properties.
+
+Set income to -25% of normal (e.g., newIncome = normalIncome * -0.25).
+Dynamic Calculations:
+Business Fee: Sum the costs of all levels up to the current level and multiply by 0.5.
+
+Locale Fee: Sum the purchase prices of the top 50% of properties (by value) and multiply by 0.5.
+Ad Integration:
+Implement an ad API for immediate resolution.
+Challenge UI:
+Create a tap counter with a progress bar for the 200-tap challenge.
+Testing:
+Ensure the negative income mechanic doesn’t overly penalize early-game players; adjust the -25% rate if needed based on playtesting.
+Examples
+Business Event Example
+Event: "Craft Brewery has been shut down due to food contamination."
+
+Normal Income: 1200/sec (at Level 1).
+
+Penalty: Income reduced to -25% of normal = -300/sec.
+
+Resolution Options:
+Wait 1 hour.
+
+Watch an ad.
+
+Pay 50% of total upgrade costs (e.g., Level 1 cost = 500,000; Fee = 250,000).
+
+Tap 200 times.
+Locale Event Example
+Event: "Singapore earthquake has caused severe damage."
+
+Affected: Top 50% of properties in Singapore by value (10 out of 20 properties).
+
+Normal Income: Assume 10 properties generate 10,000/sec total.
+
+Penalty: Income reduced to -25% of normal = -2,500/sec.
+
+Resolution Options:
+Wait 1 hour.
+
+Watch an ad.
+
+Pay 50% of the sum of affected properties' purchase prices (requires property data).
+
+Tap 200 times.
+This Event_system.md provides a detailed blueprint for implementing the interactive event system in Empire Tycoon, with the updated penalty mechanic of reducing income to -25% of normal. Ensure property data is integrated for accurate fee calculations, and adjust the negative income rate or tap count based on playtesting to maintain game balance.
+

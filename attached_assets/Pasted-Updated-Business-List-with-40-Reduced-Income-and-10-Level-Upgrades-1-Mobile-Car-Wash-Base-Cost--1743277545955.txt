@@ -1,0 +1,262 @@
+Updated Business List with 40% Reduced Income and 10-Level Upgrades
+1. Mobile Car Wash
+Base Cost: $250  
+
+Base Income: $0.6/sec (was $1/sec)  
+
+Description: A van-based car wash service that visits customers.
+Upgrade Tiers:  
+Level 1 - $250 | $0.6/sec (Basic van and supplies)  
+
+Level 2 - $500 | $1.5/sec (Pressure washer) (was $2.5/sec)  
+
+Level 3 - $1,000 | $3.6/sec (Extra staff) (was $6/sec)  
+
+Level 4 - $2,000 | $9/sec (Second van) (was $15/sec)  
+
+Level 5 - $4,000 | $24/sec (Eco-friendly soap) (was $40/sec)  
+
+Level 6 - $8,000 | $60/sec (Mobile app bookings) (was $100/sec)  
+
+Level 7 - $16,000 | $150/sec (Franchise model) (was $250/sec)  
+
+Level 8 - $32,000 | $360/sec (Fleet expansion) (was $600/sec)  
+
+Level 9 - $64,000 | $900/sec (VIP detailing) (was $1,500/sec)  
+
+Level 10 - $128,000 | $2,250/sec (Citywide coverage) (was $3,750/sec)
+2. Pop-Up Food Stall
+Base Cost: $1,000  
+
+Base Income: $3/sec (was $5/sec)  
+
+Description: A temporary stall selling street food like burgers or tacos.
+Upgrade Tiers:  
+Level 1 - $1,000 | $3/sec (Basic stall)  
+
+Level 2 - $2,000 | $7.2/sec (Better grill) (was $12/sec)  
+
+Level 3 - $4,000 | $18/sec (Menu expansion) (was $30/sec)  
+
+Level 4 - $8,000 | $45/sec (More staff) (was $75/sec)  
+
+Level 5 - $16,000 | $114/sec (Branded tent) (was $190/sec)  
+
+Level 6 - $32,000 | $285/sec (Weekend markets) (was $475/sec)  
+
+Level 7 - $64,000 | $720/sec (Food truck add-on) (was $1,200/sec)  
+
+Level 8 - $128,000 | $1,800/sec (Multi-city stalls) (was $3,000/sec)  
+
+Level 9 - $256,000 | $4,500/sec (Catering gigs) (was $7,500/sec)  
+
+Level 10 - $512,000 | $11,250/sec (Chain operation) (was $18,750/sec)
+3. Boutique Coffee Roaster
+Base Cost: $5,000  
+
+Base Income: $12/sec (was $20/sec)  
+
+Description: A small-batch coffee roasting and retail business.
+Upgrade Tiers:  
+Level 1 - $5,000 | $12/sec (Home roaster)  
+
+Level 2 - $10,000 | $30/sec (Premium beans) (was $50/sec)  
+
+Level 3 - $20,000 | $75/sec (Cafe counter) (was $125/sec)  
+
+Level 4 - $40,000 | $180/sec (Wholesale deals) (was $300/sec)  
+
+Level 5 - $80,000 | $450/sec (Roasting machine) (was $750/sec)  
+
+Level 6 - $160,000 | $1,125/sec (Local chain) (was $1,875/sec)  
+
+Level 7 - $320,000 | $2,820/sec (Online store) (was $4,700/sec)  
+
+Level 8 - $640,000 | $7,050/sec (Brand licensing) (was $11,750/sec)  
+
+Level 9 - $1.28M | $17,625/sec (Export market) (was $29,375/sec)  
+
+Level 10 - $2.56M | $44,100/sec (Global supplier) (was $73,500/sec)
+4. Fitness Studio
+Base Cost: $20,000  
+
+Base Income: $60/sec (was $100/sec)  
+
+Description: A gym offering classes and personal training.
+Upgrade Tiers:  
+Level 1 - $20,000 | $60/sec (Small space)  
+
+Level 2 - $40,000 | $150/sec (New equipment) (was $250/sec)  
+
+Level 3 - $80,000 | $375/sec (Group classes) (was $625/sec)  
+
+Level 4 - $160,000 | $900/sec (More trainers) (was $1,500/sec)  
+
+Level 5 - $320,000 | $2,250/sec (Expansion) (was $3,750/sec)  
+
+Level 6 - $640,000 | $5,625/sec (App membership) (was $9,375/sec)  
+
+Level 7 - $1.28M | $14,100/sec (Second location) (was $23,500/sec)  
+
+Level 8 - $2.56M | $35,250/sec (Franchise rights) (was $58,750/sec)  
+
+Level 9 - $5.12M | $88,200/sec (Celebrity endorsement) (was $147,000/sec)  
+
+Level 10 - $10.24M | $220,500/sec (National chain) (was $367,500/sec)
+5. E-Commerce Store
+Base Cost: $100,000  
+
+Base Income: $300/sec (was $500/sec)  
+
+Description: An online shop selling niche products like gadgets or apparel.
+Upgrade Tiers:  
+Level 1 - $100,000 | $300/sec (Basic website)  
+
+Level 2 - $200,000 | $750/sec (SEO boost) (was $1,250/sec)  
+
+Level 3 - $400,000 | $1,875/sec (Wider inventory) (was $3,125/sec)  
+
+Level 4 - $800,000 | $4,680/sec (Faster shipping) (was $7,800/sec)  
+
+Level 5 - $1.6M | $11,700/sec (Ad campaigns) (was $19,500/sec)  
+
+Level 6 - $3.2M | $29,250/sec (Mobile app) (was $48,750/sec)  
+
+Level 7 - $6.4M | $73,200/sec (Warehouse) (was $122,000/sec)  
+
+Level 8 - $12.8M | $183,000/sec (Multi-brand) (was $305,000/sec)  
+
+Level 9 - $25.6M | $457,500/sec (Global reach) (was $762,500/sec)  
+
+Level 10 - $51.2M | $1.14M/sec (Market leader) (was $1.9M/sec)
+6. Craft Brewery
+Base Cost: $500,000  
+
+Base Income: $1,200/sec (was $2,000/sec)  
+
+Description: A brewery producing artisanal beers for local and regional sale.
+Upgrade Tiers:  
+Level 1 - $500,000 | $1,200/sec (Small batch)  
+
+Level 2 - $1M | $3,000/sec (Tasting room) (was $5,000/sec)  
+
+Level 3 - $2M | $7,500/sec (New flavors) (was $12,500/sec)  
+
+Level 4 - $4M | $18,750/sec (Bigger tanks) (was $31,250/sec)  
+
+Level 5 - $8M | $46,875/sec (Distribution) (was $78,125/sec)  
+
+Level 6 - $16M | $117,000/sec (Pub chain) (was $195,000/sec)  
+
+Level 7 - $32M | $292,500/sec (Canning line) (was $487,500/sec)  
+
+Level 8 - $64M | $732,000/sec (National sales) (was $1.22M/sec)  
+
+Level 9 - $128M | $1.83M/sec (Export deals) (was $3.05M/sec)  
+
+Level 10 - $256M | $4.572M/sec (Industry giant) (was $7.62M/sec)
+7. Boutique Hotel
+Base Cost: $2M  
+
+Base Income: $6,000/sec (was $10,000/sec)  
+
+Description: A stylish hotel catering to travelers and locals.
+Upgrade Tiers:  
+Level 1 - $2M | $6,000/sec (Small property)  
+
+Level 2 - $4M | $15,000/sec (More rooms) (was $25,000/sec)  
+
+Level 3 - $8M | $37,500/sec (Restaurant) (was $62,500/sec)  
+
+Level 4 - $16M | $93,750/sec (Spa add-on) (was $156,250/sec)  
+
+Level 5 - $32M | $234,375/sec (Luxury suites) (was $390,625/sec)  
+
+Level 6 - $64M | $585,600/sec (Event space) (was $976,000/sec)  
+
+Level 7 - $128M | $1.464M/sec (Second location) (was $2.44M/sec)  
+
+Level 8 - $256M | $3.66M/sec (Chain branding) (was $6.1M/sec)  
+
+Level 9 - $512M | $9.15M/sec (Global presence) (was $15.25M/sec)  
+
+Level 10 - $1B | $22.86M/sec (Luxury empire) (was $38.1M/sec)
+8. Film Production Studio
+Base Cost: $10M  
+
+Base Income: $30,000/sec (was $50,000/sec)  
+
+Description: A studio making indie films and streaming content.
+Upgrade Tiers:  
+Level 1 - $10M | $30,000/sec (Small crew)  
+
+Level 2 - $20M | $75,000/sec (Better gear) (was $125,000/sec)  
+
+Level 3 - $40M | $187,500/sec (Bigger casts) (was $312,500/sec)  
+
+Level 4 - $80M | $468,750/sec (Studio lot) (was $781,250/sec)  
+
+Level 5 - $160M | $1.17M/sec (Streaming deal) (was $1.95M/sec)  
+
+Level 6 - $320M | $2.928M/sec (Blockbusters) (was $4.88M/sec)  
+
+Level 7 - $640M | $7.32M/sec (Franchise IP) (was $12.2M/sec)  
+
+Level 8 - $1.28B | $18.3M/sec (Global releases) (was $30.5M/sec)  
+
+Level 9 - $2.56B | $45.75M/sec (Awards buzz) (was $76.25M/sec)  
+
+Level 10 - $5.12B | $114M/sec (Media titan) (was $190M/sec)
+9. Logistics Company
+Base Cost: $50M  
+
+Base Income: $150,000/sec (was $250,000/sec)  
+
+Description: A freight and delivery service for businesses.
+Upgrade Tiers:  
+Level 1 - $50M | $150,000/sec (Few trucks)  
+
+Level 2 - $100M | $375,000/sec (More routes) (was $625,000/sec)  
+
+Level 3 - $200M | $936,000/sec (Warehouse) (was $1.56M/sec)  
+
+Level 4 - $400M | $2.34M/sec (Fleet upgrade) (was $3.9M/sec)  
+
+Level 5 - $800M | $5.85M/sec (Air shipping) (was $9.75M/sec)  
+
+Level 6 - $1.6B | $14.64M/sec (Automation) (was $24.4M/sec)  
+
+Level 7 - $3.2B | $36.6M/sec (Regional hubs) (was $61M/sec)  
+
+Level 8 - $6.4B | $91.5M/sec (National scale) (was $152.5M/sec)  
+
+Level 9 - $12.8B | $228.6M/sec (Global network) (was $381M/sec)  
+
+Level 10 - $25.6B | $571.2M/sec (Industry leader) (was $952M/sec)
+10. Luxury Real Estate Developer
+Base Cost: $250M  
+
+Base Income: $600,000/sec (was $1M/sec)  
+
+Description: Builds and sells high-end homes and condos.
+Upgrade Tiers:  
+Level 1 - $250M | $600,000/sec (Single project)  
+
+Level 2 - $500M | $1.5M/sec (Gated community) (was $2.5M/sec)  
+
+Level 3 - $1B | $3.75M/sec (Luxury towers) (was $6.25M/sec)  
+
+Level 4 - $2B | $9.36M/sec (Beachfront) (was $15.6M/sec)  
+
+Level 5 - $4B | $23.4M/sec (Smart homes) (was $39M/sec)  
+
+Level 6 - $8B | $58.5M/sec (City expansion) (was $97.5M/sec)  
+
+Level 7 - $16B | $146.4M/sec (Resort chain) (was $244M/sec)  
+
+Level 8 - $32B | $366M/sec (Global brand) (was $610M/sec)  
+
+Level 9 - $64B | $912M/sec (Billionaire clients) (was $1.52B/sec)  
+
+Level 10 - $128B | $2.286B/sec (Real estate empire) (was $3.81B/sec)
+
