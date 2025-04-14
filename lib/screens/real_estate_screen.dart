@@ -417,6 +417,7 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
   
   Widget _buildPropertiesList(RealEstateLocale locale, GameState gameState, ThemeData theme) {
     return ListView(
+      key: ValueKey<String>(locale.id),
       padding: const EdgeInsets.only(bottom: 24),
       children: [
         // Header with back button and locale info
@@ -874,7 +875,7 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
                     const SizedBox(width: 8),
                     Text(
                       isOwned 
-                        ? 'Value: ${NumberFormatter.formatCurrency(property.purchasePrice)}'
+                        ? 'Value: ${NumberFormatter.formatCurrency(property.totalValue)}'
                         : 'Price: ${NumberFormatter.formatCurrency(property.purchasePrice)}',
                       style: const TextStyle(
                         fontSize: 16,

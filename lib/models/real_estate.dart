@@ -64,6 +64,17 @@ class RealEstateProperty {
     return purchasedUpgrades.first.newIncomePerSecond;
   }
 
+  // Calculate the total value including purchased upgrades
+  double get totalValue {
+    double value = purchasePrice;
+    for (var upgrade in upgrades) {
+      if (upgrade.purchased) {
+        value += upgrade.cost;
+      }
+    }
+    return value;
+  }
+
   RealEstateProperty({
     required this.id,
     required this.name,
