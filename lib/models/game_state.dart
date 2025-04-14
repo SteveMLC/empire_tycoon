@@ -2740,6 +2740,32 @@ class GameState with ChangeNotifier {
     return baseRequirement * pow(10, thresholdsUsed);
   }
   
+  // Calculate the number of achieved reincorporation levels based on networkWorth
+  int getAchievedReincorporationLevels() {
+    int levelsAchieved = 0;
+    if (networkWorth > 0) {
+      // $1M threshold
+      if (networkWorth >= 0.01) levelsAchieved++;
+      // $10M threshold
+      if (networkWorth >= 0.1) levelsAchieved++;
+      // $100M threshold
+      if (networkWorth >= 1.0) levelsAchieved++;
+      // $1B threshold
+      if (networkWorth >= 10.0) levelsAchieved++;
+      // $10B threshold
+      if (networkWorth >= 100.0) levelsAchieved++;
+      // $100B threshold
+      if (networkWorth >= 1000.0) levelsAchieved++;
+      // $1T threshold
+      if (networkWorth >= 10000.0) levelsAchieved++;
+      // $10T threshold
+      if (networkWorth >= 100000.0) levelsAchieved++;
+      // $100T threshold
+      if (networkWorth >= 1000000.0) levelsAchieved++;
+    }
+    return levelsAchieved;
+  }
+  
   // Check and update available reincorporation uses
   void updateReincorporationUses() {
     double netWorth = calculateNetWorth();

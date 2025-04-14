@@ -575,7 +575,8 @@ class AchievementManager {
     }
     
     // Max reincorporations (9 - counting from $1M to $100T = 9 thresholds)
-    if (!_isCompleted('max_reincorporations') && gameState.totalReincorporations >= 9) {
+    // Use the new method to check based on achieved levels from networkWorth
+    if (!_isCompleted('max_reincorporations') && gameState.getAchievedReincorporationLevels() >= 9) {
       completeAchievement('max_reincorporations');
       newlyCompleted.add(achievements.firstWhere((a) => a.id == 'max_reincorporations'));
     }
@@ -703,7 +704,8 @@ class AchievementManager {
         
       case 'max_reincorporations':
         // Progress towards 9 reincorporations ($1M to $100T = 9 thresholds)
-        return gameState.totalReincorporations / 9.0 > 1.0 ? 1.0 : gameState.totalReincorporations / 9.0;
+        // Use the new method for progress calculation
+        return gameState.getAchievedReincorporationLevels() / 9.0 > 1.0 ? 1.0 : gameState.getAchievedReincorporationLevels() / 9.0;
         
       case 'income_trifecta':
         // Progress towards $10M per second from each income source
