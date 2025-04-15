@@ -53,7 +53,7 @@ class _StatsScreenState extends State<StatsScreen> {
                 
                 const SizedBox(height: 20),
                 
-                _buildDailyEarningsChart(gameState),
+                _buildHourlyEarningsChart(gameState),
                 
                 const SizedBox(height: 20),
                 
@@ -499,18 +499,24 @@ class _StatsScreenState extends State<StatsScreen> {
     );
   }
   
-  Widget _buildDailyEarningsChart(GameState gameState) {
-    // Get the last 7 days of earnings
+  Widget _buildHourlyEarningsChart(GameState gameState) {
+    // Get the last 24 hours of earnings data
     final now = DateTime.now();
-    List<MapEntry<String, double>> dailyData = [];
-    
-    for (int i = 6; i >= 0; i--) {
-      final day = now.subtract(Duration(days: i));
-      final dayKey = TimeUtils.getDayKey(day);
-      final earnings = gameState.dailyEarnings[dayKey] ?? 0.0;
-      dailyData.add(MapEntry(dayKey, earnings));
+    Map<String, double> hourlyDataMap = {};
+
+    for (int i = 23; i >= 0; i--) {
+      final hour = now.subtract(Duration(hours: i));
+      final hourKey = TimeUtils.getHourKey(hour);
+      final earnings = gameState.hourlyEarnings[hourKey] ?? 0.0;
+      hourlyDataMap[hourKey] = earnings;
     }
-    
+
+    // Sort keys chronologically (YYYY-MM-DD-HH)
+    List<String> sortedKeys = hourlyDataMap.keys.toList()..sort();
+    List<MapEntry<String, double>> hourlyData = sortedKeys
+        .map((key) => MapEntry(key, hourlyDataMap[key]!))
+        .toList();
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -518,7 +524,7 @@ class _StatsScreenState extends State<StatsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Daily Earnings',
+              'Hourly Earnings (Last 24h)',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -529,9 +535,9 @@ class _StatsScreenState extends State<StatsScreen> {
             
             SizedBox(
               height: 200,
-              child: dailyData.isEmpty 
+              child: hourlyData.isEmpty 
                   ? const Center(child: Text('No earnings data available'))
-                  : _buildBarChart(dailyData),
+                  : _buildBarChart(hourlyData),
             ),
           ],
         ),
@@ -540,22 +546,15 @@ class _StatsScreenState extends State<StatsScreen> {
   }
   
   Widget _buildNetWorthChart(GameState gameState) {
-    // If we have net worth history data
-    List<double> history = gameState.netWorthHistory;
+    // Get persistent net worth history
+    Map<int, double> historyMap = gameState.persistentNetWorthHistory;
+
+    // Sort by timestamp (key)
+    List<int> sortedTimestamps = historyMap.keys.toList()..sort();
+    List<double> history = sortedTimestamps.map((ts) => historyMap[ts]!).toList();
     
-    // Determine the chart's time granularity based on game duration
-    String timeframeText = 'Net Worth History';
-    if (history.isNotEmpty) {
-      final gameDuration = DateTime.now().difference(gameState.gameStartTime);
-      
-      if (gameDuration.inDays < 1) {
-        timeframeText = 'Net Worth (15 Minute Intervals)';
-      } else if (gameDuration.inDays < 3) {
-        timeframeText = 'Net Worth (Hourly)';
-      } else {
-        timeframeText = 'Net Worth (Daily)';
-      }
-    }
+    // Removed dynamic timeframe logic
+    String timeframeText = 'Net Worth History (Persistent)';
     
     return Card(
       child: Padding(
@@ -604,8 +603,8 @@ class _StatsScreenState extends State<StatsScreen> {
         // Calculate height percentage
         double heightPercent = entry.value / maxValue;
         
-        // Format day label
-        String day = entry.key.substring(entry.key.length - 2);
+        // Format hour label from the key (YYYY-MM-DD-HH)
+        String hour = entry.key.substring(entry.key.length - 2);
         
         return Expanded(
           child: Padding(
@@ -624,7 +623,7 @@ class _StatsScreenState extends State<StatsScreen> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                Text(day, style: TextStyle(fontSize: 12)),
+                Text(hour, style: TextStyle(fontSize: 12)),
               ],
             ),
           ),
@@ -1029,28 +1028,19 @@ class ChartPainter extends CustomPainter {
     
     canvas.drawPath(path, paint);
     
-    // Draw points on the line and x-axis labels
+    // Draw points on the line 
     final pointPaint = Paint()
       ..color = Colors.blue
       ..strokeWidth = 2
       ..style = PaintingStyle.fill;
     
-    // Draw x-axis points and labels (only for selected points to avoid overcrowding)
-    int labelStep = data.length <= 10 ? 1 : data.length ~/ 5;
+    // Draw points without x-axis labels
     for (int i = 0; i < data.length; i++) {
       final x = i * xStep;
       final y = height - ((data[i] - minValue) / range * height);
       
       // Draw point
       canvas.drawCircle(Offset(x, y), 4, pointPaint);
-      
-      // Draw label for selected points
-      if (i % labelStep == 0 || i == data.length - 1) {
-        String label = (i + 1).toString();
-        textPainter.text = TextSpan(text: label, style: textStyle);
-        textPainter.layout();
-        textPainter.paint(canvas, Offset(x - textPainter.width / 2, height + 5));
-      }
     }
     
     // Draw min and max value labels on y-axis

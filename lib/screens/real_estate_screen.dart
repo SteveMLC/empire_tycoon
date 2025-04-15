@@ -236,32 +236,6 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
   Widget _buildLocaleItem(RealEstateLocale locale, GameState gameState, ThemeData theme) {
     // If not unlocked, show locked indicator with appropriate unlock message
     if (!locale.unlocked) {
-      // Determine unlock message based on locale id
-      String unlockMessage = '';
-      
-      // Check business condition first - required for all locales
-      bool hasAnyBusiness = gameState.businesses.any((business) => business.level > 0);
-      if (!hasAnyBusiness) {
-        unlockMessage = 'Unlock by purchasing first business';
-      } else {
-        // If has business, check money thresholds based on tiers
-        if (locale.id == 'rural_kenya') {
-          unlockMessage = 'Unlock by purchasing first business';
-        } else if (['lagos_nigeria', 'rural_thailand', 'rural_mexico'].contains(locale.id)) {
-          unlockMessage = 'Unlock at \$10,000';
-        } else if (['cape_town_sa', 'mumbai_india', 'ho_chi_minh_city', 'bucharest_romania', 'lima_peru', 'sao_paulo_brazil'].contains(locale.id)) {
-          unlockMessage = 'Unlock at \$50,000';
-        } else if (['lisbon_portugal', 'berlin_germany', 'mexico_city'].contains(locale.id)) {
-          unlockMessage = 'Unlock at \$250,000';
-        } else if (['singapore', 'london_uk', 'miami_florida', 'new_york_city', 'los_angeles'].contains(locale.id)) {
-          unlockMessage = 'Unlock at \$1,000,000';
-        } else if (['hong_kong', 'dubai_uae'].contains(locale.id)) {
-          unlockMessage = 'Unlock at \$5,000,000';
-        } else {
-          unlockMessage = 'Unlock by progressing further';
-        }
-      }
-      
       return Container(
         margin: const EdgeInsets.only(bottom: 8),
         padding: const EdgeInsets.all(16),
@@ -290,31 +264,31 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
             Expanded(
               child: Consumer<GameState>(
                 builder: (context, gameState, child) {
-                  String message = 'Unlock by progressing further';
-                  
-                  // Check business condition first - required for all locales
-                  bool hasAnyBusiness = gameState.businesses.any((business) => business.level > 0);
-                  if (!hasAnyBusiness) {
-                    message = 'Unlock by purchasing first business';
-                  } else {
-                    // If has business, check money thresholds based on tiers
-                    if (locale.id == 'rural_kenya') {
-                      message = 'Unlock by purchasing first business';
-                    } else if (['lagos_nigeria', 'rural_thailand', 'rural_mexico'].contains(locale.id)) {
-                      message = 'Unlock at \$10,000';
-                    } else if (['cape_town_sa', 'mumbai_india', 'ho_chi_minh_city', 'bucharest_romania', 'lima_peru', 'sao_paulo_brazil'].contains(locale.id)) {
-                      message = 'Unlock at \$50,000';
-                    } else if (['lisbon_portugal', 'berlin_germany', 'mexico_city'].contains(locale.id)) {
-                      message = 'Unlock at \$250,000';
-                    } else if (['singapore', 'london_uk', 'miami_florida', 'new_york_city', 'los_angeles'].contains(locale.id)) {
-                      message = 'Unlock at \$1,000,000';
-                    } else if (['hong_kong', 'dubai_uae'].contains(locale.id)) {
-                      message = 'Unlock at \$5,000,000';
-                    }
+                  // Determine unlock message based purely on monetary thresholds
+                  String message = 'Unlock by progressing further'; // Default message
+
+                  // Check money thresholds based on tiers
+                  // NOTE: We are removing the 'hasAnyBusiness' check as per user feedback
+                  if (locale.id == 'rural_kenya') {
+                     // Assuming rural_kenya is unlocked by default or another condition not monetary
+                     // If it should have a monetary condition, adjust here.
+                     // For now, keeping a placeholder or specific message if needed.
+                     message = 'Unlock criteria TBD'; // Placeholder - adjust as needed
+                  } else if (['lagos_nigeria', 'rural_thailand', 'rural_mexico'].contains(locale.id)) {
+                    message = 'Unlock at ${NumberFormatter.formatCurrency(10000)}';
+                  } else if (['cape_town_sa', 'mumbai_india', 'ho_chi_minh_city', 'bucharest_romania', 'lima_peru', 'sao_paulo_brazil'].contains(locale.id)) {
+                    message = 'Unlock at ${NumberFormatter.formatCurrency(50000)}';
+                  } else if (['lisbon_portugal', 'berlin_germany', 'mexico_city'].contains(locale.id)) {
+                    message = 'Unlock at ${NumberFormatter.formatCurrency(250000)}';
+                  } else if (['singapore', 'london_uk', 'miami_florida', 'new_york_city', 'los_angeles'].contains(locale.id)) {
+                    message = 'Unlock at ${NumberFormatter.formatCurrency(1000000)}';
+                  } else if (['hong_kong', 'dubai_uae'].contains(locale.id)) {
+                    message = 'Unlock at ${NumberFormatter.formatCurrency(5000000)}';
                   }
-                  
+                  // Removed the `hasAnyBusiness` check block entirely
+
                   return Text(
-                    message,
+                    message, // Use the calculated and formatted message
                     style: TextStyle(
                       color: Colors.grey.shade600,
                       fontWeight: FontWeight.w500,

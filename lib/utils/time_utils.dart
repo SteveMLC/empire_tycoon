@@ -61,4 +61,9 @@ class TimeUtils {
   static String getDayKey(DateTime dateTime) {
     return DateFormat('yyyy-MM-dd').format(dateTime);
   }
+
+  /// Get hour key in YYYY-MM-DD-HH format
+  static String getHourKey(DateTime dateTime) {
+    return DateFormat('yyyy-MM-dd-HH').format(dateTime);
+  }
 }

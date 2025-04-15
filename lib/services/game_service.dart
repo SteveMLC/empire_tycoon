@@ -340,10 +340,6 @@ class GameService {
       _gameState.passiveEarnings += offlineIncome;
     }
     
-    // Record the offline earnings in daily stats
-    String today = TimeUtils.getDayKey(DateTime.now());
-    _gameState.dailyEarnings[today] = (_gameState.dailyEarnings[today] ?? 0) + offlineIncome;
-    
     print("💰 Earned ${NumberFormatter.formatCurrency(offlineIncome)} while offline (${offlineDuration.inMinutes} minutes)");
     _gameState.notifyListeners();
   }

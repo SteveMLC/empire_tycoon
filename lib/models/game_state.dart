@@ -63,6 +63,13 @@ class GameState with ChangeNotifier {
   Set<String> fullyUpgradedLocales = {};
   // >> END: Add Achievement Tracking Fields Declaration <<
   
+  // NEW: Hourly earnings tracking (key: YYYY-MM-DD-HH)
+  Map<String, double> hourlyEarnings = {};
+
+  // NEW: Persistent Net Worth History (key: timestamp ms, value: net worth)
+  // This map persists across reincorporation
+  Map<int, double> persistentNetWorthHistory = {};
+  
   // Premium features
   bool isPremium = false; // Whether the user has purchased premium
   
@@ -214,8 +221,12 @@ class GameState with ChangeNotifier {
   int totalReincorporations = 0; // Total number of reincorporations performed
   
   // Stats tracking
-  Map<String, double> dailyEarnings = {};
-  List<double> netWorthHistory = [];
+  // OLD: Map<String, double> dailyEarnings = {};
+  // OLD: List<double> netWorthHistory = [];
+  // NEW: Reset new tracking fields
+  // REMOVE INVALID ASSIGNMENT >> hourlyEarnings = {};
+  // NEW: Reset only hourly earnings, keep persistent net worth
+  // REMOVE INVALID ASSIGNMENT >> persistentNetWorthHistory = {}; // Full reset clears persistent history too
   
   // Timer for autosave
   Timer? _saveTimer;
@@ -1551,6 +1562,7 @@ class GameState with ChangeNotifier {
   void _updateGameState() {
     try { // << ADDED TRY
       DateTime now = DateTime.now();
+      String hourKey = TimeUtils.getHourKey(now); // Get YYYY-MM-DD-HH key
       
       // Process event system
       checkAndTriggerEvents();
@@ -1591,7 +1603,6 @@ class GameState with ChangeNotifier {
       // Note: Event checking is now handled by the checkAndTriggerEvents() method at the beginning of _updateGameState
       
       // -----[ LIVE INCOME START ]-----
-      String today = TimeUtils.getDayKey(now);
       double previousMoney = money; // For logging
 
       // Update businesses income
@@ -1617,8 +1628,8 @@ class GameState with ChangeNotifier {
         money += businessIncomeThisTick;
         totalEarned += businessIncomeThisTick;
         passiveEarnings += businessIncomeThisTick;
-        // Use the helper method to update and prune daily earnings
-        _updateDailyEarnings(today, businessIncomeThisTick); 
+        // Use the helper method to update and prune hourly earnings
+        _updateHourlyEarnings(hourKey, businessIncomeThisTick);
         // print("DEBUG: Applied Business Income: $${NumberFormatter.formatCurrency(businessIncomeThisTick)}"); // Optional detailed logging
       }
       
@@ -1630,8 +1641,8 @@ class GameState with ChangeNotifier {
         money += realEstateIncomeThisTick;
         totalEarned += realEstateIncomeThisTick;
         realEstateEarnings += realEstateIncomeThisTick; // Track real estate earnings separately
-        // Use the helper method to update and prune daily earnings
-        _updateDailyEarnings(today, realEstateIncomeThisTick); 
+        // Use the helper method to update and prune hourly earnings
+        _updateHourlyEarnings(hourKey, realEstateIncomeThisTick);
         // print("DEBUG: Applied Real Estate Income: $${NumberFormatter.formatCurrency(realEstateIncomeThisTick)}"); // Optional detailed logging
       }
       
@@ -1653,8 +1664,8 @@ class GameState with ChangeNotifier {
         money += dividendIncomeThisTick;
         totalEarned += dividendIncomeThisTick;
         investmentDividendEarnings += dividendIncomeThisTick; // Track dividend earnings separately
-        // Use the helper method to update and prune daily earnings
-        _updateDailyEarnings(today, dividendIncomeThisTick); 
+        // Use the helper method to update and prune hourly earnings
+        _updateHourlyEarnings(hourKey, dividendIncomeThisTick);
         // print("DEBUG: Applied Dividend Income: $${NumberFormatter.formatCurrency(dividendIncomeThisTick)}"); // Optional detailed logging
       }
       
@@ -1664,6 +1675,26 @@ class GameState with ChangeNotifier {
       }
       // -----[ LIVE INCOME END ]-----
 
+      // --- Persistent Net Worth Tracking ---
+      // Update persistent net worth history every 30 minutes
+      if (now.minute % 30 == 0 && now.second < 5) { // Check near start of minute
+        int timestampMs = now.millisecondsSinceEpoch;
+        persistentNetWorthHistory[timestampMs] = calculateNetWorth();
+
+        // Prune entries older than 7 days (in milliseconds)
+        final cutoffMs = now.subtract(const Duration(days: 7)).millisecondsSinceEpoch;
+        List<int> keysToRemove = [];
+        for (int key in persistentNetWorthHistory.keys) {
+          if (key < cutoffMs) {
+            keysToRemove.add(key);
+          }
+        }
+        for (int key in keysToRemove) {
+          persistentNetWorthHistory.remove(key);
+        }
+      }
+      // --- End Persistent Net Worth Tracking ---
+
       // Check if it's a new day for investment market
       int todayDay = now.weekday; // 1-7 (Monday-Sunday)
       
@@ -1671,30 +1702,6 @@ class GameState with ChangeNotifier {
         // It's a new day, update investments
         currentDay = todayDay;
         _updateInvestments();
-        
-        // Update net worth for tracking with dynamic intervals based on game duration
-        final gameDuration = now.difference(gameStartTime);
-        bool shouldUpdateNetWorth = false;
-        
-        // If game just started (less than 1 day), track every 15 minutes
-        if (gameDuration.inDays < 1) {
-          shouldUpdateNetWorth = (now.minute % 15 == 0) && (now.second < 10);
-        } 
-        // If less than 3 days, track every hour
-        else if (gameDuration.inDays < 3) {
-          shouldUpdateNetWorth = (now.minute < 5);
-        }
-        // Otherwise track daily
-        else {
-          shouldUpdateNetWorth = (now.hour == 0 && now.minute < 10);
-        }
-        
-        if (shouldUpdateNetWorth || netWorthHistory.isEmpty) {
-          netWorthHistory.add(calculateNetWorth());
-          if (netWorthHistory.length > 30) {
-            netWorthHistory.removeAt(0); // Keep only last 30 data points
-          }
-        }
         
         // Check if we need to unlock more real estate locales
         _updateRealEstateUnlocks();
@@ -2250,9 +2257,12 @@ class GameState with ChangeNotifier {
       }).toList(),
     }).toList();
     
-    // Save other stats
-    json['dailyEarnings'] = dailyEarnings;
-    json['netWorthHistory'] = netWorthHistory;
+    // Save new stats tracking
+    json['hourlyEarnings'] = hourlyEarnings;
+    // Convert int keys to strings for JSON compatibility
+    json['persistentNetWorthHistory'] = persistentNetWorthHistory.map(
+      (key, value) => MapEntry(key.toString(), value)
+    );
     
     // Save achievements
     json['achievements'] = achievementManager.achievements.map((achievement) => achievement.toJson()).toList();
@@ -2482,25 +2492,36 @@ class GameState with ChangeNotifier {
     }
     
     // Load stats
-    if (json['dailyEarnings'] != null) {
-      Map<String, dynamic> dailyJson = json['dailyEarnings'];
-      // Ensure loaded data respects the history limit
-      Map<String, double> loadedEarnings = Map<String, double>.from(dailyJson);
-      if (loadedEarnings.length > _maxDailyEarningsHistory) {
-         List<String> sortedKeys = loadedEarnings.keys.toList()..sort();
-         dailyEarnings = {};
-         // Keep only the most recent entries up to the limit
-         for (int i = max(0, sortedKeys.length - _maxDailyEarningsHistory); i < sortedKeys.length; i++) {
-           dailyEarnings[sortedKeys[i]] = loadedEarnings[sortedKeys[i]]!;
-         }
-      } else {
-        dailyEarnings = loadedEarnings;
+    if (json['hourlyEarnings'] != null) {
+      try {
+        // Ensure keys are strings and values are doubles
+        hourlyEarnings = Map<String, double>.from(
+          (json['hourlyEarnings'] as Map).map(
+            (key, value) => MapEntry(key.toString(), (value as num).toDouble())
+          )
+        );
+      } catch (e) {
+        print("Error loading hourlyEarnings: $e. Resetting.");
+        hourlyEarnings = {};
       }
+    } else {
+      hourlyEarnings = {}; // Initialize if not found
     }
     
-    if (json['netWorthHistory'] != null) {
-      List<dynamic> historyJson = json['netWorthHistory'];
-      netWorthHistory = historyJson.map((e) => e as double).toList();
+    if (json['persistentNetWorthHistory'] != null) {
+      try {
+        // Convert string keys back to int timestamps
+        persistentNetWorthHistory = Map<int, double>.from(
+          (json['persistentNetWorthHistory'] as Map).map(
+            (key, value) => MapEntry(int.parse(key.toString()), (value as num).toDouble())
+          )
+        );
+      } catch (e) {
+        print("Error loading persistentNetWorthHistory: $e. Resetting.");
+        persistentNetWorthHistory = {};
+      }
+    } else {
+      persistentNetWorthHistory = {}; // Initialize if not found
     }
     
     // Initialize achievements manager
@@ -2634,8 +2655,8 @@ class GameState with ChangeNotifier {
     totalReincorporations = 0; // Reset the total reincorporations count
     
     // Reset stats tracking
-    dailyEarnings = {};
-    netWorthHistory = [];
+    hourlyEarnings = {};
+    persistentNetWorthHistory = {}; // Full reset clears persistent history too
     
     // Reset market events
     activeMarketEvents = [];
@@ -2777,8 +2798,7 @@ class GameState with ChangeNotifier {
     clickBoostEndTime = null;
     
     // Reset stats tracking
-    dailyEarnings = {};
-    netWorthHistory = [];
+    hourlyEarnings = {};
     
     // Reset market events
     activeMarketEvents = [];
@@ -4785,21 +4805,57 @@ class GameState with ChangeNotifier {
   // -----[ MEMORY OPTIMIZATION HELPER START ]-----
   // Helper to update daily earnings and prune old entries
   void _updateDailyEarnings(String dayKey, double amount) {
-    dailyEarnings[dayKey] = (dailyEarnings[dayKey] ?? 0) + amount;
-
+    hourlyEarnings[dayKey] = (hourlyEarnings[dayKey] ?? 0) + amount;
+  
     // Prune entries older than the limit
-    if (dailyEarnings.length > _maxDailyEarningsHistory) {
+    if (hourlyEarnings.length > _maxDailyEarningsHistory) {
       // Get keys sorted chronologically (assuming YYYY-MM-DD format)
-      List<String> sortedKeys = dailyEarnings.keys.toList()..sort();
+      List<String> sortedKeys = hourlyEarnings.keys.toList()..sort();
       
       // Remove the oldest entries until the map size is within the limit
-      int entriesToRemove = dailyEarnings.length - _maxDailyEarningsHistory;
+      int entriesToRemove = hourlyEarnings.length - _maxDailyEarningsHistory;
       for (int i = 0; i < entriesToRemove; i++) {
         if (i < sortedKeys.length) { // Check bounds just in case
-          dailyEarnings.remove(sortedKeys[i]);
+          hourlyEarnings.remove(sortedKeys[i]);
         }
       }
     }
   }
   // -----[ MEMORY OPTIMIZATION HELPER END ]-----
+  
+  // Helper function to update hourly earnings and prune old entries
+  void _updateHourlyEarnings(String hourKey, double earnings) {
+    hourlyEarnings[hourKey] = (hourlyEarnings[hourKey] ?? 0) + earnings;
+    
+    // Prune entries older than, say, 7 days (168 hours)
+    final cutoff = DateTime.now().subtract(const Duration(hours: 168));
+    List<String> keysToRemove = [];
+    for (String key in hourlyEarnings.keys) {
+      try {
+        // Assuming key format 'YYYY-MM-DD-HH'
+        List<String> parts = key.split('-');
+        if (parts.length == 4) {
+          int year = int.parse(parts[0]);
+          int month = int.parse(parts[1]);
+          int day = int.parse(parts[2]);
+          int hour = int.parse(parts[3]);
+          DateTime entryTime = DateTime(year, month, day, hour);
+          if (entryTime.isBefore(cutoff)) {
+            keysToRemove.add(key);
+          }
+        } else {
+          // Invalid key format, remove it
+          keysToRemove.add(key);
+        }
+      } catch (e) {
+        // Error parsing key, remove it
+        keysToRemove.add(key);
+        print("Error parsing hourly earnings key: $key, Error: $e");
+      }
+    }
+    
+    for (String key in keysToRemove) {
+      hourlyEarnings.remove(key);
+    }
+  }
 }
