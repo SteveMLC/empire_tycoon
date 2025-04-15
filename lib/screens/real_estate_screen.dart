@@ -578,99 +578,101 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
     return Container(
       padding: const EdgeInsets.all(24),
       child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // Illustration
-            Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withOpacity(0.1),
-                shape: BoxShape.circle,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Illustration
+              Container(
+                width: 120,
+                height: 120,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primary.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.real_estate_agent,
+                  size: 68,
+                  color: theme.colorScheme.primary,
+                ),
               ),
-              child: Icon(
-                Icons.real_estate_agent,
-                size: 68,
-                color: theme.colorScheme.primary,
-              ),
-            ),
-            
-            const SizedBox(height: 32),
-            
-            // Title
-            Text(
-              'Your Real Estate Portfolio',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: theme.colorScheme.primary,
-              ),
-            ),
-            
-            const SizedBox(height: 16),
-            
-            // Description
-            Container(
-              constraints: const BoxConstraints(maxWidth: 320),
-              child: Text(
-                'Invest in properties around the world to generate passive income. Select a location from the left panel to view available properties.',
+              
+              const SizedBox(height: 32),
+              
+              // Title
+              Text(
+                'Your Real Estate Portfolio',
                 style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey.shade700,
-                  height: 1.5,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-            
-            const SizedBox(height: 32),
-            
-            // Instructions
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.amber.shade50,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: Colors.amber.shade200,
-                  width: 1,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.primary,
                 ),
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.tips_and_updates,
-                    color: Colors.amber.shade800,
+              
+              const SizedBox(height: 16),
+              
+              // Description
+              Container(
+                constraints: const BoxConstraints(maxWidth: 320),
+                child: Text(
+                  'Invest in properties around the world to generate passive income. Select a location from the left panel to view available properties.',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey.shade700,
+                    height: 1.5,
                   ),
-                  const SizedBox(width: 12),
-                  Flexible(
-                    child: Text(
-                      'Tip: Properties provide a steady income stream. Select a location to get started!',
-                      style: TextStyle(
-                        color: Colors.amber.shade900,
-                        fontSize: 14,
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              
+              const SizedBox(height: 32),
+              
+              // Instructions
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.amber.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: Colors.amber.shade200,
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.tips_and_updates,
+                      color: Colors.amber.shade800,
+                    ),
+                    const SizedBox(width: 12),
+                    Flexible(
+                      child: Text(
+                        'Tip: Properties provide a steady income stream. Select a location to get started!',
+                        style: TextStyle(
+                          color: Colors.amber.shade900,
+                          fontSize: 14,
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            
-            const SizedBox(height: 32),
-            
-            // Action button
-            ElevatedButton.icon(
-              onPressed: () {},
-              icon: const Icon(Icons.arrow_back),
-              label: const Text('SELECT A LOCATION'),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                backgroundColor: theme.colorScheme.primary,
+              
+              const SizedBox(height: 32),
+              
+              // Action button
+              ElevatedButton.icon(
+                onPressed: () {},
+                icon: const Icon(Icons.arrow_back),
+                label: const Text('SELECT A LOCATION'),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  backgroundColor: theme.colorScheme.primary,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
