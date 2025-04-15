@@ -28,16 +28,29 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
   late TabController _tabController;
   Timer? _boostTimer; // Timer for boost UI updates
   Duration _boostTimeRemaining = Duration.zero; // State variable for remaining time
+  late GameState _gameState;
+  late GameService _gameService;
   
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 5, vsync: this);
-    // Start listening to GameState changes to manage the timer
+    
+    // Load dependencies
+    _gameState = Provider.of<GameState>(context, listen: false);
+    _gameService = Provider.of<GameService>(context, listen: false);
+    
+    // >> START NEW: Initialize boost timer and try showing initial achievement <<
+    _initializeBoostTimer();
+    
+    // Use WidgetsBinding to ensure the first frame is built before potentially showing a notification
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _updateBoostTimer(Provider.of<GameState>(context, listen: false));
-      Provider.of<GameState>(context, listen: false).addListener(_handleGameStateChange);
+      if (mounted) { // Check if the widget is still in the tree
+        _gameState.tryShowingNextAchievement();
+        print("🔔 Initial achievement check triggered.");
+      }
     });
+    // >> END NEW <<
   }
   
   @override
@@ -47,6 +60,14 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     // Remove listener to avoid memory leaks
     Provider.of<GameState>(context, listen: false).removeListener(_handleGameStateChange);
     super.dispose();
+  }
+
+  // FIX: Re-add missing _initializeBoostTimer method
+  void _initializeBoostTimer() {
+    // Initial check
+    _updateBoostTimer(_gameState);
+    // Add listener for future changes
+    _gameState.addListener(_handleGameStateChange);
   }
 
   // Listen to GameState changes to start/stop the timer
@@ -244,17 +265,21 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
   }
   
   Widget _buildAchievementNotifications(GameState gameState) {
-    if (gameState.recentlyCompletedAchievements.isEmpty) {
-      return const SizedBox();
+    // NEW LOGIC: Check if there is a current achievement notification to display
+    if (gameState.currentAchievementNotification == null) {
+      return const SizedBox.shrink(); // Return an empty, zero-sized box
     }
     
-    final achievement = gameState.recentlyCompletedAchievements.last;
+    // Use the current achievement from GameState
+    final achievement = gameState.currentAchievementNotification!;
+    
     return AchievementNotification(
       achievement: achievement,
       gameService: Provider.of<GameService>(context, listen: false),
+      // NEW: Use the dismiss method from GameState
       onDismiss: () {
-        gameState.recentlyCompletedAchievements.removeLast();
-        gameState.notifyListeners();
+        // No need to call setState here as GameState's notifyListeners will handle the rebuild
+        gameState.dismissCurrentAchievementNotification();
       },
     );
   }

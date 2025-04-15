@@ -79,7 +79,18 @@ class GameState with ChangeNotifier {
   
   // Achievement tracking
   late AchievementManager achievementManager;
-  List<Achievement> recentlyCompletedAchievements = [];
+  // REMOVE: List<Achievement> recentlyCompletedAchievements = []; // REMOVED: This list is being replaced by a queue system
+  
+  // NEW: Achievement Notification Queue System
+  final List<Achievement> _pendingAchievementNotifications = [];
+  Achievement? _currentAchievementNotification;
+  bool _isAchievementNotificationVisible = false;
+  
+  // Public getters for notification state
+  List<Achievement> get pendingAchievementNotifications => List.unmodifiable(_pendingAchievementNotifications);
+  Achievement? get currentAchievementNotification => _currentAchievementNotification;
+  bool get isAchievementNotificationVisible => _isAchievementNotificationVisible;
+  // END NEW: Achievement Notification Queue System
   
   // Game time tracking - CRITICAL FIX: ensure these are always initialized
   DateTime lastSaved = DateTime.now(); // When the game was last saved
@@ -1581,17 +1592,11 @@ class GameState with ChangeNotifier {
       if (isInitialized && achievementManager != null) {
         List<Achievement> newlyCompleted = achievementManager.evaluateAchievements(this);
         
-        // If any new achievements were completed, add them to recently completed list
+        // NEW: Queue newly completed achievements for display
         if (newlyCompleted.isNotEmpty) {
-          recentlyCompletedAchievements.addAll(newlyCompleted);
-          // Notify listeners immediately after adding new achievements
-          notifyListeners(); 
-          
-          // Memory Optimization: Clear the list *after* notifying listeners
-          // This ensures consumers (like UI) can react to the new achievements
-          // before the list is cleared for the next tick.
-          recentlyCompletedAchievements.clear(); 
+          queueAchievementsForDisplay(newlyCompleted);
         }
+        // END NEW
       }
       
       // Check for reincorporation unlocks
@@ -2672,7 +2677,7 @@ class GameState with ChangeNotifier {
     
     // Reset achievements
     achievementManager = AchievementManager(this);
-    recentlyCompletedAchievements = [];
+    // REMOVE: recentlyCompletedAchievements = []; // REMOVED: This list is being replaced by a queue system
     
     // Reset event system
     activeEvents = [];
@@ -4670,8 +4675,12 @@ class GameState with ChangeNotifier {
     List<Achievement> newlyCompleted = achievementManager.evaluateAchievements(this);
     if (newlyCompleted.isNotEmpty) {
       print("🏆 Achievements completed: ${newlyCompleted.map((a) => a.name).join(', ')}");
-      // Add to recently completed list for potential UI notification
-      recentlyCompletedAchievements.addAll(newlyCompleted);
+      // REMOVE: Add to recently completed list for potential UI notification
+      // REMOVE: recentlyCompletedAchievements.addAll(newlyCompleted);
+      
+      // NEW: Queue newly completed achievements for display
+      queueAchievementsForDisplay(newlyCompleted);
+      // END NEW
     }
 
     // Notify listeners
@@ -4859,3 +4868,63 @@ class GameState with ChangeNotifier {
     }
   }
 }
+
+// >> START NEW: Achievement Notification Queue Methods <<
+extension AchievementNotificationQueue on GameState {
+
+  /// Adds newly completed achievements to the pending queue if they aren't already queued or displayed.
+  void queueAchievementsForDisplay(List<Achievement> achievements) {
+    bool addedNew = false;
+    final Set<String> existingIds = {
+      ..._pendingAchievementNotifications.map((a) => a.id),
+      if (_currentAchievementNotification != null) _currentAchievementNotification!.id,
+    };
+
+    for (final achievement in achievements) {
+      if (!existingIds.contains(achievement.id)) {
+        _pendingAchievementNotifications.add(achievement);
+        existingIds.add(achievement.id); // Add locally to prevent adding duplicates from the same input list
+        addedNew = true;
+        print("📬 Queued achievement for display: ${achievement.name}");
+      } else {
+         print("ℹ️ Skipped queuing duplicate achievement: ${achievement.name}");
+      }
+    }
+
+    if (addedNew) {
+      tryShowingNextAchievement(); // Attempt to show immediately if possible
+    }
+  }
+
+  /// Checks if a notification can be shown and triggers the display of the next one if conditions are met.
+  void tryShowingNextAchievement() {
+    // Can only show if nothing is currently visible and the queue is not empty
+    if (!_isAchievementNotificationVisible && _pendingAchievementNotifications.isNotEmpty) {
+      _showNextPendingAchievement();
+    }
+  }
+
+  /// Internal method to display the next achievement from the queue.
+  void _showNextPendingAchievement() {
+    if (_pendingAchievementNotifications.isEmpty) return; // Should not happen if called via tryShowingNextAchievement
+
+    _currentAchievementNotification = _pendingAchievementNotifications.removeAt(0);
+    _isAchievementNotificationVisible = true;
+    print("🔔 Displaying achievement: ${_currentAchievementNotification!.name}");
+    notifyListeners(); // Notify UI to show the current achievement
+  }
+
+  /// Called when the currently displayed achievement notification is dismissed by the user or timer.
+  void dismissCurrentAchievementNotification() {
+    if (_currentAchievementNotification != null) {
+       print("✅ Dismissed achievement notification: ${_currentAchievementNotification!.name}");
+    }
+    _currentAchievementNotification = null;
+    _isAchievementNotificationVisible = false;
+    notifyListeners(); // Notify UI to hide the notification
+
+    // Important: Immediately try to show the next one after dismissal
+    tryShowingNextAchievement();
+  }
+}
+// >> END NEW: Achievement Notification Queue Methods <<

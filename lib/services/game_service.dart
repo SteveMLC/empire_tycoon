@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/game_state.dart';
+import '../models/achievement.dart';
 import '../utils/time_utils.dart';
 import '../utils/number_formatter.dart';
 import '../utils/sounds.dart'; // Contains both SoundManager and GameSounds classes
@@ -341,6 +342,23 @@ class GameService {
     }
     
     print("💰 Earned ${NumberFormatter.formatCurrency(offlineIncome)} while offline (${offlineDuration.inMinutes} minutes)");
+    
+    // NEW: Evaluate achievements after applying offline income
+    try {
+      print("🏆 Checking for achievements unlocked offline...");
+      List<Achievement> offlineCompleted = _gameState.achievementManager.evaluateAchievements(_gameState);
+      if (offlineCompleted.isNotEmpty) {
+        print("🏅 Found ${offlineCompleted.length} achievements completed offline: ${offlineCompleted.map((a) => a.name).join(', ')}");
+        // Use the queue method in GameState
+        _gameState.queueAchievementsForDisplay(offlineCompleted);
+      } else {
+        print("🏅 No new achievements completed offline.");
+      }
+    } catch (e) {
+      print("❌ Error evaluating offline achievements: $e");
+    }
+    // END NEW
+    
     _gameState.notifyListeners();
   }
   
