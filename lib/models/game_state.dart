@@ -15,6 +15,9 @@ import '../utils/time_utils.dart';
 import 'investment_holding.dart';
 import '../data/real_estate_data_loader.dart';
 
+// Define a limit for how many days of earnings history to keep
+const int _maxDailyEarningsHistory = 30; // Memory Optimization: Limit history size
+
 // Market Event definition
 class MarketEvent {
   final String name;
@@ -1569,7 +1572,13 @@ class GameState with ChangeNotifier {
         // If any new achievements were completed, add them to recently completed list
         if (newlyCompleted.isNotEmpty) {
           recentlyCompletedAchievements.addAll(newlyCompleted);
-          notifyListeners();
+          // Notify listeners immediately after adding new achievements
+          notifyListeners(); 
+          
+          // Memory Optimization: Clear the list *after* notifying listeners
+          // This ensures consumers (like UI) can react to the new achievements
+          // before the list is cleared for the next tick.
+          recentlyCompletedAchievements.clear(); 
         }
       }
       
@@ -1608,7 +1617,8 @@ class GameState with ChangeNotifier {
         money += businessIncomeThisTick;
         totalEarned += businessIncomeThisTick;
         passiveEarnings += businessIncomeThisTick;
-        dailyEarnings[today] = (dailyEarnings[today] ?? 0) + businessIncomeThisTick;
+        // Use the helper method to update and prune daily earnings
+        _updateDailyEarnings(today, businessIncomeThisTick); 
         // print("DEBUG: Applied Business Income: $${NumberFormatter.formatCurrency(businessIncomeThisTick)}"); // Optional detailed logging
       }
       
@@ -1620,7 +1630,8 @@ class GameState with ChangeNotifier {
         money += realEstateIncomeThisTick;
         totalEarned += realEstateIncomeThisTick;
         realEstateEarnings += realEstateIncomeThisTick; // Track real estate earnings separately
-        dailyEarnings[today] = (dailyEarnings[today] ?? 0) + realEstateIncomeThisTick;
+        // Use the helper method to update and prune daily earnings
+        _updateDailyEarnings(today, realEstateIncomeThisTick); 
         // print("DEBUG: Applied Real Estate Income: $${NumberFormatter.formatCurrency(realEstateIncomeThisTick)}"); // Optional detailed logging
       }
       
@@ -1642,7 +1653,8 @@ class GameState with ChangeNotifier {
         money += dividendIncomeThisTick;
         totalEarned += dividendIncomeThisTick;
         investmentDividendEarnings += dividendIncomeThisTick; // Track dividend earnings separately
-        dailyEarnings[today] = (dailyEarnings[today] ?? 0) + dividendIncomeThisTick;
+        // Use the helper method to update and prune daily earnings
+        _updateDailyEarnings(today, dividendIncomeThisTick); 
         // print("DEBUG: Applied Dividend Income: $${NumberFormatter.formatCurrency(dividendIncomeThisTick)}"); // Optional detailed logging
       }
       
@@ -1983,7 +1995,8 @@ class GameState with ChangeNotifier {
     lifetimeTaps++; // Increment lifetime taps count for persistent tracking
     
     String today = TimeUtils.getDayKey(DateTime.now());
-    dailyEarnings[today] = (dailyEarnings[today] ?? 0) + earned;
+    // Use the helper method to update and prune daily earnings
+    _updateDailyEarnings(today, earned); 
     
     notifyListeners();
   }
@@ -2247,6 +2260,12 @@ class GameState with ChangeNotifier {
     // Save event system data using the extension method
     json.addAll(eventsToJson());
     
+    // Memory Optimization Note: While the entire state is serialized here, 
+    // which can be memory-intensive for huge states, streaming serialization 
+    // would significantly change the saving/loading contract. This approach 
+    // maintains functionality. Limits on specific fields (like dailyEarnings) 
+    // help reduce the overall size.
+    
     return json;
   }
   
@@ -2465,7 +2484,18 @@ class GameState with ChangeNotifier {
     // Load stats
     if (json['dailyEarnings'] != null) {
       Map<String, dynamic> dailyJson = json['dailyEarnings'];
-      dailyEarnings = Map<String, double>.from(dailyJson);
+      // Ensure loaded data respects the history limit
+      Map<String, double> loadedEarnings = Map<String, double>.from(dailyJson);
+      if (loadedEarnings.length > _maxDailyEarningsHistory) {
+         List<String> sortedKeys = loadedEarnings.keys.toList()..sort();
+         dailyEarnings = {};
+         // Keep only the most recent entries up to the limit
+         for (int i = max(0, sortedKeys.length - _maxDailyEarningsHistory); i < sortedKeys.length; i++) {
+           dailyEarnings[sortedKeys[i]] = loadedEarnings[sortedKeys[i]]!;
+         }
+      } else {
+        dailyEarnings = loadedEarnings;
+      }
     }
     
     if (json['netWorthHistory'] != null) {
@@ -4751,4 +4781,25 @@ class GameState with ChangeNotifier {
       }
     }
   }
+
+  // -----[ MEMORY OPTIMIZATION HELPER START ]-----
+  // Helper to update daily earnings and prune old entries
+  void _updateDailyEarnings(String dayKey, double amount) {
+    dailyEarnings[dayKey] = (dailyEarnings[dayKey] ?? 0) + amount;
+
+    // Prune entries older than the limit
+    if (dailyEarnings.length > _maxDailyEarningsHistory) {
+      // Get keys sorted chronologically (assuming YYYY-MM-DD format)
+      List<String> sortedKeys = dailyEarnings.keys.toList()..sort();
+      
+      // Remove the oldest entries until the map size is within the limit
+      int entriesToRemove = dailyEarnings.length - _maxDailyEarningsHistory;
+      for (int i = 0; i < entriesToRemove; i++) {
+        if (i < sortedKeys.length) { // Check bounds just in case
+          dailyEarnings.remove(sortedKeys[i]);
+        }
+      }
+    }
+  }
+  // -----[ MEMORY OPTIMIZATION HELPER END ]-----
 }

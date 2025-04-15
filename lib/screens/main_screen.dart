@@ -207,10 +207,18 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
                 _buildOfflineIncomeNotification(), // Only build if data exists
               
               // Achievement notifications
-              _buildAchievementNotifications(gameState),
+              AnimatedSize(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+                child: _buildAchievementNotifications(gameState),
+              ),
               
               // Event notifications
-              _buildEventNotifications(gameState),
+              AnimatedSize(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+                child: _buildEventNotifications(gameState),
+              ),
               
               // Tab bar for navigation
               _buildTabBar(),
