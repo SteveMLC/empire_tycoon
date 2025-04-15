@@ -131,7 +131,7 @@ class AchievementManager {
       Achievement(
         id: 'big_investment',
         name: 'Stock Market Savvy',
-        description: 'Own investments worth \\\$100,000 or more',
+        description: 'Own investments worth 100,000 dollars or more',
         icon: Icons.attach_money,
         category: AchievementCategory.progress,
         rarity: AchievementRarity.rare,
@@ -215,7 +215,7 @@ class AchievementManager {
       Achievement(
         id: 'max_reincorporations',
         name: 'Corporate Dynasty',
-        description: 'Complete all 9 re-incorporations (\\\$1M to \\\$100T)',
+        description: 'Complete all 9 re-incorporations (1M to 100T dollars)',
         icon: Icons.sync_alt,
         category: AchievementCategory.progress,
         rarity: AchievementRarity.milestone,
@@ -225,7 +225,7 @@ class AchievementManager {
       Achievement(
         id: 'first_thousand',
         name: 'First Grand',
-        description: 'Earn your first \\\$1,000',
+        description: 'Earn your first 1000 dollars',
         icon: Icons.monetization_on,
         category: AchievementCategory.wealth,
         rarity: AchievementRarity.basic,
@@ -235,7 +235,7 @@ class AchievementManager {
       Achievement(
         id: 'crisis_investor',
         name: 'Crisis Investor',
-        description: 'Spend \\\$50,000 resolving events to keep your empire afloat',
+        description: 'Spend 50,000 dollars resolving events to keep your empire afloat',
         icon: Icons.attach_money,
         category: AchievementCategory.wealth,
         rarity: AchievementRarity.basic,
@@ -245,7 +245,7 @@ class AchievementManager {
       Achievement(
         id: 'first_million',
         name: 'Millionaire',
-        description: 'Reach \\\$1,000,000 in total earnings',
+        description: 'Reach 1,000,000 dollars in total earnings',
         icon: Icons.emoji_events,
         category: AchievementCategory.wealth,
         rarity: AchievementRarity.rare,
@@ -253,7 +253,7 @@ class AchievementManager {
       Achievement(
         id: 'passive_income_master',
         name: 'Passive Income Master',
-        description: 'Earn \\\$10,000 per second in passive income',
+        description: 'Earn 10,000 dollars per second in passive income',
         icon: Icons.update,
         category: AchievementCategory.wealth,
         rarity: AchievementRarity.rare,
@@ -261,7 +261,7 @@ class AchievementManager {
       Achievement(
         id: 'investment_genius',
         name: 'Investment Genius',
-        description: 'Make \\\$500,000 profit from investments',
+        description: 'Make 500,000 dollars profit from investments',
         icon: Icons.insert_chart,
         category: AchievementCategory.wealth,
         rarity: AchievementRarity.rare,
@@ -279,7 +279,7 @@ class AchievementManager {
       Achievement(
         id: 'first_billion',
         name: 'Billionaire',
-        description: 'Reach \\\$1,000,000,000 in total earnings',
+        description: 'Reach 1,000,000,000 dollars in total earnings',
         icon: Icons.diamond,
         category: AchievementCategory.wealth,
         rarity: AchievementRarity.milestone,
@@ -287,7 +287,7 @@ class AchievementManager {
       Achievement(
         id: 'trillionaire',
         name: 'Trillion-Dollar Titan',
-        description: 'Reach \\\$1,000,000,000,000 in total earnings',
+        description: 'Reach 1,000,000,000,000 dollars in total earnings',
         icon: Icons.auto_awesome,
         category: AchievementCategory.wealth,
         rarity: AchievementRarity.milestone,
@@ -295,7 +295,7 @@ class AchievementManager {
       Achievement(
         id: 'income_trifecta',
         name: 'Income Trifecta',
-        description: 'Generate \\\$10,000,000 income per second from each: Businesses, Real Estate, and Investments',
+        description: 'Generate 10,000,000 dollars income per second from each: Businesses, Real Estate, and Investments',
         icon: Icons.monetization_on_outlined,
         category: AchievementCategory.wealth,
         rarity: AchievementRarity.milestone,
@@ -305,7 +305,7 @@ class AchievementManager {
       Achievement(
         id: 'million_dollar_fixer',
         name: 'Million-Dollar Fixer',
-        description: 'Spend \\\$1,000,000 on event resolutions to prove your financial might',
+        description: 'Spend 1,000,000 dollars on event resolutions to prove your financial might',
         icon: Icons.diamond,
         category: AchievementCategory.wealth,
         rarity: AchievementRarity.milestone,
@@ -313,7 +313,7 @@ class AchievementManager {
       Achievement(
         id: 'tycoon_titan',
         name: 'Tycoon Titan',
-        description: 'Spend \\\$50,000,000 resolving events to dominate crisis management',
+        description: 'Spend 50,000,000 dollars resolving events to dominate crisis management',
         icon: Icons.auto_awesome,
         category: AchievementCategory.wealth,
         rarity: AchievementRarity.milestone,
@@ -321,7 +321,7 @@ class AchievementManager {
       Achievement(
         id: 'million_dollar_maverick',
         name: 'Million-Dollar Maverick',
-        description: 'Pay a single fee of \\\$1,000,000 to resolve an event in one bold move',
+        description: 'Pay a single fee of 1,000,000 dollars to resolve an event in one bold move',
         icon: Icons.monetization_on_outlined,
         category: AchievementCategory.wealth,
         rarity: AchievementRarity.milestone,
@@ -440,7 +440,7 @@ class AchievementManager {
       Achievement(
         id: 'renovation_spender',
         name: 'Renovation Spender',
-        description: "Spend \\\$100,000 upgrading properties to boost your empire's value.",
+        description: "Spend 100,000 dollars upgrading properties to boost your empire's value.",
         icon: Icons.payments,
         category: AchievementCategory.wealth,
         rarity: AchievementRarity.basic,
@@ -448,7 +448,7 @@ class AchievementManager {
       Achievement(
         id: 'million_dollar_upgrader',
         name: 'Million-Dollar Upgrader',
-        description: 'Spend \\\$1,000,000 on upgrades to prove your financial prowess.',
+        description: 'Spend 1,000,000 dollars on upgrades to prove your financial prowess.',
         icon: Icons.account_balance,
         category: AchievementCategory.wealth,
         rarity: AchievementRarity.basic,
@@ -456,7 +456,7 @@ class AchievementManager {
       Achievement(
         id: 'big_renovator',
         name: 'Big Renovator',
-        description: 'Spend \\\$4,000,000 upgrading properties to reshape your empire.',
+        description: 'Spend 4,000,000 dollars upgrading properties to reshape your empire.',
         icon: Icons.storefront,
         category: AchievementCategory.wealth,
         rarity: AchievementRarity.rare,
@@ -464,7 +464,7 @@ class AchievementManager {
       Achievement(
         id: 'luxury_investor',
         name: 'Luxury Investor',
-        description: 'Spend \\\$10,000,000 on upgrades for premium properties.',
+        description: 'Spend 10,000,000 dollars on upgrades for premium properties.',
         icon: Icons.villa,
         category: AchievementCategory.wealth,
         rarity: AchievementRarity.rare,
@@ -472,7 +472,7 @@ class AchievementManager {
       Achievement(
         id: 'billion_dollar_builder',
         name: 'Billion-Dollar Builder',
-        description: 'Spend \\\$1,000,000,000 upgrading properties to dominate the real estate market.',
+        description: 'Spend 1,000,000,000 dollars upgrading properties to dominate the real estate market.',
         icon: Icons.diamond,
         category: AchievementCategory.wealth,
         rarity: AchievementRarity.milestone,
@@ -1099,23 +1099,33 @@ class AchievementManager {
       newlyCompleted.add(achievements.firstWhere((a) => a.id == 'first_real_estate'));
     }
 
-    // Own properties in 5 locales
+    // ** FIX: Corrected ID from 'regional_investor' to 'global_investor' **
+    // ** FIX: Corrected condition from >= 5 to >= 3 to match achievement description **
     int localesWithProperties = gameState.realEstateLocales.where((l) => l.hasOwnedProperties()).length;
-    if (!_isCompleted('regional_investor') && localesWithProperties >= 5) {
-      completeAchievement('regional_investor');
-      newlyCompleted.add(achievements.firstWhere((a) => a.id == 'regional_investor'));
+    if (!_isCompleted('global_investor') && localesWithProperties >= 3) { 
+      completeAchievement('global_investor');
+      newlyCompleted.add(achievements.firstWhere((a) => a.id == 'global_investor')); 
     }
 
     // Own 50 properties
-    if (!_isCompleted('property_magnate') && gameState.getTotalOwnedProperties() >= 50) {
-      completeAchievement('property_magnate');
-      newlyCompleted.add(achievements.firstWhere((a) => a.id == 'property_magnate'));
+    // ** FIX: Define achievement ID 'property_magnate' if missing, or verify existence **
+    // Let's assume 'property_magnate' exists for now based on the pattern.
+    // We should verify this ID is actually defined in _initializeAchievements.
+    // Checking init... ID 'real_estate_tycoon' seems to be the one for owning 20 properties.
+    // There isn't one for 50 properties. Let's adjust this check to use 'real_estate_tycoon' (20 properties).
+    if (!_isCompleted('real_estate_tycoon') && gameState.getTotalOwnedProperties() >= 20) {
+      completeAchievement('real_estate_tycoon');
+      newlyCompleted.add(achievements.firstWhere((a) => a.id == 'real_estate_tycoon'));
     }
 
     // Own properties in all 20 locales
-    if (!_isCompleted('global_landlord') && localesWithProperties >= 20) { // Assuming 20 locales total
-      completeAchievement('global_landlord');
-      newlyCompleted.add(achievements.firstWhere((a) => a.id == 'global_landlord'));
+    // ** FIX: Define achievement ID 'global_landlord' if missing, or verify existence **
+    // Checking init... ID 'world_domination' is for owning properties in every region.
+    // Let's use that ID and check against total locales.
+    int totalLocales = gameState.realEstateLocales.length;
+    if (!_isCompleted('world_domination') && localesWithProperties >= totalLocales && totalLocales > 0) { 
+      completeAchievement('world_domination');
+      newlyCompleted.add(achievements.firstWhere((a) => a.id == 'world_domination'));
     }
 
     // Own all properties

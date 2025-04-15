@@ -407,12 +407,10 @@ class _StatsScreenState extends State<StatsScreen> {
     double businessValue = gameState.businesses.fold(0.0, (sum, business) => sum + business.getCurrentValue());
     double investmentValue = gameState.investments.fold(0.0, (sum, investment) => sum + investment.getCurrentValue());
     
-    // Calculate real estate value
+    // Calculate real estate value using the corrected locale method
     double realEstateValue = 0.0;
     for (var locale in gameState.realEstateLocales) {
-      for (var property in locale.properties) {
-        realEstateValue += property.purchasePrice * property.owned;
-      }
+      realEstateValue += locale.getTotalValue(); // Use corrected method
     }
     
     double totalAssets = cash + businessValue + investmentValue + realEstateValue;

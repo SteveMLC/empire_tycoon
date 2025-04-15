@@ -75,6 +75,11 @@ class RealEstateProperty {
     return value;
   }
 
+  // NEW: Calculate the total value for ALL owned units of this property, including upgrades
+  double get getCurrentTotalValue {
+    return totalValue * owned;
+  }
+
   RealEstateProperty({
     required this.id,
     required this.name,
@@ -167,13 +172,14 @@ class RealEstateLocale {
     required this.properties,
   });
 
-  // Get the total value of owned properties in this locale
+  // Get the total value of owned properties in this locale (NOW CORRECTED)
   double getTotalValue() {
     double total = 0.0;
     if (properties.isEmpty) return total;
     
     for (var property in properties) {
-      total += property.purchasePrice * property.owned;
+      // Use the new getter that includes purchase price, upgrades, and owned count
+      total += property.getCurrentTotalValue;
     }
     return total;
   }

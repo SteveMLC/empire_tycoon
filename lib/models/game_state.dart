@@ -267,15 +267,15 @@ class GameState with ChangeNotifier {
   }
   
   // Initialize with default businesses based on the 10-level upgrade system
-  void _initializeDefaultBusinesses() {
+    void _initializeDefaultBusinesses() {
     businesses = [
-      // 1. Mobile Car Wash
+      // 1. Mobile Car Wash (-15% additional reduction)
       Business(
         id: 'mobile_car_wash',
         name: 'Mobile Car Wash',
         description: 'A van-based car wash service with direct customer service',
         basePrice: 250.0,
-        baseIncome: 0.51, // 15% reduction from 0.6
+        baseIncome: 0.43, // 15% reduction from 0.6 -> Further 15% reduction applied
         level: 0,
         incomeInterval: 1, // Income per second
         unlocked: true,
@@ -284,73 +284,73 @@ class GameState with ChangeNotifier {
           // Level 1
           BusinessLevel(
             cost: 250.0,
-            incomePerSecond: 0.51, // 15% reduction from 0.6
+            incomePerSecond: 0.43, // 15% reduction from 0.6 -> Further 15% reduction applied
             description: 'Better van and supplies',
           ),
           // Level 2
           BusinessLevel(
             cost: 500.0,
-            incomePerSecond: 1.28, // 15% reduction from 1.5
+            incomePerSecond: 1.09, // 15% reduction from 1.5 -> Further 15% reduction applied
             description: 'Pressure washer',
           ),
           // Level 3
           BusinessLevel(
             cost: 1000.0,
-            incomePerSecond: 3.06, // 15% reduction from 3.6
+            incomePerSecond: 2.60, // 15% reduction from 3.6 -> Further 15% reduction applied
             description: 'Extra staff',
           ),
           // Level 4
           BusinessLevel(
             cost: 2000.0,
-            incomePerSecond: 7.65, // 15% reduction from 9.0
+            incomePerSecond: 6.50, // 15% reduction from 9.0 -> Further 15% reduction applied
             description: 'Second van',
           ),
           // Level 5
           BusinessLevel(
             cost: 4000.0,
-            incomePerSecond: 20.4, // 15% reduction from 24.0
+            incomePerSecond: 17.34, // 15% reduction from 24.0 -> Further 15% reduction applied
             description: 'Eco-friendly soap',
           ),
           // Level 6
           BusinessLevel(
             cost: 8000.0,
-            incomePerSecond: 51.0, // 15% reduction from 60.0
+            incomePerSecond: 43.35, // 15% reduction from 60.0 -> Further 15% reduction applied
             description: 'Mobile app rollout',
           ),
           // Level 7
           BusinessLevel(
             cost: 16000.0,
-            incomePerSecond: 127.5, // 15% reduction from 150.0
+            incomePerSecond: 108.38, // 15% reduction from 150.0 -> Further 15% reduction applied
             description: 'Franchise model',
           ),
           // Level 8
           BusinessLevel(
             cost: 32000.0,
-            incomePerSecond: 306.0, // 15% reduction from 360.0
+            incomePerSecond: 260.1, // 15% reduction from 360.0 -> Further 15% reduction applied
             description: 'Fleet expansion',
           ),
           // Level 9
           BusinessLevel(
             cost: 64000.0,
-            incomePerSecond: 765.0, // 15% reduction from 900.0
+            incomePerSecond: 650.25, // 15% reduction from 900.0 -> Further 15% reduction applied
             description: 'VIP detailing',
           ),
           // Level 10
           BusinessLevel(
             cost: 128000.0,
-            incomePerSecond: 1912.5, // 15% reduction from 2250.0
+            incomePerSecond: 1625.63, // 15% reduction from 2250.0 -> Further 15% reduction applied
             description: 'Citywide coverage',
           ),
         ],
       ),
-      
-      // 2. Pop-Up Food Stall
+
+      // 2. Pop-Up Food Stall (-15% additional reduction)
       Business(
         id: 'food_stall',
         name: 'Pop-Up Food Stall',
         description: 'A street stall selling food like burgers or tacos',
         basePrice: 1000.0,
-        baseIncome: 2.55, // 15% reduction from 3.0
+        baseIncome: 2.17, // 15% reduction from 3.0 -> Further 15% reduction applied
         level: 0,
         incomeInterval: 1,
         unlocked: true,
@@ -359,73 +359,73 @@ class GameState with ChangeNotifier {
           // Level 1
           BusinessLevel(
             cost: 1000.0,
-            incomePerSecond: 2.55, // 15% reduction from 3.0
+            incomePerSecond: 2.17, // 15% reduction from 3.0 -> Further 15% reduction applied
             description: 'Basic stall',
           ),
           // Level 2
           BusinessLevel(
             cost: 2000.0,
-            incomePerSecond: 6.12, // 15% reduction from 7.2
+            incomePerSecond: 5.20, // 15% reduction from 7.2 -> Further 15% reduction applied
             description: 'Better grill',
           ),
           // Level 3
           BusinessLevel(
             cost: 4000.0,
-            incomePerSecond: 15.3, // 15% reduction from 18.0
+            incomePerSecond: 13.01, // 15% reduction from 18.0 -> Further 15% reduction applied
             description: 'Menu expansion',
           ),
           // Level 4
           BusinessLevel(
             cost: 8000.0,
-            incomePerSecond: 38.25, // 15% reduction from 45.0
+            incomePerSecond: 32.51, // 15% reduction from 45.0 -> Further 15% reduction applied
             description: 'More staff',
           ),
           // Level 5
           BusinessLevel(
             cost: 16000.0,
-            incomePerSecond: 96.9, // 15% reduction from 114.0
+            incomePerSecond: 82.37, // 15% reduction from 114.0 -> Further 15% reduction applied
             description: 'Branded tent',
           ),
           // Level 6
           BusinessLevel(
             cost: 32000.0,
-            incomePerSecond: 242.25, // 15% reduction from 285.0
+            incomePerSecond: 205.91, // 15% reduction from 285.0 -> Further 15% reduction applied
             description: 'Weekend markets',
           ),
           // Level 7
           BusinessLevel(
             cost: 64000.0,
-            incomePerSecond: 612.0, // 15% reduction from 720.0
+            incomePerSecond: 520.2, // 15% reduction from 720.0 -> Further 15% reduction applied
             description: 'Food truck expansion',
           ),
           // Level 8
           BusinessLevel(
             cost: 128000.0,
-            incomePerSecond: 1530.0, // 15% reduction from 1800.0
+            incomePerSecond: 1300.5, // 15% reduction from 1800.0 -> Further 15% reduction applied
             description: 'Multi-city stalls',
           ),
           // Level 9
           BusinessLevel(
             cost: 256000.0,
-            incomePerSecond: 3825.0, // 15% reduction from 4500.0
+            incomePerSecond: 3251.25, // 15% reduction from 4500.0 -> Further 15% reduction applied
             description: 'Catering gigs',
           ),
           // Level 10
           BusinessLevel(
             cost: 512000.0,
-            incomePerSecond: 9562.5, // 15% reduction from 11250.0
+            incomePerSecond: 8128.13, // 15% reduction from 11250.0 -> Further 15% reduction applied
             description: 'Chain operation',
           ),
         ],
       ),
-      
-      // 3. Boutique Coffee Roaster
+
+      // 3. Boutique Coffee Roaster (-15% additional reduction)
       Business(
         id: 'coffee_roaster',
         name: 'Boutique Coffee Roaster',
         description: 'A small-batch coffee roasting and retail business',
         basePrice: 5000.0,
-        baseIncome: 10.2, // 15% reduction from 12.0
+        baseIncome: 8.67, // 15% reduction from 12.0 -> Further 15% reduction applied
         level: 0,
         incomeInterval: 1,
         unlocked: true,
@@ -434,73 +434,73 @@ class GameState with ChangeNotifier {
           // Level 1
           BusinessLevel(
             cost: 5000.0,
-            incomePerSecond: 10.2, // 15% reduction from 12.0
+            incomePerSecond: 8.67, // 15% reduction from 12.0 -> Further 15% reduction applied
             description: 'Home roaster offering',
           ),
           // Level 2
           BusinessLevel(
             cost: 10000.0,
-            incomePerSecond: 25.5, // 15% reduction from 30.0
+            incomePerSecond: 21.68, // 15% reduction from 30.0 -> Further 15% reduction applied
             description: 'Premium beans',
           ),
           // Level 3
           BusinessLevel(
             cost: 20000.0,
-            incomePerSecond: 63.75, // 15% reduction from 75.0
+            incomePerSecond: 54.19, // 15% reduction from 75.0 -> Further 15% reduction applied
             description: 'Cafe counter',
           ),
           // Level 4
           BusinessLevel(
             cost: 40000.0,
-            incomePerSecond: 153.0, // 15% reduction from 180.0
+            incomePerSecond: 130.05, // 15% reduction from 180.0 -> Further 15% reduction applied
             description: 'Wholesale deals',
           ),
           // Level 5
           BusinessLevel(
             cost: 80000.0,
-            incomePerSecond: 382.5, // 15% reduction from 450.0
+            incomePerSecond: 325.13, // 15% reduction from 450.0 -> Further 15% reduction applied
             description: 'Efficient Roasting machines',
           ),
           // Level 6
           BusinessLevel(
             cost: 160000.0,
-            incomePerSecond: 956.25, // 15% reduction from 1125.0
+            incomePerSecond: 812.81, // 15% reduction from 1125.0 -> Further 15% reduction applied
             description: 'Local chain',
           ),
           // Level 7
           BusinessLevel(
             cost: 320000.0,
-            incomePerSecond: 2397.0, // 15% reduction from 2820.0
+            incomePerSecond: 2037.45, // 15% reduction from 2820.0 -> Further 15% reduction applied
             description: 'Online store launch',
           ),
           // Level 8
           BusinessLevel(
             cost: 640000.0,
-            incomePerSecond: 5992.5, // 15% reduction from 7050.0
+            incomePerSecond: 5093.63, // 15% reduction from 7050.0 -> Further 15% reduction applied
             description: 'Brand licensing',
           ),
           // Level 9
           BusinessLevel(
             cost: 1280000.0,
-            incomePerSecond: 14981.25, // 15% reduction from 17625.0
+            incomePerSecond: 12734.06, // 15% reduction from 17625.0 -> Further 15% reduction applied
             description: 'Export market',
           ),
           // Level 10
           BusinessLevel(
             cost: 2560000.0,
-            incomePerSecond: 37485.0, // 15% reduction from 44100.0
+            incomePerSecond: 31862.25, // 15% reduction from 44100.0 -> Further 15% reduction applied
             description: 'Global supplier',
           ),
         ],
       ),
-      
-      // 4. Fitness Studio
+
+      // 4. Fitness Studio (-20% additional reduction)
       Business(
         id: 'fitness_studio',
         name: 'Fitness Studio',
         description: 'A gym offering classes and personal training',
         basePrice: 20000.0,
-        baseIncome: 45.0, // 25% reduction from 60.0
+        baseIncome: 36.0, // 25% reduction from 60.0 -> Further 20% reduction applied
         level: 0,
         incomeInterval: 1,
         unlocked: false,
@@ -509,73 +509,73 @@ class GameState with ChangeNotifier {
           // Level 1
           BusinessLevel(
             cost: 20000.0,
-            incomePerSecond: 45.0, // 25% reduction from 60.0
+            incomePerSecond: 36.0, // 25% reduction from 60.0 -> Further 20% reduction applied
             description: 'Small space upgrade',
           ),
           // Level 2
           BusinessLevel(
             cost: 40000.0,
-            incomePerSecond: 112.5, // 25% reduction from 150.0
+            incomePerSecond: 90.0, // 25% reduction from 150.0 -> Further 20% reduction applied
             description: 'New equipment',
           ),
           // Level 3
           BusinessLevel(
             cost: 80000.0,
-            incomePerSecond: 281.25, // 25% reduction from 375.0
+            incomePerSecond: 225.0, // 25% reduction from 375.0 -> Further 20% reduction applied
             description: 'Group classes',
           ),
           // Level 4
           BusinessLevel(
             cost: 160000.0,
-            incomePerSecond: 675.0, // 25% reduction from 900.0
+            incomePerSecond: 540.0, // 25% reduction from 900.0 -> Further 20% reduction applied
             description: 'Hire more trainers',
           ),
           // Level 5
           BusinessLevel(
             cost: 320000.0,
-            incomePerSecond: 1687.5, // 25% reduction from 2250.0
+            incomePerSecond: 1350.0, // 25% reduction from 2250.0 -> Further 20% reduction applied
             description: 'Acquire expanded space',
           ),
           // Level 6
           BusinessLevel(
             cost: 640000.0,
-            incomePerSecond: 4218.75, // 25% reduction from 5625.0
+            incomePerSecond: 3375.0, // 25% reduction from 5625.0 -> Further 20% reduction applied
             description: 'App membership',
           ),
           // Level 7
           BusinessLevel(
             cost: 1280000.0,
-            incomePerSecond: 10575.0, // 25% reduction from 14100.0
+            incomePerSecond: 8460.0, // 25% reduction from 14100.0 -> Further 20% reduction applied
             description: 'Second location',
           ),
           // Level 8
           BusinessLevel(
             cost: 2560000.0,
-            incomePerSecond: 26437.5, // 25% reduction from 35250.0
+            incomePerSecond: 21150.0, // 25% reduction from 35250.0 -> Further 20% reduction applied
             description: 'Franchise rights',
           ),
           // Level 9
           BusinessLevel(
             cost: 5120000.0,
-            incomePerSecond: 66150.0, // 25% reduction from 88200.0
+            incomePerSecond: 52920.0, // 25% reduction from 88200.0 -> Further 20% reduction applied
             description: 'Influencer endorsements',
           ),
           // Level 10
           BusinessLevel(
             cost: 10240000.0,
-            incomePerSecond: 165375.0, // 25% reduction from 220500.0
+            incomePerSecond: 132300.0, // 25% reduction from 220500.0 -> Further 20% reduction applied
             description: 'National chain',
           ),
         ],
       ),
-      
-      // 5. E-Commerce Store
+
+      // 5. E-Commerce Store (-20% additional reduction)
       Business(
         id: 'ecommerce_store',
         name: 'E-Commerce Store',
         description: 'An online shop selling niche products like gadgets or apparel',
         basePrice: 100000.0,
-        baseIncome: 300.0,
+        baseIncome: 240.0, // Further 20% reduction applied
         level: 0,
         incomeInterval: 1,
         unlocked: false,
@@ -584,73 +584,73 @@ class GameState with ChangeNotifier {
           // Level 1
           BusinessLevel(
             cost: 100000.0,
-            incomePerSecond: 300.0,
+            incomePerSecond: 240.0, // Further 20% reduction applied
             description: 'Basic website',
           ),
           // Level 2
           BusinessLevel(
             cost: 200000.0,
-            incomePerSecond: 750.0,
+            incomePerSecond: 600.0, // Further 20% reduction applied
             description: 'SEO boost',
           ),
           // Level 3
           BusinessLevel(
             cost: 400000.0,
-            incomePerSecond: 1875.0,
+            incomePerSecond: 1500.0, // Further 20% reduction applied
             description: 'Expanded inventory offering',
           ),
           // Level 4
           BusinessLevel(
             cost: 800000.0,
-            incomePerSecond: 4680.0,
+            incomePerSecond: 3744.0, // Further 20% reduction applied
             description: 'Faster shipping processes',
           ),
           // Level 5
           BusinessLevel(
             cost: 1600000.0,
-            incomePerSecond: 11700.0,
+            incomePerSecond: 9360.0, // Further 20% reduction applied
             description: 'Ad campaigns',
           ),
           // Level 6
           BusinessLevel(
             cost: 3200000.0,
-            incomePerSecond: 29250.0,
+            incomePerSecond: 23400.0, // Further 20% reduction applied
             description: 'Mobile app',
           ),
           // Level 7
           BusinessLevel(
             cost: 6400000.0,
-            incomePerSecond: 73200.0,
+            incomePerSecond: 58560.0, // Further 20% reduction applied
             description: 'Warehouse expansion',
           ),
           // Level 8
           BusinessLevel(
             cost: 12800000.0,
-            incomePerSecond: 183000.0,
+            incomePerSecond: 146400.0, // Further 20% reduction applied
             description: 'Multi-brand',
           ),
           // Level 9
           BusinessLevel(
             cost: 25600000.0,
-            incomePerSecond: 457500.0,
+            incomePerSecond: 366000.0, // Further 20% reduction applied
             description: 'Global reach',
           ),
           // Level 10
           BusinessLevel(
             cost: 51200000.0,
-            incomePerSecond: 1140000.0,
+            incomePerSecond: 912000.0, // Further 20% reduction applied
             description: 'Market leader',
           ),
         ],
       ),
-      
-      // 6. Craft Brewery
+
+      // 6. Craft Brewery (-20% additional reduction)
       Business(
         id: 'craft_brewery',
         name: 'Craft Brewery',
         description: 'A brewery producing artisanal beers for local and regional sale',
         basePrice: 500000.0,
-        baseIncome: 900.0, // 25% reduction from 1200.0
+        baseIncome: 720.0, // 25% reduction from 1200.0 -> Further 20% reduction applied
         level: 0,
         incomeInterval: 1,
         unlocked: false,
@@ -659,73 +659,73 @@ class GameState with ChangeNotifier {
           // Level 1
           BusinessLevel(
             cost: 500000.0,
-            incomePerSecond: 900.0, // 25% reduction from 1200.0
+            incomePerSecond: 720.0, // 25% reduction from 1200.0 -> Further 20% reduction applied
             description: 'Small batch production',
           ),
           // Level 2
           BusinessLevel(
             cost: 1000000.0,
-            incomePerSecond: 2250.0, // 25% reduction from 3000.0
+            incomePerSecond: 1800.0, // 25% reduction from 3000.0 -> Further 20% reduction applied
             description: 'Tasting room at brewery',
           ),
           // Level 3
           BusinessLevel(
             cost: 2000000.0,
-            incomePerSecond: 5625.0, // 25% reduction from 7500.0
+            incomePerSecond: 4500.0, // 25% reduction from 7500.0 -> Further 20% reduction applied
             description: 'New flavors',
           ),
           // Level 4
           BusinessLevel(
             cost: 4000000.0,
-            incomePerSecond: 14062.5, // 25% reduction from 18750.0
+            incomePerSecond: 11250.0, // 25% reduction from 18750.0 -> Further 20% reduction applied
             description: 'Bigger tanks',
           ),
           // Level 5
           BusinessLevel(
             cost: 8000000.0,
-            incomePerSecond: 35156.25, // 25% reduction from 46875.0
+            incomePerSecond: 28125.0, // 25% reduction from 46875.0 -> Further 20% reduction applied
             description: 'Distribution agreements',
           ),
           // Level 6
           BusinessLevel(
             cost: 16000000.0,
-            incomePerSecond: 87750.0, // 25% reduction from 117000.0
+            incomePerSecond: 70200.0, // 25% reduction from 117000.0 -> Further 20% reduction applied
             description: 'Pub chain',
           ),
           // Level 7
           BusinessLevel(
             cost: 32000000.0,
-            incomePerSecond: 219375.0, // 25% reduction from 292500.0
+            incomePerSecond: 175500.0, // 25% reduction from 292500.0 -> Further 20% reduction applied
             description: 'Canning line',
           ),
           // Level 8
           BusinessLevel(
             cost: 64000000.0,
-            incomePerSecond: 549000.0, // 25% reduction from 732000.0
+            incomePerSecond: 439200.0, // 25% reduction from 732000.0 -> Further 20% reduction applied
             description: 'National sales team',
           ),
           // Level 9
           BusinessLevel(
             cost: 128000000.0,
-            incomePerSecond: 1372500.0, // 25% reduction from 1830000.0
+            incomePerSecond: 1098000.0, // 25% reduction from 1830000.0 -> Further 20% reduction applied
             description: 'Export deals',
           ),
           // Level 10
           BusinessLevel(
             cost: 256000000.0,
-            incomePerSecond: 3429000.0, // 25% reduction from 4572000.0
+            incomePerSecond: 2743200.0, // 25% reduction from 4572000.0 -> Further 20% reduction applied
             description: 'Industry giant',
           ),
         ],
       ),
-      
-      // 7. Boutique Hotel
+
+      // 7. Boutique Hotel (-25% additional reduction)
       Business(
         id: 'boutique_hotel',
         name: 'Boutique Hotel',
         description: 'A stylish hotel catering to travelers and locals',
         basePrice: 2000000.0,
-        baseIncome: 4500.0, // 25% reduction from 6000.0
+        baseIncome: 3375.0, // 25% reduction from 6000.0 -> Further 25% reduction applied
         level: 0,
         incomeInterval: 1,
         unlocked: false,
@@ -734,73 +734,73 @@ class GameState with ChangeNotifier {
           // Level 1
           BusinessLevel(
             cost: 2000000.0,
-            incomePerSecond: 4500.0, // 25% reduction from 6000.0
+            incomePerSecond: 3375.0, // 25% reduction from 6000.0 -> Further 25% reduction applied
             description: 'Small property',
           ),
           // Level 2
           BusinessLevel(
             cost: 4000000.0,
-            incomePerSecond: 11250.0, // 25% reduction from 15000.0
+            incomePerSecond: 8437.5, // 25% reduction from 15000.0 -> Further 25% reduction applied
             description: 'More rooms',
           ),
           // Level 3
           BusinessLevel(
             cost: 8000000.0,
-            incomePerSecond: 28125.0, // 25% reduction from 37500.0
+            incomePerSecond: 21093.75, // 25% reduction from 37500.0 -> Further 25% reduction applied
             description: 'Restaurant opening',
           ),
           // Level 4
           BusinessLevel(
             cost: 16000000.0,
-            incomePerSecond: 70312.5, // 25% reduction from 93750.0
+            incomePerSecond: 52734.38, // 25% reduction from 93750.0 -> Further 25% reduction applied
             description: 'Spa add-on',
           ),
           // Level 5
           BusinessLevel(
             cost: 32000000.0,
-            incomePerSecond: 175781.25, // 25% reduction from 234375.0
+            incomePerSecond: 131835.94, // 25% reduction from 234375.0 -> Further 25% reduction applied
             description: 'Luxury suites',
           ),
           // Level 6
           BusinessLevel(
             cost: 64000000.0,
-            incomePerSecond: 439200.0, // 25% reduction from 585600.0
+            incomePerSecond: 329400.0, // 25% reduction from 585600.0 -> Further 25% reduction applied
             description: 'Event and convention space',
           ),
           // Level 7
           BusinessLevel(
             cost: 128000000.0,
-            incomePerSecond: 1098000.0, // 25% reduction from 1464000.0
+            incomePerSecond: 823500.0, // 25% reduction from 1464000.0 -> Further 25% reduction applied
             description: 'Second location',
           ),
           // Level 8
           BusinessLevel(
             cost: 256000000.0,
-            incomePerSecond: 2745000.0, // 25% reduction from 3660000.0
+            incomePerSecond: 2058750.0, // 25% reduction from 3660000.0 -> Further 25% reduction applied
             description: 'Chain branding',
           ),
           // Level 9
           BusinessLevel(
             cost: 512000000.0,
-            incomePerSecond: 6862500.0, // 25% reduction from 9150000.0
+            incomePerSecond: 5146875.0, // 25% reduction from 9150000.0 -> Further 25% reduction applied
             description: 'Global presence',
           ),
           // Level 10
           BusinessLevel(
             cost: 1000000000.0,
-            incomePerSecond: 17145000.0, // 25% reduction from 22860000.0
+            incomePerSecond: 12858750.0, // 25% reduction from 22860000.0 -> Further 25% reduction applied
             description: 'Luxury empire',
           ),
         ],
       ),
-      
-      // 8. Film Production Studio
+
+      // 8. Film Production Studio (-25% additional reduction)
       Business(
         id: 'film_studio',
         name: 'Film Production Studio',
         description: 'A studio making indie films and streaming content',
         basePrice: 10000000.0,
-        baseIncome: 22500.0, // 25% reduction from 30000.0
+        baseIncome: 16875.0, // 25% reduction from 30000.0 -> Further 25% reduction applied
         level: 0,
         incomeInterval: 1,
         unlocked: false,
@@ -809,73 +809,73 @@ class GameState with ChangeNotifier {
           // Level 1
           BusinessLevel(
             cost: 10000000.0,
-            incomePerSecond: 22500.0, // 25% reduction from 30000.0
+            incomePerSecond: 16875.0, // 25% reduction from 30000.0 -> Further 25% reduction applied
             description: 'Small crew',
           ),
           // Level 2
           BusinessLevel(
             cost: 20000000.0,
-            incomePerSecond: 56250.0, // 25% reduction from 75000.0
+            incomePerSecond: 42187.5, // 25% reduction from 75000.0 -> Further 25% reduction applied
             description: 'Better film and studio gear',
           ),
           // Level 3
           BusinessLevel(
             cost: 40000000.0,
-            incomePerSecond: 140625.0, // 25% reduction from 187500.0
+            incomePerSecond: 105468.75, // 25% reduction from 187500.0 -> Further 25% reduction applied
             description: 'Bigger castings',
           ),
           // Level 4
           BusinessLevel(
             cost: 80000000.0,
-            incomePerSecond: 351562.5, // 25% reduction from 468750.0
+            incomePerSecond: 263671.88, // 25% reduction from 468750.0 -> Further 25% reduction applied
             description: 'Studio lot acquired',
           ),
           // Level 5
           BusinessLevel(
             cost: 160000000.0,
-            incomePerSecond: 877500.0, // 25% reduction from 1170000.0
+            incomePerSecond: 658125.0, // 25% reduction from 1170000.0 -> Further 25% reduction applied
             description: 'Streaming deal with major brand',
           ),
           // Level 6
           BusinessLevel(
             cost: 320000000.0,
-            incomePerSecond: 2196000.0, // 25% reduction from 2928000.0
+            incomePerSecond: 1647000.0, // 25% reduction from 2928000.0 -> Further 25% reduction applied
             description: 'Blockbuster releases',
           ),
           // Level 7
           BusinessLevel(
             cost: 640000000.0,
-            incomePerSecond: 5490000.0, // 25% reduction from 7320000.0
+            incomePerSecond: 4117500.0, // 25% reduction from 7320000.0 -> Further 25% reduction applied
             description: 'Franchise IP',
           ),
           // Level 8
           BusinessLevel(
             cost: 1280000000.0,
-            incomePerSecond: 13725000.0, // 25% reduction from 18300000.0
+            incomePerSecond: 10293750.0, // 25% reduction from 18300000.0 -> Further 25% reduction applied
             description: 'Global releases',
           ),
           // Level 9
           BusinessLevel(
             cost: 2560000000.0,
-            incomePerSecond: 34312500.0, // 25% reduction from 45750000.0
+            incomePerSecond: 25734375.0, // 25% reduction from 45750000.0 -> Further 25% reduction applied
             description: 'Awards buzz',
           ),
           // Level 10
           BusinessLevel(
             cost: 5120000000.0,
-            incomePerSecond: 85500000.0, // 25% reduction from 114000000.0
+            incomePerSecond: 64125000.0, // 25% reduction from 114000000.0 -> Further 25% reduction applied
             description: 'Media titan',
           ),
         ],
       ),
-      
-      // 9. Logistics Company
+
+      // 9. Logistics Company (-25% additional reduction)
       Business(
         id: 'logistics_company',
         name: 'Logistics Company',
         description: 'A freight and delivery service for businesses',
         basePrice: 50000000.0,
-        baseIncome: 112500.0, // 25% reduction from 150000.0
+        baseIncome: 84375.0, // 25% reduction from 150000.0 -> Further 25% reduction applied
         level: 0,
         incomeInterval: 1,
         unlocked: false,
@@ -884,73 +884,73 @@ class GameState with ChangeNotifier {
           // Level 1
           BusinessLevel(
             cost: 50000000.0,
-            incomePerSecond: 112500.0, // 25% reduction from 150000.0
+            incomePerSecond: 84375.0, // 25% reduction from 150000.0 -> Further 25% reduction applied
             description: 'Additional trucks',
           ),
           // Level 2
           BusinessLevel(
             cost: 100000000.0,
-            incomePerSecond: 281250.0, // 25% reduction from 375000.0
+            incomePerSecond: 210937.5, // 25% reduction from 375000.0 -> Further 25% reduction applied
             description: 'Strategic route expansion',
           ),
           // Level 3
           BusinessLevel(
             cost: 200000000.0,
-            incomePerSecond: 702000.0, // 25% reduction from 936000.0
+            incomePerSecond: 526500.0, // 25% reduction from 936000.0 -> Further 25% reduction applied
             description: 'Multiple warehouses acquired',
           ),
           // Level 4
           BusinessLevel(
             cost: 400000000.0,
-            incomePerSecond: 1755000.0, // 25% reduction from 2340000.0
+            incomePerSecond: 1316250.0, // 25% reduction from 2340000.0 -> Further 25% reduction applied
             description: 'Fleet upgrade with high tech truck and trailers',
           ),
           // Level 5
           BusinessLevel(
             cost: 800000000.0,
-            incomePerSecond: 4387500.0, // 25% reduction from 5850000.0
+            incomePerSecond: 3290625.0, // 25% reduction from 5850000.0 -> Further 25% reduction applied
             description: 'Air shipping',
           ),
           // Level 6
           BusinessLevel(
             cost: 1600000000.0,
-            incomePerSecond: 10980000.0, // 25% reduction from 14640000.0
+            incomePerSecond: 8235000.0, // 25% reduction from 14640000.0 -> Further 25% reduction applied
             description: 'Automation with robotics',
           ),
           // Level 7
           BusinessLevel(
             cost: 3200000000.0,
-            incomePerSecond: 27450000.0, // 25% reduction from 36600000.0
+            incomePerSecond: 20587500.0, // 25% reduction from 36600000.0 -> Further 25% reduction applied
             description: 'Regional hub expansion',
           ),
           // Level 8
           BusinessLevel(
             cost: 6400000000.0,
-            incomePerSecond: 68625000.0, // 25% reduction from 91500000.0
+            incomePerSecond: 51468750.0, // 25% reduction from 91500000.0 -> Further 25% reduction applied
             description: 'National scale',
           ),
           // Level 9
           BusinessLevel(
             cost: 12800000000.0,
-            incomePerSecond: 171450000.0, // 25% reduction from 228600000.0
+            incomePerSecond: 128587500.0, // 25% reduction from 22860000.0 -> Further 25% reduction applied
             description: 'Global network with tanker shipping',
           ),
           // Level 10
           BusinessLevel(
             cost: 25600000000.0,
-            incomePerSecond: 428400000.0, // 25% reduction from 571200000.0
+            incomePerSecond: 321300000.0, // 25% reduction from 571200000.0 -> Further 25% reduction applied
             description: 'Industry leader',
           ),
         ],
       ),
-      
-      // 10. Luxury Real Estate Developer
+
+      // 10. Luxury Real Estate Developer (-25% additional reduction)
       Business(
         id: 'real_estate_developer',
         name: 'Luxury Real Estate Developer',
         description: 'Builds and sells high-end homes and condos',
         basePrice: 250000000.0,
-        baseIncome: 450000.0, // 25% reduction from 600000.0
+        baseIncome: 337500.0, // 25% reduction from 600000.0 -> Further 25% reduction applied
         level: 0,
         incomeInterval: 1,
         unlocked: false,
@@ -959,61 +959,61 @@ class GameState with ChangeNotifier {
           // Level 1
           BusinessLevel(
             cost: 250000000.0,
-            incomePerSecond: 450000.0, // 25% reduction from 600000.0
+            incomePerSecond: 337500.0, // 25% reduction from 600000.0 -> Further 25% reduction applied
             description: 'Single high end project',
           ),
           // Level 2
           BusinessLevel(
             cost: 500000000.0,
-            incomePerSecond: 1125000.0, // 25% reduction from 1500000.0
+            incomePerSecond: 843750.0, // 25% reduction from 1500000.0 -> Further 25% reduction applied
             description: 'Multiple gated community projects',
           ),
           // Level 3
           BusinessLevel(
             cost: 1000000000.0,
-            incomePerSecond: 2812500.0, // 25% reduction from 3750000.0
+            incomePerSecond: 2109375.0, // 25% reduction from 3750000.0 -> Further 25% reduction applied
             description: 'Luxury towers',
           ),
           // Level 4
           BusinessLevel(
             cost: 2000000000.0,
-            incomePerSecond: 7020000.0, // 25% reduction from 9360000.0
+            incomePerSecond: 5265000.0, // 25% reduction from 9360000.0 -> Further 25% reduction applied
             description: 'Beachfront high rises',
           ),
           // Level 5
           BusinessLevel(
             cost: 4000000000.0,
-            incomePerSecond: 17550000.0, // 25% reduction from 23400000.0
+            incomePerSecond: 13162500.0, // 25% reduction from 23400000.0 -> Further 25% reduction applied
             description: 'Smart homes for ultra rich',
           ),
           // Level 6
           BusinessLevel(
             cost: 8000000000.0,
-            incomePerSecond: 43875000.0, // 25% reduction from 58500000.0
+            incomePerSecond: 32906250.0, // 25% reduction from 58500000.0 -> Further 25% reduction applied
             description: 'City expansion projects',
           ),
           // Level 7
           BusinessLevel(
             cost: 16000000000.0,
-            incomePerSecond: 109800000.0, // 25% reduction from 146400000.0
+            incomePerSecond: 82350000.0, // 25% reduction from 14640000.0 -> Further 25% reduction applied
             description: 'Resort chain development deals',
           ),
           // Level 8
           BusinessLevel(
             cost: 32000000000.0,
-            incomePerSecond: 274500000.0, // 25% reduction from 366000000.0
+            incomePerSecond: 205875000.0, // 25% reduction from 36600000.0 -> Further 25% reduction applied
             description: 'Global brand',
           ),
           // Level 9
           BusinessLevel(
             cost: 64000000000.0,
-            incomePerSecond: 684000000.0, // 25% reduction from 912000000.0
+            incomePerSecond: 513000000.0, // 25% reduction from 912000000.0 -> Further 25% reduction applied
             description: 'Billionaire clients',
           ),
           // Level 10
           BusinessLevel(
             cost: 128000000000.0,
-            incomePerSecond: 1714500000.0, // 25% reduction from 2286000000.0
+            incomePerSecond: 1285875000.0, // 25% reduction from 2286000000.0 -> Further 25% reduction applied
             description: 'Real estate empire',
           ),
         ],
@@ -1546,150 +1546,158 @@ class GameState with ChangeNotifier {
   
   // Update game state every tick
   void _updateGameState() {
-    DateTime now = DateTime.now();
-    
-    // Process event system
-    checkAndTriggerEvents();
-    
-    // Check if click boost has expired
-    if (clickBoostEndTime != null && now.isAfter(clickBoostEndTime!)) {
-      clickMultiplier = 1.0;
-      clickBoostEndTime = null;
-      notifyListeners();
-    }
-    
-    // Add micro-updates to investment prices for more dynamic charts
-    _updateInvestmentPricesMicro();
-    
-    // Check for achievement completions
-    if (isInitialized && achievementManager != null) {
-      List<Achievement> newlyCompleted = achievementManager.evaluateAchievements(this);
+    try { // << ADDED TRY
+      DateTime now = DateTime.now();
       
-      // If any new achievements were completed, add them to recently completed list
-      if (newlyCompleted.isNotEmpty) {
-        recentlyCompletedAchievements.addAll(newlyCompleted);
+      // Process event system
+      checkAndTriggerEvents();
+      
+      // Check if click boost has expired
+      if (clickBoostEndTime != null && now.isAfter(clickBoostEndTime!)) {
+        clickMultiplier = 1.0;
+        clickBoostEndTime = null;
         notifyListeners();
       }
-    }
-    
-    // Check for reincorporation unlocks
-    updateReincorporationUses();
-    
-    // Update real estate unlocks based on current money
-    _updateRealEstateUnlocks();
-    
-    // Note: Event checking is now handled by the checkAndTriggerEvents() method at the beginning of _updateGameState
-    
-    // Update businesses income
-    for (var business in businesses) {
-      if (business.level > 0) {
-        business.secondsSinceLastIncome++;
+      
+      // Add micro-updates to investment prices for more dynamic charts
+      _updateInvestmentPricesMicro();
+      
+      // Check for achievement completions
+      if (isInitialized && achievementManager != null) {
+        List<Achievement> newlyCompleted = achievementManager.evaluateAchievements(this);
         
-        if (business.secondsSinceLastIncome >= business.incomeInterval) {
-          // Check if business is affected by an event
-          bool hasEvent = hasActiveEventForBusiness(business.id);
-          
-          // Include both incomeMultiplier and prestigeMultiplier for business income
-          double income = business.getCurrentIncome(affectedByEvent: hasEvent) * incomeMultiplier * prestigeMultiplier;
-          money += income;
-          totalEarned += income;
-          passiveEarnings += income;
-          
-          // Reset timer
-          business.secondsSinceLastIncome = 0;
-          
-          // Record earnings for stats
-          String today = TimeUtils.getDayKey(now);
-          dailyEarnings[today] = (dailyEarnings[today] ?? 0) + income;
-          
+        // If any new achievements were completed, add them to recently completed list
+        if (newlyCompleted.isNotEmpty) {
+          recentlyCompletedAchievements.addAll(newlyCompleted);
           notifyListeners();
         }
       }
-    }
-    
-    // Generate real estate income (per second)
-    // Include both incomeMultiplier and prestigeMultiplier for real estate income
-    double realEstateIncome = getRealEstateIncomePerSecond() * incomeMultiplier * prestigeMultiplier;
-    if (realEstateIncome > 0) {
-      money += realEstateIncome;
-      totalEarned += realEstateIncome;
-      realEstateEarnings += realEstateIncome; // Track real estate earnings separately
       
-      // Record earnings for stats
+      // Check for reincorporation unlocks
+      updateReincorporationUses();
+      
+      // Update real estate unlocks based on current money
+      _updateRealEstateUnlocks();
+      
+      // Note: Event checking is now handled by the checkAndTriggerEvents() method at the beginning of _updateGameState
+      
+      // -----[ LIVE INCOME START ]-----
       String today = TimeUtils.getDayKey(now);
-      dailyEarnings[today] = (dailyEarnings[today] ?? 0) + realEstateIncome;
-      
-      notifyListeners();
-    }
-    
-    // Generate dividend income from investments (per second)
-    double dividendIncome = 0.0;
-    
-    // Get the diversification bonus
-    double diversificationBonus = calculateDiversificationBonus();
-    
-    for (var investment in investments) {
-      if (investment.owned > 0 && investment.hasDividends()) {
-        // Apply income multipliers and diversification bonus to dividend income
-        double investmentDividend = investment.getDividendIncomePerSecond() * 
-                                   incomeMultiplier * 
-                                   prestigeMultiplier * 
-                                   (1 + diversificationBonus); // Add diversification bonus
-        dividendIncome += investmentDividend;
+      double previousMoney = money; // For logging
+
+      // Update businesses income
+      double businessIncomeThisTick = 0;
+      for (var business in businesses) {
+        if (business.level > 0) {
+          business.secondsSinceLastIncome++;
+          
+          if (business.secondsSinceLastIncome >= business.incomeInterval) {
+            // Check if business is affected by an event
+            bool hasEvent = hasActiveEventForBusiness(business.id);
+            
+            // Include both incomeMultiplier and prestigeMultiplier for business income
+            double income = business.getCurrentIncome(affectedByEvent: hasEvent) * incomeMultiplier * prestigeMultiplier;
+            businessIncomeThisTick += income;
+            
+            // Reset timer
+            business.secondsSinceLastIncome = 0;
+          }
+        }
       }
-    }
-    
-    if (dividendIncome > 0) {
-      money += dividendIncome;
-      totalEarned += dividendIncome;
-      investmentDividendEarnings += dividendIncome; // Track dividend earnings separately
-      
-      // Record earnings for stats
-      String today = TimeUtils.getDayKey(now);
-      dailyEarnings[today] = (dailyEarnings[today] ?? 0) + dividendIncome;
-      
-      notifyListeners();
-    }
-    
-    // Check if it's a new day for investment market
-    int todayDay = now.weekday; // 1-7 (Monday-Sunday)
-    
-    if (todayDay != currentDay) {
-      // It's a new day, update investments
-      currentDay = todayDay;
-      _updateInvestments();
-      
-      // Update net worth for tracking with dynamic intervals based on game duration
-      final gameDuration = now.difference(gameStartTime);
-      bool shouldUpdateNetWorth = false;
-      
-      // If game just started (less than 1 day), track every 15 minutes
-      if (gameDuration.inDays < 1) {
-        shouldUpdateNetWorth = (now.minute % 15 == 0) && (now.second < 10);
-      } 
-      // If less than 3 days, track every hour
-      else if (gameDuration.inDays < 3) {
-        shouldUpdateNetWorth = (now.minute < 5);
-      }
-      // Otherwise track daily
-      else {
-        shouldUpdateNetWorth = (now.hour == 0 && now.minute < 10);
+      if (businessIncomeThisTick > 0) {
+        money += businessIncomeThisTick;
+        totalEarned += businessIncomeThisTick;
+        passiveEarnings += businessIncomeThisTick;
+        dailyEarnings[today] = (dailyEarnings[today] ?? 0) + businessIncomeThisTick;
+        // print("DEBUG: Applied Business Income: $${NumberFormatter.formatCurrency(businessIncomeThisTick)}"); // Optional detailed logging
       }
       
-      if (shouldUpdateNetWorth || netWorthHistory.isEmpty) {
-        netWorthHistory.add(calculateNetWorth());
-        if (netWorthHistory.length > 30) {
-          netWorthHistory.removeAt(0); // Keep only last 30 data points
+      // Generate real estate income (per second)
+      // Include both incomeMultiplier and prestigeMultiplier for real estate income
+      double realEstateIncomePerSecond = getRealEstateIncomePerSecond();
+      double realEstateIncomeThisTick = realEstateIncomePerSecond * incomeMultiplier * prestigeMultiplier;
+      if (realEstateIncomeThisTick > 0) {
+        money += realEstateIncomeThisTick;
+        totalEarned += realEstateIncomeThisTick;
+        realEstateEarnings += realEstateIncomeThisTick; // Track real estate earnings separately
+        dailyEarnings[today] = (dailyEarnings[today] ?? 0) + realEstateIncomeThisTick;
+        // print("DEBUG: Applied Real Estate Income: $${NumberFormatter.formatCurrency(realEstateIncomeThisTick)}"); // Optional detailed logging
+      }
+      
+      // Generate dividend income from investments (per second)
+      double dividendIncomeThisTick = 0.0;
+      double diversificationBonus = calculateDiversificationBonus(); // Get diversification bonus
+      for (var investment in investments) {
+        if (investment.owned > 0 && investment.hasDividends()) {
+          // Apply income multipliers and diversification bonus to dividend income
+          double investmentDividend = investment.getDividendIncomePerSecond() * 
+                                     incomeMultiplier * 
+                                     prestigeMultiplier * 
+                                     (1 + diversificationBonus); // Add diversification bonus
+          dividendIncomeThisTick += investmentDividend;
         }
       }
       
-      // Check if we need to unlock more real estate locales
-      _updateRealEstateUnlocks();
+      if (dividendIncomeThisTick > 0) {
+        money += dividendIncomeThisTick;
+        totalEarned += dividendIncomeThisTick;
+        investmentDividendEarnings += dividendIncomeThisTick; // Track dividend earnings separately
+        dailyEarnings[today] = (dailyEarnings[today] ?? 0) + dividendIncomeThisTick;
+        // print("DEBUG: Applied Dividend Income: $${NumberFormatter.formatCurrency(dividendIncomeThisTick)}"); // Optional detailed logging
+      }
       
-      notifyListeners();
+      // If money changed, notify listeners
+      if (money != previousMoney) {
+         notifyListeners();
+      }
+      // -----[ LIVE INCOME END ]-----
+
+      // Check if it's a new day for investment market
+      int todayDay = now.weekday; // 1-7 (Monday-Sunday)
+      
+      if (todayDay != currentDay) {
+        // It's a new day, update investments
+        currentDay = todayDay;
+        _updateInvestments();
+        
+        // Update net worth for tracking with dynamic intervals based on game duration
+        final gameDuration = now.difference(gameStartTime);
+        bool shouldUpdateNetWorth = false;
+        
+        // If game just started (less than 1 day), track every 15 minutes
+        if (gameDuration.inDays < 1) {
+          shouldUpdateNetWorth = (now.minute % 15 == 0) && (now.second < 10);
+        } 
+        // If less than 3 days, track every hour
+        else if (gameDuration.inDays < 3) {
+          shouldUpdateNetWorth = (now.minute < 5);
+        }
+        // Otherwise track daily
+        else {
+          shouldUpdateNetWorth = (now.hour == 0 && now.minute < 10);
+        }
+        
+        if (shouldUpdateNetWorth || netWorthHistory.isEmpty) {
+          netWorthHistory.add(calculateNetWorth());
+          if (netWorthHistory.length > 30) {
+            netWorthHistory.removeAt(0); // Keep only last 30 data points
+          }
+        }
+        
+        // Check if we need to unlock more real estate locales
+        _updateRealEstateUnlocks();
+        
+        notifyListeners();
+      }
+      
+      // Removed timestamp update from here, GameService handles it before saving
+      // lastSaved = now; 
+      
+    } catch (e, stackTrace) { // << ADDED CATCH
+      print("❌❌❌ CRITICAL ERROR in _updateGameState: $e");
+      print(stackTrace); 
+      // Potentially add more robust error handling here, but avoid stopping the timer if possible
     }
-    
-    lastSaved = now;
   }
   
   // Update investment prices on new day
@@ -2141,12 +2149,10 @@ class GameState with ChangeNotifier {
     double businessesValue = businesses.fold(0.0, (sum, business) => sum + business.getCurrentValue());
     double investmentsValue = investments.fold(0.0, (sum, investment) => sum + investment.getCurrentValue());
     
-    // Calculate real estate value (purchase price of all owned properties)
+    // Calculate real estate value using the corrected locale method
     double realEstateValue = 0.0;
     for (var locale in realEstateLocales) {
-      for (var property in locale.properties) {
-        realEstateValue += property.purchasePrice * property.owned;
-      }
+      realEstateValue += locale.getTotalValue(); // Use corrected method
     }
     
     return money + businessesValue + investmentsValue + realEstateValue;
