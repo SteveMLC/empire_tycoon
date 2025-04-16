@@ -62,6 +62,7 @@ flutter:
     - web/assets/
     - assets/fonts/
     - attached_assets/
+    - assets/legal/
     - assets/images/rural_kenya/
     - assets/images/lagos_nigeria/
     - assets/images/rural_thailand/
