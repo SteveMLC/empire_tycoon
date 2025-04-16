@@ -27,6 +27,10 @@ class _AchievementNotificationState extends State<AchievementNotification> with 
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
+  late Animation<double> _ppFadeAnimation;
+  late Animation<Offset> _ppSlideAnimation;
+  late Animation<double> _ppScaleAnimation;
+  bool _showPpAnimation = false;
   
   @override
   void initState() {
@@ -36,13 +40,13 @@ class _AchievementNotificationState extends State<AchievementNotification> with 
     
     _animationController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 2000),
     );
     
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
         parent: _animationController,
-        curve: Interval(0.0, 0.5, curve: Curves.easeOut),
+        curve: const Interval(0.0, 0.3, curve: Curves.easeOut),
       ),
     );
     
@@ -52,12 +56,47 @@ class _AchievementNotificationState extends State<AchievementNotification> with 
     ).animate(
       CurvedAnimation(
         parent: _animationController,
-        curve: Interval(0.0, 0.5, curve: Curves.easeOut),
+        curve: const Interval(0.0, 0.3, curve: Curves.easeOut),
+      ),
+    );
+    
+    // PP reward animations
+    _ppFadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.4, 0.6, curve: Curves.easeIn),
+      ),
+    );
+    
+    _ppSlideAnimation = Tween<Offset>(
+      begin: const Offset(0.0, 0.0),
+      end: const Offset(0.0, -5.0),
+    ).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.4, 0.9, curve: Curves.easeOut),
+      ),
+    );
+    
+    _ppScaleAnimation = Tween<double>(begin: 1.0, end: 0.5).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: const Interval(0.7, 0.9, curve: Curves.easeOut),
       ),
     );
     
     _animationController.forward();
     
+    // Trigger PP animation after the achievement appears
+    Future.delayed(const Duration(milliseconds: 800), () {
+      if (mounted) {
+        setState(() {
+          _showPpAnimation = true;
+        });
+      }
+    });
+    
+    // Dismiss after animation completes
     Future.delayed(const Duration(seconds: 4), () {
       if (mounted) {
         _dismiss();
@@ -105,125 +144,325 @@ class _AchievementNotificationState extends State<AchievementNotification> with 
   Widget build(BuildContext context) {
     final rarityColors = _getRarityColors(widget.achievement.rarity);
     
-    return SlideTransition(
-      position: _slideAnimation,
-      child: FadeTransition(
-        opacity: _fadeAnimation,
-        child: GestureDetector(
-          onTap: _dismiss,
-          child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-            padding: const EdgeInsets.all(16.0),
-            decoration: BoxDecoration(
-              color: rarityColors['backgroundColor'],
-              borderRadius: BorderRadius.circular(12.0),
-              boxShadow: [
-                BoxShadow(
-                  color: rarityColors['shadowColor']!,
-                  blurRadius: rarityColors['blurRadius'] as double,
-                  spreadRadius: rarityColors['spreadRadius'] as double,
-                  offset: const Offset(0, 5),
-                ),
-              ],
-              border: Border.all(
-                color: rarityColors['borderColor']!,
-                width: rarityColors['borderWidth'] as double,
-              ),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: rarityColors['iconBackgroundColor'],
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      if (widget.achievement.rarity == AchievementRarity.milestone)
-                        BoxShadow(
-                          color: rarityColors['iconGlowColor']!,
-                          blurRadius: 8.0,
-                          spreadRadius: 2.0,
-                        ),
-                    ],
-                  ),
-                  child: Icon(
-                    widget.achievement.icon,
-                    color: rarityColors['iconColor'],
-                    size: widget.achievement.rarity == AchievementRarity.milestone ? 28 : 24,
+    return Stack(
+      children: [
+        SlideTransition(
+          position: _slideAnimation,
+          child: FadeTransition(
+            opacity: _fadeAnimation,
+            child: GestureDetector(
+              onTap: _dismiss,
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                padding: const EdgeInsets.all(16.0),
+                decoration: BoxDecoration(
+                  color: rarityColors['backgroundColor'],
+                  borderRadius: BorderRadius.circular(12.0),
+                  boxShadow: [
+                    BoxShadow(
+                      color: rarityColors['shadowColor']!,
+                      blurRadius: rarityColors['blurRadius'] as double,
+                      spreadRadius: rarityColors['spreadRadius'] as double,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                  border: Border.all(
+                    color: rarityColors['borderColor']!,
+                    width: rarityColors['borderWidth'] as double,
                   ),
                 ),
-                
-                const SizedBox(width: 16),
-                
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Row(
-                        children: [
-                          Text(
-                            'Achievement Unlocked!',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: rarityColors['titleColor'],
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          
-                          if (widget.achievement.rarity != AchievementRarity.basic)
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: rarityColors['badgeColor'],
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                _getRarityText(widget.achievement.rarity),
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                  color: rarityColors['badgeTextColor'],
-                                ),
-                              ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: rarityColors['iconBackgroundColor'],
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          if (widget.achievement.rarity == AchievementRarity.milestone)
+                            BoxShadow(
+                              color: rarityColors['iconGlowColor']!,
+                              blurRadius: 8.0,
+                              spreadRadius: 2.0,
                             ),
                         ],
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        widget.achievement.name,
-                        style: TextStyle(
-                          fontSize: widget.achievement.rarity == AchievementRarity.milestone ? 18 : 16,
-                          fontWeight: FontWeight.bold,
-                          color: rarityColors['nameColor'],
-                        ),
+                      child: Icon(
+                        widget.achievement.icon,
+                        color: rarityColors['iconColor'],
+                        size: widget.achievement.rarity == AchievementRarity.milestone ? 28 : 24,
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        widget.achievement.description,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: rarityColors['descriptionColor'],
-                        ),
+                    ),
+                    
+                    const SizedBox(width: 16),
+                    
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                'Achievement Unlocked!',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: rarityColors['titleColor'],
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              
+                              if (widget.achievement.rarity != AchievementRarity.basic)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: rarityColors['badgeColor'],
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    _getRarityText(widget.achievement.rarity),
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                      color: rarityColors['badgeTextColor'],
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            widget.achievement.name,
+                            style: TextStyle(
+                              fontSize: widget.achievement.rarity == AchievementRarity.milestone ? 18 : 16,
+                              fontWeight: FontWeight.bold,
+                              color: rarityColors['nameColor'],
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            widget.achievement.description,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: rarityColors['descriptionColor'],
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          // Add PP reward display here
+                          Row(
+                            children: [
+                              // Platinum coin icon
+                              Container(
+                                width: 16,
+                                height: 16,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: const Color(0xFFFFD700), // Solid gold background
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: const Color(0xFFFFD700).withOpacity(0.6),
+                                      blurRadius: 4,
+                                      spreadRadius: 0,
+                                    ),
+                                  ],
+                                ),
+                                child: const Center(
+                                  child: Text(
+                                    '✦',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      height: 1.0,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                '+${widget.achievement.ppReward} Platinum Points',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: const Color(0xFFE5E4E2),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                    
+                    IconButton(
+                      icon: Icon(Icons.close, size: 18),
+                      onPressed: _dismiss,
+                      color: rarityColors['closeButtonColor'],
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                  ],
                 ),
-                
-                IconButton(
-                  icon: Icon(Icons.close, size: 18),
-                  onPressed: _dismiss,
-                  color: rarityColors['closeButtonColor'],
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                ),
-              ],
+              ),
             ),
           ),
         ),
-      ),
+        
+        // Animated PP reward indicator
+        if (_showPpAnimation)
+          Positioned(
+            top: 65, // Adjust this to start at the bottom of the notification
+            right: 45, // Adjust this based on your notification width
+            child: SlideTransition(
+              position: _ppSlideAnimation,
+              child: FadeTransition(
+                opacity: _ppFadeAnimation,
+                child: ScaleTransition(
+                  scale: _ppScaleAnimation,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1A1A1A).withOpacity(0.85), // Dark background with transparency
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: const Color(0xFFFFD700).withOpacity(0.8),
+                        width: 1.5,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Color(0xFFFFD700).withOpacity(0.6), // Gold glow
+                          blurRadius: 8,
+                          spreadRadius: 0,
+                        ),
+                      ],
+                    ),
+                    child: Stack(
+                      alignment: Alignment.center,
+                      clipBehavior: Clip.none,
+                      children: [
+                        // Main content
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 18,
+                              height: 18,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: const Color(0xFFFFD700), // Solid gold background
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFFFFD700).withOpacity(0.6),
+                                    blurRadius: 4,
+                                    spreadRadius: 0,
+                                  ),
+                                ],
+                              ),
+                              child: const Center(
+                                child: Text(
+                                  '✦',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    height: 1.0,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              '+${widget.achievement.ppReward} PP!',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                                letterSpacing: 0.5,
+                                shadows: [
+                                  Shadow(
+                                    color: Colors.black54,
+                                    blurRadius: 2,
+                                    offset: Offset(0.5, 0.5),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        
+                        // Glitter effects (random positions)
+                        ...List.generate(8, (index) {
+                          final random = Random();
+                          final size = 2.0 + random.nextDouble() * 2.0;
+                          final top = -15.0 + random.nextDouble() * 50;
+                          final left = -15.0 + random.nextDouble() * 80;
+                          
+                          return Positioned(
+                            top: top,
+                            left: left,
+                            child: AnimatedOpacity(
+                              opacity: _fadeAnimation.value * (0.5 + 0.5 * random.nextDouble()),
+                              duration: const Duration(milliseconds: 300),
+                              child: Container(
+                                width: size,
+                                height: size,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.white,
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: const Color(0xFFFFD700).withOpacity(0.8),
+                                      blurRadius: 4,
+                                      spreadRadius: 1,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        }),
+                        
+                        // Radiating rings for extra flair
+                        if (_ppFadeAnimation.value > 0.5)
+                          Positioned.fill(
+                            child: Opacity(
+                              opacity: (_ppFadeAnimation.value - 0.5) * 2 * 0.3,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: const Color(0xFFFFD700),
+                                    width: 1.5,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          
+                        if (_ppFadeAnimation.value > 0.7)
+                          Positioned.fill(
+                            child: Opacity(
+                              opacity: (_ppFadeAnimation.value - 0.7) * 3 * 0.2,
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: Colors.white,
+                                    width: 1.0,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
   

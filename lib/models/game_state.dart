@@ -50,6 +50,7 @@ class GameState with ChangeNotifier {
   bool _retroactivePPAwarded = false; // Flag for retroactive PP grant
   Map<String, int> ppPurchases = {}; // Tracks counts of repeatable PP items purchased {itemId: count}
   Set<String> ppOwnedItems = {};    // Tracks IDs of one-time PP items purchased {itemId}
+  bool showPPAnimation = false; // Flag to control PP animation
   // >> END: Platinum Points System Fields <<
 
   // Flags for specific unlocks from Platinum Vault
@@ -2297,11 +2298,22 @@ class GameState with ChangeNotifier {
     if (amount <= 0) return; // Don't award negative or zero points
     platinumPoints += amount;
     print("💎 +$amount Platinum Points awarded! Total: $platinumPoints");
-    // TODO: Trigger notification popup here
+    
+    // Trigger animation
+    showPPAnimation = true;
+    notifyListeners();
+    
+    // Turn off animation after a delay
+    Future.delayed(const Duration(milliseconds: 2000), () {
+      if (showPPAnimation) {
+        showPPAnimation = false;
+        notifyListeners();
+      }
+    });
+    
     // Analytics Placeholder:
     print("[Analytics] Log event: pp_earned, amount: $amount, source: achievement");
     // TODO: Log PP gain for analytics here (replace print)
-    notifyListeners();
   }
 
   bool spendPlatinumPoints(String itemId, int cost, {bool isOneTime = false}) {

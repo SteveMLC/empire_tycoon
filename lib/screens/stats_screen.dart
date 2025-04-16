@@ -169,7 +169,32 @@ class _StatsScreenState extends State<StatsScreen> {
                                // TODO: Add check if vault is unlocked?
                                Navigator.pushNamed(context, '/platinumVault');
                             },
-                            icon: Icon(Icons.star, color: Colors.white), // Use star icon for consistency
+                            icon: Container(
+                              width: 20,
+                              height: 20,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: const Color(0xFFFFD700), // Solid gold background
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFFFFD700).withOpacity(0.6),
+                                    blurRadius: 4,
+                                    spreadRadius: 0,
+                                  ),
+                                ],
+                              ),
+                              child: const Center(
+                                child: Text(
+                                  '✦',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    height: 1.0,
+                                  ),
+                                ),
+                              ),
+                            ),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.purple.shade600, // Theme color
                               foregroundColor: Colors.white,

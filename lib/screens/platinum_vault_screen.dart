@@ -38,26 +38,107 @@ class _PlatinumVaultScreenState extends State<PlatinumVaultScreen> with SingleTi
       appBar: AppBar(
         title: Row(
           children: [
-            Icon(Icons.shield_moon_outlined, color: Colors.purple.shade200), // Vault icon
-            const SizedBox(width: 8),
-            const Text('Platinum Vault'),
+            // Custom vault icon with glow effect
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFFFFD700).withOpacity(0.8),
+                    blurRadius: 10,
+                    spreadRadius: 2,
+                  ),
+                ],
+              ),
+              child: Icon(Icons.shield_moon_outlined, color: const Color(0xFFFFD700), size: 24),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              'Platinum Vault',
+              style: TextStyle(
+                color: const Color(0xFFFFD700),
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.5,
+                shadows: [
+                  Shadow(
+                    color: Colors.black.withOpacity(0.7),
+                    blurRadius: 2,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
-        backgroundColor: Colors.grey.shade800, // Darker theme for vault
+        backgroundColor: const Color(0xFF2D0C3E), // Rich purple background for luxury
+        elevation: 8,
+        shadowColor: Colors.black.withOpacity(0.5),
         actions: [
-          // Display PP balance in AppBar
-          Padding(
-            padding: const EdgeInsets.only(right: 16.0),
+          // Display PP balance in AppBar with enhanced styling
+          Container(
+            margin: const EdgeInsets.only(right: 16.0),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  const Color(0xFF4A1259).withOpacity(0.8),
+                  const Color(0xFF7B1FA2).withOpacity(0.9),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: const Color(0xFFFFD700).withOpacity(0.6),
+                width: 1.0,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFFFFD700).withOpacity(0.3),
+                  blurRadius: 5,
+                  spreadRadius: 0,
+                ),
+              ],
+            ),
             child: Row(
               children: [
-                Icon(Icons.star, color: Colors.purple.shade300, size: 20),
-                const SizedBox(width: 4),
+                // Custom platinum coin
+                Container(
+                  width: 20,
+                  height: 20,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: const Color(0xFFFFD700), // Solid gold background
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFFFD700).withOpacity(0.6),
+                        blurRadius: 4,
+                        spreadRadius: 0,
+                      ),
+                    ],
+                  ),
+                  child: const Center(
+                    child: Text(
+                      '✦',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        height: 1.0,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
                 Text(
                   '${gameState.platinumPoints.toString()} PP',
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: Color(0xFFFFD700),
                   ),
                 ),
               ],
@@ -67,26 +148,87 @@ class _PlatinumVaultScreenState extends State<PlatinumVaultScreen> with SingleTi
         bottom: TabBar(
           controller: _tabController,
           isScrollable: true,
-          indicatorColor: Colors.purple.shade300,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.grey.shade400,
-          tabs: VaultItemCategory.values.map((category) => Tab(text: _getCategoryName(category))).toList(),
+          indicatorColor: const Color(0xFFFFD700), // Gold indicator
+          labelColor: const Color(0xFFFFD700), // Gold text for selected tab
+          unselectedLabelColor: Colors.grey.shade300,
+          labelStyle: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 14,
+            letterSpacing: 0.5,
+          ),
+          tabs: VaultItemCategory.values.map((category) => 
+            Tab(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: const Color(0xFFFFD700).withOpacity(0.3),
+                    width: 1,
+                  ),
+                ),
+                child: Text(_getCategoryName(category)),
+              ),
+            )
+          ).toList(),
         ),
       ),
       body: Container(
         decoration: BoxDecoration(
+          // Luxury rich purple gradient background
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Colors.grey.shade800, Colors.grey.shade900],
+            colors: [
+              const Color(0xFF2D0C3E), // Rich purple
+              const Color(0xFF1A0523), // Darker purple
+            ],
+            stops: const [0.0, 1.0],
           ),
+          // Add shimmer effect
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFFFFD700).withOpacity(0.05),
+              blurRadius: 15,
+              spreadRadius: 10,
+            ),
+          ],
         ),
-        child: TabBarView(
-          controller: _tabController,
-          children: VaultItemCategory.values.map((category) {
-            final categoryItems = _vaultItems.where((item) => item.category == category).toList();
-            return _buildItemGrid(categoryItems, gameState);
-          }).toList(),
+        child: Stack(
+          children: [
+            // Decorative floating particles/stars
+            ...List.generate(20, (index) {
+              final random = 0.3 + (index / 20) * 0.7; // Create varied positions
+              return Positioned(
+                top: MediaQuery.of(context).size.height * (index % 5) / 5,
+                left: MediaQuery.of(context).size.width * random,
+                child: Container(
+                  width: 3 + (index % 3),
+                  height: 3 + (index % 3),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: const Color(0xFFFFD700).withOpacity(0.2 + (index % 10) / 20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFFFD700).withOpacity(0.3),
+                        blurRadius: 4,
+                        spreadRadius: 1,
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }),
+            
+            // Main content
+            TabBarView(
+              controller: _tabController,
+              children: VaultItemCategory.values.map((category) {
+                final categoryItems = _vaultItems.where((item) => item.category == category).toList();
+                return _buildItemGrid(categoryItems, gameState);
+              }).toList(),
+            ),
+          ],
         ),
       ),
     );
@@ -110,48 +252,93 @@ class _PlatinumVaultScreenState extends State<PlatinumVaultScreen> with SingleTi
       return _buildPlaceholderTab("No items available in this category yet.");
     }
 
-    return GridView.builder(
-      padding: const EdgeInsets.all(16.0),
-      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 200.0, // Adjust based on desired item size
-        childAspectRatio: 2 / 3.5, // Decreased aspect ratio to give more height
-        crossAxisSpacing: 16.0,
-        mainAxisSpacing: 16.0,
+    return Container(
+      // Add subtle animated shine effect
+      foregroundDecoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white.withOpacity(0.0),
+            Colors.white.withOpacity(0.05),
+            Colors.white.withOpacity(0.0),
+          ],
+          stops: const [0.0, 0.5, 1.0],
+        ),
       ),
-      itemCount: items.length,
-      itemBuilder: (context, index) {
-        final item = items[index];
-        return VaultItemCard(
-          item: item,
-          currentPoints: gameState.platinumPoints,
-          isOwned: item.type == VaultItemType.oneTime && gameState.ppOwnedItems.contains(item.id),
-          onBuy: () {
-            bool success = gameState.spendPlatinumPoints(
-              item.id,
-              item.cost,
-              isOneTime: item.type == VaultItemType.oneTime,
-            );
-            if (success) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Purchased ${item.name}!'),
-                  backgroundColor: Colors.green,
-                  duration: const Duration(seconds: 2),
-                ),
+      child: GridView.builder(
+        padding: const EdgeInsets.all(16.0),
+        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+          maxCrossAxisExtent: 200.0,
+          childAspectRatio: 2 / 3.5,
+          crossAxisSpacing: 16.0,
+          mainAxisSpacing: 16.0,
+        ),
+        itemCount: items.length,
+        itemBuilder: (context, index) {
+          final item = items[index];
+          return VaultItemCard(
+            item: item,
+            currentPoints: gameState.platinumPoints,
+            isOwned: item.type == VaultItemType.oneTime && gameState.ppOwnedItems.contains(item.id),
+            onBuy: () {
+              bool success = gameState.spendPlatinumPoints(
+                item.id,
+                item.cost,
+                isOneTime: item.type == VaultItemType.oneTime,
               );
-            } else {
-              // Feedback for failure (e.g., insufficient funds or already owned)
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Could not purchase ${item.name}. ${gameState.platinumPoints < item.cost ? "Not enough PP." : "Item already owned or unavailable."}'),
-                  backgroundColor: Colors.red,
-                  duration: const Duration(seconds: 2),
-                ),
-              );
-            }
-          },
-        );
-      },
+              if (success) {
+                // Enhanced success feedback
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Row(
+                      children: [
+                        const Icon(Icons.check_circle, color: Colors.white),
+                        const SizedBox(width: 8),
+                        Text('Successfully purchased ${item.name}!'),
+                      ],
+                    ),
+                    backgroundColor: Colors.green.shade600,
+                    duration: const Duration(seconds: 2),
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                );
+                
+                // TODO: Add sparkle animation on successful purchase
+              } else {
+                // Enhanced error feedback
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Row(
+                      children: [
+                        const Icon(Icons.error_outline, color: Colors.white),
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: Text(
+                            gameState.platinumPoints < item.cost
+                                ? 'Not enough Platinum Points to purchase ${item.name}.'
+                                : 'You already own this item.',
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                    backgroundColor: Colors.red.shade600,
+                    duration: const Duration(seconds: 2),
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                );
+              }
+            },
+          );
+        },
+      ),
     );
   }
 
