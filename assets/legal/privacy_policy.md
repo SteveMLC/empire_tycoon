@@ -2,7 +2,7 @@
 
 **Effective Date:** April 16 2025
 
-Thank you for playing Empire Tycoon! This Privacy Policy explains how MLC Games ("we," "us," or "our") handles information in connection with your use of the Empire Tycoon mobile application (the "App").
+Thank you for playing Empire Tycoon! This Privacy Policy explains how Go7 Studio ("we," "us," or "our") handles information in connection with your use of the Empire Tycoon mobile application (the "App").
 
 We are committed to protecting your privacy. This App is designed to be played without collecting your personal information.
 
@@ -42,4 +42,4 @@ We may update this Privacy Policy from time to time. We will notify you of any c
 
 ## Contact Us
 
-If you have any questions about this Privacy Policy, please contact us at: stephen@moonlightcapital.io
+If you have any questions about this Privacy Policy, please contact us at: go7studio@moonlightcapital.io
