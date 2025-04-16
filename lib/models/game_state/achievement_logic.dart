@@ -1,5 +1,9 @@
 part of '../game_state.dart';
 
+// Removed incorrect imports
+// import 'package:empire_tycoon/models/achievement.dart';
+// import 'package:empire_tycoon/models/achievement_data.dart';
+
 // Contains methods related to achievement checking and management.
 extension AchievementLogic on GameState {
   // Check achievements based on the current game state

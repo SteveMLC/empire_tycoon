@@ -15,6 +15,7 @@ import '../utils/time_utils.dart';
 import 'investment_holding.dart';
 import '../data/real_estate_data_loader.dart';
 import 'market_event.dart';
+import 'achievement_data.dart'; // Added import
 
 part 'game_state/initialization_logic.dart';
 part 'game_state/business_logic.dart';

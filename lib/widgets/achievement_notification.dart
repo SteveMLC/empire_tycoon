@@ -1,5 +1,10 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/achievement.dart';
+import '../models/game_state.dart';
+import '../utils/number_formatter.dart';
+import '../models/achievement_data.dart';
 import '../services/game_service.dart';
 
 class AchievementNotification extends StatefulWidget {

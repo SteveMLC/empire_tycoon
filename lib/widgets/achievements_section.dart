@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/achievement.dart';
 import '../models/game_state.dart';
+import '../utils/number_formatter.dart';
+import '../models/achievement_data.dart';
 
 class AchievementsSection extends StatelessWidget {
   const AchievementsSection({Key? key}) : super(key: key);
