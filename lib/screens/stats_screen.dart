@@ -17,7 +17,6 @@ class StatsScreen extends StatefulWidget {
 }
 
 class _StatsScreenState extends State<StatsScreen> {
-  // Format large numbers with abbreviations
   String formatLargeNumber(double value) {
     if (value >= 1000000000000) {
       return '\$${(value / 1000000000000).toStringAsFixed(1)}T';
@@ -42,31 +41,29 @@ class _StatsScreenState extends State<StatsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildOverviewCard(gameState),
-                
+
                 const SizedBox(height: 20),
-                
+
                 _buildEarningsBreakdown(gameState),
-                
+
                 const SizedBox(height: 20),
-                
+
                 _buildAssetsBreakdown(gameState),
-                
+
                 const SizedBox(height: 20),
-                
+
                 _buildHourlyEarningsChart(gameState),
-                
+
                 const SizedBox(height: 20),
-                
+
                 _buildNetWorthChart(gameState),
-                
+
                 const SizedBox(height: 20),
-                
-                // Achievements section
+
                 const AchievementsSection(),
-                
+
                 const SizedBox(height: 20),
-                
-                // Game controls section
+
                 Card(
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
@@ -80,10 +77,9 @@ class _StatsScreenState extends State<StatsScreen> {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        
+
                         const SizedBox(height: 16),
-                        
-                        // Sound toggle button
+
                         Consumer<GameService>(
                           builder: (context, gameService, child) {
                             bool soundEnabled = gameService.soundManager.isSoundEnabled();
@@ -91,7 +87,6 @@ class _StatsScreenState extends State<StatsScreen> {
                               width: double.infinity,
                               child: OutlinedButton.icon(
                                 onPressed: () {
-                                  // Toggle sound on/off
                                   gameService.soundManager.toggleSound(!soundEnabled);
                                   // Force rebuild to update icon
                                   setState(() {});
@@ -116,32 +111,28 @@ class _StatsScreenState extends State<StatsScreen> {
                             );
                           },
                         ),
-                        
+
                         const SizedBox(height: 16),
-                        
-                        // Manual save button
+
                         Consumer<GameService>(
                           builder: (context, gameService, child) {
                             return SizedBox(
                               width: double.infinity,
                               child: OutlinedButton.icon(
                                 onPressed: () async {
-                                  // Show saving indicator
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
                                       content: Text('Saving game...'),
                                       duration: Duration(seconds: 1),
                                     ),
                                   );
-                                  
-                                  // Attempt to save the game
+
                                   bool success = await gameService.saveGame();
-                                  
-                                  // Show result
+
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
-                                      content: Text(success 
-                                          ? 'Game saved successfully!' 
+                                      content: Text(success
+                                          ? 'Game saved successfully!'
                                           : 'Failed to save game.'),
                                       backgroundColor: success ? Colors.green : Colors.red,
                                     ),
@@ -167,10 +158,9 @@ class _StatsScreenState extends State<StatsScreen> {
                             );
                           },
                         ),
-                        
+
                         const SizedBox(height: 16),
-                        
-                        // Reset game button with confirmation dialog
+
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(
@@ -182,16 +172,15 @@ class _StatsScreenState extends State<StatsScreen> {
                             child: const Text('Reset Game'),
                           ),
                         ),
-                        
+
                         const SizedBox(height: 16),
-                        
-                        // Premium purchase button
+
                         Consumer<GameState>(
                           builder: (context, gameState, child) {
                             return SizedBox(
                               width: double.infinity,
                               child: ElevatedButton.icon(
-                                onPressed: gameState.isPremium 
+                                onPressed: gameState.isPremium
                                     ? null // Disable if already premium
                                     : () => _showPremiumPurchaseDialog(context, gameState),
                                 icon: const Icon(Icons.star),
@@ -202,8 +191,8 @@ class _StatsScreenState extends State<StatsScreen> {
                                   disabledBackgroundColor: Colors.grey[300],
                                   disabledForegroundColor: Colors.grey[600],
                                 ),
-                                label: Text(gameState.isPremium 
-                                    ? 'Premium Enabled' 
+                                label: Text(gameState.isPremium
+                                    ? 'Premium Enabled'
                                     : 'Get Premium (\$4.99)'),
                               ),
                             );
@@ -213,7 +202,7 @@ class _StatsScreenState extends State<StatsScreen> {
                     ),
                   ),
                 ),
-                
+
                 const SizedBox(height: 50),
               ],
             ),
@@ -222,15 +211,14 @@ class _StatsScreenState extends State<StatsScreen> {
       },
     );
   }
-  
+
   Widget _buildOverviewCard(GameState gameState) {
-    // Calculate current net worth for reincorporation check
     double netWorth = gameState.calculateNetWorth();
     double minNetWorthRequired = gameState.getMinimumNetWorthForReincorporation();
-    
+
     // Can reincorporate only if there are uses available AND we meet the net worth requirement
     bool canReincorporate = gameState.reincorporationUsesAvailable > 0 && netWorth >= minNetWorthRequired;
-    
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -244,12 +232,11 @@ class _StatsScreenState extends State<StatsScreen> {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             _buildStatRow('Net Worth', NumberFormatter.formatCurrency(netWorth)),
-            
-            // Show prestige multiplier if it's greater than 1
+
             if (gameState.incomeMultiplier > 1.0)
               Builder(builder: (context) {
                 // Calculate the current prestige level using the same formula as in _showReincorporateConfirmation
@@ -259,23 +246,22 @@ class _StatsScreenState extends State<StatsScreen> {
                 }
                 return _buildStatRow('Prestige Multiplier', '${gameState.incomeMultiplier.toStringAsFixed(2)}x (1.2 compounded ${currentPrestigeLevel}x)');
               }),
-            
+
             // Show network worth as lifetime stat (doesn't reset with reincorporation)
             _buildStatRow('Lifetime Network Worth', NumberFormatter.formatCurrency(gameState.networkWorth * 100000000 + gameState.calculateNetWorth())),
-            
+
             _buildStatRow('Total Money Earned', NumberFormatter.formatCurrency(gameState.totalEarned)),
             _buildStatRow('Lifetime Taps', gameState.lifetimeTaps.toString()),
             _buildStatRow('Time Playing', _calculateTimePlayed(gameState)),
-            
+
             const SizedBox(height: 16),
-            
-            // Re-incorporate button
+
             Row(
               children: [
                 Expanded(
                   child: ElevatedButton.icon(
-                    onPressed: canReincorporate 
-                        ? () => _showReincorporateConfirmation(context, gameState) 
+                    onPressed: canReincorporate
+                        ? () => _showReincorporateConfirmation(context, gameState)
                         : null,
                     icon: const Icon(Icons.refresh),
                     style: ElevatedButton.styleFrom(
@@ -295,7 +281,6 @@ class _StatsScreenState extends State<StatsScreen> {
                               : 'Re-Incorporate (${NumberFormatter.formatCurrency(minNetWorthRequired)} needed)'),
                   ),
                 ),
-                // Information button
                 IconButton(
                   icon: const Icon(Icons.info_outline, color: Colors.blue),
                   onPressed: () => _showReincorporateInfo(context),
@@ -308,21 +293,19 @@ class _StatsScreenState extends State<StatsScreen> {
       ),
     );
   }
-  
+
   Widget _buildEarningsBreakdown(GameState gameState) {
-    // Calculate total earnings including real estate and dividends
-    double totalEarned = gameState.manualEarnings + 
-                         gameState.passiveEarnings + 
+    double totalEarned = gameState.manualEarnings +
+                         gameState.passiveEarnings +
                          gameState.investmentEarnings +
                          gameState.investmentDividendEarnings +
                          gameState.realEstateEarnings;
-    
-    // Calculate percentages for cumulative earnings
+
     double manualPercent = totalEarned > 0 ? (gameState.manualEarnings / totalEarned) * 100 : 0;
     double passivePercent = totalEarned > 0 ? (gameState.passiveEarnings / totalEarned) * 100 : 0;
     double investmentPercent = totalEarned > 0 ? ((gameState.investmentEarnings + gameState.investmentDividendEarnings) / totalEarned) * 100 : 0;
     double realEstatePercent = totalEarned > 0 ? (gameState.realEstateEarnings / totalEarned) * 100 : 0;
-    
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -336,21 +319,20 @@ class _StatsScreenState extends State<StatsScreen> {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            
+
             const SizedBox(height: 16),
-            
-            _buildStatRow('Hustle Earnings', 
+
+            _buildStatRow('Hustle Earnings',
                 '${NumberFormatter.formatCurrency(gameState.manualEarnings)} (${manualPercent.toStringAsFixed(1)}%)'),
-            _buildStatRow('Business Earnings', 
+            _buildStatRow('Business Earnings',
                 '${NumberFormatter.formatCurrency(gameState.passiveEarnings)} (${passivePercent.toStringAsFixed(1)}%)'),
-            _buildStatRow('Investment Earnings', 
+            _buildStatRow('Investment Earnings',
                 '${NumberFormatter.formatCurrency(gameState.investmentEarnings + gameState.investmentDividendEarnings)} (${investmentPercent.toStringAsFixed(1)}%)'),
-            _buildStatRow('Real Estate Earnings', 
+            _buildStatRow('Real Estate Earnings',
                 '${NumberFormatter.formatCurrency(gameState.realEstateEarnings)} (${realEstatePercent.toStringAsFixed(1)}%)'),
-            
+
             const SizedBox(height: 10),
-            
-            // Simple visual breakdown
+
             Container(
               height: 20,
               clipBehavior: Clip.antiAlias,
@@ -379,10 +361,9 @@ class _StatsScreenState extends State<StatsScreen> {
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 10),
-            
-            // Legend
+
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -400,27 +381,25 @@ class _StatsScreenState extends State<StatsScreen> {
       ),
     );
   }
-  
+
   Widget _buildAssetsBreakdown(GameState gameState) {
-    // Calculate asset values
     double cash = gameState.money;
     double businessValue = gameState.businesses.fold(0.0, (sum, business) => sum + business.getCurrentValue());
     double investmentValue = gameState.investments.fold(0.0, (sum, investment) => sum + investment.getCurrentValue());
-    
+
     // Calculate real estate value using the corrected locale method
     double realEstateValue = 0.0;
     for (var locale in gameState.realEstateLocales) {
       realEstateValue += locale.getTotalValue(); // Use corrected method
     }
-    
+
     double totalAssets = cash + businessValue + investmentValue + realEstateValue;
-    
-    // Calculate percentages
+
     double cashPercent = totalAssets > 0 ? (cash / totalAssets) * 100 : 0;
     double businessPercent = totalAssets > 0 ? (businessValue / totalAssets) * 100 : 0;
     double investmentPercent = totalAssets > 0 ? (investmentValue / totalAssets) * 100 : 0;
     double realEstatePercent = totalAssets > 0 ? (realEstateValue / totalAssets) * 100 : 0;
-    
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -434,21 +413,20 @@ class _StatsScreenState extends State<StatsScreen> {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            
+
             const SizedBox(height: 16),
-            
-            _buildStatRow('Cash', 
+
+            _buildStatRow('Cash',
                 '${NumberFormatter.formatCurrency(cash)} (${cashPercent.toStringAsFixed(1)}%)'),
-            _buildStatRow('Business Value', 
+            _buildStatRow('Business Value',
                 '${NumberFormatter.formatCurrency(businessValue)} (${businessPercent.toStringAsFixed(1)}%)'),
-            _buildStatRow('Investment Value', 
+            _buildStatRow('Investment Value',
                 '${NumberFormatter.formatCurrency(investmentValue)} (${investmentPercent.toStringAsFixed(1)}%)'),
-            _buildStatRow('Real Estate Value', 
+            _buildStatRow('Real Estate Value',
                 '${NumberFormatter.formatCurrency(realEstateValue)} (${realEstatePercent.toStringAsFixed(1)}%)'),
-            
+
             const SizedBox(height: 10),
-            
-            // Simple visual breakdown
+
             Container(
               height: 20,
               clipBehavior: Clip.antiAlias,
@@ -477,10 +455,9 @@ class _StatsScreenState extends State<StatsScreen> {
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 10),
-            
-            // Legend
+
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -498,9 +475,8 @@ class _StatsScreenState extends State<StatsScreen> {
       ),
     );
   }
-  
+
   Widget _buildHourlyEarningsChart(GameState gameState) {
-    // Get the last 24 hours of earnings data
     final now = DateTime.now();
     Map<String, double> hourlyDataMap = {};
 
@@ -530,12 +506,12 @@ class _StatsScreenState extends State<StatsScreen> {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             SizedBox(
               height: 200,
-              child: hourlyData.isEmpty 
+              child: hourlyData.isEmpty
                   ? const Center(child: Text('No earnings data available'))
                   : _buildBarChart(hourlyData),
             ),
@@ -544,18 +520,17 @@ class _StatsScreenState extends State<StatsScreen> {
       ),
     );
   }
-  
+
   Widget _buildNetWorthChart(GameState gameState) {
-    // Get persistent net worth history
     Map<int, double> historyMap = gameState.persistentNetWorthHistory;
 
     // Sort by timestamp (key)
     List<int> sortedTimestamps = historyMap.keys.toList()..sort();
     List<double> history = sortedTimestamps.map((ts) => historyMap[ts]!).toList();
-    
+
     // Removed dynamic timeframe logic
     String timeframeText = 'Net Worth History (Persistent)';
-    
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -569,12 +544,12 @@ class _StatsScreenState extends State<StatsScreen> {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             SizedBox(
               height: 200,
-              child: history.isEmpty 
+              child: history.isEmpty
                   ? const Center(child: Text('No net worth history available'))
                   : _buildLineChart(history),
             ),
@@ -583,29 +558,24 @@ class _StatsScreenState extends State<StatsScreen> {
       ),
     );
   }
-  
-  // Build a simple bar chart
+
   Widget _buildBarChart(List<MapEntry<String, double>> data) {
-    // Find the maximum value for scaling
     double maxValue = 0;
     for (var entry in data) {
       if (entry.value > maxValue) {
         maxValue = entry.value;
       }
     }
-    
-    // Ensure we have a non-zero max for scaling
+
     maxValue = maxValue == 0 ? 1 : maxValue;
-    
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: data.map((entry) {
-        // Calculate height percentage
         double heightPercent = entry.value / maxValue;
-        
-        // Format hour label from the key (YYYY-MM-DD-HH)
+
         String hour = entry.key.substring(entry.key.length - 2);
-        
+
         return Expanded(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -631,22 +601,18 @@ class _StatsScreenState extends State<StatsScreen> {
       }).toList(),
     );
   }
-  
-  // Build a simple line chart
+
   Widget _buildLineChart(List<double> data) {
-    // Need at least 2 points for a line
     if (data.length < 2) {
       return const Center(child: Text('Not enough data for chart'));
     }
-    
-    // Find min and max values
+
     double maxValue = data.reduce((a, b) => a > b ? a : b);
     double minValue = data.reduce((a, b) => a < b ? a : b);
-    
-    // Ensure non-zero range
+
     double range = maxValue - minValue;
     if (range <= 0) range = maxValue > 0 ? maxValue : 1;
-    
+
     return CustomPaint(
       size: const Size(double.infinity, 200),
       painter: ChartPainter(
@@ -656,7 +622,7 @@ class _StatsScreenState extends State<StatsScreen> {
       ),
     );
   }
-  
+
   Widget _buildStatRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),
@@ -674,7 +640,7 @@ class _StatsScreenState extends State<StatsScreen> {
       ),
     );
   }
-  
+
   Widget _buildLegendItem(Color color, String label) {
     return Row(
       children: [
@@ -694,16 +660,16 @@ class _StatsScreenState extends State<StatsScreen> {
       ],
     );
   }
-  
+
   String _calculateTimePlayed(GameState gameState) {
     // Use gameStartTime for persistent time tracking across reincorporations
     final firstStart = gameState.gameStartTime;
     final playTime = DateTime.now().difference(firstStart);
-    
+
     final days = playTime.inDays;
     final hours = playTime.inHours % 24;
     final minutes = playTime.inMinutes % 60;
-    
+
     if (days > 0) {
       return '$days days, $hours hours';
     } else if (hours > 0) {
@@ -712,7 +678,7 @@ class _StatsScreenState extends State<StatsScreen> {
       return '${playTime.inMinutes} mins';
     }
   }
-  
+
   void _showResetConfirmation(BuildContext context, GameState gameState) {
     showDialog(
       context: context,
@@ -728,7 +694,6 @@ class _StatsScreenState extends State<StatsScreen> {
           ),
           TextButton(
             onPressed: () {
-              // Access the game service to reset
               Provider.of<GameService>(context, listen: false).resetGame();
               Navigator.of(context).pop();
             },
@@ -739,8 +704,7 @@ class _StatsScreenState extends State<StatsScreen> {
       ),
     );
   }
-  
-  // Show premium purchase confirmation dialog
+
   void _showPremiumPurchaseDialog(BuildContext context, GameState gameState) {
     showDialog(
       context: context,
@@ -775,8 +739,7 @@ class _StatsScreenState extends State<StatsScreen> {
               // For now, just enable premium immediately
               gameState.enablePremium();
               Navigator.of(context).pop();
-              
-              // Show confirmation
+
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text('Premium features activated!'),
@@ -792,14 +755,14 @@ class _StatsScreenState extends State<StatsScreen> {
       ),
     );
   }
-  
+
   void _showReincorporateConfirmation(BuildContext context, GameState gameState) {
     double currentNetWorth = gameState.calculateNetWorth();
-    
+
     // Calculate passive income bonus (20% compounding per prestige level)
     double passiveBonus = 1.0;
     int currentPrestigeLevels = 0;
-    
+
     // Count how many threshold levels we've currently used based on networkWorth
     if (gameState.networkWorth > 0) {
       // $1M threshold
@@ -820,23 +783,23 @@ class _StatsScreenState extends State<StatsScreen> {
       if (gameState.networkWorth >= 100000.0) currentPrestigeLevels++;
       // $100T threshold
       if (gameState.networkWorth >= 1000000.0) currentPrestigeLevels++;
-      
+
       // Calculate passive bonus with 20% compounding per prestige level
       passiveBonus = pow(1.2, currentPrestigeLevels).toDouble();
     }
-    
+
     // Calculate the new prestige level after this reincorporation
     double baseRequirement = 1000000.0; // $1 million
     int newThresholdLevel = 0;
-    
+
     if (currentNetWorth >= baseRequirement) {
       newThresholdLevel = (log(currentNetWorth / baseRequirement) / log(10)).floor() + 1;
     }
-    
+
     // Calculate the expected new network worth after this reincorporation
     double networkWorthIncrement = newThresholdLevel > 0 ? pow(10, newThresholdLevel - 1).toDouble() / 100 : 0;
     double newNetworkWorth = gameState.networkWorth + networkWorthIncrement;
-    
+
     // Count how many threshold levels we'll have used after this reincorporation
     int newTotalPrestigeLevels = 0;
     if (newNetworkWorth > 0) {
@@ -850,18 +813,18 @@ class _StatsScreenState extends State<StatsScreen> {
       if (newNetworkWorth >= 100000.0) newTotalPrestigeLevels++; // $10T threshold
       if (newNetworkWorth >= 1000000.0) newTotalPrestigeLevels++; // $100T threshold
     }
-    
+
     // Calculate new passive bonus with 20% compounding per prestige level
     double newPassiveBonus = pow(1.2, newTotalPrestigeLevels).toDouble();
-    
+
     // We already calculated these values above, so we can use them for the click multiplier calculation
     double newNetworkValue = newNetworkWorth; // Reuse value from passive calculation
-    
+
     // Count total prestige levels that will be used, which determines the multiplier
     int totalPrestigeLevels = 0;
     if (newNetworkValue > 0) {
       if (newNetworkValue >= 0.01) totalPrestigeLevels++;  // $1M threshold
-      if (newNetworkValue >= 0.1) totalPrestigeLevels++;   // $10M threshold  
+      if (newNetworkValue >= 0.1) totalPrestigeLevels++;   // $10M threshold
       if (newNetworkValue >= 1.0) totalPrestigeLevels++;   // $100M threshold
       if (newNetworkValue >= 10.0) totalPrestigeLevels++;  // $1B threshold
       if (newNetworkValue >= 100.0) totalPrestigeLevels++; // $10B threshold
@@ -870,13 +833,13 @@ class _StatsScreenState extends State<StatsScreen> {
       if (newNetworkValue >= 100000.0) totalPrestigeLevels++; // $10T threshold
       if (newNetworkValue >= 1000000.0) totalPrestigeLevels++; // $100T threshold
     }
-    
+
     // Calculate the new click multiplier (1.0 + 0.1 per level)
     double newClickMultiplier = 1.0 + (0.1 * totalPrestigeLevels);
     if (totalPrestigeLevels > 0 && newClickMultiplier < 1.2) {
       newClickMultiplier = 1.2; // First level should be 1.2x instead of 1.1x
     }
-    
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -897,7 +860,7 @@ class _StatsScreenState extends State<StatsScreen> {
             Text('Current passive bonus: ${passiveBonus.toStringAsFixed(2)}x'),
             const SizedBox(height: 8),
             Text('New click multiplier: ${newClickMultiplier.toStringAsFixed(2)}x'),
-            Text('New passive bonus: ${newPassiveBonus.toStringAsFixed(2)}x (+${(newPassiveBonus - passiveBonus).toStringAsFixed(2)}x)', 
+            Text('New passive bonus: ${newPassiveBonus.toStringAsFixed(2)}x (+${(newPassiveBonus - passiveBonus).toStringAsFixed(2)}x)',
                 style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
           ],
         ),
@@ -908,20 +871,17 @@ class _StatsScreenState extends State<StatsScreen> {
           ),
           TextButton(
             onPressed: () {
-              // Call the reincorporate method
               bool success = gameState.reincorporate();
               Navigator.of(context).pop();
-              
+
               if (success) {
-                // Show success toast
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text('Successfully re-incorporated! New passive bonus: ${gameState.incomeMultiplier.toStringAsFixed(2)}x'),
                     backgroundColor: Colors.green,
                   ),
                 );
-                
-                // Play reincorporation sound
+
                 Provider.of<GameService>(context, listen: false).soundManager.playEventReincorporationSound();
               }
             },
@@ -932,15 +892,13 @@ class _StatsScreenState extends State<StatsScreen> {
       ),
     );
   }
-  
+
   void _showReincorporateInfo(BuildContext context) {
-    // Get current game state
     final gameState = Provider.of<GameState>(context, listen: false);
     double nextThreshold = gameState.getMinimumNetWorthForReincorporation();
-    
-    // Format the next threshold using abbreviation
+
     String formattedThreshold = formatLargeNumber(nextThreshold);
-    
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -982,20 +940,20 @@ class ChartPainter extends CustomPainter {
   final List<double> data;
   final double minValue;
   final double maxValue;
-  
+
   ChartPainter({
     required this.data,
     required this.minValue,
     required this.maxValue,
   });
-  
+
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
       ..color = Colors.blue
       ..strokeWidth = 3
       ..style = PaintingStyle.stroke;
-      
+
     final textStyle = TextStyle(
       color: Colors.grey[600],
       fontSize: 10,
@@ -1003,69 +961,59 @@ class ChartPainter extends CustomPainter {
     final textPainter = TextPainter(
       textDirection: TextDirection.ltr,
     );
-    
+
     final path = Path();
     final width = size.width;
     final height = size.height - 20; // Reserve space for labels at bottom
-    
-    // Calculate x step
+
     final double xStep = width / (data.length - 1);
-    
-    // Ensure min and max are different to avoid division by zero
+
     final range = (maxValue - minValue) == 0 ? 1 : maxValue - minValue;
-    
-    // Draw the line
+
     for (int i = 0; i < data.length; i++) {
       final x = i * xStep;
       final y = height - ((data[i] - minValue) / range * height);
-      
+
       if (i == 0) {
         path.moveTo(x, y);
       } else {
         path.lineTo(x, y);
       }
     }
-    
+
     canvas.drawPath(path, paint);
-    
-    // Draw points on the line 
+
     final pointPaint = Paint()
       ..color = Colors.blue
       ..strokeWidth = 2
       ..style = PaintingStyle.fill;
-    
-    // Draw points without x-axis labels
+
     for (int i = 0; i < data.length; i++) {
       final x = i * xStep;
       final y = height - ((data[i] - minValue) / range * height);
-      
-      // Draw point
+
       canvas.drawCircle(Offset(x, y), 4, pointPaint);
     }
-    
+
     // Draw min and max value labels on y-axis
     if (maxValue > minValue) {
-      // Max value label
       String maxLabel = _formatValue(maxValue);
       textPainter.text = TextSpan(text: maxLabel, style: textStyle);
       textPainter.layout();
       textPainter.paint(canvas, Offset(0, 0));
-      
-      // Mid value label
+
       String midLabel = _formatValue(minValue + range / 2);
       textPainter.text = TextSpan(text: midLabel, style: textStyle);
       textPainter.layout();
       textPainter.paint(canvas, Offset(0, height / 2 - textPainter.height / 2));
-      
-      // Min value label
+
       String minLabel = _formatValue(minValue);
       textPainter.text = TextSpan(text: minLabel, style: textStyle);
       textPainter.layout();
       textPainter.paint(canvas, Offset(0, height - textPainter.height));
     }
   }
-  
-  // Format value for display
+
   String _formatValue(double value) {
     if (value >= 1000000000000) {
       return '\$${(value / 1000000000000).toStringAsFixed(1)}T';
@@ -1079,7 +1027,7 @@ class ChartPainter extends CustomPainter {
       return '\$${value.toStringAsFixed(0)}';
     }
   }
-  
+
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }

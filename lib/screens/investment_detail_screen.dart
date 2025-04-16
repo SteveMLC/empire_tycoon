@@ -7,10 +7,9 @@ import '../models/investment.dart';
 import '../models/investment_holding.dart';
 import '../services/game_service.dart';
 import '../utils/number_formatter.dart';
-import '../utils/sounds.dart';  // Import GameSounds
+import '../utils/sounds.dart';
 import '../widgets/investment_chart.dart';
 
-// Helper function to format currency using the NumberFormatter
 String formatCurrency(double value) {
   return NumberFormatter.formatCurrency(value);
 }
@@ -29,57 +28,33 @@ class InvestmentDetailScreen extends StatefulWidget {
 
 class _InvestmentDetailScreenState extends State<InvestmentDetailScreen> {
   int _quantity = 1;
-  // Create a TextEditingController to manage the input field
   late TextEditingController _quantityController;
-  // Track maximum affordable quantity at the class level
   int _maxAffordable = 0;
-  // Track whether we're buying or selling
   bool _isBuying = true;
   
-  // Getter for maxAffordable to fix references in the code
   int get maxAffordable => _maxAffordable;
   
   @override
   void initState() {
     super.initState();
     _quantityController = TextEditingController(text: _quantity.toString());
-    // Get the game state from the provider
-    // final gameState = Provider.of<GameState>(context, listen: false); // No longer needed here
-    // Force a rebuild when the game state updates (like price changes)
-    // gameState.addListener(_onGameStateUpdate); // REMOVED
   }
   
   @override
   void dispose() {
-    // Clean up listener when widget is disposed
-    // final gameState = Provider.of<GameState>(context, listen: false); // No longer needed here
-    // gameState.removeListener(_onGameStateUpdate); // REMOVED
     _quantityController.dispose();
     super.dispose();
   }
   
-  // This will be called when game state updates
-  /* // REMOVED LISTENER METHOD
-  void _onGameStateUpdate() {
-    if (mounted) {
-      setState(() {}); // Trigger a rebuild of the widget
-    }
-  }
-  */
-  
-  // Update the text controller when quantity changes
   void _updateQuantityController() {
-    // Only update if the value has actually changed
     if (_quantityController.text != _quantity.toString()) {
       _quantityController.text = _quantity.toString();
-      // Move cursor to the end of the text
       _quantityController.selection = TextSelection.fromPosition(
         TextPosition(offset: _quantityController.text.length),
       );
     }
   }
   
-  // Method to set quantity to maximum affordable amount or owned amount
   void _setMaxQuantity() {
     if (_isBuying) {
       if (_maxAffordable > 0) {
@@ -89,7 +64,6 @@ class _InvestmentDetailScreenState extends State<InvestmentDetailScreen> {
         });
       }
     } else {
-      // If selling, set to max owned
       final ownedShares = widget.investment.owned;
       if (ownedShares > 0) {
         setState(() {
@@ -105,17 +79,13 @@ class _InvestmentDetailScreenState extends State<InvestmentDetailScreen> {
     final gameState = Provider.of<GameState>(context);
     final investment = widget.investment;
     
-    // Calculate the current affordable quantity based on player funds
     final double totalCost = investment.currentPrice * _quantity;
     final bool canAfford = gameState.money >= totalCost;
     
-    // Calculate how many shares the player can afford
     _maxAffordable = (gameState.money / investment.currentPrice).floor();
     
-    // Get player's owned shares
     final int ownedShares = investment.owned;
     
-    // Calculate the potential profit
     final double purchasedValue = investment.purchasePrice * ownedShares;
     final double currentValue = investment.currentPrice * ownedShares;
     final double profitLoss = currentValue - purchasedValue;
@@ -123,7 +93,6 @@ class _InvestmentDetailScreenState extends State<InvestmentDetailScreen> {
       ? (profitLoss / purchasedValue) * 100 
       : 0.0;
     
-    // Calculate color based on performance
     final Color performanceColor = profitLoss >= 0 ? Colors.green : Colors.red;
     
     return Scaffold(
@@ -136,7 +105,6 @@ class _InvestmentDetailScreenState extends State<InvestmentDetailScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Market Card with Current Price and Chart
               Card(
                 elevation: 2,
                 child: Padding(
@@ -144,7 +112,6 @@ class _InvestmentDetailScreenState extends State<InvestmentDetailScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Company Name and Icon
                       Row(
                         children: [
                           Icon(
@@ -178,7 +145,6 @@ class _InvestmentDetailScreenState extends State<InvestmentDetailScreen> {
                       ),
                       const SizedBox(height: 16),
                       
-                      // Current Price and Change
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -241,7 +207,6 @@ class _InvestmentDetailScreenState extends State<InvestmentDetailScreen> {
                       
                       const SizedBox(height: 16),
                       
-                      // Price Chart
                       SizedBox(
                         height: 180,
                         child: InvestmentChart(
@@ -252,7 +217,6 @@ class _InvestmentDetailScreenState extends State<InvestmentDetailScreen> {
                       
                       const SizedBox(height: 16),
                       
-                      // Market Data
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -276,7 +240,6 @@ class _InvestmentDetailScreenState extends State<InvestmentDetailScreen> {
                       
                       const SizedBox(height: 16),
                       
-                      // Investment Forecast
                       Row(
                         children: [
                           Expanded(
@@ -285,7 +248,6 @@ class _InvestmentDetailScreenState extends State<InvestmentDetailScreen> {
                         ],
                       ),
                       
-                      // Dividend info - always show if this investment has dividends
                       if (investment.hasDividends()) ...[
                         const SizedBox(height: 16),
                         Container(
@@ -335,7 +297,6 @@ class _InvestmentDetailScreenState extends State<InvestmentDetailScreen> {
               
               const SizedBox(height: 16),
               
-              // Your Holdings Card
               if (ownedShares > 0)
                 Card(
                   elevation: 2,
@@ -376,7 +337,6 @@ class _InvestmentDetailScreenState extends State<InvestmentDetailScreen> {
                         
                         const SizedBox(height: 16),
                         
-                        // Profit/Loss Banner
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
@@ -415,7 +375,6 @@ class _InvestmentDetailScreenState extends State<InvestmentDetailScreen> {
                           ),
                         ),
                         
-                        // Dividend Info if applicable
                         if (investment.hasDividends())
                           Padding(
                             padding: const EdgeInsets.only(top: 16.0),
@@ -455,7 +414,6 @@ class _InvestmentDetailScreenState extends State<InvestmentDetailScreen> {
               
               const SizedBox(height: 16),
               
-              // Buy/Sell Card
               Card(
                 elevation: 2,
                 child: Padding(
@@ -463,7 +421,6 @@ class _InvestmentDetailScreenState extends State<InvestmentDetailScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Buy/Sell Toggle
                       Row(
                         children: [
                           Expanded(
@@ -506,7 +463,6 @@ class _InvestmentDetailScreenState extends State<InvestmentDetailScreen> {
                       
                       const SizedBox(height: 16),
                       
-                      // Quantity Row
                       Row(
                         children: [
                           Expanded(
@@ -545,7 +501,6 @@ class _InvestmentDetailScreenState extends State<InvestmentDetailScreen> {
                       
                       const SizedBox(height: 16),
                       
-                      // Total Cost/Proceeds
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -568,7 +523,6 @@ class _InvestmentDetailScreenState extends State<InvestmentDetailScreen> {
                       
                       const SizedBox(height: 8),
                       
-                      // Current Cash Available
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -591,7 +545,6 @@ class _InvestmentDetailScreenState extends State<InvestmentDetailScreen> {
                       
                       const SizedBox(height: 16),
                       
-                      // Buy/Sell Button
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
@@ -602,7 +555,6 @@ class _InvestmentDetailScreenState extends State<InvestmentDetailScreen> {
                           onPressed: (_isBuying && canAfford && _quantity > 0) ||
                                   (!_isBuying && ownedShares >= _quantity && _quantity > 0)
                               ? () {
-                                  // Capture messenger BEFORE the buy/sell action
                                   final scaffoldMessenger = ScaffoldMessenger.of(context);
                                   final gameService = Provider.of<GameService>(context, listen: false);
                                   final gameState = Provider.of<GameState>(context, listen: false);
@@ -615,17 +567,14 @@ class _InvestmentDetailScreenState extends State<InvestmentDetailScreen> {
                                   }
                                   
                                   if (success) {
-                                    // Play the appropriate investment sound effects
                                     if (_isBuying) {
                                       gameService.playSound(GameSounds.investmentBuyStock);
                                     } else {
                                       gameService.playSound(GameSounds.investmentSellStock);
                                     }
                                     
-                                    // Now check mounted AFTER buy/sell completes
                                     if (!mounted) return; 
 
-                                    // Use the captured messenger
                                     scaffoldMessenger.showSnackBar(
                                       SnackBar(
                                         content: Text(
@@ -637,21 +586,16 @@ class _InvestmentDetailScreenState extends State<InvestmentDetailScreen> {
                                       ),
                                     );
                                     
-                                    // Check if mounted again before setState, although the one above should suffice
-                                    // it's safer to have it directly before the state change too.
                                     if (!mounted) return; 
                                     setState(() {
                                       _quantity = 1;
                                       _updateQuantityController();
                                     });
                                   } else {
-                                    // Play error sound
                                     gameService.playSound(GameSounds.error);
                                     
-                                    // Check if widget is still mounted BEFORE showing SnackBar
                                     if (!mounted) return; 
 
-                                    // Use the captured messenger
                                     scaffoldMessenger.showSnackBar(
                                       SnackBar(
                                         content: Text(
@@ -683,7 +627,6 @@ class _InvestmentDetailScreenState extends State<InvestmentDetailScreen> {
               
               const SizedBox(height: 16),
               
-              // About This Investment
               Card(
                 elevation: 2,
                 child: Padding(

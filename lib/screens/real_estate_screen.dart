@@ -17,21 +17,19 @@ class RealEstateScreen extends StatefulWidget {
 
 class _RealEstateScreenState extends State<RealEstateScreen> {
   RealEstateLocale? _selectedLocale;
-  
+
   @override
   Widget build(BuildContext context) {
     final gameState = Provider.of<GameState>(context);
-    // Use a custom theme with green as primary color
     final theme = Theme.of(context).copyWith(
       colorScheme: Theme.of(context).colorScheme.copyWith(
         primary: Colors.green.shade700,
       ),
     );
-    
+
     return Scaffold(
       body: Column(
         children: [
-          // Header with real estate income display
           Container(
             padding: const EdgeInsets.fromLTRB(20, 30, 20, 15),
             decoration: BoxDecoration(
@@ -47,7 +45,6 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
             width: double.infinity,
             child: Column(
               children: [
-                // Main income display
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -70,14 +67,13 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
                     ),
                   ],
                 ),
-                
+
                 const SizedBox(height: 8),
-                
-                // Income value with animation - including multipliers
+
                 Text(
                   '\$${NumberFormatter.formatCompact(
-                    gameState.getRealEstateIncomePerSecond() * 
-                    gameState.incomeMultiplier * 
+                    gameState.getRealEstateIncomePerSecond() *
+                    gameState.incomeMultiplier *
                     gameState.prestigeMultiplier
                   )}/sec',
                   style: const TextStyle(
@@ -87,16 +83,13 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
                     letterSpacing: 0.5,
                   ),
                 ),
-                
-                // Portfolio summary if there are properties - now clickable
+
                 if (gameState.getTotalOwnedProperties() > 0) Column(children: [
                   const SizedBox(height: 10),
                   InkWell(
                     onTap: () {
-                      // Get all owned properties with details
                       List<Map<String, dynamic>> ownedProperties = gameState.getAllOwnedPropertiesWithDetails();
-                      
-                      // Show the property gallery dialog
+
                       showDialog(
                         context: context,
                         builder: (context) => PropertyGalleryDialog(
@@ -140,12 +133,10 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
               ],
             ),
           ),
-          
-          // Real Estate content
+
           Expanded(
             child: Row(
               children: [
-                // Map/Locales list (left side)
                 Expanded(
                   flex: 3,
                   child: Container(
@@ -153,7 +144,6 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Locations header
                         Container(
                           padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
                           child: Row(
@@ -181,8 +171,7 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
                             ],
                           ),
                         ),
-                        
-                        // Description text
+
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                           child: Text(
@@ -193,12 +182,11 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
                             ),
                           ),
                         ),
-                        
-                        // List of locales
+
                         Expanded(
                           child: ListView(
                             padding: const EdgeInsets.all(16),
-                            children: _getSortedLocales(gameState.realEstateLocales).map((locale) => 
+                            children: _getSortedLocales(gameState.realEstateLocales).map((locale) =>
                               _buildLocaleItem(locale, gameState, theme)
                             ).toList(),
                           ),
@@ -207,20 +195,18 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
                     ),
                   ),
                 ),
-                
-                // Vertical divider between panels
+
                 VerticalDivider(
                   width: 1,
                   thickness: 1,
                   color: Colors.grey.shade300,
                 ),
-                
-                // Properties in selected locale (right side)
+
                 Expanded(
                   flex: 4,
                   child: Container(
                     color: Colors.white,
-                    child: _selectedLocale != null 
+                    child: _selectedLocale != null
                       ? _buildPropertiesList(_selectedLocale!, gameState, theme)
                       : _buildEmptyStateMessage(theme),
                   ),
@@ -232,7 +218,7 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
       ),
     );
   }
-  
+
   Widget _buildLocaleItem(RealEstateLocale locale, GameState gameState, ThemeData theme) {
     // If not unlocked, show locked indicator with appropriate unlock message
     if (!locale.unlocked) {
@@ -288,7 +274,7 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
                   // Removed the `hasAnyBusiness` check block entirely
 
                   return Text(
-                    message, // Use the calculated and formatted message
+                    message,
                     style: TextStyle(
                       color: Colors.grey.shade600,
                       fontWeight: FontWeight.w500,
@@ -301,11 +287,10 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
         )
       );
     }
-    
-    // Count owned properties
+
     int ownedProperties = locale.properties.where((p) => p.owned > 0).length;
     bool isSelected = _selectedLocale?.id == locale.id;
-    
+
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
       elevation: isSelected ? 3 : 1,
@@ -331,7 +316,6 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
           ),
           child: Row(
             children: [
-              // Locale icon
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
@@ -344,10 +328,9 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
                   size: 24,
                 ),
               ),
-              
+
               const SizedBox(width: 12),
-              
-              // Locale name
+
               Expanded(
                 child: Text(
                   locale.name,
@@ -359,10 +342,9 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
                   ),
                 ),
               ),
-              
+
               const SizedBox(width: 8),
-              
-              // Properties counter badge
+
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
@@ -388,13 +370,12 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
       ),
     );
   }
-  
+
   Widget _buildPropertiesList(RealEstateLocale locale, GameState gameState, ThemeData theme) {
     return ListView(
       key: ValueKey<String>(locale.id),
       padding: const EdgeInsets.only(bottom: 24),
       children: [
-        // Header with back button and locale info
         Container(
           padding: const EdgeInsets.only(bottom: 16),
           decoration: BoxDecoration(
@@ -414,7 +395,6 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Back button and locale name
               Row(
                 children: [
                   IconButton(
@@ -438,8 +418,7 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
                   ),
                 ],
               ),
-              
-              // Locale theme description
+
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Text(
@@ -450,8 +429,7 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
                   ),
                 ),
               ),
-              
-              // Properties count summary
+
               Padding(
                 padding: const EdgeInsets.only(left: 16, right: 16, top: 8),
                 child: Row(
@@ -506,8 +484,8 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
                           const SizedBox(width: 4),
                           Text(
                             '${NumberFormatter.formatCompact(
-                              locale.getTotalIncomePerSecond() * 
-                              gameState.incomeMultiplier * 
+                              locale.getTotalIncomePerSecond() *
+                              gameState.incomeMultiplier *
                               gameState.prestigeMultiplier
                             )}/sec',
                             style: const TextStyle(
@@ -525,55 +503,50 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
             ],
           ),
         ),
-        
+
         const SizedBox(height: 16),
-        
-        // Property list
+
         ...locale.properties.map((property) => _buildPropertyItem(locale, property, gameState, theme)).toList(),
       ],
     );
   }
-  
-  // Sort locales based on their unlock thresholds
+
   List<RealEstateLocale> _getSortedLocales(List<RealEstateLocale> locales) {
-    // Create a copy of the locales list so we don't modify the original
     List<RealEstateLocale> sortedLocales = List.from(locales);
-    
-    // Sort locales based on their unlock requirements
+
     sortedLocales.sort((a, b) {
       // First prioritize unlocked locales
       if (a.unlocked && !b.unlocked) return -1;
       if (!a.unlocked && b.unlocked) return 1;
-      
+
       // If both are locked or both are unlocked, sort by unlock threshold
       int aThreshold = _getUnlockThreshold(a.id);
       int bThreshold = _getUnlockThreshold(b.id);
-      
+
       return aThreshold.compareTo(bThreshold);
     });
-    
+
     return sortedLocales;
   }
-  
-  // Helper method to determine the unlock threshold for a locale based on its ID
+
   int _getUnlockThreshold(String localeId) {
     if (localeId == 'rural_kenya') {
-      return 1; // Tier 1: First business
+      return 1;
     } else if (['lagos_nigeria', 'rural_thailand', 'rural_mexico'].contains(localeId)) {
-      return 2; // Tier 2: $10,000
+      return 2;
     } else if (['cape_town_sa', 'mumbai_india', 'ho_chi_minh_city', 'bucharest_romania', 'lima_peru', 'sao_paulo_brazil'].contains(localeId)) {
-      return 3; // Tier 3: $50,000
+      return 3;
     } else if (['lisbon_portugal', 'berlin_germany', 'mexico_city'].contains(localeId)) {
-      return 4; // Tier 4: $250,000
+      return 4;
     } else if (['singapore', 'london_uk', 'miami_florida', 'new_york_city', 'los_angeles'].contains(localeId)) {
-      return 5; // Tier 5: $1,000,000
+      return 5;
     } else if (['hong_kong', 'dubai_uae'].contains(localeId)) {
-      return 6; // Tier 6: $5,000,000
+      return 6;
     }
-    
+
     return 999; // Unknown locale, place at the end
   }
-  
+
   Widget _buildEmptyStateMessage(ThemeData theme) {
     return Container(
       padding: const EdgeInsets.all(24),
@@ -582,7 +555,6 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Illustration
               Container(
                 width: 120,
                 height: 120,
@@ -596,10 +568,9 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
                   color: theme.colorScheme.primary,
                 ),
               ),
-              
+
               const SizedBox(height: 32),
-              
-              // Title
+
               Text(
                 'Your Real Estate Portfolio',
                 style: TextStyle(
@@ -608,10 +579,9 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
                   color: theme.colorScheme.primary,
                 ),
               ),
-              
+
               const SizedBox(height: 16),
-              
-              // Description
+
               Container(
                 constraints: const BoxConstraints(maxWidth: 320),
                 child: Text(
@@ -624,10 +594,9 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
                   textAlign: TextAlign.center,
                 ),
               ),
-              
+
               const SizedBox(height: 32),
-              
-              // Instructions
+
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -658,10 +627,9 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
                   ],
                 ),
               ),
-              
+
               const SizedBox(height: 32),
-              
-              // Action button
+
               ElevatedButton.icon(
                 onPressed: () {},
                 icon: const Icon(Icons.arrow_back),
@@ -677,21 +645,18 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
       ),
     );
   }
-  
+
   Widget _buildPropertyItem(RealEstateLocale locale, RealEstateProperty property, GameState gameState, ThemeData theme) {
-    // Determine if the property is owned
     bool isOwned = property.owned > 0;
     bool canAfford = gameState.money >= property.purchasePrice;
-    
-    // Get the locale ID from the passed locale object
-    String localeId = locale.id; // Use passed locale
-    
-    // Get next available upgrade if property is owned
+
+    String localeId = locale.id;
+
     RealEstateUpgrade? nextUpgrade = isOwned ? property.getNextAvailableUpgrade() : null;
     bool hasUpgrade = nextUpgrade != null;
     bool canAffordUpgrade = hasUpgrade && gameState.money >= nextUpgrade.cost;
     bool allUpgradesPurchased = isOwned && property.allUpgradesPurchased;
-    
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -712,7 +677,6 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Property image at the top
           ClipRRect(
             borderRadius: const BorderRadius.only(
               topLeft: Radius.circular(10),
@@ -740,13 +704,11 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
               },
             ),
           ),
-          // Property details
           Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Property name and owned badge in a row that wraps if needed
                 Wrap(
                   spacing: 8,
                   crossAxisAlignment: WrapCrossAlignment.center,
@@ -759,7 +721,7 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
                         color: isOwned ? theme.colorScheme.primary : Colors.black87,
                       ),
                     ),
-                    if (isOwned) 
+                    if (isOwned)
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
@@ -802,26 +764,25 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
                   ],
                 ),
                 const SizedBox(height: 12),
-                
-                // Income info
+
                 Row(
                   children: [
                     Icon(
-                      isOwned ? Icons.monetization_on : Icons.attach_money, 
-                      size: 16, 
+                      isOwned ? Icons.monetization_on : Icons.attach_money,
+                      size: 16,
                       color: Colors.green.shade700
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      isOwned 
+                      isOwned
                         ? '${NumberFormatter.formatCompact(
-                            property.getTotalIncomePerSecond() * 
-                            gameState.incomeMultiplier * 
+                            property.getTotalIncomePerSecond() *
+                            gameState.incomeMultiplier *
                             gameState.prestigeMultiplier
                           )}/sec'
                         : '${NumberFormatter.formatCompact(
-                            property.cashFlowPerSecond * 
-                            gameState.incomeMultiplier * 
+                            property.cashFlowPerSecond *
+                            gameState.incomeMultiplier *
                             gameState.prestigeMultiplier
                           )}/sec',
                       style: TextStyle(
@@ -835,22 +796,20 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
               ],
             ),
           ),
-          
+
           Divider(height: 1, color: Colors.grey.shade200),
-          
-          // Purchase section
+
           Container(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Price/Value display
                 Row(
                   children: [
                     const Icon(Icons.payments, size: 18, color: Colors.grey),
                     const SizedBox(width: 8),
                     Text(
-                      isOwned 
+                      isOwned
                         ? 'Value: ${NumberFormatter.formatCurrency(property.totalValue)}'
                         : 'Price: ${NumberFormatter.formatCurrency(property.purchasePrice)}',
                       style: const TextStyle(
@@ -860,20 +819,19 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
                     ),
                   ],
                 ),
-                
+
                 const SizedBox(height: 12),
-                
-                // Action button - full width
+
                 SizedBox(
                   width: double.infinity,
                   child: isOwned
-                    ? hasUpgrade 
+                    ? hasUpgrade
                       ? _buildUpgradeButton(
-                          locale, // Pass locale down
-                          property, 
-                          nextUpgrade!, 
-                          canAffordUpgrade, 
-                          gameState, 
+                          locale,
+                          property,
+                          nextUpgrade!,
+                          canAffordUpgrade,
+                          gameState,
                           theme
                         )
                       : ElevatedButton.icon(
@@ -889,15 +847,13 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
                           ),
                         )
                     : ElevatedButton.icon(
-                        onPressed: canAfford 
+                        onPressed: canAfford
                           ? () {
-                              // Try to buy the property
                               // Use the passed locale's ID here too for consistency
                               if (gameState.buyRealEstateProperty(locale.id, property.id)) {
-                                // Play real estate purchase sound
                                 final gameService = Provider.of<GameService>(context, listen: false);
                                 gameService.soundManager.playRealEstatePurchaseSound();
-                                
+
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                     content: Text('Purchased ${property.name}'),
@@ -905,10 +861,9 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
                                   ),
                                 );
                               } else {
-                                // Play error sound
                                 final gameService = Provider.of<GameService>(context, listen: false);
                                 gameService.soundManager.playErrorSound();
-                                
+
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
                                     content: Text('Not enough money!'),
@@ -916,7 +871,7 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
                                   ),
                                 );
                               }
-                            } 
+                            }
                           : null,
                         icon: const Icon(Icons.shopping_cart, size: 18),
                         label: Text(canAfford ? 'BUY PROPERTY' : 'INSUFFICIENT FUNDS'),
@@ -929,8 +884,7 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
                         ),
                       ),
                 ),
-                
-                // Display upgrade information if property is owned and has upgrades
+
                 if (isOwned && hasUpgrade) ...[
                   const SizedBox(height: 16),
                   _buildUpgradeInfo(property, nextUpgrade!, theme),
@@ -942,49 +896,43 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
       ),
     );
   }
-  
-  // Helper method to build upgrade button
+
   Widget _buildUpgradeButton(
-    RealEstateLocale locale, // Accept locale
-    RealEstateProperty property, 
-    RealEstateUpgrade upgrade, 
-    bool canAffordUpgrade, 
-    GameState gameState, 
+    RealEstateLocale locale,
+    RealEstateProperty property,
+    RealEstateUpgrade upgrade,
+    bool canAffordUpgrade,
+    GameState gameState,
     ThemeData theme
   ) {
     return ElevatedButton.icon(
-      onPressed: canAffordUpgrade 
+      onPressed: canAffordUpgrade
         ? () {
-            // Get GameState and GameService providers
             final gameState = context.read<GameState>();
-            final gameService = Provider.of<GameService>(context, listen: false); // Keep GameService for sounds
+            final gameService = Provider.of<GameService>(context, listen: false);
 
             // Attempt to purchase the upgrade - use the PASSED locale.id
-            if (gameState.purchasePropertyUpgrade(locale.id, property.id, upgrade.id)) { // Use locale.id
-              // Play property upgrade sound
-              gameService.soundManager.playRealEstateUpgradeSound(); 
-              // Use ScaffoldMessenger to show the success snackbar
+            if (gameState.purchasePropertyUpgrade(locale.id, property.id, upgrade.id)) {
+              gameService.soundManager.playRealEstateUpgradeSound();
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text('Upgrade purchased: ${upgrade.description}'),
                   duration: const Duration(seconds: 2),
-                  backgroundColor: Colors.green, // Optional: Success styling
+                  backgroundColor: Colors.green,
                 ),
               );
             } else {
-              // Play error sound
-              gameService.soundManager.playErrorSound(); 
-              // Use ScaffoldMessenger to show the error snackbar
+              gameService.soundManager.playErrorSound();
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text('Upgrade failed. Please try again.'),
                   duration: Duration(seconds: 2),
-                  backgroundColor: Colors.red, // Optional: Error styling
+                  backgroundColor: Colors.red,
                 ),
               );
             }
-          } 
-        : null, // Disable button if cannot afford
+          }
+        : null,
       icon: const Icon(Icons.upgrade, size: 18),
       label: Text(canAffordUpgrade ? 'UPGRADE PROPERTY' : 'INSUFFICIENT FUNDS'),
       style: ElevatedButton.styleFrom(
@@ -996,8 +944,7 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
       ),
     );
   }
-  
-  // Helper method to build upgrade information
+
   Widget _buildUpgradeInfo(RealEstateProperty property, RealEstateUpgrade upgrade, ThemeData theme) {
     return Container(
       padding: const EdgeInsets.all(12),
@@ -1012,7 +959,6 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Upgrade title
           Text(
             'Upgrade: ${upgrade.description}',
             style: const TextStyle(
@@ -1022,8 +968,7 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
             ),
           ),
           const SizedBox(height: 8),
-          
-          // Upgrade cost
+
           Row(
             children: [
               const Icon(Icons.attach_money, size: 16, color: Colors.grey),
@@ -1038,8 +983,7 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
             ],
           ),
           const SizedBox(height: 4),
-          
-          // Income comparison
+
           Row(
             children: [
               const Icon(Icons.trending_up, size: 16, color: Colors.green),

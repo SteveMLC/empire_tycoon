@@ -50,7 +50,7 @@ class MarketOverviewWidget extends StatelessWidget {
                   Align(
                     alignment: Alignment.topRight,
                     child: Tooltip(
-                      message: gameState.activeMarketEvents.map((e) => e.name).join(', '),
+                      message: gameState.activeMarketEvents.map((e) => e.name ?? 'Unknown Event').join(', '),
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(

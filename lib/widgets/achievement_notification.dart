@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../models/achievement.dart';
 import '../services/game_service.dart';
 
-/// Widget to display achievements when they are completed
 class AchievementNotification extends StatefulWidget {
   final Achievement achievement;
   final Function onDismiss;
@@ -28,10 +27,8 @@ class _AchievementNotificationState extends State<AchievementNotification> with 
   void initState() {
     super.initState();
     
-    // Play achievement sound based on rarity
     _playAchievementSound();
     
-    // Setup animations
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
@@ -56,7 +53,6 @@ class _AchievementNotificationState extends State<AchievementNotification> with 
     
     _animationController.forward();
     
-    // Auto-dismiss after 4 seconds
     Future.delayed(const Duration(seconds: 4), () {
       if (mounted) {
         _dismiss();
@@ -64,10 +60,8 @@ class _AchievementNotificationState extends State<AchievementNotification> with 
     });
   }
   
-  /// Play achievement sound based on rarity level
   void _playAchievementSound() {
     try {
-      // Play different sounds based on the achievement rarity
       switch (widget.achievement.rarity) {
         case AchievementRarity.milestone:
           widget.gameService.soundManager.playAchievementMilestoneSound();
@@ -82,7 +76,6 @@ class _AchievementNotificationState extends State<AchievementNotification> with 
       }
     } catch (e) {
       print("Error playing achievement sound: $e");
-      // Fallback to success sound if achievement sound fails
       try {
         widget.gameService.soundManager.playFeedbackSuccessSound();
       } catch (e) {
@@ -105,7 +98,6 @@ class _AchievementNotificationState extends State<AchievementNotification> with 
 
   @override
   Widget build(BuildContext context) {
-    // Set colors based on achievement rarity
     final rarityColors = _getRarityColors(widget.achievement.rarity);
     
     return SlideTransition(
@@ -135,7 +127,6 @@ class _AchievementNotificationState extends State<AchievementNotification> with 
             ),
             child: Row(
               children: [
-                // Achievement icon with rarity-based styling
                 Container(
                   width: 40,
                   height: 40,
@@ -160,7 +151,6 @@ class _AchievementNotificationState extends State<AchievementNotification> with 
                 
                 const SizedBox(width: 16),
                 
-                // Achievement details
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -178,7 +168,6 @@ class _AchievementNotificationState extends State<AchievementNotification> with 
                           ),
                           const SizedBox(width: 4),
                           
-                          // Display rarity badge for rare and milestone achievements
                           if (widget.achievement.rarity != AchievementRarity.basic)
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
@@ -218,7 +207,6 @@ class _AchievementNotificationState extends State<AchievementNotification> with 
                   ),
                 ),
                 
-                // Dismiss button
                 IconButton(
                   icon: Icon(Icons.close, size: 18),
                   onPressed: _dismiss,
@@ -234,11 +222,9 @@ class _AchievementNotificationState extends State<AchievementNotification> with 
     );
   }
   
-  /// Get appropriate colors based on achievement rarity level
   Map<String, dynamic> _getRarityColors(AchievementRarity rarity) {
     switch (rarity) {
       case AchievementRarity.milestone:
-        // Gold/purple theme for milestone achievements
         return {
           'backgroundColor': Colors.purple.shade50,
           'borderColor': Colors.amber.shade500,
@@ -258,7 +244,6 @@ class _AchievementNotificationState extends State<AchievementNotification> with 
         };
       
       case AchievementRarity.rare:
-        // Blue theme for rare achievements
         return {
           'backgroundColor': Colors.blue.shade50,
           'borderColor': Colors.blue.shade400,
@@ -279,7 +264,6 @@ class _AchievementNotificationState extends State<AchievementNotification> with 
       
       case AchievementRarity.basic:
       default:
-        // Green theme for basic achievements
         return {
           'backgroundColor': Colors.green.shade100,
           'borderColor': Colors.green.shade300,
@@ -300,7 +284,6 @@ class _AchievementNotificationState extends State<AchievementNotification> with 
     }
   }
   
-  /// Get text label for the rarity badge
   String _getRarityText(AchievementRarity rarity) {
     switch (rarity) {
       case AchievementRarity.milestone:

@@ -19,7 +19,6 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Determine if we're running on web platform to choose different font strategy
     final bool isWeb = kIsWeb;
     
     return MultiProvider(
@@ -28,7 +27,6 @@ class MyApp extends StatelessWidget {
         Provider(create: (context) {
           final gameState = context.read<GameState>();
           final gameService = GameService(prefs, gameState);
-          // Add print statements to debug initialization and saving
           print('Created GameService with prefs: ${prefs.getKeys()}');
           return gameService;
         }),
@@ -43,17 +41,13 @@ class MyApp extends StatelessWidget {
             foregroundColor: Colors.blue[800],
             elevation: 0,
           ),
-          // For web, use system default fonts for faster loading
-          // For Android/iOS, continue using Roboto
           fontFamily: isWeb ? null : 'Roboto',
-          // Make sure Material Icons font is loaded properly
           iconTheme: const IconThemeData(
             color: Colors.blue,
             size: 24.0,
           ),
-          // Conditionally set text theme based on platform
           textTheme: isWeb 
-            ? const TextTheme() // Use system defaults on web
+            ? const TextTheme() 
             : const TextTheme(
                 bodyLarge: TextStyle(fontFamily: 'Roboto'),
                 bodyMedium: TextStyle(fontFamily: 'Roboto'),
@@ -66,7 +60,6 @@ class MyApp extends StatelessWidget {
   }
 }
 
-// GameInitializer widget with improved initialization
 class GameInitializer extends StatefulWidget {
   const GameInitializer({Key? key}) : super(key: key);
 
@@ -82,7 +75,6 @@ class _GameInitializerState extends State<GameInitializer> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Initialize when dependencies are ready
     if (!_isInitialized) {
       _initializeGame();
     }
@@ -90,7 +82,6 @@ class _GameInitializerState extends State<GameInitializer> {
   
   @override
   void dispose() {
-    // Make sure to dispose the GameService when this widget is disposed
     if (_gameService != null) {
       print('Game initializer: Disposing gameService');
       _gameService!.dispose();
@@ -117,10 +108,8 @@ class _GameInitializerState extends State<GameInitializer> {
 
   @override
   Widget build(BuildContext context) {
-    // Show loading screen until initialization is complete
     if (!_isInitialized) {
       if (_errorMessage != null) {
-        // Error state
         return Scaffold(
           body: Center(
             child: Column(
@@ -154,7 +143,6 @@ class _GameInitializerState extends State<GameInitializer> {
         );
       }
       
-      // Loading state
       return Scaffold(
         body: Center(
           child: Column(
@@ -172,7 +160,6 @@ class _GameInitializerState extends State<GameInitializer> {
       );
     }
     
-    // Once initialization is complete, show the main screen
     return const MainScreen();
   }
 }

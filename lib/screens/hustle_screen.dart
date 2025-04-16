@@ -58,59 +58,48 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
     try {
       final gameState = Provider.of<GameState>(context, listen: false);
       
-      // Safety check that game is initialized
       if (!gameState.isInitialized) {
         print("Game not yet initialized, ignoring tap");
         return;
       }
       
-      // Try to get game service
       GameService? gameService;
       try {
         gameService = Provider.of<GameService>(context, listen: false);
       } catch (e) {
         print("Could not get GameService: $e");
-        // Continue without sound if service not available
       }
       
-      // Call the tap method in GameState which properly updates all stats including lifetimeTaps
       if (_remainingBoostSeconds > 0) {
-        // Custom handling for the boost case since tap() doesn't handle boost
-        double boostedClickMultiplier = gameState.clickMultiplier * 10.0; // Store the original multiplier
-        gameState.clickMultiplier *= 10.0; // Apply 10x boost temporarily
-        gameState.tap(); // This increments both taps and lifetimeTaps
-        gameState.clickMultiplier = boostedClickMultiplier / 10.0; // Reset to original
+        double boostedClickMultiplier = gameState.clickMultiplier * 10.0;
+        gameState.clickMultiplier *= 10.0;
+        gameState.tap();
+        gameState.clickMultiplier = boostedClickMultiplier / 10.0;
       } else {
-        gameState.tap(); // Regular tap, which increments both taps and lifetimeTaps
+        gameState.tap();
       }
       
-      // Check for level up
       _checkForLevelUp(gameState);
       
-      // Enhanced debug logging
       double earnings = gameState.clickValue * (_remainingBoostSeconds > 0 ? 10.0 : 1.0);
       print("💰 HUSTLE TAP: earned \$${earnings.toStringAsFixed(2)}, new total: \$${gameState.money.toStringAsFixed(2)}, level: ${gameState.clickLevel}");
       
-      // Force UI update in case state change isn't detected
       if (mounted) {
         setState(() {});
       }
       
-      // Play sound - use boosted tap sound if boost is active
       if (gameService != null) {
         try {
-          // Use the new specific method based on boost state
           if (_remainingBoostSeconds > 0) {
             gameService.soundManager.playUiTapBoostedSound();
           } else {
-            gameService.soundManager.playUiTapSound(); // Use new UI tap sound method
+            gameService.soundManager.playUiTapSound();
           }
         } catch (e) {
           print("Sound error: $e");
         }
       }
       
-      // Explicitly notify listeners for GameState
       gameState.notifyListeners();
     } catch (e) {
       print("Error in _earnMoney: $e");
@@ -119,11 +108,9 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
   
   void _checkForLevelUp(GameState gameState) {
     try {
-      // For example, level up click value at specific tap counts
       final int nextLevel = gameState.clickLevel + 1;
       int requiredTaps;
       
-      // Calculate required taps for next level (with progressive scaling)
       if (nextLevel <= 5) {
         requiredTaps = 500 * nextLevel;
       } else if (nextLevel <= 10) {
@@ -132,46 +119,32 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
         requiredTaps = 1000 * nextLevel;
       }
       
-      // Check if we should level up
       if (gameState.taps >= requiredTaps && gameState.clickLevel < 20) {
-        // Level up!
         gameState.clickLevel = nextLevel;
         
-        // Increase click value (increasing gains per level)
         double baseValue;
         if (nextLevel <= 5) {
-          // Starting from 1.5, increasing by at least 0.5 per level for first 5 levels
           baseValue = 1.5 + (nextLevel * 0.5);
         } else if (nextLevel <= 10) {
-          // Base of 4.0 at level 6, increasing by 1.0 per level
           baseValue = 4.0 + ((nextLevel - 5) * 1.0);
         } else if (nextLevel <= 15) {
-          // Base of 9.0 at level 11, increasing by 2.0 per level
           baseValue = 9.0 + ((nextLevel - 10) * 2.0);
         } else {
-          // Base of 19.0 at level 16, increasing by 3.5 per level up to level 20
           baseValue = 19.0 + ((nextLevel - 15) * 3.5);
         }
         
-        // Apply prestigeMultiplier to the new base value
         gameState.clickValue = baseValue * gameState.prestigeMultiplier;
         
-        // Play level up sound based on milestone level
         try {
           GameService? gameService = Provider.of<GameService>(context, listen: false);
           
-          // Play different achievement sounds based on level significance
           if (nextLevel >= 15) {
-            // Major milestone achievement sound for high levels
             gameService.soundManager.playAchievementMilestoneSound();
           } else if (nextLevel >= 10) {
-            // Rare achievement sound for medium-high levels
             gameService.soundManager.playAchievementRareSound();
           } else if (nextLevel >= 5) {
-            // Basic achievement sound for medium levels
             gameService.soundManager.playAchievementBasicSound();
           } else {
-            // Use feedback success sound for early levels
             gameService.soundManager.playFeedbackSuccessSound();
           }
         } catch (e) {
@@ -186,21 +159,18 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
   }
   
   void _startAdBoost() {
-    // In a real app, you would show an actual ad here
     setState(() {
       _isWatchingAd = true;
     });
     
-    // Simulate ad viewing
     Future.delayed(const Duration(seconds: 3), () {
-      if (!mounted) return; // Safety check if widget is disposed
+      if (!mounted) return;
       
       setState(() {
         _isWatchingAd = false;
         _remainingBoostSeconds = 60;
       });
       
-      // Start boost timer
       _boostTimer?.cancel();
       _boostTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
         if (!mounted) {
@@ -216,10 +186,8 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
         });
       });
       
-      // Play boost success sound with error handling
       try {
         GameService? gameService = Provider.of<GameService>(context, listen: false);
-        // Use notification sound for boost activation
         gameService.soundManager.playFeedbackNotificationSound();
       } catch (e) {
         print("Could not play boost success sound: $e");
@@ -231,7 +199,6 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
   Widget build(BuildContext context) {
     return Consumer<GameState>(
       builder: (context, gameState, child) {
-        // Calculate progress to next level
         final int nextLevel = gameState.clickLevel + 1;
         int requiredTaps;
         int currentLevelTaps;
@@ -250,9 +217,6 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
           gameState.clickLevel <= 10 ? 750 * gameState.clickLevel :
           1000 * gameState.clickLevel;
         
-        // Calculate relative progress within current level
-        // Use taps (current level progress) instead of lifetimeTaps % requiredTaps
-        // This ensures progress bar properly tracks taps for current level
         relativeTaps = gameState.taps - currentLevelTaps;
         
         final double progress = gameState.clickLevel >= 20 ? 1.0 :
@@ -266,16 +230,14 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
             _buildClickInfoCard(gameState, progress, nextClickValue),
             _buildBoostCard(),
             
-            // Click area (takes up about half the screen)
             Expanded(
-              flex: 6, // Increased from 3 to 6 to make it much taller
+              flex: 6,
               child: Padding(
                 padding: const EdgeInsets.all(12.0),
                 child: _buildClickArea(gameState),
               ),
             ),
             
-            // Bottom spacer
             const SizedBox(height: 20),
           ],
         );
@@ -286,20 +248,15 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
   double _calculateNextClickValue(int level) {
     double baseValue;
     if (level <= 5) {
-      // Starting from 1.5, increasing by at least 0.5 per level for first 5 levels
       baseValue = 1.5 + (level * 0.5);
     } else if (level <= 10) {
-      // Base of 4.0 at level 6, increasing by 1.0 per level
       baseValue = 4.0 + ((level - 5) * 1.0);
     } else if (level <= 15) {
-      // Base of 9.0 at level 11, increasing by 2.0 per level
       baseValue = 9.0 + ((level - 10) * 2.0);
     } else {
-      // Base of 19.0 at level 16, increasing by 3.5 per level up to level 20
       baseValue = 19.0 + ((level - 15) * 3.5);
     }
     
-    // Apply the prestige multiplier to the next level value
     final gameState = Provider.of<GameState>(context, listen: false);
     return baseValue * gameState.prestigeMultiplier;
   }
@@ -326,7 +283,6 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            // Current click value
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -352,7 +308,6 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
                   ),
                 ),
                 
-                // Next level value preview
                 if (gameState.clickLevel < 20)
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -383,7 +338,6 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
             
             const SizedBox(height: 12),
             
-            // Level indicator and progress bar
             Row(
               children: [
                 Container(
@@ -403,7 +357,6 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
                 
                 const SizedBox(width: 12),
                 
-                // Progress bar
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
@@ -442,7 +395,7 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
   
   int _calculateRequiredTaps(int level) {
     if (level <= 5) {
-      return 500 * level; // Start with 500 taps for level 1, already updated from 1000
+      return 500 * level;
     } else if (level <= 10) {
       return 750 * level;
     } else {
@@ -554,17 +507,15 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
     return GestureDetector(
       onTap: () {
         _earnMoney();
-        // Debug print to confirm tap is registered
         print("TAP REGISTERED IN HUSTLE SCREEN");
       },
       onTapDown: _onTapDown,
       onTapUp: _onTapUp,
       onTapCancel: _onTapCancel,
-      behavior: HitTestBehavior.translucent, // Changed to translucent for better detection
+      behavior: HitTestBehavior.translucent,
       child: AnimatedBuilder(
         animation: _animationController,
         builder: (context, child) {
-          // Use Matrix4Fallback utility for better deployment compatibility
           return Matrix4Fallback.scale(
             scale: _scaleAnimation.value,
             child: Material(
