@@ -130,7 +130,6 @@ class GameService {
       print("🔄 CRITICAL FIX: Removing all existing listeners - complete reset");
       final int listenerCount = _gameState.hasListeners ? 1 : 0;
       print("🔢 Current listener count: $listenerCount");
-      _gameState.removeListener(_saveGame); // Forcefully remove our save game listener (if it exists)
       print("📝 AUTO-SAVE FIX: Now using direct timer-based auto-save only instead of listener pattern");
 
       print("📦 Available keys in SharedPreferences: ${_prefs.getKeys()}");
@@ -383,9 +382,8 @@ class GameService {
   }
 
   void dispose() {
+    print("🛑 Disposing GameService...");
     _autoSaveTimer?.cancel();
-    _autoSaveTimer = null;
-    _gameState.removeListener(_saveGame); // Ensure listener removed if it was ever added
-    print('🧹 GameService resources cleaned up');
+    print("✅ GameService disposed.");
   }
 }

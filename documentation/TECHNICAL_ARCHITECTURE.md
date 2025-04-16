@@ -21,12 +21,14 @@ User Interaction → Screens/Widgets → GameService → GameState → Persisten
 ### Models
 
 #### GameState (`models/game_state.dart`)
-- Central state container for all game data
-- Implements `ChangeNotifier` for the Provider pattern
-- Manages player resources, assets, and game progression
-- Tracks game time and financial metrics
-- Coordinates timers for passive income and auto-save
-- Responsible for serialization/deserialization of game data
+- Central state container for all core game data (money, businesses, investments, real estate, events, achievements, etc.).
+- Implements `ChangeNotifier` for reactive state updates via the Provider pattern.
+- Manages player resources (money), assets (businesses, investments, properties), and overall game progression (taps, levels, reincorporation).
+- Tracks game time (start time, save/open times) and detailed financial metrics (total earned, passive income, investment gains, net worth history).
+- Coordinates timers for periodic updates (passive income calculation, auto-save, investment price changes).
+- Responsible for serialization/deserialization of the entire game state for persistence.
+- **Note:** The extensive logic for `GameState` is modularized using Dart's `part` directive, splitting functionality into separate files (e.g., `business_logic.dart`, `investment_logic.dart`, `serialization_logic.dart`) located in `lib/models/game_state/`.
+- Manages the game's event system (triggering, tracking, resolution) and achievement system (tracking progress, awarding, notifications).
 
 #### Business (`models/business.dart`)
 - Represents a player-owned business entity
@@ -51,13 +53,14 @@ User Interaction → Screens/Widgets → GameService → GameState → Persisten
 ### Services
 
 #### GameService (`services/game_service.dart`)
-- Coordinates between persistence layer and game state
-- Manages saving/loading game data
-- Handles offline progression calculations
-- Coordinates sound effects and game events
-- Initializes game systems and dependencies
+- Orchestrates game initialization, loading, and saving.
+- Acts as the interface to the persistence layer (`SharedPreferences`), managing the serialization and deserialization of `GameState`.
+- Calculates offline progression based on time elapsed since the last save.
+- Initializes and manages the core `SoundManager` and related sound assets.
+- Sets up and manages timers for background tasks like auto-saving.
+- Handles game version checking and data migration/reset if necessary.
 
-#### SoundManager (`assets/sounds.dart`)
+#### SoundManager (`utils/sounds.dart`)
 - Loads and caches sound resources
 - Plays appropriate sound effects for game events
 - Manages audio settings and volume control
@@ -65,10 +68,11 @@ User Interaction → Screens/Widgets → GameService → GameState → Persisten
 ### Screens
 
 #### MainScreen (`screens/main_screen.dart`)
-- Root UI container with tabbed navigation
-- Manages tab controller and navigation state
-- Displays persistent UI elements (money display)
-- Coordinates between different gameplay screens
+- The primary UI container after initialization, hosting the main gameplay interface.
+- Implements a `Scaffold` with a `BottomNavigationBar` and `TabBarView` to manage navigation between core game sections (Hustle, Businesses, Investments, Real Estate, Stats).
+- Manages the `TabController` to synchronize the bottom navigation bar and the displayed screen.
+- Displays persistent UI elements in the `AppBar`, such as the player's current money (`MoneyDisplay` widget).
+- Uses a `Stack` to potentially overlay important notifications (e.g., Offline Income, Achievements, Events) on top of the current screen.
 
 #### HustleScreen (`screens/hustle_screen.dart`)
 - Implements manual income generation mechanics
@@ -83,10 +87,11 @@ User Interaction → Screens/Widgets → GameService → GameState → Persisten
 - Shows income generation rates
 
 #### InvestmentScreen (`screens/investment_screen.dart`)
-- Displays investment opportunities and owned assets
-- Shows market data and price trends
-- Implements buy/sell mechanics
-- Visualizes portfolio performance
+- Displays a filterable and sortable list of available investment opportunities using `InvestmentListItem` widgets.
+- Includes filters for investment category and owned status.
+- Shows a high-level market overview (`MarketOverviewWidget`) and provides access to a detailed portfolio summary (`PortfolioWidget`) overlay.
+- Tapping an `InvestmentListItem` navigates to `InvestmentDetailScreen` where detailed information, price trends, and buy/sell actions (likely using an `InvestmentItem` widget) are handled.
+- Provides sorting options based on price, volatility, performance, and dividend yield.
 
 #### RealEstateScreen (`screens/real_estate_screen.dart`)
 - Organizes properties by locale
@@ -103,9 +108,9 @@ User Interaction → Screens/Widgets → GameService → GameState → Persisten
 ### Widgets
 
 #### MoneyDisplay (`widgets/money_display.dart`)
-- Shows current player balance with formatting
-- Animates value changes
-- Provides visual hierarchy for currency display
+- A reusable widget for displaying currency values.
+- Shows the provided balance formatted using `NumberFormatter.formatCurrency`.
+- Allows customization of text style (color, size, weight) for visual hierarchy.
 
 #### BusinessItem (`widgets/business_item.dart`)
 - List item for business display
@@ -113,9 +118,10 @@ User Interaction → Screens/Widgets → GameService → GameState → Persisten
 - Contains upgrade button and progress indicators
 
 #### InvestmentItem (`widgets/investment_item.dart`)
-- Displays individual investment assets
-- Shows price trends and ownership information
-- Contains buy/sell controls
+- A detailed widget (likely used on `InvestmentDetailScreen`) for a single investment.
+- Displays investment details: name, icon, price, price change, owned quantity, description, category, forecast, dividend info.
+- Shows a simple price history chart.
+- Includes controls for selecting quantity and triggering buy/sell actions via callbacks (`onBuy`, `onSell`).
 
 #### RealEstatePropertyItem (`widgets/real_estate_property_item.dart`)
 - Displays property information
@@ -130,20 +136,20 @@ User Interaction → Screens/Widgets → GameService → GameState → Persisten
 - Implements short notation for large values
 
 #### TimeUtils (`utils/time_utils.dart`)
-- Handles time-based calculations
-- Formats timestamps
-- Calculates offline progression
+- Provides helper functions for time-related operations.
+- Formats `DateTime` objects into various string representations (time, date, date+time, relative time ago, remaining time).
+- Generates standardized string keys based on date/hour for data storage.
 
 ## State Management
 
-The application uses the Provider pattern for state management:
+The application uses the Provider package for state management:
 
-1. `GameState` class extends `ChangeNotifier`
-2. `MultiProvider` in `main.dart` provides:
-   - `GameService` as a straight Provider
-   - `GameState` as a ChangeNotifierProvider
-3. Screens and widgets consume state using `Consumer<GameState>` or `Provider.of<GameState>(context)`
-4. State changes trigger UI rebuilds through the notifier pattern
+1. `GameState` (`models/game_state.dart`) extends `ChangeNotifier` to hold and notify about changes in the core game state.
+2. `GameService` (`services/game_service.dart`) manages initialization, persistence, and background tasks.
+3. `MultiProvider` in `main.dart` (`MyApp` widget) sets up the providers at the root:
+   - `GameState` is provided via `ChangeNotifierProvider`.
+   - `GameService` is provided via a standard `Provider`, taking the `GameState` instance and `SharedPreferences`.
+4. Screens and widgets access state and services primarily using `Provider.of<T>(context)` or `context.read<T>()` / `context.watch<T>()`, and react to `GameState` changes using `Consumer<GameState>` or `context.watch<GameState>()`.
 
 ## Persistence
 
@@ -156,17 +162,23 @@ Game persistence is implemented through:
 
 ## Initialization Flow
 
-1. Show loading screen first (`LoadingApp`)
-2. Initialize core systems in the background:
-   - Set device orientation to portrait
-   - Handle web-specific initialization
-   - Initialize SharedPreferences
-   - Create GameState instance
-   - Initialize GameService
-   - Load saved game data if available
-3. Calculate offline progress if applicable
-4. Switch to main game UI (`EmpireTycoonApp`)
-5. Start passive income timers and auto-save timer
+1. **Entry Point (`main` function):** Ensures Flutter bindings are ready and initializes `SharedPreferences`.
+2. **Root Widget (`MyApp`):** Sets up `MaterialApp` and the core `MultiProvider` with `GameState` and `GameService`.
+3. **Initializer Widget (`GameInitializer`):** 
+   - Shown initially as the home route.
+   - Displays a loading indicator or an error message.
+   - Fetches the `GameService` instance from the provider.
+   - Calls `gameService.init()` to perform the main initialization tasks.
+4. **Service Initialization (`GameService.init()`):**
+   - Handles game version checking.
+   - Initializes sound systems.
+   - Loads the saved `GameState` from `SharedPreferences` (`_loadGame`).
+   - Calculates offline progress based on timestamps (`_calculateOfflineIncome`).
+   - Performs an initial save (`saveGame`).
+   - Sets up the auto-save timer.
+   - Sets `GameState.isInitialized` to true.
+5. **Transition to Main UI:** Once `gameService.init()` completes successfully, `GameInitializer` rebuilds and displays the `MainScreen` (`screens/main_screen.dart`).
+6. **Background Timers:** Auto-save and other periodic updates (like investment changes within `GameState`) continue running in the background.
 
 ## Error Handling
 
@@ -184,13 +196,21 @@ The application implements error handling through:
 3. Efficient JSON parsing for save/load operations
 4. Animation optimizations to maintain smooth framerates
 
+## Data Loading
+
+Static game data, such as achievement definitions and real estate details, is loaded from:
+1. Hardcoded definitions within the `lib/data/` directory (e.g., `achievement_definitions.dart`).
+2. External files (e.g., CSVs) located in the root `attached_assets/` directory, parsed by loaders in `lib/data/` (e.g., `real_estate_data_loader.dart`).
+
 ## Code Organization
 
 ```
 lib/
-├── assets/
-│   └── sounds.dart
+├── data/
+│   ├── achievement_definitions.dart
+│   └── real_estate_data_loader.dart
 ├── models/
+│   ├── achievement_data.dart # (Implicitly exists based on achievement_definitions.dart import)
 │   ├── business.dart
 │   ├── game_state.dart
 │   ├── investment.dart
@@ -206,6 +226,7 @@ lib/
 │   └── game_service.dart
 ├── utils/
 │   ├── number_formatter.dart
+│   ├── sounds.dart           
 │   └── time_utils.dart
 ├── widgets/
 │   ├── business_item.dart

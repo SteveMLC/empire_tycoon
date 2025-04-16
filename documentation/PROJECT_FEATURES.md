@@ -14,17 +14,17 @@ Empire Tycoon is a mobile idle business tycoon game that transforms strategic fi
 ## Core Game Features
 
 ### 1. Player Economy System
-- **Starting Money**: Players begin with $1,000
+- **Starting Money**: Players begin with $500
 - **Currency Display**: Dynamic money display showing current balance
 - **Income Streams**: Multiple income generation pathways
   - Manual earnings (tapping/hustle)
   - Passive business income
-  - Investment returns
+  - Investment returns and dividend income
   - Real estate cash flow
 
 ### 2. Hustle/Tapping Mechanics
 - **Manual Income Generation**: Players can tap to earn money directly
-- **Tap Value Progression**: Starting at $1 per tap with upgradable value
+- **Tap Value Progression**: Starting at $1.50 per tap with upgradable value
 - **Tap Animation**: Visual feedback with scale animation
 - **Boost System**: Temporary tap value multipliers
 - **Sound Effects**: Audio feedback when tapping
@@ -61,6 +61,9 @@ Empire Tycoon is a mobile idle business tycoon game that transforms strategic fi
 - **Passive Income**: Properties generate steady cash flow
 - **ROI Analysis**: Return on investment calculations for each property
 - **Progressive Unlocking**: New locations unlock as player wealth increases
+-**Upgrade System**: Each property has 3 upgrades available with increasing:
+  - Income generation rates
+  - Purchase costs
 
 ### 6. Statistics & Progress Tracking
 - **Financial Metrics**:
@@ -99,6 +102,12 @@ Empire Tycoon is a mobile idle business tycoon game that transforms strategic fi
 - **Game Events**: Sound cues for significant gameplay moments
 - **Audio Management**: Volume controls and mute options
 
+### 10. Achievement System (NEW)
+- **Tracking & Completion**: Monitors player progress against defined goals (e.g., earning milestones, owning assets, resolving events).
+- **Categorization**: Achievements grouped by type (Progress, Wealth, Regional) and rarity (Basic, Rare, Milestone).
+- **Notifications**: In-game notifications for completed achievements.
+- **Visualization**: Dedicated section in the Stats screen to view completed and pending achievements.
+
 ## Technical Implementation
 
 ### State Management
@@ -120,7 +129,6 @@ Empire Tycoon is a mobile idle business tycoon game that transforms strategic fi
 - **Adaptive Layout**: Accommodates different screen sizes
 
 ## Future Enhancement Opportunities
-- Achievement system
 - Time-limited special events
 - Cloud save functionality
 - Social features (leaderboards, sharing)

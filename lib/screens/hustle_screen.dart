@@ -17,8 +17,6 @@ class HustleScreen extends StatefulWidget {
 class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
-  Timer? _boostTimer;
-  int _remainingBoostSeconds = 0;
   bool _isWatchingAd = false;
 
   @override
@@ -36,7 +34,6 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
   @override
   void dispose() {
     _animationController.dispose();
-    _boostTimer?.cancel();
     super.dispose();
   }
 
@@ -70,19 +67,12 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
         print("Could not get GameService: $e");
       }
       
-      if (_remainingBoostSeconds > 0) {
-        double boostedClickMultiplier = gameState.clickMultiplier * 10.0;
-        gameState.clickMultiplier *= 10.0;
-        gameState.tap();
-        gameState.clickMultiplier = boostedClickMultiplier / 10.0;
-      } else {
-        gameState.tap();
-      }
+      gameState.tap();
       
       _checkForLevelUp(gameState);
       
-      double earnings = gameState.clickValue * (_remainingBoostSeconds > 0 ? 10.0 : 1.0);
-      print("💰 HUSTLE TAP: earned \$${earnings.toStringAsFixed(2)}, new total: \$${gameState.money.toStringAsFixed(2)}, level: ${gameState.clickLevel}");
+      double currentClickValue = gameState.clickValue * (gameState.isBoostActive ? 10.0 : 1.0);
+      print("💰 HUSTLE TAP: earned \$${currentClickValue.toStringAsFixed(2)}, new total: \$${gameState.money.toStringAsFixed(2)}, level: ${gameState.clickLevel}");
       
       if (mounted) {
         setState(() {});
@@ -90,7 +80,7 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
       
       if (gameService != null) {
         try {
-          if (_remainingBoostSeconds > 0) {
+          if (gameState.isBoostActive) {
             gameService.soundManager.playUiTapBoostedSound();
           } else {
             gameService.soundManager.playUiTapSound();
@@ -99,8 +89,6 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
           print("Sound error: $e");
         }
       }
-      
-      gameState.notifyListeners();
     } catch (e) {
       print("Error in _earnMoney: $e");
     }
@@ -166,24 +154,13 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
     Future.delayed(const Duration(seconds: 3), () {
       if (!mounted) return;
       
+      // Call GameState to start the actual boost
+      print("~~~ HustleScreen._startAdBoost: Attempting to call gameState.startBoost() ~~~"); // DEBUG LOG
+      Provider.of<GameState>(context, listen: false).startBoost();
+      
+      // Update local state for UI
       setState(() {
         _isWatchingAd = false;
-        _remainingBoostSeconds = 60;
-      });
-      
-      _boostTimer?.cancel();
-      _boostTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-        if (!mounted) {
-          timer.cancel();
-          return;
-        }
-        
-        setState(() {
-          _remainingBoostSeconds--;
-          if (_remainingBoostSeconds <= 0) {
-            timer.cancel();
-          }
-        });
       });
       
       try {
@@ -220,7 +197,8 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
         relativeTaps = gameState.taps - currentLevelTaps;
         
         final double progress = gameState.clickLevel >= 20 ? 1.0 :
-          relativeTaps / (requiredTaps - currentLevelTaps);
+          (relativeTaps <= 0 || (requiredTaps - currentLevelTaps) <= 0) ? 0.0 :
+          (relativeTaps / (requiredTaps - currentLevelTaps)).clamp(0.0, 1.0);
         
         final double nextClickValue = gameState.clickLevel >= 20 ? gameState.clickValue :
           _calculateNextClickValue(gameState.clickLevel + 1);
@@ -228,7 +206,7 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
         return Column(
           children: [
             _buildClickInfoCard(gameState, progress, nextClickValue),
-            _buildBoostCard(),
+            _buildBoostCard(gameState),
             
             Expanded(
               flex: 6,
@@ -290,7 +268,7 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
                   text: TextSpan(
                     children: [
                       TextSpan(
-                        text: '${NumberFormatter.formatCurrency(gameState.clickValue)} ',
+                        text: '${NumberFormatter.formatCurrency(gameState.clickValue * (gameState.isBoostActive ? 10.0 : 1.0))} ',
                         style: const TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
@@ -403,18 +381,25 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
     }
   }
   
-  Widget _buildBoostCard() {
+  Widget _buildBoostCard(GameState gameState) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: Card(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12.0),
         ),
-        color: _remainingBoostSeconds > 0 
+        color: gameState.isBoostActive
             ? Colors.amber.shade100 
             : Colors.green.shade100,
         child: InkWell(
-          onTap: (_remainingBoostSeconds > 0 || _isWatchingAd) ? null : _startAdBoost,
+          onTap: (gameState.isBoostActive || _isWatchingAd) 
+              ? null 
+              : () {
+                  final gs = Provider.of<GameState>(context, listen: false);
+                  if (!gs.isBoostActive) {
+                    _startAdBoost(); 
+                  }
+                },
           borderRadius: BorderRadius.circular(12.0),
           child: Padding(
             padding: const EdgeInsets.all(12.0),
@@ -438,7 +423,7 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
                 ),
                 const SizedBox(width: 16),
                 Expanded(
-                  child: _remainingBoostSeconds > 0
+                  child: gameState.isBoostActive
                       ? Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -451,7 +436,7 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              '10x earnings for $_remainingBoostSeconds more seconds',
+                              '10x earnings for ${gameState.boostRemainingSeconds} more seconds',
                               style: TextStyle(
                                 color: Colors.grey.shade700,
                               ),
@@ -522,19 +507,19 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
                 color: Colors.transparent,
                 child: Container(
                   decoration: BoxDecoration(
-                    color: _remainingBoostSeconds > 0
+                    color: gameState.isBoostActive
                         ? Colors.amber.withOpacity(0.1)
                         : Colors.blue.withOpacity(0.05),
                     borderRadius: BorderRadius.circular(24.0),
                     border: Border.all(
-                      color: _remainingBoostSeconds > 0
+                      color: gameState.isBoostActive
                           ? Colors.amber
                           : Colors.blue.shade300,
                       width: 2,
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: _remainingBoostSeconds > 0
+                        color: gameState.isBoostActive
                             ? Colors.amber.withOpacity(0.2)
                             : Colors.blue.withOpacity(0.1),
                         blurRadius: 10,
@@ -544,10 +529,10 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
                   ),
                   child: InkWell(
                     onTap: _earnMoney,
-                    splashColor: _remainingBoostSeconds > 0
+                    splashColor: gameState.isBoostActive
                         ? Colors.amber.withOpacity(0.3)
                         : Colors.blue.withOpacity(0.3),
-                    highlightColor: _remainingBoostSeconds > 0
+                    highlightColor: gameState.isBoostActive
                         ? Colors.amber.withOpacity(0.2)
                         : Colors.blue.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(24.0),
@@ -558,22 +543,22 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
                           Icon(
                             Icons.touch_app,
                             size: 72,
-                            color: _remainingBoostSeconds > 0
+                            color: gameState.isBoostActive
                                 ? Colors.amber
                                 : Colors.blue.shade400,
                           ),
                           const SizedBox(height: 16),
                           Text(
-                            'Tap to earn ${NumberFormatter.formatCurrency(_remainingBoostSeconds > 0 ? gameState.clickValue * 10 : gameState.clickValue)}',
+                            'Tap to earn ${NumberFormatter.formatCurrency(gameState.clickValue * (gameState.isBoostActive ? 10.0 : 1.0))}',
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
-                              color: _remainingBoostSeconds > 0
+                              color: gameState.isBoostActive
                                   ? Colors.amber.shade800
                                   : Colors.blue.shade800,
                             ),
                           ),
-                          if (_remainingBoostSeconds > 0)
+                          if (gameState.isBoostActive)
                             Padding(
                               padding: const EdgeInsets.only(top: 8.0),
                               child: Container(

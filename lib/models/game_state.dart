@@ -44,6 +44,11 @@ class GameState with ChangeNotifier {
   int clickLevel = 1;
   int totalRealEstateUpgradesPurchased = 0; // Track total upgrades purchased
 
+  // Boost Timer State
+  int boostRemainingSeconds = 0;
+  Timer? _boostTimer;
+  bool get isBoostActive => boostRemainingSeconds > 0;
+
   // >> START: Add Achievement Tracking Fields Declaration <<
   // These fields are explicitly marked as needed for achievement tracking
   double totalUpgradeSpending = 0.0;
@@ -936,15 +941,21 @@ class GameState with ChangeNotifier {
   }
 
   void tap() {
-    double earned = clickValue * clickMultiplier;
-    money += earned;
-    totalEarned += earned;
-    manualEarnings += earned;
-    taps++;
-    lifetimeTaps++;
+    // Calculate earnings based on click value and potential boost
+    double earnings = clickValue * (isBoostActive ? 10.0 : 1.0) * clickMultiplier;
+    print("~~~ GameState.tap() called. isBoostActive: $isBoostActive, clickValue: $clickValue, clickMultiplier: $clickMultiplier, calculated earnings: $earnings ~~~"); // DEBUG LOG
 
-    String today = TimeUtils.getDayKey(DateTime.now());
-    _updateDailyEarnings(today, earned);
+    money += earnings;
+    totalEarned += earnings;
+    manualEarnings += earnings;
+    taps++;
+    lifetimeTaps++; // Also count towards lifetime taps
+
+    // Check for achievements related to taps or earnings here if needed
+    // Example: achievementManager.checkTapAchievements(taps, lifetimeTaps);
+    // Example: achievementManager.checkEarningAchievements(totalEarned, manualEarnings);
+
+    // No need to check for level up here, HustleScreen does that after calling tap()
 
     notifyListeners();
   }
@@ -1401,6 +1412,7 @@ class GameState with ChangeNotifier {
     _saveTimer?.cancel();
     _updateTimer?.cancel();
     _investmentUpdateTimer?.cancel(); // Ensure this timer is cancelled too
+    _boostTimer?.cancel(); // ADDED: Cancel boost timer on dispose
     super.dispose();
   }
 
@@ -2155,4 +2167,54 @@ class GameState with ChangeNotifier {
        }
     });
   }
+
+  // --- Boost Logic ---
+
+  void startBoost({int durationSeconds = 60}) {
+    print("~~~ GameState.startBoost called. Duration: $durationSeconds ~~~"); // DEBUG LOG
+    _boostTimer?.cancel(); // Cancel any existing timer
+
+    boostRemainingSeconds = durationSeconds;
+    print("~~~ GameState.startBoost: Set boostRemainingSeconds=$boostRemainingSeconds. Notifying listeners... ~~~"); // DEBUG LOG
+    notifyListeners(); // Notify UI immediately that boost is active
+
+    print("~~~ GameState.startBoost: Creating Timer... ~~~"); // DEBUG LOG
+    _boostTimer = Timer.periodic(const Duration(seconds: 1), _tickBoostTimer);
+    print("🚀 Boost Started: $boostRemainingSeconds seconds remaining.");
+  }
+
+  void _tickBoostTimer(Timer timer) {
+    // print("~~~ GameState._tickBoostTimer: Tick! isInitialized: $isInitialized ~~~"); // DEBUG LOG
+    if (!isInitialized) { // Safety check
+      timer.cancel();
+      boostRemainingSeconds = 0;
+      print("⚠️ Boost timer cancelled because GameState is not initialized.");
+      notifyListeners();
+      return;
+    }
+
+    boostRemainingSeconds--;
+    // print("~~~ GameState._tickBoostTimer: Decremented seconds to $boostRemainingSeconds ~~~"); // DEBUG LOG
+
+    if (boostRemainingSeconds <= 0) {
+      boostRemainingSeconds = 0; // Ensure it doesn't go negative
+      timer.cancel();
+      _boostTimer = null; // Clear the timer reference
+      print("✅ Boost Ended.");
+    } else {
+      // print("⏱️ Boost Tick: $boostRemainingSeconds seconds remaining."); // Optional: for debugging
+    }
+    print("~~~ GameState._tickBoostTimer: Tick processed (Seconds: $boostRemainingSeconds). Notifying listeners... ~~~"); // DEBUG LOG
+    notifyListeners(); // Update UI every second while boost is active or when it ends
+  }
+
+  void cancelBoost() { // Method to manually cancel boost if needed elsewhere
+    _boostTimer?.cancel();
+    _boostTimer = null;
+    boostRemainingSeconds = 0;
+    print("🚫 Boost Cancelled Manually.");
+    notifyListeners();
+  }
+
+  // --- End Boost Logic ---
 }
