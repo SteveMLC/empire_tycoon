@@ -382,15 +382,48 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Account label
-          Text(
-            'INVESTMENT ACCOUNT',
-            style: TextStyle(
-              color: Colors.grey.shade700,
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
-              letterSpacing: 1.2,
-            ),
+          // Top Row: Account Label and PP Display
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              // Account label
+              Text(
+                'INVESTMENT ACCOUNT',
+                style: TextStyle(
+                  color: Colors.grey.shade700,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  letterSpacing: 1.2,
+                ),
+              ),
+
+              // Clickable Platinum Points Display
+              InkWell(
+                onTap: () {
+                  // TODO: Add check if vault is unlocked (e.g., gameState.platinumPoints > 0 || gameState.vaultUnlocked)
+                  Navigator.pushNamed(context, '/platinumVault');
+                },
+                borderRadius: BorderRadius.circular(8),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min, // Prevent row from expanding unnecessarily
+                    children: [
+                      Icon(Icons.star, color: Colors.purple.shade400, size: 20), // PP Icon
+                      const SizedBox(width: 6),
+                      Text(
+                        '${gameState.platinumPoints.toString()} PP', // Use standard toString for integer PP
+                        style: TextStyle(
+                          color: Colors.purple.shade700,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
           
           const SizedBox(height: 10),

@@ -161,6 +161,26 @@ class _StatsScreenState extends State<StatsScreen> {
 
                         const SizedBox(height: 16),
 
+                        // Platinum Vault Button
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: () {
+                               // TODO: Add check if vault is unlocked?
+                               Navigator.pushNamed(context, '/platinumVault');
+                            },
+                            icon: Icon(Icons.star, color: Colors.white), // Use star icon for consistency
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.purple.shade600, // Theme color
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                            ),
+                            label: const Text('Platinum Vault'),
+                          ),
+                        ),
+
+                        const SizedBox(height: 16),
+
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton(

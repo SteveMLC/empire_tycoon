@@ -19,6 +19,7 @@ class Achievement {
   final IconData icon;
   final AchievementCategory category;
   final AchievementRarity rarity;
+  final int ppReward;
   bool completed;
   final DateTime? completedTimestamp;
 
@@ -28,6 +29,7 @@ class Achievement {
     required this.description,
     required this.icon,
     required this.category,
+    required this.ppReward,
     this.rarity = AchievementRarity.basic,
     this.completed = false,
     this.completedTimestamp,

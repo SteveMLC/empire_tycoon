@@ -16,6 +16,7 @@ import 'investment_holding.dart';
 import '../data/real_estate_data_loader.dart';
 import 'market_event.dart';
 import 'achievement_data.dart'; // Added import
+import '../data/achievement_definitions.dart'; // Import needed for retroactive PP
 
 part 'game_state/initialization_logic.dart';
 part 'game_state/business_logic.dart';
@@ -43,6 +44,18 @@ class GameState with ChangeNotifier {
   int taps = 0;
   int clickLevel = 1;
   int totalRealEstateUpgradesPurchased = 0; // Track total upgrades purchased
+
+  // >> START: Platinum Points System Fields <<
+  int platinumPoints = 0;
+  bool _retroactivePPAwarded = false; // Flag for retroactive PP grant
+  Map<String, int> ppPurchases = {}; // Tracks counts of repeatable PP items purchased {itemId: count}
+  Set<String> ppOwnedItems = {};    // Tracks IDs of one-time PP items purchased {itemId}
+  // >> END: Platinum Points System Fields <<
+
+  // Flags for specific unlocks from Platinum Vault
+  bool isGoldenCursorUnlocked = false;
+  bool isExecutiveThemeUnlocked = false;
+  bool isPlatinumFrameUnlocked = false;
 
   // Boost Timer State
   int boostRemainingSeconds = 0;
@@ -942,20 +955,16 @@ class GameState with ChangeNotifier {
 
   void tap() {
     // Calculate earnings based on click value and potential boost
-    double earnings = clickValue * (isBoostActive ? 10.0 : 1.0) * clickMultiplier;
-    print("~~~ GameState.tap() called. isBoostActive: $isBoostActive, clickValue: $clickValue, clickMultiplier: $clickMultiplier, calculated earnings: $earnings ~~~"); // DEBUG LOG
+    double baseEarnings = clickValue * clickMultiplier; // Base click value * permanent PP multiplier * prestige multiplier
+    double finalEarnings = baseEarnings * (isBoostActive ? _tempClickBoostMultiplier : 1.0); // Apply temp boost multiplier if active
 
-    money += earnings;
-    totalEarned += earnings;
-    manualEarnings += earnings;
+    print("~~~ GameState.tap() called. BaseClick: $clickValue, PermClickMult: $clickMultiplier, TempBoostMult: $isBoostActive ? $_tempClickBoostMultiplier : 1.0, Final: $finalEarnings ~~~ "); // DEBUG LOG
+
+    money += finalEarnings;
+    totalEarned += finalEarnings;
+    manualEarnings += finalEarnings;
     taps++;
-    lifetimeTaps++; // Also count towards lifetime taps
-
-    // Check for achievements related to taps or earnings here if needed
-    // Example: achievementManager.checkTapAchievements(taps, lifetimeTaps);
-    // Example: achievementManager.checkEarningAchievements(totalEarned, manualEarnings);
-
-    // No need to check for level up here, HustleScreen does that after calling tap()
+    lifetimeTaps++;
 
     notifyListeners();
   }
@@ -1103,6 +1112,13 @@ class GameState with ChangeNotifier {
       'localesWithOneFullyUpgradedProperty': localesWithOneFullyUpgradedProperty.toList(),
       'fullyUpgradedLocales': fullyUpgradedLocales.toList(),
       'isPremium': isPremium,
+      'platinumPoints': platinumPoints, // Save PP
+      '_retroactivePPAwarded': _retroactivePPAwarded, // Save flag
+      'ppPurchases': ppPurchases, // Save repeatable purchases
+      'ppOwnedItems': ppOwnedItems.toList(), // Save one-time purchases
+      'isGoldenCursorUnlocked': isGoldenCursorUnlocked,
+      'isExecutiveThemeUnlocked': isExecutiveThemeUnlocked,
+      'isPlatinumFrameUnlocked': isPlatinumFrameUnlocked,
       'lifetimeTaps': lifetimeTaps,
       'gameStartTime': gameStartTime.toIso8601String(),
       'currentDay': currentDay,
@@ -1168,6 +1184,17 @@ class GameState with ChangeNotifier {
     localesWithOneFullyUpgradedProperty = Set<String>.from(json['localesWithOneFullyUpgradedProperty'] ?? []);
     fullyUpgradedLocales = Set<String>.from(json['fullyUpgradedLocales'] ?? []);
 
+    platinumPoints = json['platinumPoints'] ?? 0;
+    _retroactivePPAwarded = json['_retroactivePPAwarded'] ?? false;
+
+    // Load PP purchase history
+    ppPurchases = Map<String, int>.from(json['ppPurchases'] ?? {});
+    ppOwnedItems = Set<String>.from(json['ppOwnedItems'] ?? []);
+
+    // Load unlock flags
+    isGoldenCursorUnlocked = json['isGoldenCursorUnlocked'] ?? false;
+    isExecutiveThemeUnlocked = json['isExecutiveThemeUnlocked'] ?? false;
+    isPlatinumFrameUnlocked = json['isPlatinumFrameUnlocked'] ?? false;
 
     lifetimeTaps = json['lifetimeTaps'] ?? taps;
     if (json['gameStartTime'] != null) {
@@ -1327,7 +1354,7 @@ class GameState with ChangeNotifier {
     } else { persistentNetWorthHistory = {}; }
 
 
-    // Initialize achievements manager *after* loading basic stats but *before* loading achievement status
+    // Initialize achievements manager *after* loading basic stats but *before* loading achievement status or granting retroactive PP
     achievementManager = AchievementManager(this);
 
     if (json['achievements'] is List) {
@@ -1338,14 +1365,16 @@ class GameState with ChangeNotifier {
             int index = achievementManager.achievements.indexWhere((a) => a.id == achievementJson['id']);
             if (index != -1) {
               achievementManager.achievements[index].completed = true;
-              // Optionally load timestamp if needed:
-              // if (achievementJson['completedTimestamp'] != null) {
-              //   try { achievementManager.achievements[index].completedTimestamp = DateTime.parse(achievementJson['completedTimestamp']); } catch(_) {}
-              // }
             }
           }
         }
       }
+    }
+
+    // Grant Retroactive PP if this is the first time loading since the PP system was added
+    if (!_retroactivePPAwarded) {
+      print("✨ Granting retroactive Platinum Points...");
+      _grantRetroactivePP();
     }
 
     eventsFromJson(json); // Load event system data
@@ -1355,6 +1384,39 @@ class GameState with ChangeNotifier {
     print("✅ GameState.fromJson complete.");
   }
 
+  void _grantRetroactivePP() {
+    if (achievementManager == null) {
+      print("❌ Cannot grant retroactive PP: AchievementManager is null.");
+      return;
+    }
+    int summedPpReward = 0;
+    final completedAchievements = achievementManager.getCompletedAchievements();
+    if (completedAchievements.isEmpty) {
+       print ("🤷 No previously completed achievements found for retroactive PP.");
+       _retroactivePPAwarded = true; // Mark as done even if none found
+       return;
+    }
+
+    // We need the full definitions map to get ppReward
+    Map<String, Achievement> definitionsMap = { for (var a in getAchievementDefinitions()) a.id : a };
+
+    for (final completedAch in completedAchievements) {
+      final definition = definitionsMap[completedAch.id];
+      if (definition != null) {
+        summedPpReward += definition.ppReward;
+        print ("  -> Found completed: ${completedAch.name}, adding ${definition.ppReward} PP");
+      } else {
+        print("  -> WARNING: Could not find definition for completed achievement ID: ${completedAch.id}");
+      }
+    }
+
+    if (summedPpReward > 0) {
+        platinumPoints = summedPpReward; // Overwrite existing PP, as this is the initial grant
+        print("💎 Retroactive PP granted! Total: $platinumPoints");
+    }
+    _retroactivePPAwarded = true; // Mark as awarded, even if total was 0
+    // Do not call notifyListeners here, it's called at the end of fromJson
+  }
 
   void _processOfflineProgress(int secondsElapsed) {
     final int oneDaysInSeconds = 86400;
@@ -1484,6 +1546,16 @@ class GameState with ChangeNotifier {
     lastEventResolvedTime = null;
     resolvedEvents = [];
 
+    // Reset PP
+    platinumPoints = 0;
+    _retroactivePPAwarded = false; // Allow retroactive grant on next load if needed
+    ppPurchases = {}; // Reset PP purchases
+    ppOwnedItems = {};  // Reset PP owned items
+
+    // Reset unlock flags
+    isGoldenCursorUnlocked = false;
+    isExecutiveThemeUnlocked = false;
+    isPlatinumFrameUnlocked = false;
 
     notifyListeners();
     print("Game state reset to defaults");
@@ -1577,9 +1649,14 @@ class GameState with ChangeNotifier {
     lastEventResolvedTime = null;
     resolvedEvents = [];
 
+    // Reset PP on reincorporation
+    platinumPoints = 0;
+    // _retroactivePPAwarded should persist across reincorporation
+    ppPurchases = {}; // Reset PP purchases
+    ppOwnedItems = {};  // Reset PP owned items
 
     notifyListeners();
-    print("Reincorporated! Network Worth: $networkWorth, Click Multiplier: $prestigeMultiplier, Passive Bonus Multiplier: $incomeMultiplier");
+    print("Reincorporated! Network Worth: $networkWorth, Click Multiplier: $prestigeMultiplier, Passive Bonus Multiplier: $incomeMultiplier, PP Reset.");
     return true;
   }
 
@@ -2170,51 +2247,181 @@ class GameState with ChangeNotifier {
 
   // --- Boost Logic ---
 
-  void startBoost({int durationSeconds = 60}) {
-    print("~~~ GameState.startBoost called. Duration: $durationSeconds ~~~"); // DEBUG LOG
-    _boostTimer?.cancel(); // Cancel any existing timer
+  double _tempClickBoostMultiplier = 1.0; // Temporary multiplier from PP items
+
+  void startBoost({int durationSeconds = 60, double multiplier = 10.0}) {
+    // Cancel any existing boost first to apply the new one correctly
+    _boostTimer?.cancel();
+    print("~~~ GameState.startBoost called. Duration: $durationSeconds, Multiplier: ${multiplier}x ~~~");
 
     boostRemainingSeconds = durationSeconds;
-    print("~~~ GameState.startBoost: Set boostRemainingSeconds=$boostRemainingSeconds. Notifying listeners... ~~~"); // DEBUG LOG
+    _tempClickBoostMultiplier = multiplier;
+    print("~~~ GameState.startBoost: Set boostRemainingSeconds=$boostRemainingSeconds, _tempClickBoostMultiplier=$_tempClickBoostMultiplier. Notifying listeners... ~~~");
     notifyListeners(); // Notify UI immediately that boost is active
 
-    print("~~~ GameState.startBoost: Creating Timer... ~~~"); // DEBUG LOG
+    print("~~~ GameState.startBoost: Creating Timer... ~~~");
     _boostTimer = Timer.periodic(const Duration(seconds: 1), _tickBoostTimer);
-    print("🚀 Boost Started: $boostRemainingSeconds seconds remaining.");
+    print("🚀 Boost Started: $boostRemainingSeconds seconds remaining, ${_tempClickBoostMultiplier}x multiplier.");
   }
 
   void _tickBoostTimer(Timer timer) {
-    // print("~~~ GameState._tickBoostTimer: Tick! isInitialized: $isInitialized ~~~"); // DEBUG LOG
-    if (!isInitialized) { // Safety check
-      timer.cancel();
-      boostRemainingSeconds = 0;
-      print("⚠️ Boost timer cancelled because GameState is not initialized.");
-      notifyListeners();
-      return;
-    }
+    if (!isInitialized) { /* ... safety check ... */ return; }
 
     boostRemainingSeconds--;
-    // print("~~~ GameState._tickBoostTimer: Decremented seconds to $boostRemainingSeconds ~~~"); // DEBUG LOG
 
     if (boostRemainingSeconds <= 0) {
-      boostRemainingSeconds = 0; // Ensure it doesn't go negative
+      boostRemainingSeconds = 0;
+      _tempClickBoostMultiplier = 1.0; // Reset multiplier when timer ends
       timer.cancel();
-      _boostTimer = null; // Clear the timer reference
+      _boostTimer = null;
       print("✅ Boost Ended.");
     } else {
-      // print("⏱️ Boost Tick: $boostRemainingSeconds seconds remaining."); // Optional: for debugging
+      // print("⏱️ Boost Tick: $boostRemainingSeconds seconds remaining.");
     }
-    print("~~~ GameState._tickBoostTimer: Tick processed (Seconds: $boostRemainingSeconds). Notifying listeners... ~~~"); // DEBUG LOG
-    notifyListeners(); // Update UI every second while boost is active or when it ends
+    // print("~~~ GameState._tickBoostTimer: Tick processed (Seconds: $boostRemainingSeconds). Notifying listeners... ~~~");
+    notifyListeners();
   }
 
   void cancelBoost() { // Method to manually cancel boost if needed elsewhere
     _boostTimer?.cancel();
     _boostTimer = null;
     boostRemainingSeconds = 0;
+    _tempClickBoostMultiplier = 1.0; // Reset multiplier on manual cancel
     print("🚫 Boost Cancelled Manually.");
     notifyListeners();
   }
-
   // --- End Boost Logic ---
+
+  // >> START: Platinum Points System Methods <<
+  void awardPlatinumPoints(int amount) {
+    if (amount <= 0) return; // Don't award negative or zero points
+    platinumPoints += amount;
+    print("💎 +$amount Platinum Points awarded! Total: $platinumPoints");
+    // TODO: Trigger notification popup here
+    // Analytics Placeholder:
+    print("[Analytics] Log event: pp_earned, amount: $amount, source: achievement");
+    // TODO: Log PP gain for analytics here (replace print)
+    notifyListeners();
+  }
+
+  bool spendPlatinumPoints(String itemId, int cost, {bool isOneTime = false}) {
+    // Need BuildContext for ScaffoldMessenger, cannot directly use here.
+    // We should show feedback in the UI layer (e.g., VaultItemCard onPressed)
+
+    if (platinumPoints < cost) {
+      print("❌ Cannot spend PP: Insufficient funds. Have: $platinumPoints, Need: $cost");
+      // Feedback moved to UI layer (VaultItemCard)
+      return false;
+    }
+
+    if (isOneTime && ppOwnedItems.contains(itemId)) {
+      print("❌ Cannot spend PP: One-time item '$itemId' already owned.");
+      // Feedback moved to UI layer (VaultItemCard)
+      return false;
+    }
+
+    // Deduct points FIRST
+    platinumPoints -= cost;
+
+    // Apply item effect
+    bool effectApplied = _applyVaultItemEffect(itemId);
+    if (!effectApplied) {
+      // If effect fails for some reason (e.g., cannot skip event), refund points
+      print("⚠️ Effect application failed for '$itemId'. Refunding $cost PP.");
+      platinumPoints += cost;
+      return false;
+    }
+
+    // If effect succeeded, record purchase
+    print("💰 Spent $cost PP on item '$itemId'. Remaining: $platinumPoints. Effect applied.");
+    if (isOneTime) {
+      ppOwnedItems.add(itemId);
+      print("  -> Added '$itemId' to one-time owned items.");
+    } else {
+      ppPurchases[itemId] = (ppPurchases[itemId] ?? 0) + 1;
+      print("  -> Incremented purchase count for '$itemId' to ${ppPurchases[itemId]}.");
+    }
+
+    // Analytics Placeholder:
+    print("[Analytics] Log event: pp_spent, item_id: $itemId, cost: $cost");
+    // TODO: Log purchase for analytics (replace print)
+
+    notifyListeners();
+    return true;
+  }
+
+  // Helper method to apply effects based on item ID
+  bool _applyVaultItemEffect(String itemId) {
+    switch (itemId) {
+      // --- Upgrades ---
+      case 'perm_income_boost_5pct':
+        incomeMultiplier += 0.05; // Additive permanent boost
+        print("✨ Applied +5% permanent income boost. New multiplier: $incomeMultiplier");
+        return true;
+      case 'perm_click_boost_10pct':
+        clickValue *= 1.10; // Multiplicative permanent boost to base click value
+        print("✨ Applied +10% permanent click boost. New base click value: $clickValue");
+        return true;
+
+      // --- Unlockables ---
+      case 'unlock_golden_cursor':
+        isGoldenCursorUnlocked = true;
+        print("✨ Unlocked Golden Cursor!");
+        return true;
+      case 'unlock_stats_theme_1':
+        isExecutiveThemeUnlocked = true;
+        print("✨ Unlocked Executive Stats Theme!");
+        return true;
+
+      // --- Boosters ---
+      case 'temp_boost_10x_5min':
+        startBoost(durationSeconds: 5 * 60, multiplier: 10.0);
+        print("✨ Activated 10x Click Frenzy boost for 5 minutes!");
+        return true;
+      case 'temp_boost_2x_10min':
+        startBoost(durationSeconds: 10 * 60, multiplier: 2.0);
+        print("✨ Activated 2x Steady boost for 10 minutes!");
+        return true;
+
+      // --- Events & Challenges ---
+      case 'event_skip_ticket':
+        return _tryConsumeEventSkipTicket();
+
+      // --- Cosmetics ---
+      case 'cosmetic_platinum_frame':
+        isPlatinumFrameUnlocked = true;
+        print("✨ Unlocked Platinum UI Frame!");
+        return true;
+
+      default:
+        print("⚠️ No effect defined for vault item ID: $itemId");
+        return false; // Return false if no effect is defined for the ID
+    }
+  }
+
+  // Helper for Event Skip Ticket logic
+  bool _tryConsumeEventSkipTicket() {
+    GameEvent? eventToSkip;
+    for (var event in activeEvents) {
+      // Find the first active, non-disaster event
+      if (!event.isResolved && !event.type.isNaturalDisaster) {
+        eventToSkip = event;
+        break;
+      }
+    }
+
+    if (eventToSkip != null) {
+      print("🎟️ Using Event Skip Ticket on event: ${eventToSkip.name}"); // Use .name instead of .title
+      eventToSkip.resolve(); // Remove resolutionMethod parameter
+      trackEventResolution(eventToSkip, "ticket"); // Use custom tracking method
+      // Potentially remove from activeEvents list immediately or let update loop handle it
+      activeEvents.remove(eventToSkip);
+      notifyListeners();
+      return true;
+    } else {
+      print("🎟️ No eligible event found to skip.");
+      return false; // Cannot consume if no eligible event
+    }
+  }
+  // >> END: Platinum Points System Methods <<
 }

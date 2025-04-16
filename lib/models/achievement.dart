@@ -42,6 +42,7 @@ class AchievementManager {
         icon: achievements[index].icon,
         category: achievements[index].category,
         rarity: achievements[index].rarity,
+        ppReward: achievements[index].ppReward,
         completed: true,
         completedTimestamp: DateTime.now(),
       );
@@ -51,6 +52,7 @@ class AchievementManager {
   /// Check all achievements against current game state
   List<Achievement> evaluateAchievements(GameState gameState) {
     List<Achievement> newlyCompleted = [];
+    List<Achievement> currentAchievements = List.from(achievements); // Create a copy to avoid issues if the list is modified during iteration
 
     _checkBusinessAchievements(gameState, newlyCompleted);
     _checkInvestmentAchievements(gameState, newlyCompleted);
@@ -61,6 +63,12 @@ class AchievementManager {
     _checkRegionalAchievements(gameState, newlyCompleted);
     _checkEventAchievements(gameState, newlyCompleted);
     _checkRealEstateUpgradeAchievements(gameState, newlyCompleted);
+
+    // Award PP for any newly completed achievements
+    for (Achievement completedAchievement in newlyCompleted) {
+      gameState.awardPlatinumPoints(completedAchievement.ppReward);
+      print("🏆 Awarding ${completedAchievement.ppReward} PP for completing: ${completedAchievement.name}");
+    }
 
     return newlyCompleted;
   }
@@ -615,7 +623,13 @@ class AchievementManager {
 
   bool _isCompleted(String id) {
     // Use the imported Achievement class for the orElse
-    final achievement = achievements.firstWhere((a) => a.id == id, orElse: () => Achievement(id: '', name: '', description: '', icon: Icons.error, category: AchievementCategory.progress));
+    final achievement = achievements.firstWhere((a) => a.id == id, 
+      orElse: () => Achievement(
+          id: '', name: '', description: '', 
+          icon: Icons.error, category: AchievementCategory.progress, 
+          ppReward: 0 // Provide default 0 for placeholder
+      )
+    );
     return achievement.completed;
   }
 

@@ -305,6 +305,24 @@ class AchievementsSection extends StatelessWidget {
                             color: Colors.grey.shade700,
                           ),
                         ),
+                        const SizedBox(height: 8),
+
+                        // Display PP Reward
+                        Row(
+                          children: [
+                            Icon(Icons.star, color: Colors.purple.shade300, size: 16),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Reward: ${achievement.ppReward} PP',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.purple.shade600,
+                              ),
+                            ),
+                          ],
+                        ),
+
                         const SizedBox(height: 12),
                         
                         // Progress bar with improved styling
