@@ -60,28 +60,28 @@ class _AchievementNotificationState extends State<AchievementNotification> with 
       ),
     );
     
-    // PP reward animations
-    _ppFadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+    // PP reward animations - MODIFIED
+    _ppFadeAnimation = Tween<double>(begin: 1.0, end: 0.0).animate( // Fade OUT
       CurvedAnimation(
         parent: _animationController,
-        curve: const Interval(0.4, 0.6, curve: Curves.easeIn),
+        curve: const Interval(0.6, 1.0, curve: Curves.easeOut), // Fade out during the second half of travel
       ),
     );
     
     _ppSlideAnimation = Tween<Offset>(
-      begin: const Offset(0.0, 0.0),
-      end: const Offset(0.0, -5.0),
+      begin: const Offset(0.0, 0.0), // Start at the Positioned location
+      end: const Offset(0.5, -4.1), // Move towards top-right (adjust as needed)
     ).animate(
       CurvedAnimation(
         parent: _animationController,
-        curve: const Interval(0.4, 0.9, curve: Curves.easeOut),
+        curve: const Interval(0.4, 1.0, curve: Curves.easeInOut), // Travel lasts longer
       ),
     );
     
     _ppScaleAnimation = Tween<double>(begin: 1.0, end: 0.5).animate(
       CurvedAnimation(
         parent: _animationController,
-        curve: const Interval(0.7, 0.9, curve: Curves.easeOut),
+        curve: const Interval(0.5, 1.0, curve: Curves.easeOut), // Scale down during travel
       ),
     );
     
@@ -198,98 +198,107 @@ class _AchievementNotificationState extends State<AchievementNotification> with 
                     const SizedBox(width: 16),
                     
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
+                      child: Stack(
                         children: [
-                          Row(
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              Text(
-                                'Achievement Unlocked!',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: rarityColors['titleColor'],
-                                ),
-                              ),
-                              const SizedBox(width: 4),
-                              
-                              if (widget.achievement.rarity != AchievementRarity.basic)
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: rarityColors['badgeColor'],
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: Text(
-                                    _getRarityText(widget.achievement.rarity),
+                              Row(
+                                children: [
+                                  Text(
+                                    'Achievement Unlocked!',
                                     style: TextStyle(
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.bold,
-                                      color: rarityColors['badgeTextColor'],
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: rarityColors['titleColor'],
                                     ),
                                   ),
-                                ),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            widget.achievement.name,
-                            style: TextStyle(
-                              fontSize: widget.achievement.rarity == AchievementRarity.milestone ? 18 : 16,
-                              fontWeight: FontWeight.bold,
-                              color: rarityColors['nameColor'],
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            widget.achievement.description,
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: rarityColors['descriptionColor'],
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          // Add PP reward display here
-                          Row(
-                            children: [
-                              // Platinum coin icon
-                              Container(
-                                width: 16,
-                                height: 16,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: const Color(0xFFFFD700), // Solid gold background
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: const Color(0xFFFFD700).withOpacity(0.6),
-                                      blurRadius: 4,
-                                      spreadRadius: 0,
+                                  const SizedBox(width: 4),
+                                  
+                                  if (widget.achievement.rarity != AchievementRarity.basic)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: rarityColors['badgeColor'],
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: Text(
+                                        _getRarityText(widget.achievement.rarity),
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                          color: rarityColors['badgeTextColor'],
+                                        ),
+                                      ),
                                     ),
-                                  ],
-                                ),
-                                child: const Center(
-                                  child: Text(
-                                    '✦',
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                      height: 1.0,
-                                    ),
-                                  ),
-                                ),
+                                ],
                               ),
-                              const SizedBox(width: 4),
+                              const SizedBox(height: 4),
                               Text(
-                                '+${widget.achievement.ppReward} Platinum Points',
+                                widget.achievement.name,
                                 style: TextStyle(
-                                  fontSize: 12,
+                                  fontSize: widget.achievement.rarity == AchievementRarity.milestone ? 18 : 16,
                                   fontWeight: FontWeight.bold,
-                                  color: const Color(0xFFE5E4E2),
+                                  color: rarityColors['nameColor'],
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Padding(
+                                padding: const EdgeInsets.only(right: 50.0), 
+                                child: Text(
+                                  widget.achievement.description,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: rarityColors['descriptionColor'],
+                                  ),
                                 ),
                               ),
                             ],
+                          ),
+
+                          Positioned(
+                            top: 0,
+                            right: 0,
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 14,
+                                  height: 14,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: const Color(0xFFFFD700),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color(0xFFFFD700).withOpacity(0.6),
+                                        blurRadius: 3,
+                                        spreadRadius: 0,
+                                      ),
+                                    ],
+                                  ),
+                                  child: const Center(
+                                    child: Text(
+                                      '✦',
+                                      style: TextStyle(
+                                        fontSize: 9,
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        height: 1.0,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '+${widget.achievement.ppReward}',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                    color: rarityColors['nameColor']?.withOpacity(0.8) ?? Colors.black.withOpacity(0.8),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
@@ -312,8 +321,8 @@ class _AchievementNotificationState extends State<AchievementNotification> with 
         // Animated PP reward indicator
         if (_showPpAnimation)
           Positioned(
-            top: 65, // Adjust this to start at the bottom of the notification
-            right: 45, // Adjust this based on your notification width
+            top: 20, // Adjusted starting position closer to new PP location
+            right: 30, // Adjusted starting position closer to new PP location
             child: SlideTransition(
               position: _ppSlideAnimation,
               child: FadeTransition(

@@ -23,10 +23,24 @@ extension UtilityLogic on GameState {
 
   // Enable premium features (called when purchase is successful)
   void enablePremium() {
+    print("🔵 enablePremium called. Current isPremium: $isPremium");
     if (!isPremium) {
-        isPremium = true;
-        notifyListeners();
-        print("🌟 Premium status enabled!");
+      isPremium = true;
+      print("🟢 isPremium set to true.");
+      awardPlatinumPoints(1500); // Handles points, animation flag, AND notifyListeners
+      showPremiumPurchaseNotification = true; // SET flag for the notification widget
+      print("💎 Premium Enabled. Called awardPlatinumPoints(1500) and set showPremiumPurchaseNotification=true.");
+    } else {
+      print("🟡 enablePremium: Already premium.");
+    }
+  }
+
+  // Method to dismiss the premium purchase notification
+  void dismissPremiumPurchaseNotification() {
+    if (showPremiumPurchaseNotification) {
+      showPremiumPurchaseNotification = false;
+      print("⚫️ Premium purchase notification dismissed.");
+      notifyListeners();
     }
   }
 

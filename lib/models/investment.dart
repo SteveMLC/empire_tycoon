@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:math'; // Import math for max function
 
 class Investment {
   final String id;
@@ -22,9 +23,13 @@ class Investment {
   final String riskLevel; // Risk level for display ("Low", "Medium", "High", etc.)
   final double marketCap; // Market capitalization of the investment
   final double dailyVolume; // Daily trading volume
+  final int maxShares; // Maximum number of shares available based on initial market cap/price
   
   // Get price change percentage - this is now a getter to simplify access
   double get priceChangePercent => getPriceChangePercent();
+  
+  // Get available shares (max shares - owned shares)
+  int get availableShares => max(0, maxShares - owned); // Ensure it doesn't go below 0
   
   Investment({
     required this.id,
@@ -44,9 +49,12 @@ class Investment {
     this.autoInvestAmount = 0,
     this.dividendPerSecond = 0.0, // Default to 0 for non-dividend investments
     this.riskLevel = 'Medium', // Default risk level
-    this.marketCap = 0.0, // Default market cap
+    this.marketCap = 0.0, // Default market cap (in billions)
     this.dailyVolume = 0.0, // Default daily volume
-  });
+  }) : // Calculate maxShares based on initial marketCap and basePrice
+       maxShares = (basePrice > 0 && marketCap > 0)
+           ? ((marketCap * 1e9) / basePrice).floor() // Convert marketCap from billions
+           : 0;
   
   // Get current value of owned investments
   double getCurrentValue() {

@@ -123,15 +123,29 @@ extension GameStateEvents on GameState {
     assert(!(affectedBusinessIds.isNotEmpty && affectedLocaleIds.isNotEmpty));
     
     // Create the event
-    GameEvent newEvent = _createRandomEvent(affectedBusinessIds, affectedLocaleIds);
-    
-    // Add to active events
-    activeEvents.add(newEvent);
-    notifyListeners();
+    GameEvent newEvent;
+    int attempts = 0; // Prevent infinite loop in rare cases
+    do {
+      newEvent = _createRandomEvent(affectedBusinessIds, affectedLocaleIds, isResilienceActive: isPlatinumResilienceActive);
+      attempts++;
+    } while (
+      isDisasterShieldActive && 
+      newEvent.type == EventType.disaster && 
+      attempts < 10 // Safety break
+    );
+
+    // Only add the event if it's not a disaster while the shield is active (or if we failed to find a non-disaster)
+    if (!(isDisasterShieldActive && newEvent.type == EventType.disaster)) {
+      activeEvents.add(newEvent);
+      notifyListeners();
+    } else {
+      print("INFO: Disaster event blocked by shield.");
+      // Optionally trigger a different, less impactful event?
+    }
   }
   
   // Create a random event with the given affected targets
-  GameEvent _createRandomEvent(List<String> businessIds, List<String> localeIds) {
+  GameEvent _createRandomEvent(List<String> businessIds, List<String> localeIds, {required bool isResilienceActive}) {
     final eventTypes = EventType.values;
     final resolutionTypes = EventResolutionType.values;
     
@@ -146,6 +160,37 @@ extension GameStateEvents on GameState {
       EventResolutionType.adBased
     ];
     final resolutionType = activeResolutionTypes[Random().nextInt(activeResolutionTypes.length)];
+    
+    // Determine resolution value based on type
+    dynamic resolutionValue;
+    switch (resolutionType) {
+      case EventResolutionType.tapChallenge:
+        int requiredTaps = 50 + Random().nextInt(151); // Base 50-200 taps
+        // FIX: Apply accelerator effect here
+        if (isCrisisAcceleratorActive) { // Check the flag from GameState
+            requiredTaps = (requiredTaps * 0.5).ceil(); // Halve and round up
+            print("INFO: Crisis Accelerator reduced tap requirement to $requiredTaps");
+        }
+        resolutionValue = {'required': requiredTaps, 'current': 0};
+        break;
+      case EventResolutionType.feeBased:
+        // Calculate fee based on player's current income per second
+        // Ensure we access totalIncomePerSecond correctly (it's a getter on GameState)
+        double currentIncomePerSecond = this.totalIncomePerSecond; // Accessing the getter directly
+        double fee = (currentIncomePerSecond * 60 * Random().nextDouble() * 0.5) + 100; // 0-30 mins of income + base 100
+        // NOTE: Cost reduction needs to be applied where the fee is actually paid (UI/Service layer)
+        // We cannot halve it here as the accelerator might expire before payment.
+        resolutionValue = fee;
+        break;
+      case EventResolutionType.adBased:
+        // Ad-based doesn't have a numeric value here, resolution handled by ad completion callback
+        resolutionValue = true; 
+        break;
+      case EventResolutionType.timeBased:
+        // Duration handled by the event itself, no specific value needed here
+        resolutionValue = null;
+        break;
+    }
     
     // Get names of affected businesses and locales for more descriptive messages
     List<String> affectedBusinessNames = [];
@@ -308,50 +353,6 @@ extension GameStateEvents on GameState {
         break;
     }
     
-    // Generate resolution details based on type
-    EventResolution resolution;
-    
-    switch (resolutionType) {
-      case EventResolutionType.timeBased:
-        // Time-based: 15-minute duration (reduced from 60 minutes)
-        int duration = 900; // 900 seconds (15 minutes)
-        resolution = EventResolution(
-          type: EventResolutionType.timeBased,
-          value: duration,
-        );
-        break;
-        
-      case EventResolutionType.adBased:
-        // Ad-based: Resolves when player watches an ad
-        resolution = EventResolution(
-          type: EventResolutionType.adBased,
-          value: null,
-        );
-        break;
-        
-      case EventResolutionType.feeBased:
-        // Fee-based: Costs 20-100% of current income per second
-        double fee = totalIncomePerSecond * (0.2 + Random().nextDouble() * 0.8) * 60; // 20-100% of income for 1 minute
-        fee = max(100, fee.roundToDouble()); // Minimum fee of $100
-        
-        resolution = EventResolution(
-          type: EventResolutionType.feeBased,
-          value: fee,
-        );
-        break;
-        
-      case EventResolutionType.tapChallenge:
-        // Tap challenge: Requires 20-50 taps
-        resolution = EventResolution(
-          type: EventResolutionType.tapChallenge,
-          value: {
-            'required': 20 + Random().nextInt(31),
-            'current': 0,
-          },
-        );
-        break;
-    }
-    
     // Create and return the event
     return GameEvent(
       id: const Uuid().v4(),
@@ -360,7 +361,10 @@ extension GameStateEvents on GameState {
       type: eventType,
       affectedBusinessIds: businessIds,
       affectedLocaleIds: localeIds,
-      resolution: resolution,
+      resolution: EventResolution(
+        type: resolutionType,
+        value: resolutionValue,
+      ),
       startTime: DateTime.now(),
     );
   }

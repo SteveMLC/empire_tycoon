@@ -155,12 +155,22 @@ class MarketOverviewWidget extends StatelessWidget {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            '+${(gameState.calculateDiversificationBonus() * 100).toStringAsFixed(1)}%',
+                            '${(gameState.calculateDiversificationBonus() * 100).toStringAsFixed(1)}%',
                             style: TextStyle(
                               color: Colors.blue.shade700,
                               fontWeight: FontWeight.bold,
                               fontSize: 12,
                             ),
+                          ),
+                          // Info button for diversification bonus
+                          IconButton(
+                            icon: Icon(Icons.info_outline, size: 16, color: Colors.blue.shade700),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(), // Remove default padding
+                            tooltip: 'Learn about Diversification Bonus',
+                            onPressed: () {
+                              _showDiversificationInfoDialog(context, gameState);
+                            },
                           ),
                         ],
                       ),
@@ -216,4 +226,59 @@ class MarketOverviewWidget extends StatelessWidget {
       },
     );
   }
+}
+
+// Helper function to show the dialog
+void _showDiversificationInfoDialog(BuildContext context, GameState gameState) {
+  // Get the current bonus percentage
+  double bonusPercentage = gameState.calculateDiversificationBonus() * 100;
+  // Get the number of unique categories owned
+  Set<String> ownedCategories = gameState.investments
+      .where((investment) => investment.owned > 0)
+      .map((investment) => investment.category)
+      .toSet();
+  int categoryCount = ownedCategories.length;
+
+  showDialog(
+    context: context,
+    builder: (BuildContext dialogContext) {
+      return AlertDialog(
+        title: const Text('Diversification Bonus'),
+        content: SingleChildScrollView(
+          child: ListBody(
+            children: <Widget>[
+              const Text(
+                'You receive a bonus to your total dividend income based on the number of unique investment categories you own.',
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'Bonus: +2% per unique category owned.',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'You currently own investments in $categoryCount unique categor${categoryCount == 1 ? 'y' : 'ies'}.',
+              ),
+              const SizedBox(height: 5),
+              Text(
+                'Current Bonus: +${bonusPercentage.toStringAsFixed(1)}%',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blue.shade700,
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: <Widget>[
+          TextButton(
+            child: const Text('Got it!'),
+            onPressed: () {
+              Navigator.of(dialogContext).pop(); // Close the dialog
+            },
+          ),
+        ],
+      );
+    },
+  );
 }

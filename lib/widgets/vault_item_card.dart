@@ -7,8 +7,10 @@ import '../utils/number_formatter.dart'; // For formatting cost
 class VaultItemCard extends StatelessWidget {
   final VaultItem item;
   final int currentPoints;
-  final bool isOwned; // For one-time items
+  final bool isOwned; // For one-time items OR if max repeatable reached
   final VoidCallback onBuy;
+  final int? purchaseCount; // Optional: Current purchase count for repeatable items
+  final int? maxPurchaseCount; // Optional: Max purchase count for repeatable items
 
   const VaultItemCard({
     Key? key,
@@ -16,20 +18,44 @@ class VaultItemCard extends StatelessWidget {
     required this.currentPoints,
     required this.isOwned,
     required this.onBuy,
+    this.purchaseCount,
+    this.maxPurchaseCount,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     final bool canAfford = currentPoints >= item.cost;
-    final bool isPurchasable = item.type == VaultItemType.repeatable || !isOwned;
+    // Determine if the item is purchasable based on type, owned status, and limits
+    final bool isRepeatable = item.type == VaultItemType.repeatable;
+    final bool isMaxedOut = isRepeatable && 
+                           maxPurchaseCount != null && 
+                           purchaseCount != null && 
+                           purchaseCount! >= maxPurchaseCount!;
+    final bool isPurchasable = (isRepeatable && !isMaxedOut) || (!isRepeatable && !isOwned);
     final bool isBuyButtonEnabled = canAfford && isPurchasable;
+
+    // Determine text for the button
+    String buttonText = 'Buy';
+    if (!canAfford) {
+        buttonText = 'Not Enough PP';
+    } else if (isMaxedOut) {
+        buttonText = 'Maxed Out (${maxPurchaseCount!}/${maxPurchaseCount!})';
+    } else if (!isRepeatable && isOwned) {
+        buttonText = 'Owned';
+    }
+
+    // Text to display purchase count if applicable
+    String countText = '';
+    if (isRepeatable && maxPurchaseCount != null && purchaseCount != null) {
+        countText = ' (${purchaseCount!}/${maxPurchaseCount!})';
+    }
 
     return Card(
       elevation: 8.0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12.0),
         side: BorderSide(
-          color: isOwned 
+          color: isOwned || isMaxedOut
               ? const Color(0xFFFFD700).withOpacity(0.7)
               : const Color(0xFFAA00FF).withOpacity(0.3),
           width: 1.0,
@@ -43,7 +69,7 @@ class VaultItemCard extends StatelessWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              const Color(0xFF3A1249), 
+              const Color(0xFF3A1249),
               const Color(0xFF260B33),
             ],
           ),

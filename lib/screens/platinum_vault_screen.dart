@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../models/game_state.dart';
+import '../models/real_estate.dart'; // Import RealEstateLocale
 import '../utils/number_formatter.dart'; // For formatting PP display
 import '../data/platinum_vault_items.dart'; // Import actual item data
 import '../widgets/vault_item_card.dart'; // Import the new card widget
@@ -156,7 +157,7 @@ class _PlatinumVaultScreenState extends State<PlatinumVaultScreen> with SingleTi
             fontSize: 14,
             letterSpacing: 0.5,
           ),
-          tabs: VaultItemCategory.values.map((category) => 
+          tabs: VaultItemCategory.values.map((category) =>
             Tab(
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -219,7 +220,7 @@ class _PlatinumVaultScreenState extends State<PlatinumVaultScreen> with SingleTi
                 ),
               );
             }),
-            
+
             // Main content
             TabBarView(
               controller: _tabController,
@@ -280,67 +281,132 @@ class _PlatinumVaultScreenState extends State<PlatinumVaultScreen> with SingleTi
           return VaultItemCard(
             item: item,
             currentPoints: gameState.platinumPoints,
-            isOwned: item.type == VaultItemType.oneTime && gameState.ppOwnedItems.contains(item.id),
+            isOwned: (item.type == VaultItemType.oneTime && gameState.ppOwnedItems.contains(item.id)) ||
+                     (item.id == 'platinum_foundation' && gameState.platinumFoundationsApplied.length >= 5), // Check global limit for foundation
+            purchaseCount: item.id == 'platinum_foundation' ? gameState.platinumFoundationsApplied.length : null, // Pass count for foundation
+            maxPurchaseCount: item.id == 'platinum_foundation' ? 5 : null, // Pass max count for foundation
             onBuy: () {
-              bool success = gameState.spendPlatinumPoints(
-                item.id,
-                item.cost,
-                isOneTime: item.type == VaultItemType.oneTime,
-              );
-              if (success) {
-                // Enhanced success feedback
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Row(
-                      children: [
-                        const Icon(Icons.check_circle, color: Colors.white),
-                        const SizedBox(width: 8),
-                        Text('Successfully purchased ${item.name}!'),
-                      ],
-                    ),
-                    backgroundColor: Colors.green.shade600,
-                    duration: const Duration(seconds: 2),
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                );
-                
-                // TODO: Add sparkle animation on successful purchase
-              } else {
-                // Enhanced error feedback
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Row(
-                      children: [
-                        const Icon(Icons.error_outline, color: Colors.white),
-                        const SizedBox(width: 8),
-                        Flexible(
-                          child: Text(
-                            gameState.platinumPoints < item.cost
-                                ? 'Not enough Platinum Points to purchase ${item.name}.'
-                                : 'You already own this item.',
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                    backgroundColor: Colors.red.shade600,
-                    duration: const Duration(seconds: 2),
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                );
-              }
+               _handlePurchase(context, gameState, item); // Use handler function
             },
           );
         },
       ),
     );
   }
+
+  // Handle purchase logic, including showing dialog for specific items
+  void _handlePurchase(BuildContext context, GameState gameState, VaultItem item) {
+      if (item.id == 'platinum_foundation') {
+        // --- Special handling for Platinum Foundation ---
+        _showLocaleSelectionDialog(context, gameState, item);
+      } else {
+        // --- Default purchase logic for other items ---
+        bool success = gameState.spendPlatinumPoints(item.id, item.cost);
+        _showPurchaseFeedback(context, success, item, gameState);
+      }
+  }
+
+  // Show dialog for selecting locale for Platinum Foundation
+  void _showLocaleSelectionDialog(BuildContext context, GameState gameState, VaultItem item) {
+    // Filter eligible locales: unlocked and not already boosted by this item
+    // Assuming 1 foundation per locale for now. Check global limit as well.
+    final eligibleLocales = gameState.realEstateLocales
+        .where((locale) => locale.unlocked && !gameState.platinumFoundationsApplied.containsKey(locale.id))
+        .toList();
+
+    if (gameState.platinumFoundationsApplied.length >= 5) {
+         ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Maximum number of Foundations (5) already applied."), backgroundColor: Colors.orange),
+        );
+        return;
+    }
+
+    if (eligibleLocales.isEmpty) {
+         ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("No eligible locations available to apply Foundation."), backgroundColor: Colors.orange),
+        );
+        return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return _LocaleSelectionDialog(
+          eligibleLocales: eligibleLocales,
+          onConfirm: (selectedLocaleId) {
+            if (selectedLocaleId != null) {
+                // Pass context for the purchase
+                bool success = gameState.spendPlatinumPoints(
+                    item.id,
+                    item.cost,
+                    purchaseContext: {'selectedLocaleId': selectedLocaleId} // Pass selected locale ID
+                );
+                _showPurchaseFeedback(context, success, item, gameState, selectedLocaleName: eligibleLocales.firstWhere((l) => l.id == selectedLocaleId).name);
+            }
+          },
+        );
+      },
+    );
+  }
+
+  // Show SnackBar feedback after purchase attempt
+  void _showPurchaseFeedback(BuildContext context, bool success, VaultItem item, GameState gameState, {String? selectedLocaleName}) {
+      if (success) {
+          String message = 'Successfully purchased ${item.name}!';
+          if (item.id == 'platinum_foundation' && selectedLocaleName != null) {
+              message += ' Applied to $selectedLocaleName.';
+          }
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.check_circle, color: Colors.white),
+                  const SizedBox(width: 8),
+                  Flexible(child: Text(message)),
+                ],
+              ),
+              backgroundColor: Colors.green.shade600,
+              duration: const Duration(seconds: 3),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+          );
+          // TODO: Add sparkle animation on successful purchase
+      } else {
+          String errorMessage = 'Purchase failed.';
+          if (gameState.platinumPoints < item.cost) {
+              errorMessage = 'Not enough Platinum Points to purchase ${item.name}.';
+          } else if (item.type == VaultItemType.oneTime && gameState.ppOwnedItems.contains(item.id)) {
+              errorMessage = 'You already own this item.';
+          } else if (item.id == 'platinum_foundation' && gameState.platinumFoundationsApplied.length >= 5){
+               errorMessage = 'Cannot apply Foundation: Maximum limit (5) reached.';
+          } else {
+              // Generic failure or specific reason if available from gameState
+              errorMessage = 'Could not purchase ${item.name}.';
+          }
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.error_outline, color: Colors.white),
+                  const SizedBox(width: 8),
+                  Flexible(child: Text(errorMessage)),
+                ],
+              ),
+              backgroundColor: Colors.red.shade600,
+              duration: const Duration(seconds: 3),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+          );
+      }
+  }
+
 
   // Placeholder for empty categories or initial state
   Widget _buildPlaceholderTab(String message) {
@@ -369,6 +435,84 @@ class _PlatinumVaultScreenState extends State<PlatinumVaultScreen> with SingleTi
           ),
         ],
       ),
+    );
+  }
+}
+
+
+// --- Locale Selection Dialog Widget ---
+
+class _LocaleSelectionDialog extends StatefulWidget {
+  final List<RealEstateLocale> eligibleLocales;
+  final Function(String?) onConfirm;
+
+  const _LocaleSelectionDialog({
+    required this.eligibleLocales,
+    required this.onConfirm,
+  });
+
+  @override
+  __LocaleSelectionDialogState createState() => __LocaleSelectionDialogState();
+}
+
+class __LocaleSelectionDialogState extends State<_LocaleSelectionDialog> {
+  String? _selectedLocaleId;
+
+  @override
+  void initState() {
+    super.initState();
+    // Pre-select the first eligible locale if available
+    if (widget.eligibleLocales.isNotEmpty) {
+      _selectedLocaleId = widget.eligibleLocales.first.id;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Select Location'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Choose a location to apply the Platinum Foundation (+5% Income):'),
+          const SizedBox(height: 16),
+          if (widget.eligibleLocales.isNotEmpty)
+            DropdownButton<String>(
+              value: _selectedLocaleId,
+              isExpanded: true,
+              hint: const Text('Select Location'),
+              items: widget.eligibleLocales.map((locale) {
+                return DropdownMenuItem<String>(
+                  value: locale.id,
+                  child: Text(locale.name), // Display locale name
+                );
+              }).toList(),
+              onChanged: (String? newValue) {
+                setState(() {
+                  _selectedLocaleId = newValue;
+                });
+              },
+            )
+          else
+            const Text('No locations available for boost.', style: TextStyle(color: Colors.grey)),
+        ],
+      ),
+      actions: <Widget>[
+        TextButton(
+          child: const Text('Cancel'),
+          onPressed: () {
+            Navigator.of(context).pop(); // Close the dialog
+          },
+        ),
+        TextButton(
+          child: const Text('Confirm'),
+          onPressed: _selectedLocaleId == null ? null : () { // Disable confirm if nothing selected
+            widget.onConfirm(_selectedLocaleId);
+            Navigator.of(context).pop(); // Close the dialog
+          },
+        ),
+      ],
     );
   }
 } 

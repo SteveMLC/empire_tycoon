@@ -17,6 +17,7 @@ import '../data/real_estate_data_loader.dart';
 import 'market_event.dart';
 import 'achievement_data.dart'; // Added import
 import '../data/achievement_definitions.dart'; // Import needed for retroactive PP
+import 'challenge.dart'; // ADDED: Import for Challenge model
 
 part 'game_state/initialization_logic.dart';
 part 'game_state/business_logic.dart';
@@ -51,7 +52,48 @@ class GameState with ChangeNotifier {
   Map<String, int> ppPurchases = {}; // Tracks counts of repeatable PP items purchased {itemId: count}
   Set<String> ppOwnedItems = {};    // Tracks IDs of one-time PP items purchased {itemId}
   bool showPPAnimation = false; // Flag to control PP animation
+  bool showPremiumPurchaseNotification = false; // ADDED: Flag for premium notification
   // >> END: Platinum Points System Fields <<
+
+  // >> START: Platinum Vault Item State <<
+  bool isPlatinumEfficiencyActive = false; // platinum_efficiency
+  bool isPlatinumPortfolioActive = false; // platinum_portfolio
+  Map<String, int> platinumFoundationsApplied = {}; // { localeId: count } - platinum_foundation (Max 5 total)
+  bool isPlatinumResilienceActive = false; // platinum_resilience
+  bool isPlatinumTowerUnlocked = false; // platinum_tower (Unlocks property)
+  bool isPlatinumVentureUnlocked = false; // platinum_venture (Unlocks business)
+  bool isPlatinumIslandsUnlocked = false; // platinum_islands (Unlocks locale)
+  bool isPlatinumYachtUnlocked = false; // platinum_yacht (Unlocks the ability to buy the yacht)
+  bool isPlatinumYachtPurchased = false; // Tracks if the yacht itself has been purchased
+  String? platinumYachtDockedLocaleId; // Where the yacht is currently providing a boost (resets on reincorp)
+  List<RealEstateUpgrade> platinumYachtUpgrades = []; // Upgrades for the yacht itself
+  bool isPlatinumIslandUnlocked = false; // platinum_island (Unlocks property in Platinum Islands)
+  bool isPlatinumStockUnlocked = false; // ADDED: platinum_stock (Unlocks investment)
+  // >> END: Platinum Vault Item State <<
+
+  // ADDED: Active Challenge State
+  Challenge? activeChallenge;
+
+  // ADDED: Disaster Shield State
+  bool isDisasterShieldActive = false;
+  DateTime? disasterShieldEndTime;
+
+  // ADDED: Crisis Accelerator State
+  bool isCrisisAcceleratorActive = false;
+  DateTime? crisisAcceleratorEndTime;
+
+  // ADDED: Platinum Facade State
+  Set<String> platinumFacadeAppliedBusinessIds = {};
+
+  // ADDED: Platinum Crest State
+  bool isPlatinumCrestUnlocked = false;
+
+  // ADDED: Platinum Spire State
+  String? platinumSpireLocaleId; // ID of the locale where the spire is placed
+
+  // ADDED: Income Surge State
+  bool isIncomeSurgeActive = false;
+  DateTime? incomeSurgeEndTime;
 
   // Flags for specific unlocks from Platinum Vault
   bool isGoldenCursorUnlocked = false;
@@ -62,6 +104,11 @@ class GameState with ChangeNotifier {
   int boostRemainingSeconds = 0;
   Timer? _boostTimer;
   bool get isBoostActive => boostRemainingSeconds > 0;
+
+  // Ad Boost State (separate system)
+  int adBoostRemainingSeconds = 0;
+  Timer? _adBoostTimer;
+  bool get isAdBoostActive => adBoostRemainingSeconds > 0;
 
   // >> START: Add Achievement Tracking Fields Declaration <<
   // These fields are explicitly marked as needed for achievement tracking
@@ -91,6 +138,7 @@ class GameState with ChangeNotifier {
   final List<Achievement> _pendingAchievementNotifications = [];
   Achievement? _currentAchievementNotification;
   bool _isAchievementNotificationVisible = false;
+  Timer? _achievementNotificationTimer; // ADDED: Timer for hiding notification
 
   List<Achievement> get pendingAchievementNotifications => List.unmodifiable(_pendingAchievementNotifications);
   Achievement? get currentAchievementNotification => _currentAchievementNotification;
@@ -660,12 +708,13 @@ class GameState with ChangeNotifier {
       return '$remainingSeconds seconds';
     }
   }
-
+/*
   void enablePremium() {
     isPremium = true;
     notifyListeners();
     print("Premium status enabled");
   }
+*/
 
   void _setupTimers() {
     _saveTimer = Timer.periodic(const Duration(minutes: 1), (_) {
@@ -707,6 +756,54 @@ class GameState with ChangeNotifier {
       DateTime now = DateTime.now();
       String hourKey = TimeUtils.getHourKey(now);
 
+      // --- ADDED: Challenge Check --- 
+      if (activeChallenge != null) {
+        if (!activeChallenge!.isActive(now)) {
+          // Challenge has expired
+          bool success = activeChallenge!.wasSuccessful(totalEarned);
+          if (success) {
+            print("🎉 Platinum Challenge Successful! Awarding ${activeChallenge!.rewardPP} PP.");
+            awardPlatinumPoints(activeChallenge!.rewardPP);
+            // TODO: Add user-facing notification for success
+          } else {
+            print("😞 Platinum Challenge Failed. Goal not met.");
+            // TODO: Add user-facing notification for failure
+          }
+          activeChallenge = null; // Clear the challenge
+          notifyListeners(); // Update UI potentially showing challenge status
+        }
+      }
+      // --- END: Challenge Check --- 
+
+      // --- ADDED: Disaster Shield Check --- 
+      if (isDisasterShieldActive && disasterShieldEndTime != null && now.isAfter(disasterShieldEndTime!)) {
+        print("INFO: Disaster Shield expired.");
+        isDisasterShieldActive = false;
+        disasterShieldEndTime = null;
+        // TODO: Add user-facing notification for shield expiry?
+        notifyListeners();
+      }
+      // --- END: Disaster Shield Check --- 
+
+      // --- ADDED: Crisis Accelerator Check --- 
+      if (isCrisisAcceleratorActive && crisisAcceleratorEndTime != null && now.isAfter(crisisAcceleratorEndTime!)) {
+        print("INFO: Crisis Accelerator expired.");
+        isCrisisAcceleratorActive = false;
+        crisisAcceleratorEndTime = null;
+        // TODO: Add user-facing notification?
+        notifyListeners();
+      }
+      // --- END: Crisis Accelerator Check --- 
+
+      // --- ADDED: Income Surge Check --- 
+      if (isIncomeSurgeActive && incomeSurgeEndTime != null && now.isAfter(incomeSurgeEndTime!)) {
+        print("INFO: Income Surge expired.");
+        isIncomeSurgeActive = false;
+        incomeSurgeEndTime = null;
+        notifyListeners();
+      }
+      // --- END: Income Surge Check --- 
+
       checkAndTriggerEvents();
 
       if (clickBoostEndTime != null && now.isAfter(clickBoostEndTime!)) {
@@ -737,6 +834,8 @@ class GameState with ChangeNotifier {
           if (business.secondsSinceLastIncome >= business.incomeInterval) {
             bool hasEvent = hasActiveEventForBusiness(business.id);
             double income = business.getCurrentIncome(affectedByEvent: hasEvent) * incomeMultiplier * prestigeMultiplier;
+            // ADDED: Apply Income Surge
+            if (isIncomeSurgeActive) income *= 2.0;
             businessIncomeThisTick += income;
             business.secondsSinceLastIncome = 0;
           }
@@ -768,6 +867,8 @@ class GameState with ChangeNotifier {
                                      incomeMultiplier *
                                      prestigeMultiplier *
                                      (1 + diversificationBonus); // Apply diversification bonus
+          // ADDED: Apply Income Surge
+          if (isIncomeSurgeActive) investmentDividend *= 2.0;
           dividendIncomeThisTick += investmentDividend;
         }
       }
@@ -955,11 +1056,17 @@ class GameState with ChangeNotifier {
   }
 
   void tap() {
-    // Calculate earnings based on click value and potential boost
-    double baseEarnings = clickValue * clickMultiplier; // Base click value * permanent PP multiplier * prestige multiplier
-    double finalEarnings = baseEarnings * (isBoostActive ? _tempClickBoostMultiplier : 1.0); // Apply temp boost multiplier if active
+    // Calculate earnings based on click value and potential boost effects
+    double baseEarnings = clickValue * clickMultiplier; // Base click value * permanent PP multiplier
+    
+    // Apply temporary boosts - they can stack multiplicatively
+    double boostMultiplier = 1.0;
+    if (isBoostActive) boostMultiplier *= 2.0;
+    if (isAdBoostActive) boostMultiplier *= 10.0;
+    
+    double finalEarnings = baseEarnings * boostMultiplier;
 
-    print("~~~ GameState.tap() called. BaseClick: $clickValue, PermClickMult: $clickMultiplier, TempBoostMult: $isBoostActive ? $_tempClickBoostMultiplier : 1.0, Final: $finalEarnings ~~~ "); // DEBUG LOG
+    print("~~~ GameState.tap() called. BaseClick: $clickValue, PermClickMult: $clickMultiplier, PlatBoostMult: ${isBoostActive ? '2.0x' : '1.0x'}, AdBoostMult: ${isAdBoostActive ? '10.0x' : '1.0x'}, Final: $finalEarnings ~~~ "); // DEBUG LOG
 
     money += finalEarnings;
     totalEarned += finalEarnings;
@@ -1133,1307 +1240,473 @@ class GameState with ChangeNotifier {
       'events': eventsToJson(),
       'lastOpened': DateTime.now().toIso8601String(),
       'isInitialized': true, // Assuming saving means it's initialized
+      // >> START: Platinum Vault Item State Serialization <<
+      'isPlatinumEfficiencyActive': isPlatinumEfficiencyActive,
+      'isPlatinumPortfolioActive': isPlatinumPortfolioActive,
+      'platinumFoundationsApplied': platinumFoundationsApplied,
+      'isPlatinumResilienceActive': isPlatinumResilienceActive,
+      'isPlatinumTowerUnlocked': isPlatinumTowerUnlocked,
+      'isPlatinumVentureUnlocked': isPlatinumVentureUnlocked,
+      'isPlatinumStockUnlocked': isPlatinumStockUnlocked,
+      'isPlatinumIslandsUnlocked': isPlatinumIslandsUnlocked,
+      'isPlatinumYachtUnlocked': isPlatinumYachtUnlocked,
+      'isPlatinumYachtPurchased': isPlatinumYachtPurchased,
+      'platinumYachtDockedLocaleId': platinumYachtDockedLocaleId,
+      'platinumYachtUpgrades': platinumYachtUpgrades.map((u) => u.toJson()).toList(),
+      'isPlatinumIslandUnlocked': isPlatinumIslandUnlocked,
+      // >> END: Platinum Vault Item State Serialization <<
+      
+      // Save both types of boost timers
+      'boostRemainingSeconds': boostRemainingSeconds,
+      'adBoostRemainingSeconds': adBoostRemainingSeconds,
+      'clickBoostEndTime': clickBoostEndTime?.toIso8601String(),
     };
-
-    if (clickBoostEndTime != null) {
-      json['clickBoostEndTime'] = clickBoostEndTime!.toIso8601String();
-    }
-
-    json['businesses'] = businesses.map((b) => {
-      'id': b.id, 'level': b.level, 'unlocked': b.unlocked, 'secondsSinceLastIncome': b.secondsSinceLastIncome
-    }).toList();
-
-    json['investments'] = investments.map((i) => {
-      'id': i.id, 'owned': i.owned, 'purchasePrice': i.purchasePrice,
-      'currentPrice': i.currentPrice, 'priceHistory': i.priceHistory
-    }).toList();
-
-    json['realEstateLocales'] = realEstateLocales.map((locale) => {
-      'id': locale.id, 'unlocked': locale.unlocked,
-      'properties': locale.properties.map((p) => {
-        'id': p.id, 'owned': p.owned,
-        'purchasedUpgradeIds': p.upgrades.where((u) => u.purchased).map((u) => u.id).toList(),
-      }).toList(),
-    }).toList();
-
-    json['hourlyEarnings'] = hourlyEarnings;
-    json['persistentNetWorthHistory'] = persistentNetWorthHistory.map((k, v) => MapEntry(k.toString(), v));
-    json['achievements'] = achievementManager.achievements.map((a) => a.toJson()).toList();
-    json.addAll(eventsToJson());
-
+    print("💾 GameState.toJson finished.");
     return json;
   }
 
-  Future<void> fromJson(Map<String, dynamic> json) async {
-    money = json['money'] ?? 500.0;
-    totalEarned = json['totalEarned'] ?? 500.0;
-    manualEarnings = json['manualEarnings'] ?? 0.0;
-    passiveEarnings = json['passiveEarnings'] ?? 0.0;
-    isPremium = json['isPremium'] ?? false;
-    investmentEarnings = json['investmentEarnings'] ?? 0.0;
-    investmentDividendEarnings = json['investmentDividendEarnings'] ?? 0.0;
-    realEstateEarnings = json['realEstateEarnings'] ?? 0.0;
-    clickValue = json['clickValue'] ?? 1.5;
-    taps = json['taps'] ?? 0;
-    clickLevel = json['clickLevel'] ?? 1;
-    totalRealEstateUpgradesPurchased = json['totalRealEstateUpgradesPurchased'] ?? 0;
-
-    totalUpgradeSpending = json['totalUpgradeSpending'] ?? 0.0;
-    luxuryUpgradeSpending = json['luxuryUpgradeSpending'] ?? 0.0;
-    fullyUpgradedPropertyIds = Set<String>.from(json['fullyUpgradedPropertyIds'] ?? []);
-    fullyUpgradedPropertiesPerLocale = Map<String, int>.from(json['fullyUpgradedPropertiesPerLocale'] ?? {});
-    localesWithOneFullyUpgradedProperty = Set<String>.from(json['localesWithOneFullyUpgradedProperty'] ?? []);
-    fullyUpgradedLocales = Set<String>.from(json['fullyUpgradedLocales'] ?? []);
-
-    platinumPoints = json['platinumPoints'] ?? 0;
-    _retroactivePPAwarded = json['_retroactivePPAwarded'] ?? false;
-
-    // Load PP purchase history
-    ppPurchases = Map<String, int>.from(json['ppPurchases'] ?? {});
-    ppOwnedItems = Set<String>.from(json['ppOwnedItems'] ?? []);
-
-    // Load unlock flags
-    isGoldenCursorUnlocked = json['isGoldenCursorUnlocked'] ?? false;
-    isExecutiveThemeUnlocked = json['isExecutiveThemeUnlocked'] ?? false;
-    isPlatinumFrameUnlocked = json['isPlatinumFrameUnlocked'] ?? false;
-
-    lifetimeTaps = json['lifetimeTaps'] ?? taps;
-    if (json['gameStartTime'] != null) {
-      try { gameStartTime = DateTime.parse(json['gameStartTime']); } catch (_) {}
-    }
-
-    currentDay = json['currentDay'] ?? DateTime.now().weekday;
-    incomeMultiplier = json['incomeMultiplier'] ?? 1.0;
-    clickMultiplier = json['clickMultiplier'] ?? 1.0;
-    prestigeMultiplier = json['prestigeMultiplier'] ?? 1.0;
-    networkWorth = json['networkWorth'] ?? 0.0;
-    reincorporationUsesAvailable = json['reincorporationUsesAvailable'] ?? 0;
-    totalReincorporations = json['totalReincorporations'] ?? 0;
-    isInitialized = json['isInitialized'] ?? false; // Load initialized status
-
-    // CRITICAL FIX: Load lastSaved robustly
+  void fromJson(Map<String, dynamic> json) {
     try {
-      lastSaved = json['lastSaved'] != null ? DateTime.parse(json['lastSaved']) : DateTime.now();
-      print("📅 Loaded lastSaved timestamp: ${lastSaved.toIso8601String()}");
-    } catch (e) {
-      print("❌ Error parsing lastSaved timestamp: $e. Using current time.");
-      lastSaved = DateTime.now();
-    }
-
-    // Process offline progress based on lastOpened
-    try {
-      if (json['lastOpened'] != null) {
-        DateTime previousOpen = DateTime.parse(json['lastOpened']);
-        print("📆 Loaded lastOpened timestamp: ${previousOpen.toIso8601String()}");
-        int secondsElapsed = DateTime.now().difference(previousOpen).inSeconds;
-        print("⏱️ Time since last opened: ${secondsElapsed} seconds");
-        if (secondsElapsed > 10) {
-          print("💰 Processing offline progress for $secondsElapsed seconds");
-          // Ensure achievementManager is initialized before processing offline progress
-          achievementManager = AchievementManager(this);
-          _processOfflineProgress(secondsElapsed);
-        }
-      } else {
-        print("⚠️ No lastOpened timestamp found, using current time");
-      }
-    } catch (e) {
-      print("❌ Error parsing lastOpened timestamp: $e");
-    }
-    lastOpened = DateTime.now(); // Always update lastOpened
-    print("🔄 Updated lastOpened to: ${lastOpened.toIso8601String()}");
-
-
-    if (json['clickBoostEndTime'] != null) {
-       try {
-        clickBoostEndTime = DateTime.parse(json['clickBoostEndTime']);
-        if (DateTime.now().isAfter(clickBoostEndTime!)) {
-          clickMultiplier = 1.0;
+      // ... existing code ...
+      
+      // Restore boost timers
+      boostRemainingSeconds = json['boostRemainingSeconds'] ?? 0;
+      adBoostRemainingSeconds = json['adBoostRemainingSeconds'] ?? 0;
+      
+      if (json['clickBoostEndTime'] != null) {
+        try {
+          clickBoostEndTime = DateTime.parse(json['clickBoostEndTime']);
+        } catch (e) {
+          print("Error parsing clickBoostEndTime: $e");
           clickBoostEndTime = null;
         }
-      } catch (_) {}
-    }
-
-    // Load businesses
-    if (json['businesses'] is List) {
-      for (var businessJson in json['businesses']) {
-        if (businessJson is Map && businessJson['id'] != null) {
-          int index = businesses.indexWhere((b) => b.id == businessJson['id']);
-          if (index != -1) {
-            if (businessJson['level'] != null) businesses[index].level = businessJson['level'];
-            else if (businessJson['owned'] != null) businesses[index].level = businessJson['owned'] > 0 ? 1 : 0; // Backward compatibility
-            businesses[index].unlocked = businessJson['unlocked'] ?? false;
-            businesses[index].secondsSinceLastIncome = businessJson['secondsSinceLastIncome'] ?? 0;
-          }
-        }
       }
-    }
-
-    // Load investments
-    if (json['investments'] is List) {
-      for (var investmentJson in json['investments']) {
-         if (investmentJson is Map && investmentJson['id'] != null) {
-          int index = investments.indexWhere((i) => i.id == investmentJson['id']);
-          if (index != -1) {
-            investments[index].owned = investmentJson['owned'] ?? 0;
-            investments[index].currentPrice = investmentJson['currentPrice'] ?? investments[index].basePrice;
-            investments[index].purchasePrice = investmentJson['purchasePrice'] ?? 0.0; // Default to 0 if missing
-
-            if (investmentJson['priceHistory'] is List) {
-              try {
-                investments[index].priceHistory = (investmentJson['priceHistory'] as List).map((e) => (e as num).toDouble()).toList();
-              } catch (e) {
-                print('Error parsing price history for ${investmentJson['id']}: $e');
-                investments[index].priceHistory = List.generate(30, (_) => investments[index].basePrice);
-              }
-            }
-          }
-        }
+      
+      // Restart boost timers if needed
+      if (boostRemainingSeconds > 0) {
+        _startBoostTimer();
       }
-    }
-
-    // Ensure real estate upgrades are initialized before loading state
-    if (realEstateInitializationFuture != null) {
-      print("⏳ Waiting for real estate initialization before loading saved state...");
-      await realEstateInitializationFuture;
-      print("✅ Real estate initialization complete. Proceeding with loading saved state.");
-    } else {
-       print("⚠️ Real estate initialization future was null. Attempting to load state anyway.");
-    }
-
-
-    // Load real estate
-    if (json['realEstateLocales'] is List) {
-      for (var localeJson in json['realEstateLocales']) {
-        if (localeJson is Map && localeJson['id'] != null) {
-          int localeIndex = realEstateLocales.indexWhere((l) => l.id == localeJson['id']);
-          if (localeIndex != -1) {
-            realEstateLocales[localeIndex].unlocked = localeJson['unlocked'] ?? false;
-            if (localeJson['properties'] is List) {
-              for (var propertyJson in localeJson['properties']) {
-                if (propertyJson is Map && propertyJson['id'] != null) {
-                  int propertyIndex = realEstateLocales[localeIndex].properties.indexWhere((p) => p.id == propertyJson['id']);
-                  if (propertyIndex != -1) {
-                    final property = realEstateLocales[localeIndex].properties[propertyIndex];
-                    property.owned = propertyJson['owned'] ?? 0;
-
-                    // Load purchased upgrades
-                    List<String> purchasedIds = [];
-                    if (propertyJson['purchasedUpgradeIds'] is List) {
-                       purchasedIds = List<String>.from(propertyJson['purchasedUpgradeIds']);
-                    }
-                    print("🔧 Loading upgrades for ${property.name}. Found ${purchasedIds.length} saved IDs. Property has ${property.upgrades.length} upgrades in definition.");
-
-                    int appliedCount = 0;
-                    for (var upgrade in property.upgrades) {
-                      bool shouldBePurchased = purchasedIds.contains(upgrade.id);
-                      if (upgrade.purchased != shouldBePurchased) {
-                         upgrade.purchased = shouldBePurchased;
-                         if (shouldBePurchased) appliedCount++;
-                         print("      -> Set purchased=${shouldBePurchased} for upgrade: ${upgrade.id}");
-                      }
-                    }
-                     print("   Applied purchased status to $appliedCount upgrades for ${property.name}.");
-                  }
-                }
-              }
-            }
-          }
-        }
+      
+      if (adBoostRemainingSeconds > 0) {
+        _startAdBoostTimer();
       }
+      
+      // ... existing code ...
+    } catch (e, stackTrace) {
+      print("❌❌❌ CRITICAL ERROR in fromJson: $e");
+      print(stackTrace);
     }
-
-
-    // Load stats
-    if (json['hourlyEarnings'] is Map) {
-      try { hourlyEarnings = Map<String, double>.from((json['hourlyEarnings'] as Map).map((k, v) => MapEntry(k.toString(), (v as num).toDouble()))); }
-      catch (e) { print("Error loading hourlyEarnings: $e. Resetting."); hourlyEarnings = {}; }
-    } else { hourlyEarnings = {}; }
-
-    if (json['persistentNetWorthHistory'] is Map) {
-       try { persistentNetWorthHistory = Map<int, double>.from((json['persistentNetWorthHistory'] as Map).map((k, v) => MapEntry(int.parse(k.toString()), (v as num).toDouble()))); }
-       catch (e) { print("Error loading persistentNetWorthHistory: $e. Resetting."); persistentNetWorthHistory = {}; }
-    } else { persistentNetWorthHistory = {}; }
-
-
-    // Initialize achievements manager *after* loading basic stats but *before* loading achievement status or granting retroactive PP
-    achievementManager = AchievementManager(this);
-
-    if (json['achievements'] is List) {
-      for (var achievementJson in json['achievements']) {
-        if (achievementJson is Map && achievementJson['id'] != null) {
-          bool completed = achievementJson['completed'] ?? false;
-          if (completed) {
-            int index = achievementManager.achievements.indexWhere((a) => a.id == achievementJson['id']);
-            if (index != -1) {
-              achievementManager.achievements[index].completed = true;
-            }
-          }
-        }
-      }
-    }
-
-    // Grant Retroactive PP if this is the first time loading since the PP system was added
-    if (!_retroactivePPAwarded) {
-      print("✨ Granting retroactive Platinum Points...");
-      _grantRetroactivePP();
-    }
-
-    eventsFromJson(json); // Load event system data
-
-    isInitialized = true; // Mark as initialized after loading everything
-    notifyListeners();
-    print("✅ GameState.fromJson complete.");
   }
 
-  void _grantRetroactivePP() {
-    if (achievementManager == null) {
-      print("❌ Cannot grant retroactive PP: AchievementManager is null.");
-      return;
-    }
-    int summedPpReward = 0;
-    final completedAchievements = achievementManager.getCompletedAchievements();
-    if (completedAchievements.isEmpty) {
-       print ("🤷 No previously completed achievements found for retroactive PP.");
-       _retroactivePPAwarded = true; // Mark as done even if none found
-       return;
-    }
-
-    // We need the full definitions map to get ppReward
-    Map<String, Achievement> definitionsMap = { for (var a in getAchievementDefinitions()) a.id : a };
-
-    for (final completedAch in completedAchievements) {
-      final definition = definitionsMap[completedAch.id];
-      if (definition != null) {
-        summedPpReward += definition.ppReward;
-        print ("  -> Found completed: ${completedAch.name}, adding ${definition.ppReward} PP");
+  // Helper method to start the boost timer
+  void _startBoostTimer() {
+    _boostTimer?.cancel();
+    _boostTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (boostRemainingSeconds > 0) {
+        boostRemainingSeconds--;
       } else {
-        print("  -> WARNING: Could not find definition for completed achievement ID: ${completedAch.id}");
+        timer.cancel();
+        _boostTimer = null;
       }
-    }
-
-    if (summedPpReward > 0) {
-        platinumPoints = summedPpReward; // Overwrite existing PP, as this is the initial grant
-        print("💎 Retroactive PP granted! Total: $platinumPoints");
-    }
-    _retroactivePPAwarded = true; // Mark as awarded, even if total was 0
-    // Do not call notifyListeners here, it's called at the end of fromJson
+      notifyListeners();
+    });
   }
 
-  void _processOfflineProgress(int secondsElapsed) {
-    final int oneDaysInSeconds = 86400;
-    int cappedSeconds = min(secondsElapsed, oneDaysInSeconds);
-
-    print("💵 Processing offline income for ${cappedSeconds} seconds (capped from ${secondsElapsed})");
-    print("📊 Time away: ${_formatTimeInterval(secondsElapsed)}");
-    print("📊 Income period: ${_formatTimeInterval(cappedSeconds)}");
-
-    double offlineBusinessIncome = 0;
-    for (var business in businesses) {
-      if (business.level > 0) {
-        int cycles = cappedSeconds ~/ business.incomeInterval;
-        if (cycles > 0) {
-          offlineBusinessIncome += business.getCurrentIncome() * cycles * incomeMultiplier * prestigeMultiplier;
-        }
+  // Helper method to start the ad boost timer
+  void _startAdBoostTimer() {
+    _adBoostTimer?.cancel();
+    _adBoostTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (adBoostRemainingSeconds > 0) {
+        adBoostRemainingSeconds--;
+      } else {
+        timer.cancel();
+        _adBoostTimer = null;
       }
-    }
-     if (offlineBusinessIncome > 0) {
-      money += offlineBusinessIncome;
-      totalEarned += offlineBusinessIncome;
-      passiveEarnings += offlineBusinessIncome;
-    }
-
-    double offlineRealEstateIncome = getRealEstateIncomePerSecond() * cappedSeconds * incomeMultiplier * prestigeMultiplier;
-    if (offlineRealEstateIncome > 0) {
-      money += offlineRealEstateIncome;
-      totalEarned += offlineRealEstateIncome;
-      realEstateEarnings += offlineRealEstateIncome;
-    }
-
-    double offlineDividendIncome = getTotalDividendIncomePerSecond() * cappedSeconds * incomeMultiplier * prestigeMultiplier;
-     if (offlineDividendIncome > 0) {
-      money += offlineDividendIncome;
-      totalEarned += offlineDividendIncome;
-      investmentDividendEarnings += offlineDividendIncome;
-    }
-
-    // Note: Timers are typically setup *after* loading state, not necessarily here.
-    // Ensure they are running if needed.
-
-    _updateBusinessUnlocks();
-    _updateRealEstateUnlocks();
-
-    // Ensure AchievementManager is ready if needed for offline calculations (though usually not)
-    // if (achievementManager == null) achievementManager = AchievementManager(this);
-
-    // lastOpened is updated in the caller (fromJson)
-
-    notifyListeners(); // Notify after applying all offline income
+      notifyListeners();
+    });
   }
 
+  // Dispose timers when GameState is disposed
   @override
   void dispose() {
+    print("🗑️ Disposing GameState and canceling timers...");
     _saveTimer?.cancel();
     _updateTimer?.cancel();
-    _investmentUpdateTimer?.cancel(); // Ensure this timer is cancelled too
-    _boostTimer?.cancel(); // ADDED: Cancel boost timer on dispose
+    _investmentUpdateTimer?.cancel();
+    _boostTimer?.cancel();
+    _adBoostTimer?.cancel(); // ADDED: Cancel ad boost timer
+    _achievementNotificationTimer?.cancel();
     super.dispose();
   }
 
-  void resetToDefaults() {
-    money = 500.0;
-    totalEarned = 500.0;
-    manualEarnings = 0.0;
-    passiveEarnings = 0.0;
-    investmentEarnings = 0.0;
-    investmentDividendEarnings = 0.0;
-    realEstateEarnings = 0.0;
-    clickValue = 1.5;
-    taps = 0;
-    clickLevel = 1;
-    totalRealEstateUpgradesPurchased = 0;
-
-    // Reset Achievement Tracking Fields
-    totalUpgradeSpending = 0.0;
-    luxuryUpgradeSpending = 0.0;
-    fullyUpgradedPropertyIds = {};
-    fullyUpgradedPropertiesPerLocale = {};
-    localesWithOneFullyUpgradedProperty = {};
-    fullyUpgradedLocales = {};
-
-    // isPremium persists
-    lifetimeTaps = 0;
-    gameStartTime = DateTime.now();
-
-    lastSaved = DateTime.now();
-    lastOpened = DateTime.now();
-    currentDay = DateTime.now().weekday;
-
-    incomeMultiplier = 1.0;
-    clickMultiplier = 1.0;
-    clickBoostEndTime = null;
-
-    prestigeMultiplier = 1.0;
-    networkWorth = 0.0;
-    reincorporationUsesAvailable = 0;
-    totalReincorporations = 0;
-
-    hourlyEarnings = {};
-    persistentNetWorthHistory = {};
-
-    activeMarketEvents = [];
-
-    _initializeDefaultBusinesses();
-    _initializeDefaultInvestments();
-    _initializeRealEstateLocales(); // This creates new instances, effectively resetting ownership and upgrades
-
-    _updateBusinessUnlocks();
-    _updateRealEstateUnlocks();
-
-    achievementManager = AchievementManager(this); // Re-initialize achievements
-
-    // Reset Event System
-    activeEvents = [];
-    lastEventTime = null;
-    eventsUnlocked = false;
-    recentEventTimes = [];
-    businessesOwnedCount = 0;
-    localesWithPropertiesCount = 0;
-    totalEventsResolved = 0;
-    eventsResolvedByTapping = 0;
-    eventsResolvedByFee = 0;
-    eventFeesSpent = 0.0;
-    eventsResolvedByAd = 0;
-    eventsResolvedByLocale = {};
-    lastEventResolvedTime = null;
-    resolvedEvents = [];
-
-    // Reset PP
-    platinumPoints = 0;
-    _retroactivePPAwarded = false; // Allow retroactive grant on next load if needed
-    ppPurchases = {}; // Reset PP purchases
-    ppOwnedItems = {};  // Reset PP owned items
-
-    // Reset unlock flags
-    isGoldenCursorUnlocked = false;
-    isExecutiveThemeUnlocked = false;
-    isPlatinumFrameUnlocked = false;
-
-    notifyListeners();
-    print("Game state reset to defaults");
-  }
-
-  bool reincorporate() {
-    updateReincorporationUses();
-    double currentNetWorth = calculateNetWorth();
-    double minRequiredNetWorth = getMinimumNetWorthForReincorporation();
-
-    if (reincorporationUsesAvailable <= 0 && currentNetWorth < minRequiredNetWorth) {
-      return false;
-    }
-
-    int currentPrestigeLevel = 0;
-    if (currentNetWorth >= 1000000.0) {
-      currentPrestigeLevel = (log(currentNetWorth / 1000000.0) / log(10)).floor() + 1;
-    }
-
-    // Calculate increment based on the level being achieved *now*
-    double networkWorthIncrement = currentPrestigeLevel > 0 ? pow(10, currentPrestigeLevel - 1).toDouble() / 100.0 : 0.0;
-
-    networkWorth += networkWorthIncrement; // Persists
-    totalReincorporations++; // Increment total count
-
-    int totalAchievedLevels = getAchievedReincorporationLevels(); // Based on new total networkWorth
-
-    // Update multipliers based on *total* achieved levels
-    prestigeMultiplier = 1.0 + (0.1 * totalAchievedLevels);
-    if (totalAchievedLevels > 0 && prestigeMultiplier < 1.2) {
-       prestigeMultiplier = 1.2; // Ensure first level gives at least 1.2x
-    }
-    incomeMultiplier = pow(1.2, totalAchievedLevels).toDouble(); // Compounding passive bonus
-
-
-    if (reincorporationUsesAvailable > 0) {
-       reincorporationUsesAvailable--; // Consume an available use if one existed
-    }
-
-    // Reset basic stats (apply prestige multiplier to starting money)
-    money = 500.0 * prestigeMultiplier;
-    totalEarned = money;
-    manualEarnings = 0.0;
-    passiveEarnings = 0.0;
-    investmentEarnings = 0.0;
-    investmentDividendEarnings = 0.0;
-    realEstateEarnings = 0.0;
-
-    // Reset click value based on *persistent* click level and new prestige multiplier
-    double baseClickValue = 1.5;
-    double levelMultiplier = 1.0 + ((clickLevel - 1) * 0.5);
-    clickValue = baseClickValue * levelMultiplier * prestigeMultiplier;
-
-    // Reset taps to start of current level (persists across reincorporation)
-    if (clickLevel <= 5) taps = (500 * (clickLevel - 1));
-    else if (clickLevel <= 10) taps = 2500 + (750 * (clickLevel - 6)); // 500*5 + 750*(level-6+1)
-    else taps = 6250 + (1000 * (clickLevel - 11)); // 2500 + 750*5 + 1000*(level-11+1)
-
-
-    lastSaved = DateTime.now();
-    lastOpened = DateTime.now();
-    currentDay = DateTime.now().weekday;
-
-    clickMultiplier = 1.0; // Reset temporary click boost
-    clickBoostEndTime = null;
-
-    hourlyEarnings = {};
-
-    activeMarketEvents = [];
-
-    _initializeDefaultBusinesses();
-    _initializeDefaultInvestments();
-    _resetRealEstateForReincorporation(); // Crucial step
-
-    _updateBusinessUnlocks();
-    _updateRealEstateUnlocks();
-
-    // Reset Event System
-    activeEvents = [];
-    lastEventTime = null;
-    eventsUnlocked = false;
-    recentEventTimes = [];
-    businessesOwnedCount = 0;
-    localesWithPropertiesCount = 0;
-    totalEventsResolved = 0;
-    eventsResolvedByTapping = 0;
-    eventsResolvedByFee = 0;
-    eventFeesSpent = 0.0;
-    eventsResolvedByAd = 0;
-    eventsResolvedByLocale = {};
-    lastEventResolvedTime = null;
-    resolvedEvents = [];
-
-    // Reset PP on reincorporation
-    platinumPoints = 0;
-    // _retroactivePPAwarded should persist across reincorporation
-    ppPurchases = {}; // Reset PP purchases
-    ppOwnedItems = {};  // Reset PP owned items
-
-    notifyListeners();
-    print("Reincorporated! Network Worth: $networkWorth, Click Multiplier: $prestigeMultiplier, Passive Bonus Multiplier: $incomeMultiplier, PP Reset.");
-    return true;
-  }
-
-
-  double getMinimumNetWorthForReincorporation() {
-    if (reincorporationUsesAvailable > 0) return 0.0;
-
-    int thresholdsUsed = getAchievedReincorporationLevels();
-    if (thresholdsUsed >= 9) return double.infinity; // Max 9 levels ($100T)
-
-    double baseRequirement = 1000000.0;
-    return baseRequirement * pow(10, thresholdsUsed);
-  }
-
-  int getAchievedReincorporationLevels() {
-    int levelsAchieved = 0;
-    if (networkWorth >= 0.01) levelsAchieved++;    // 1M
-    if (networkWorth >= 0.1) levelsAchieved++;     // 10M
-    if (networkWorth >= 1.0) levelsAchieved++;     // 100M
-    if (networkWorth >= 10.0) levelsAchieved++;    // 1B
-    if (networkWorth >= 100.0) levelsAchieved++;   // 10B
-    if (networkWorth >= 1000.0) levelsAchieved++;  // 100B
-    if (networkWorth >= 10000.0) levelsAchieved++; // 1T
-    if (networkWorth >= 100000.0) levelsAchieved++;// 10T
-    if (networkWorth >= 1000000.0) levelsAchieved++; // 100T
-    return levelsAchieved;
-  }
-
-  void updateReincorporationUses() {
-    double netWorth = calculateNetWorth();
-    double baseRequirement = 1000000.0;
-
-    int totalThresholdsCrossed = 0;
-    if (netWorth >= baseRequirement) {
-      totalThresholdsCrossed = (log(netWorth / baseRequirement) / log(10)).floor() + 1;
-      totalThresholdsCrossed = min(totalThresholdsCrossed, 9); // Cap at 9 levels ($100T)
-    }
-
-    int alreadyUsedThresholds = getAchievedReincorporationLevels();
-    int newAvailableUses = max(0, totalThresholdsCrossed - alreadyUsedThresholds);
-
-    if (reincorporationUsesAvailable != newAvailableUses) {
-       reincorporationUsesAvailable = newAvailableUses;
-       notifyListeners(); // Only notify if the value actually changed
-    }
-  }
-
-  void _initializeRealEstateLocales() {
-    realEstateLocales = [
-      RealEstateLocale( id: 'rural_kenya', name: 'Rural Kenya', theme: 'Traditional and rural African homes', unlocked: true, icon: Icons.cabin, properties: [
-          RealEstateProperty(id: 'mud_hut', name: 'Mud Hut', purchasePrice: 500.0, baseCashFlowPerSecond: 0.5 * 1.15),
-          RealEstateProperty(id: 'thatched_cottage', name: 'Thatched Cottage', purchasePrice: 1000.0, baseCashFlowPerSecond: 1.0 * 1.25),
-          RealEstateProperty(id: 'brick_shack', name: 'Brick Shack', purchasePrice: 2500.0, baseCashFlowPerSecond: 2.5 * 1.35),
-          RealEstateProperty(id: 'solar_powered_hut', name: 'Solar-Powered Hut', purchasePrice: 5000.0, baseCashFlowPerSecond: 5.0 * 1.45),
-          RealEstateProperty(id: 'village_compound', name: 'Village Compound', purchasePrice: 10000.0, baseCashFlowPerSecond: 10.0 * 1.55),
-          RealEstateProperty(id: 'eco_lodge', name: 'Eco-Lodge', purchasePrice: 25000.0, baseCashFlowPerSecond: 25.0 * 1.65),
-          RealEstateProperty(id: 'farmhouse', name: 'Farmhouse', purchasePrice: 50000.0, baseCashFlowPerSecond: 50.0 * 1.75),
-          RealEstateProperty(id: 'safari_retreat', name: 'Safari Retreat', purchasePrice: 100000.0, baseCashFlowPerSecond: 100.0 * 1.85),
-          RealEstateProperty(id: 'rural_estate', name: 'Rural Estate', purchasePrice: 250000.0, baseCashFlowPerSecond: 250.0 * 1.95),
-          RealEstateProperty(id: 'conservation_villa', name: 'Conservation Villa', purchasePrice: 500000.0, baseCashFlowPerSecond: 500.0 * 2.05),
-        ],
-      ),
-      RealEstateLocale( id: 'lagos_nigeria', name: 'Lagos, Nigeria', theme: 'Urban growth and modern apartments', unlocked: false, icon: Icons.apartment, properties: [
-          RealEstateProperty(id: 'tin_roof_shack', name: 'Tin-Roof Shack', purchasePrice: 1000.0, baseCashFlowPerSecond: 1.0 * 1.15),
-          RealEstateProperty(id: 'concrete_flat', name: 'Concrete Flat', purchasePrice: 2000.0, baseCashFlowPerSecond: 2.0 * 1.25),
-          RealEstateProperty(id: 'small_apartment', name: 'Small Apartment', purchasePrice: 5000.0, baseCashFlowPerSecond: 5.0 * 1.35),
-          RealEstateProperty(id: 'duplex', name: 'Duplex', purchasePrice: 10000.0, baseCashFlowPerSecond: 10.0 * 1.45),
-          RealEstateProperty(id: 'mid_rise_block', name: 'Mid-Rise Block', purchasePrice: 25000.0, baseCashFlowPerSecond: 25.0 * 1.55),
-          RealEstateProperty(id: 'gated_complex', name: 'Gated Complex', purchasePrice: 50000.0, baseCashFlowPerSecond: 50.0 * 1.65),
-          RealEstateProperty(id: 'high_rise_tower', name: 'High-Rise Tower', purchasePrice: 100000.0, baseCashFlowPerSecond: 100.0 * 1.75),
-          RealEstateProperty(id: 'luxury_condo', name: 'Luxury Condo', purchasePrice: 250000.0, baseCashFlowPerSecond: 250.0 * 1.85),
-          RealEstateProperty(id: 'business_loft', name: 'Business Loft', purchasePrice: 500000.0, baseCashFlowPerSecond: 500.0 * 1.95),
-          RealEstateProperty(id: 'skyline_penthouse', name: 'Skyline Penthouse', purchasePrice: 1000000.0, baseCashFlowPerSecond: 1000.0 * 2.05),
-        ],
-      ),
-      RealEstateLocale( id: 'cape_town_sa', name: 'Cape Town, South Africa', theme: 'Coastal and scenic properties', unlocked: false, icon: Icons.beach_access, properties: [
-           RealEstateProperty(id: 'beach_shack', name: 'Beach Shack', purchasePrice: 5000.0, baseCashFlowPerSecond: 5.0 * 1.15),
-           RealEstateProperty(id: 'wooden_bungalow', name: 'Wooden Bungalow', purchasePrice: 10000.0, baseCashFlowPerSecond: 10.0 * 1.25),
-           RealEstateProperty(id: 'cliffside_cottage', name: 'Cliffside Cottage', purchasePrice: 25000.0, baseCashFlowPerSecond: 25.0 * 1.35),
-           RealEstateProperty(id: 'seaview_villa', name: 'Seaview Villa', purchasePrice: 50000.0, baseCashFlowPerSecond: 50.0 * 1.45),
-           RealEstateProperty(id: 'modern_beach_house', name: 'Modern Beach House', purchasePrice: 100000.0, baseCashFlowPerSecond: 100.0 * 1.55),
-           RealEstateProperty(id: 'coastal_estate', name: 'Coastal Estate', purchasePrice: 250000.0, baseCashFlowPerSecond: 250.0 * 1.65),
-           RealEstateProperty(id: 'luxury_retreat', name: 'Luxury Retreat', purchasePrice: 500000.0, baseCashFlowPerSecond: 500.0 * 1.75),
-           RealEstateProperty(id: 'oceanfront_mansion', name: 'Oceanfront Mansion', purchasePrice: 1000000.0, baseCashFlowPerSecond: 1000.0 * 1.85),
-           RealEstateProperty(id: 'vineyard_manor', name: 'Vineyard Manor', purchasePrice: 2500000.0, baseCashFlowPerSecond: 2500.0 * 1.95),
-           RealEstateProperty(id: 'cape_peninsula_chateau', name: 'Cape Peninsula Chateau', purchasePrice: 5000000.0, baseCashFlowPerSecond: 5000.0 * 2.05),
-        ],
-      ),
-      RealEstateLocale( id: 'rural_thailand', name: 'Rural Thailand', theme: 'Tropical and bamboo-based homes', unlocked: false, icon: Icons.holiday_village, properties: [
-           RealEstateProperty(id: 'bamboo_hut', name: 'Bamboo Hut', purchasePrice: 750.0, baseCashFlowPerSecond: 0.75 * 1.15),
-           RealEstateProperty(id: 'stilt_house', name: 'Stilt House', purchasePrice: 1500.0, baseCashFlowPerSecond: 1.5 * 1.25),
-           RealEstateProperty(id: 'teak_cabin', name: 'Teak Cabin', purchasePrice: 3000.0, baseCashFlowPerSecond: 3.0 * 1.35),
-           RealEstateProperty(id: 'rice_farmhouse', name: 'Rice Farmhouse', purchasePrice: 7500.0, baseCashFlowPerSecond: 7.5 * 1.45),
-           RealEstateProperty(id: 'jungle_bungalow', name: 'Jungle Bungalow', purchasePrice: 15000.0, baseCashFlowPerSecond: 15.0 * 1.55),
-           RealEstateProperty(id: 'riverside_villa', name: 'Riverside Villa', purchasePrice: 30000.0, baseCashFlowPerSecond: 30.0 * 1.65),
-           RealEstateProperty(id: 'eco_resort', name: 'Eco-Resort', purchasePrice: 75000.0, baseCashFlowPerSecond: 75.0 * 1.75),
-           RealEstateProperty(id: 'hilltop_retreat', name: 'Hilltop Retreat', purchasePrice: 150000.0, baseCashFlowPerSecond: 150.0 * 1.85),
-           RealEstateProperty(id: 'teak_mansion', name: 'Teak Mansion', purchasePrice: 300000.0, baseCashFlowPerSecond: 300.0 * 1.95),
-           RealEstateProperty(id: 'tropical_estate', name: 'Tropical Estate', purchasePrice: 750000.0, baseCashFlowPerSecond: 750.0 * 2.05),
-        ],
-      ),
-      RealEstateLocale( id: 'mumbai_india', name: 'Mumbai, India', theme: 'Dense urban housing with cultural flair', unlocked: false, icon: Icons.location_city, properties: [
-           RealEstateProperty(id: 'slum_tenement', name: 'Slum Tenement', purchasePrice: 2000.0, baseCashFlowPerSecond: 2.0 * 1.15),
-           RealEstateProperty(id: 'concrete_flat_mumbai', name: 'Concrete Flat', purchasePrice: 4000.0, baseCashFlowPerSecond: 4.0 * 1.25),
-           RealEstateProperty(id: 'small_apartment_mumbai', name: 'Small Apartment', purchasePrice: 10000.0, baseCashFlowPerSecond: 10.0 * 1.35),
-           RealEstateProperty(id: 'mid_tier_condo', name: 'Mid-Tier Condo', purchasePrice: 20000.0, baseCashFlowPerSecond: 20.0 * 1.45),
-           RealEstateProperty(id: 'bollywood_loft', name: 'Bollywood Loft', purchasePrice: 50000.0, baseCashFlowPerSecond: 50.0 * 1.55),
-           RealEstateProperty(id: 'high_rise_unit_mumbai', name: 'High-Rise Unit', purchasePrice: 100000.0, baseCashFlowPerSecond: 100.0 * 1.65),
-           RealEstateProperty(id: 'gated_tower', name: 'Gated Tower', purchasePrice: 250000.0, baseCashFlowPerSecond: 250.0 * 1.75),
-           RealEstateProperty(id: 'luxury_flat_mumbai', name: 'Luxury Flat', purchasePrice: 500000.0, baseCashFlowPerSecond: 500.0 * 1.85),
-           RealEstateProperty(id: 'seafront_penthouse', name: 'Seafront Penthouse', purchasePrice: 1000000.0, baseCashFlowPerSecond: 1000.0 * 1.95),
-           RealEstateProperty(id: 'mumbai_skyscraper', name: 'Mumbai Skyscraper', purchasePrice: 2000000.0, baseCashFlowPerSecond: 2000.0 * 2.05),
-        ],
-      ),
-      RealEstateLocale( id: 'ho_chi_minh_city', name: 'Ho Chi Minh City, Vietnam', theme: 'Emerging urban and riverfront homes', unlocked: false, icon: Icons.house_siding, properties: [
-           RealEstateProperty(id: 'shophouse', name: 'Shophouse', purchasePrice: 3000.0, baseCashFlowPerSecond: 3.0 * 1.15),
-           RealEstateProperty(id: 'narrow_flat', name: 'Narrow Flat', purchasePrice: 6000.0, baseCashFlowPerSecond: 6.0 * 1.25),
-           RealEstateProperty(id: 'riverside_hut', name: 'Riverside Hut', purchasePrice: 15000.0, baseCashFlowPerSecond: 15.0 * 1.35),
-           RealEstateProperty(id: 'modern_apartment_hcmc', name: 'Modern Apartment', purchasePrice: 30000.0, baseCashFlowPerSecond: 30.0 * 1.45),
-           RealEstateProperty(id: 'condo_unit_hcmc', name: 'Condo Unit', purchasePrice: 75000.0, baseCashFlowPerSecond: 75.0 * 1.55),
-           RealEstateProperty(id: 'riverfront_villa', name: 'Riverfront Villa', purchasePrice: 150000.0, baseCashFlowPerSecond: 150.0 * 1.65),
-           RealEstateProperty(id: 'high_rise_suite_hcmc', name: 'High-Rise Suite', purchasePrice: 300000.0, baseCashFlowPerSecond: 300.0 * 1.75),
-           RealEstateProperty(id: 'luxury_tower_hcmc', name: 'Luxury Tower', purchasePrice: 750000.0, baseCashFlowPerSecond: 750.0 * 1.85),
-           RealEstateProperty(id: 'business_loft_hcmc', name: 'Business Loft', purchasePrice: 1500000.0, baseCashFlowPerSecond: 1500.0 * 1.95),
-           RealEstateProperty(id: 'saigon_skyline_estate', name: 'Saigon Skyline Estate', purchasePrice: 3000000.0, baseCashFlowPerSecond: 3000.0 * 2.05),
-        ],
-      ),
-      RealEstateLocale( id: 'singapore', name: 'Singapore', theme: 'Ultra-modern, high-density urban living', unlocked: false, icon: Icons.apartment, properties: [
-           RealEstateProperty(id: 'hdb_flat', name: 'HDB Flat', purchasePrice: 50000.0, baseCashFlowPerSecond: 50.0 * 1.15),
-           RealEstateProperty(id: 'condo_unit_singapore', name: 'Condo Unit', purchasePrice: 100000.0, baseCashFlowPerSecond: 100.0 * 1.25),
-           RealEstateProperty(id: 'executive_apartment', name: 'Executive Apartment', purchasePrice: 250000.0, baseCashFlowPerSecond: 250.0 * 1.35),
-           RealEstateProperty(id: 'sky_terrace', name: 'Sky Terrace', purchasePrice: 500000.0, baseCashFlowPerSecond: 500.0 * 1.45),
-           RealEstateProperty(id: 'luxury_condo_singapore', name: 'Luxury Condo', purchasePrice: 1000000.0, baseCashFlowPerSecond: 1000.0 * 1.55),
-           RealEstateProperty(id: 'marina_view_suite', name: 'Marina View Suite', purchasePrice: 2500000.0, baseCashFlowPerSecond: 2500.0 * 1.65),
-           RealEstateProperty(id: 'penthouse_tower_singapore', name: 'Penthouse Tower', purchasePrice: 5000000.0, baseCashFlowPerSecond: 5000.0 * 1.75),
-           RealEstateProperty(id: 'sky_villa', name: 'Sky Villa', purchasePrice: 10000000.0, baseCashFlowPerSecond: 10000.0 * 1.85),
-           RealEstateProperty(id: 'billionaire_loft_singapore', name: 'Billionaire Loft', purchasePrice: 25000000.0, baseCashFlowPerSecond: 25000.0 * 1.95),
-           RealEstateProperty(id: 'iconic_skyscraper_singapore', name: 'Iconic Skyscraper', purchasePrice: 50000000.0, baseCashFlowPerSecond: 50000.0 * 2.05),
-        ],
-      ),
-      RealEstateLocale( id: 'hong_kong', name: 'Hong Kong', theme: 'Compact, premium urban properties', unlocked: false, icon: Icons.location_city, properties: [
-           RealEstateProperty(id: 'micro_flat', name: 'Micro-Flat', purchasePrice: 75000.0, baseCashFlowPerSecond: 75.0 * 1.15),
-           RealEstateProperty(id: 'small_apartment_hk', name: 'Small Apartment', purchasePrice: 150000.0, baseCashFlowPerSecond: 150.0 * 1.25),
-           RealEstateProperty(id: 'mid_rise_unit', name: 'Mid-Rise Unit', purchasePrice: 300000.0, baseCashFlowPerSecond: 300.0 * 1.35),
-           RealEstateProperty(id: 'harbor_view_flat', name: 'Harbor View Flat', purchasePrice: 750000.0, baseCashFlowPerSecond: 750.0 * 1.45),
-           RealEstateProperty(id: 'luxury_condo_hk', name: 'Luxury Condo', purchasePrice: 1500000.0, baseCashFlowPerSecond: 1500.0 * 1.55),
-           RealEstateProperty(id: 'peak_villa', name: 'Peak Villa', purchasePrice: 3000000.0, baseCashFlowPerSecond: 3000.0 * 1.65),
-           RealEstateProperty(id: 'skyline_suite_hk', name: 'Skyline Suite', purchasePrice: 7500000.0, baseCashFlowPerSecond: 7500.0 * 1.75),
-           RealEstateProperty(id: 'penthouse_tower_hk', name: 'Penthouse Tower', purchasePrice: 15000000.0, baseCashFlowPerSecond: 15000.0 * 1.85),
-           RealEstateProperty(id: 'billionaire_mansion', name: 'Billionaire Mansion', purchasePrice: 30000000.0, baseCashFlowPerSecond: 30000.0 * 1.95),
-           RealEstateProperty(id: 'victoria_peak_estate', name: 'Victoria Peak Estate', purchasePrice: 75000000.0, baseCashFlowPerSecond: 75000.0 * 2.05),
-        ],
-      ),
-      RealEstateLocale( id: 'lisbon_portugal', name: 'Lisbon, Portugal', theme: 'Historic and coastal European homes', unlocked: false, icon: Icons.villa, properties: [
-           RealEstateProperty(id: 'stone_cottage', name: 'Stone Cottage', purchasePrice: 10000.0, baseCashFlowPerSecond: 10.0 * 1.15),
-           RealEstateProperty(id: 'townhouse', name: 'Townhouse', purchasePrice: 20000.0, baseCashFlowPerSecond: 20.0 * 1.25),
-           RealEstateProperty(id: 'riverside_flat', name: 'Riverside Flat', purchasePrice: 50000.0, baseCashFlowPerSecond: 50.0 * 1.35),
-           RealEstateProperty(id: 'renovated_villa', name: 'Renovated Villa', purchasePrice: 100000.0, baseCashFlowPerSecond: 100.0 * 1.45),
-           RealEstateProperty(id: 'coastal_bungalow', name: 'Coastal Bungalow', purchasePrice: 250000.0, baseCashFlowPerSecond: 250.0 * 1.55),
-           RealEstateProperty(id: 'luxury_apartment_lisbon', name: 'Luxury Apartment', purchasePrice: 500000.0, baseCashFlowPerSecond: 500.0 * 1.65),
-           RealEstateProperty(id: 'historic_manor', name: 'Historic Manor', purchasePrice: 1000000.0, baseCashFlowPerSecond: 1000.0 * 1.75),
-           RealEstateProperty(id: 'seaside_mansion', name: 'Seaside Mansion', purchasePrice: 2500000.0, baseCashFlowPerSecond: 2500.0 * 1.85),
-           RealEstateProperty(id: 'cliffside_estate', name: 'Cliffside Estate', purchasePrice: 5000000.0, baseCashFlowPerSecond: 5000.0 * 1.95),
-           RealEstateProperty(id: 'lisbon_palace', name: 'Lisbon Palace', purchasePrice: 10000000.0, baseCashFlowPerSecond: 10000.0 * 2.05),
-        ],
-      ),
-      RealEstateLocale( id: 'bucharest_romania', name: 'Bucharest, Romania', theme: 'Affordable Eastern European urban growth', unlocked: false, icon: Icons.apartment, properties: [
-           RealEstateProperty(id: 'panel_flat', name: 'Panel Flat', purchasePrice: 7500.0, baseCashFlowPerSecond: 7.5 * 1.15),
-           RealEstateProperty(id: 'brick_apartment', name: 'Brick Apartment', purchasePrice: 15000.0, baseCashFlowPerSecond: 15.0 * 1.25),
-           RealEstateProperty(id: 'modern_condo_bucharest', name: 'Modern Condo', purchasePrice: 30000.0, baseCashFlowPerSecond: 30.0 * 1.35),
-           RealEstateProperty(id: 'renovated_loft', name: 'Renovated Loft', purchasePrice: 75000.0, baseCashFlowPerSecond: 75.0 * 1.45),
-           RealEstateProperty(id: 'gated_unit', name: 'Gated Unit', purchasePrice: 150000.0, baseCashFlowPerSecond: 150.0 * 1.55),
-           RealEstateProperty(id: 'high_rise_suite_bucharest', name: 'High-Rise Suite', purchasePrice: 300000.0, baseCashFlowPerSecond: 300.0 * 1.65),
-           RealEstateProperty(id: 'luxury_flat_bucharest', name: 'Luxury Flat', purchasePrice: 750000.0, baseCashFlowPerSecond: 750.0 * 1.75),
-           RealEstateProperty(id: 'urban_villa', name: 'Urban Villa', purchasePrice: 1500000.0, baseCashFlowPerSecond: 1500.0 * 1.85),
-           RealEstateProperty(id: 'city_penthouse', name: 'City Penthouse', purchasePrice: 3000000.0, baseCashFlowPerSecond: 3000.0 * 1.95),
-           RealEstateProperty(id: 'bucharest_tower', name: 'Bucharest Tower', purchasePrice: 7500000.0, baseCashFlowPerSecond: 7500.0 * 2.05),
-        ],
-      ),
-      RealEstateLocale( id: 'berlin_germany', name: 'Berlin, Germany', theme: 'Creative and industrial-chic properties', unlocked: false, icon: Icons.house_siding, properties: [
-           RealEstateProperty(id: 'studio_flat', name: 'Studio Flat', purchasePrice: 25000.0, baseCashFlowPerSecond: 25.0 * 1.15),
-           RealEstateProperty(id: 'loft_space', name: 'Loft Space', purchasePrice: 50000.0, baseCashFlowPerSecond: 50.0 * 1.25),
-           RealEstateProperty(id: 'renovated_warehouse', name: 'Renovated Warehouse', purchasePrice: 100000.0, baseCashFlowPerSecond: 100.0 * 1.35),
-           RealEstateProperty(id: 'modern_apartment_berlin', name: 'Modern Apartment', purchasePrice: 250000.0, baseCashFlowPerSecond: 250.0 * 1.45),
-           RealEstateProperty(id: 'artist_condo', name: 'Artist Condo', purchasePrice: 500000.0, baseCashFlowPerSecond: 500.0 * 1.55),
-           RealEstateProperty(id: 'riverfront_suite', name: 'Riverfront Suite', purchasePrice: 1000000.0, baseCashFlowPerSecond: 1000.0 * 1.65),
-           RealEstateProperty(id: 'luxury_loft', name: 'Luxury Loft', purchasePrice: 2500000.0, baseCashFlowPerSecond: 2500.0 * 1.75),
-           RealEstateProperty(id: 'high_rise_tower_berlin', name: 'High-Rise Tower', purchasePrice: 5000000.0, baseCashFlowPerSecond: 5000.0 * 1.85),
-           RealEstateProperty(id: 'tech_villa', name: 'Tech Villa', purchasePrice: 10000000.0, baseCashFlowPerSecond: 10000.0 * 1.95),
-           RealEstateProperty(id: 'berlin_skyline_estate', name: 'Berlin Skyline Estate', purchasePrice: 25000000.0, baseCashFlowPerSecond: 25000.0 * 2.05),
-        ],
-      ),
-      RealEstateLocale( id: 'london_uk', name: 'London, UK', theme: 'Historic and ultra-premium urban homes', unlocked: false, icon: Icons.location_city, properties: [
-           RealEstateProperty(id: 'council_flat', name: 'Council Flat', purchasePrice: 40000.0, baseCashFlowPerSecond: 40.0 * 1.15),
-           RealEstateProperty(id: 'terraced_house', name: 'Terraced House', purchasePrice: 80000.0, baseCashFlowPerSecond: 80.0 * 1.25),
-           RealEstateProperty(id: 'georgian_townhouse', name: 'Georgian Townhouse', purchasePrice: 200000.0, baseCashFlowPerSecond: 200.0 * 1.35),
-           RealEstateProperty(id: 'modern_condo_london', name: 'Modern Condo', purchasePrice: 400000.0, baseCashFlowPerSecond: 400.0 * 1.45),
-           RealEstateProperty(id: 'riverside_apartment', name: 'Riverside Apartment', purchasePrice: 1000000.0, baseCashFlowPerSecond: 1000.0 * 1.55),
-           RealEstateProperty(id: 'luxury_flat_london', name: 'Luxury Flat', purchasePrice: 2000000.0, baseCashFlowPerSecond: 2000.0 * 1.65),
-           RealEstateProperty(id: 'mayfair_mansion', name: 'Mayfair Mansion', purchasePrice: 5000000.0, baseCashFlowPerSecond: 5000.0 * 1.75),
-           RealEstateProperty(id: 'skyline_penthouse_london', name: 'Skyline Penthouse', purchasePrice: 10000000.0, baseCashFlowPerSecond: 10000.0 * 1.85),
-           RealEstateProperty(id: 'historic_estate', name: 'Historic Estate', purchasePrice: 25000000.0, baseCashFlowPerSecond: 25000.0 * 1.95),
-           RealEstateProperty(id: 'london_iconic_tower', name: 'London Iconic Tower', purchasePrice: 50000000.0, baseCashFlowPerSecond: 50000.0 * 2.05),
-        ],
-      ),
-      RealEstateLocale( id: 'rural_mexico', name: 'Rural Mexico', theme: 'Rustic and affordable Latin American homes', unlocked: false, icon: Icons.holiday_village, properties: [
-           RealEstateProperty(id: 'adobe_hut', name: 'Adobe Hut', purchasePrice: 600.0, baseCashFlowPerSecond: 0.6 * 1.15),
-           RealEstateProperty(id: 'clay_house', name: 'Clay House', purchasePrice: 1200.0, baseCashFlowPerSecond: 1.2 * 1.25),
-           RealEstateProperty(id: 'brick_cottage_mexico', name: 'Brick Cottage', purchasePrice: 3000.0, baseCashFlowPerSecond: 3.0 * 1.35),
-           RealEstateProperty(id: 'hacienda_bungalow', name: 'Hacienda Bungalow', purchasePrice: 6000.0, baseCashFlowPerSecond: 6.0 * 1.45),
-           RealEstateProperty(id: 'village_flat', name: 'Village Flat', purchasePrice: 15000.0, baseCashFlowPerSecond: 15.0 * 1.55),
-           RealEstateProperty(id: 'rural_villa', name: 'Rural Villa', purchasePrice: 30000.0, baseCashFlowPerSecond: 30.0 * 1.65),
-           RealEstateProperty(id: 'eco_casa', name: 'Eco-Casa', purchasePrice: 75000.0, baseCashFlowPerSecond: 75.0 * 1.75),
-           RealEstateProperty(id: 'farmstead', name: 'Farmstead', purchasePrice: 150000.0, baseCashFlowPerSecond: 150.0 * 1.85),
-           RealEstateProperty(id: 'countryside_estate', name: 'Countryside Estate', purchasePrice: 300000.0, baseCashFlowPerSecond: 300.0 * 1.95),
-           RealEstateProperty(id: 'hacienda_grande', name: 'Hacienda Grande', purchasePrice: 600000.0, baseCashFlowPerSecond: 600.0 * 2.05),
-        ],
-      ),
-      RealEstateLocale( id: 'mexico_city', name: 'Mexico City, Mexico', theme: 'Urban sprawl with colonial charm', unlocked: false, icon: Icons.location_city, properties: [
-           RealEstateProperty(id: 'barrio_flat', name: 'Barrio Flat', purchasePrice: 4000.0, baseCashFlowPerSecond: 4.0 * 1.15),
-           RealEstateProperty(id: 'concrete_unit_mexico', name: 'Concrete Unit', purchasePrice: 8000.0, baseCashFlowPerSecond: 8.0 * 1.25),
-           RealEstateProperty(id: 'colonial_house', name: 'Colonial House', purchasePrice: 20000.0, baseCashFlowPerSecond: 20.0 * 1.35),
-           RealEstateProperty(id: 'mid_rise_apartment', name: 'Mid-Rise Apartment', purchasePrice: 40000.0, baseCashFlowPerSecond: 40.0 * 1.45),
-           RealEstateProperty(id: 'gated_condo', name: 'Gated Condo', purchasePrice: 100000.0, baseCashFlowPerSecond: 100.0 * 1.55),
-           RealEstateProperty(id: 'modern_loft_mexico', name: 'Modern Loft', purchasePrice: 200000.0, baseCashFlowPerSecond: 200.0 * 1.65),
-           RealEstateProperty(id: 'luxury_suite_mexico', name: 'Luxury Suite', purchasePrice: 500000.0, baseCashFlowPerSecond: 500.0 * 1.75),
-           RealEstateProperty(id: 'high_rise_tower_mexico', name: 'High-Rise Tower', purchasePrice: 1000000.0, baseCashFlowPerSecond: 1000.0 * 1.85),
-           RealEstateProperty(id: 'historic_penthouse', name: 'Historic Penthouse', purchasePrice: 2000000.0, baseCashFlowPerSecond: 2000.0 * 1.95),
-           RealEstateProperty(id: 'mexico_city_skyline', name: 'Mexico City Skyline', purchasePrice: 4000000.0, baseCashFlowPerSecond: 4000.0 * 2.05),
-        ],
-      ),
-      RealEstateLocale( id: 'miami_florida', name: 'Miami, Florida', theme: 'Coastal and flashy U.S. properties', unlocked: false, icon: Icons.beach_access, properties: [
-           RealEstateProperty(id: 'beach_condo', name: 'Beach Condo', purchasePrice: 30000.0, baseCashFlowPerSecond: 30.0 * 1.15),
-           RealEstateProperty(id: 'bungalow', name: 'Bungalow', purchasePrice: 60000.0, baseCashFlowPerSecond: 60.0 * 1.25),
-           RealEstateProperty(id: 'oceanfront_flat', name: 'Oceanfront Flat', purchasePrice: 150000.0, baseCashFlowPerSecond: 150.0 * 1.35),
-           RealEstateProperty(id: 'modern_villa_miami', name: 'Modern Villa', purchasePrice: 300000.0, baseCashFlowPerSecond: 300.0 * 1.45),
-           RealEstateProperty(id: 'luxury_condo_miami', name: 'Luxury Condo', purchasePrice: 750000.0, baseCashFlowPerSecond: 750.0 * 1.55),
-           RealEstateProperty(id: 'miami_beach_house', name: 'Miami Beach House', purchasePrice: 1500000.0, baseCashFlowPerSecond: 1500.0 * 1.65),
-           RealEstateProperty(id: 'high_rise_suite_miami', name: 'High-Rise Suite', purchasePrice: 3000000.0, baseCashFlowPerSecond: 3000.0 * 1.75),
-           RealEstateProperty(id: 'skyline_penthouse_miami', name: 'Skyline Penthouse', purchasePrice: 7500000.0, baseCashFlowPerSecond: 7500.0 * 1.85),
-           RealEstateProperty(id: 'waterfront_mansion', name: 'Waterfront Mansion', purchasePrice: 15000000.0, baseCashFlowPerSecond: 15000.0 * 1.95),
-           RealEstateProperty(id: 'miami_iconic_estate', name: 'Miami Iconic Estate', purchasePrice: 30000000.0, baseCashFlowPerSecond: 30000.0 * 2.05),
-        ],
-      ),
-      RealEstateLocale( id: 'new_york_city', name: 'New York City, NY', theme: 'Iconic U.S. urban real estate', unlocked: false, icon: Icons.location_city, properties: [
-           RealEstateProperty(id: 'studio_apartment', name: 'Studio Apartment', purchasePrice: 60000.0, baseCashFlowPerSecond: 60.0 * 1.15),
-           RealEstateProperty(id: 'brownstone_flat', name: 'Brownstone Flat', purchasePrice: 120000.0, baseCashFlowPerSecond: 120.0 * 1.25),
-           RealEstateProperty(id: 'midtown_condo', name: 'Midtown Condo', purchasePrice: 300000.0, baseCashFlowPerSecond: 300.0 * 1.35),
-           RealEstateProperty(id: 'luxury_loft_nyc', name: 'Luxury Loft', purchasePrice: 600000.0, baseCashFlowPerSecond: 600.0 * 1.45),
-           RealEstateProperty(id: 'high_rise_unit_nyc', name: 'High-Rise Unit', purchasePrice: 1500000.0, baseCashFlowPerSecond: 1500.0 * 1.55),
-           RealEstateProperty(id: 'manhattan_suite', name: 'Manhattan Suite', purchasePrice: 3000000.0, baseCashFlowPerSecond: 3000.0 * 1.65),
-           RealEstateProperty(id: 'skyline_penthouse_nyc', name: 'Skyline Penthouse', purchasePrice: 7500000.0, baseCashFlowPerSecond: 7500.0 * 1.75),
-           RealEstateProperty(id: 'central_park_view', name: 'Central Park View', purchasePrice: 15000000.0, baseCashFlowPerSecond: 15000.0 * 1.85),
-           RealEstateProperty(id: 'billionaire_tower', name: 'Billionaire Tower', purchasePrice: 30000000.0, baseCashFlowPerSecond: 30000.0 * 1.95),
-           RealEstateProperty(id: 'nyc_landmark_estate', name: 'NYC Landmark Estate', purchasePrice: 60000000.0, baseCashFlowPerSecond: 60000.0 * 2.05),
-        ],
-      ),
-      RealEstateLocale( id: 'los_angeles', name: 'Los Angeles, CA', theme: 'Hollywood and luxury U.S. homes', unlocked: false, icon: Icons.villa, properties: [
-           RealEstateProperty(id: 'studio_bungalow', name: 'Studio Bungalow', purchasePrice: 50000.0, baseCashFlowPerSecond: 50.0 * 1.15),
-           RealEstateProperty(id: 'hillside_flat', name: 'Hillside Flat', purchasePrice: 100000.0, baseCashFlowPerSecond: 100.0 * 1.25),
-           RealEstateProperty(id: 'modern_condo_la', name: 'Modern Condo', purchasePrice: 250000.0, baseCashFlowPerSecond: 250.0 * 1.35),
-           RealEstateProperty(id: 'hollywood_villa', name: 'Hollywood Villa', purchasePrice: 500000.0, baseCashFlowPerSecond: 500.0 * 1.45),
-           RealEstateProperty(id: 'luxury_loft_la', name: 'Luxury Loft', purchasePrice: 1000000.0, baseCashFlowPerSecond: 1000.0 * 1.55),
-           RealEstateProperty(id: 'beverly_hills_house', name: 'Beverly Hills House', purchasePrice: 2500000.0, baseCashFlowPerSecond: 2500.0 * 1.65),
-           RealEstateProperty(id: 'celebrity_mansion', name: 'Celebrity Mansion', purchasePrice: 5000000.0, baseCashFlowPerSecond: 5000.0 * 1.75),
-           RealEstateProperty(id: 'skyline_penthouse_la', name: 'Skyline Penthouse', purchasePrice: 10000000.0, baseCashFlowPerSecond: 10000.0 * 1.85),
-           RealEstateProperty(id: 'oceanfront_estate', name: 'Oceanfront Estate', purchasePrice: 25000000.0, baseCashFlowPerSecond: 25000.0 * 1.95),
-           RealEstateProperty(id: 'la_iconic_compound', name: 'LA Iconic Compound', purchasePrice: 50000000.0, baseCashFlowPerSecond: 50000.0 * 2.05),
-        ],
-      ),
-      RealEstateLocale( id: 'lima_peru', name: 'Lima, Peru', theme: 'Andean urban and coastal homes', unlocked: false, icon: Icons.house_siding, properties: [
-           RealEstateProperty(id: 'adobe_flat', name: 'Adobe Flat', purchasePrice: 2500.0, baseCashFlowPerSecond: 2.5 * 1.15),
-           RealEstateProperty(id: 'brick_house_lima', name: 'Brick House', purchasePrice: 5000.0, baseCashFlowPerSecond: 5.0 * 1.25),
-           RealEstateProperty(id: 'coastal_shack', name: 'Coastal Shack', purchasePrice: 12500.0, baseCashFlowPerSecond: 12.5 * 1.35),
-           RealEstateProperty(id: 'modern_apartment_lima', name: 'Modern Apartment', purchasePrice: 25000.0, baseCashFlowPerSecond: 25.0 * 1.45),
-           RealEstateProperty(id: 'gated_unit_lima', name: 'Gated Unit', purchasePrice: 50000.0, baseCashFlowPerSecond: 50.0 * 1.55),
-           RealEstateProperty(id: 'andean_villa', name: 'Andean Villa', purchasePrice: 125000.0, baseCashFlowPerSecond: 125.0 * 1.65),
-           RealEstateProperty(id: 'luxury_condo_lima', name: 'Luxury Condo', purchasePrice: 250000.0, baseCashFlowPerSecond: 250.0 * 1.75),
-           RealEstateProperty(id: 'high_rise_suite_lima', name: 'High-Rise Suite', purchasePrice: 500000.0, baseCashFlowPerSecond: 500.0 * 1.85),
-           RealEstateProperty(id: 'oceanfront_loft', name: 'Oceanfront Loft', purchasePrice: 1000000.0, baseCashFlowPerSecond: 1000.0 * 1.95),
-           RealEstateProperty(id: 'lima_skyline_estate', name: 'Lima Skyline Estate', purchasePrice: 2500000.0, baseCashFlowPerSecond: 2500.0 * 2.05),
-        ],
-      ),
-      RealEstateLocale( id: 'sao_paulo_brazil', name: 'Sao Paulo, Brazil', theme: 'Sprawling South American metropolis', unlocked: false, icon: Icons.location_city, properties: [
-           RealEstateProperty(id: 'favela_hut', name: 'Favela Hut', purchasePrice: 3500.0, baseCashFlowPerSecond: 3.5 * 1.15),
-           RealEstateProperty(id: 'concrete_flat_sao_paulo', name: 'Concrete Flat', purchasePrice: 7000.0, baseCashFlowPerSecond: 7.0 * 1.25),
-           RealEstateProperty(id: 'small_apartment_sao_paulo', name: 'Small Apartment', purchasePrice: 17500.0, baseCashFlowPerSecond: 17.5 * 1.35),
-           RealEstateProperty(id: 'mid_rise_condo', name: 'Mid-Rise Condo', purchasePrice: 35000.0, baseCashFlowPerSecond: 35.0 * 1.45),
-           RealEstateProperty(id: 'gated_tower_sao_paulo', name: 'Gated Tower', purchasePrice: 75000.0, baseCashFlowPerSecond: 75.0 * 1.55),
-           RealEstateProperty(id: 'luxury_unit', name: 'Luxury Unit', purchasePrice: 150000.0, baseCashFlowPerSecond: 150.0 * 1.65),
-           RealEstateProperty(id: 'high_rise_suite_sao_paulo', name: 'High-Rise Suite', purchasePrice: 375000.0, baseCashFlowPerSecond: 375.0 * 1.75),
-           RealEstateProperty(id: 'skyline_penthouse_sao_paulo', name: 'Skyline Penthouse', purchasePrice: 750000.0, baseCashFlowPerSecond: 750.0 * 1.85),
-           RealEstateProperty(id: 'business_loft_sao_paulo', name: 'Business Loft', purchasePrice: 1500000.0, baseCashFlowPerSecond: 1500.0 * 1.95),
-           RealEstateProperty(id: 'sao_paulo_iconic_tower', name: 'Sao Paulo Iconic Tower', purchasePrice: 3000000.0, baseCashFlowPerSecond: 3000.0 * 2.05),
-        ],
-      ),
-      RealEstateLocale( id: 'dubai_uae', name: 'Dubai, UAE', theme: 'Flashy desert luxury properties', unlocked: false, icon: Icons.location_city, properties: [
-           RealEstateProperty(id: 'desert_apartment', name: 'Desert Apartment', purchasePrice: 35000.0, baseCashFlowPerSecond: 35.0 * 1.15),
-           RealEstateProperty(id: 'modern_condo_dubai', name: 'Modern Condo', purchasePrice: 70000.0, baseCashFlowPerSecond: 70.0 * 1.25),
-           RealEstateProperty(id: 'palm_villa', name: 'Palm Villa', purchasePrice: 175000.0, baseCashFlowPerSecond: 175.0 * 1.35),
-           RealEstateProperty(id: 'luxury_flat_dubai', name: 'Luxury Flat', purchasePrice: 350000.0, baseCashFlowPerSecond: 350.0 * 1.45),
-           RealEstateProperty(id: 'high_rise_suite_dubai', name: 'High-Rise Suite', purchasePrice: 750000.0, baseCashFlowPerSecond: 750.0 * 1.55),
-           RealEstateProperty(id: 'burj_tower_unit', name: 'Burj Tower Unit', purchasePrice: 1500000.0, baseCashFlowPerSecond: 1500.0 * 1.65),
-           RealEstateProperty(id: 'skyline_mansion', name: 'Skyline Mansion', purchasePrice: 3750000.0, baseCashFlowPerSecond: 3750.0 * 1.75),
-           RealEstateProperty(id: 'island_retreat', name: 'Island Retreat', purchasePrice: 7500000.0, baseCashFlowPerSecond: 7500.0 * 1.85),
-           RealEstateProperty(id: 'billionaire_penthouse_dubai', name: 'Billionaire Penthouse', purchasePrice: 15000000.0, baseCashFlowPerSecond: 15000.0 * 1.95),
-           RealEstateProperty(id: 'dubai_iconic_skyscraper', name: 'Dubai Iconic Skyscraper', purchasePrice: 35000000.0, baseCashFlowPerSecond: 35000.0 * 2.05),
-        ],
-      ),
-    ];
-  }
-
-  void _updateRealEstateUnlocks() {
-    localesWithPropertiesCount = realEstateLocales.where((l) => l.getTotalPropertiesOwned() > 0).length;
-
-    bool hasAnyBusiness = businesses.any((b) => b.level > 0);
-    if (!hasAnyBusiness && money < 10000) return; // Early exit if no business and low money
-
-    bool changed = false;
-    Map<double, List<String>> unlockThresholds = {
-       10000: ['lagos_nigeria', 'rural_thailand', 'rural_mexico'],
-       50000: ['cape_town_sa', 'mumbai_india', 'ho_chi_minh_city', 'bucharest_romania', 'lima_peru', 'sao_paulo_brazil'],
-      250000: ['lisbon_portugal', 'berlin_germany', 'mexico_city'],
-     1000000: ['singapore', 'london_uk', 'miami_florida', 'new_york_city', 'los_angeles'],
-     5000000: ['hong_kong', 'dubai_uae'],
-    };
-
-    for (var locale in realEstateLocales) {
-       if (!locale.unlocked) {
-          bool shouldUnlock = false;
-          // Check thresholds (only if player has a business OR starting money > 10k)
-          if (hasAnyBusiness || money >= 10000) {
-              for (var entry in unlockThresholds.entries) {
-                if (money >= entry.key && entry.value.contains(locale.id)) {
-                  shouldUnlock = true;
-                  break;
-                }
-              }
-          }
-          if (shouldUnlock) {
-            locale.unlocked = true;
-            changed = true;
-          }
-       }
-    }
-
-    if (changed) {
+  // ADDED: Method to start the temporary platinum boost 
+  void startBoost() {
+    if (!isBoostActive) {
+      boostRemainingSeconds = 300; // 5 minutes
+      _startBoostTimer();
       notifyListeners();
     }
   }
 
-  void _unlockLocalesById(List<String> localeIds) {
-     bool changed = false;
-     for (String id in localeIds) {
-       int index = realEstateLocales.indexWhere((l) => l.id == id);
-       if (index != -1 && !realEstateLocales[index].unlocked) {
-         realEstateLocales[index].unlocked = true;
-         changed = true;
-       }
-     }
-     // No notifyListeners() here; called by parent _updateRealEstateUnlocks if needed
-  }
-
-
-  double getRealEstateIncomePerSecond() {
-    double total = 0.0;
-    for (var locale in realEstateLocales) {
-      bool hasLocaleEvent = hasActiveEventForLocale(locale.id);
-      total += locale.getTotalIncomePerSecond(affectedByEvent: hasLocaleEvent);
-    }
-    return total;
-  }
-
-  double getTotalDividendIncomePerSecond() {
-    double total = 0.0;
-    for (var investment in investments) {
-      if (investment.owned > 0 && investment.hasDividends()) {
-        total += investment.getDividendIncomePerSecond();
-      }
-    }
-    return total;
-  }
-
-  double calculateTotalIncomePerSecond() {
-    double businessInc = businesses.fold(0.0, (sum, b) => sum + (b.level > 0 ? b.getIncomePerSecond() : 0.0)) * incomeMultiplier * prestigeMultiplier;
-    double realEstateInc = getRealEstateIncomePerSecond() * incomeMultiplier * prestigeMultiplier;
-    double dividendInc = getTotalDividendIncomePerSecond() * incomeMultiplier * prestigeMultiplier;
-    return businessInc + realEstateInc + dividendInc;
-  }
-
-  double getBusinessIncomePerSecond() {
-     return businesses.fold(0.0, (sum, b) => sum + (b.level > 0 ? b.getIncomePerSecond() : 0.0)) * incomeMultiplier * prestigeMultiplier;
-  }
-
-  Map<String, double> getCombinedIncomeBreakdown() {
-    double businessIncome = getBusinessIncomePerSecond(); // Already includes multipliers
-    double realEstateIncome = getRealEstateIncomePerSecond() * incomeMultiplier * prestigeMultiplier;
-    double investmentIncome = getTotalDividendIncomePerSecond() * incomeMultiplier * prestigeMultiplier;
-    return {
-      'business': businessIncome,
-      'realEstate': realEstateIncome,
-      'investment': investmentIncome,
-      'total': businessIncome + realEstateIncome + investmentIncome,
-    };
-  }
-
-  bool buyRealEstateProperty(String localeId, String propertyId) {
-    final localeIndex = realEstateLocales.indexWhere((l) => l.id == localeId);
-    if (localeIndex == -1) return false;
-    final propertyIndex = realEstateLocales[localeIndex].properties.indexWhere((p) => p.id == propertyId);
-    if (propertyIndex == -1) return false;
-
-    final property = realEstateLocales[localeIndex].properties[propertyIndex];
-    if (money < property.purchasePrice) return false;
-
-    money -= property.purchasePrice;
-    property.owned++;
-    notifyListeners();
-    return true;
-  }
-
-  bool purchasePropertyUpgrade(String localeId, String propertyId, String upgradeId) {
-    print("🛒 Attempting purchase: Loc: $localeId, Prop: $propertyId, Upg: $upgradeId");
-    final localeIndex = realEstateLocales.indexWhere((l) => l.id == localeId);
-    if (localeIndex == -1) { print("❌ Locale not found"); return false; }
-    final locale = realEstateLocales[localeIndex];
-
-    final propertyIndex = locale.properties.indexWhere((p) => p.id == propertyId);
-    if (propertyIndex == -1) { print("❌ Property not found"); return false; }
-    final property = locale.properties[propertyIndex];
-    print("🏠 Found property: ${property.name}");
-
-    if (property.owned <= 0) { print("❌ Property not owned"); return false; }
-
-    final upgradeIndex = property.upgrades.indexWhere((u) => u.id == upgradeId);
-    if (upgradeIndex == -1) {
-       print("❌ Upgrade not found: $upgradeId in ${property.name}");
-       print("   Available: ${property.upgrades.map((u)=>u.id).join(', ')}");
-       return false;
-    }
-    final upgrade = property.upgrades[upgradeIndex];
-    print("🔍 Found upgrade: ${upgrade.description}");
-
-    if (upgrade.purchased) { print("❌ Already purchased"); return false; }
-    if (money < upgrade.cost) { print("❌ Insufficient funds"); return false; }
-
-    print("💰 Purchasing: ${upgrade.description} for \$${upgrade.cost}. Money before: $money");
-    money -= upgrade.cost;
-    upgrade.purchased = true;
-    print("✅ Purchased! Money after: $money. New income: \$${property.cashFlowPerSecond}/sec");
-
-    // Update stats
-    totalRealEstateUpgradesPurchased++;
-    totalUpgradeSpending += upgrade.cost;
-    if (property.purchasePrice >= 1000000.0) {
-      luxuryUpgradeSpending += upgrade.cost;
-    }
-
-    if (property.allUpgradesPurchased) {
-      print("✨ Property fully upgraded: ${property.name}");
-      fullyUpgradedPropertyIds.add(property.id);
-      localesWithOneFullyUpgradedProperty.add(locale.id);
-      fullyUpgradedPropertiesPerLocale[locale.id] = (fullyUpgradedPropertiesPerLocale[locale.id] ?? 0) + 1;
-      print("   Locale ${locale.name} upgrades count: ${fullyUpgradedPropertiesPerLocale[locale.id]}");
-
-      if (locale.properties.every((p) => p.owned > 0 && p.allUpgradesPurchased)) {
-        print("🌟 Entire locale fully upgraded: ${locale.name}");
-        fullyUpgradedLocales.add(locale.id);
-      }
-    }
-
-    // Check achievements
-    List<Achievement> newlyCompleted = achievementManager.evaluateAchievements(this);
-    if (newlyCompleted.isNotEmpty) {
-      print("🏆 Achievements completed: ${newlyCompleted.map((a) => a.name).join(', ')}");
-      queueAchievementsForDisplay(newlyCompleted);
-    }
-
-    notifyListeners();
-    return true;
-  }
-
-  int getTotalOwnedProperties() {
-     return realEstateLocales.fold(0, (sum, locale) => sum + locale.getTotalPropertiesOwned());
-  }
-
-  List<Map<String, dynamic>> getAllOwnedPropertiesWithDetails() {
-    List<Map<String, dynamic>> result = [];
-    for (var locale in realEstateLocales) {
-      for (var property in locale.properties) {
-        if (property.owned > 0) {
-          result.add({
-            'property': property, 'locale': locale, 'localeId': locale.id, 'propertyId': property.id,
-            'propertyName': property.name, 'localeName': locale.name, 'owned': property.owned,
-          });
-        }
-      }
-    }
-    return result;
-  }
-
-  bool ownsAllProperties() {
-    if (realEstateLocales.isEmpty) return false;
-    return realEstateLocales.every((locale) => locale.properties.every((property) => property.owned > 0));
-  }
-
-  bool hasCombinedIncomeOfAmount(double threshold) {
-    Map<String, double> income = getCombinedIncomeBreakdown();
-    return income['business']! >= threshold && income['realEstate']! >= threshold && income['investment']! >= threshold;
-  }
-
-  List<RealEstateProperty> _getTopPropertiesByValue(RealEstateLocale locale) {
-    List<RealEstateProperty> owned = locale.properties.where((p) => p.owned > 0).toList();
-    if (owned.isEmpty) return [];
-    owned.sort((a, b) => b.purchasePrice.compareTo(a.purchasePrice));
-    int count = (owned.length / 2).ceil();
-    return owned.take(count).toList();
-  }
-
-  void _resetRealEstateForReincorporation() {
-     for (var locale in realEstateLocales) {
-      for (var property in locale.properties) {
-        property.owned = 0;
-        // Reset purchased status of existing upgrades
-        for (var upgrade in property.upgrades) {
-          upgrade.purchased = false;
-        }
-      }
-      // Optionally reset locale unlocked status based on game rules
-      // locale.unlocked = (locale.id == 'rural_kenya'); // Example: only unlock the first one
-    }
-     // Re-initialize locales and their properties to ensure clean state
-     _initializeRealEstateLocales();
-     // Immediately apply upgrades again as they are part of the definition now
-     // but their 'purchased' status is false by default.
-     // NOTE: If upgrades were dynamically loaded, this would need adjustment.
-  }
-
-
-  void _updateInvestmentPricesMicro() {
-    if (Random().nextDouble() > 0.2) return; // Run only 20% of ticks
-
-    for (var investment in investments) {
-      double microChange = investment.trend * 0.01;
-      microChange += (Random().nextDouble() * 2 - 1) * investment.volatility * 0.03;
-
-      double newPrice = investment.currentPrice * (1 + microChange);
-      newPrice = max(investment.basePrice * 0.1, newPrice); // Min price
-      newPrice = min(investment.basePrice * 10, newPrice); // Max price
-
-      investment.currentPrice = newPrice;
-
-      if (investment.priceHistory.isNotEmpty) {
-        investment.priceHistory[investment.priceHistory.length - 1] = investment.currentPrice;
-      }
-    }
-    // No notifyListeners here, called by main game loop if money changed
-  }
-
-
-  void _updateDailyEarnings(String dayKey, double amount) {
-     // This function seems deprecated by hourly earnings. Keeping structure but potentially removable.
-     // If used, should interact with hourlyEarnings for consistency or be removed.
-     print("Warning: _updateDailyEarnings called, might be deprecated. Day: $dayKey, Amount: $amount");
-     // hourlyEarnings[dayKey] = (hourlyEarnings[dayKey] ?? 0) + amount; // Example interaction if needed
-  }
-
-
-  void _updateHourlyEarnings(String hourKey, double earnings) {
-    hourlyEarnings[hourKey] = (hourlyEarnings[hourKey] ?? 0) + earnings;
-
-    // Prune entries older than 7 days (168 hours)
-    final cutoff = DateTime.now().subtract(const Duration(hours: 168));
-    hourlyEarnings.removeWhere((key, value) {
-       try {
-         List<String> parts = key.split('-');
-         if (parts.length == 4) {
-           DateTime entryTime = DateTime(int.parse(parts[0]), int.parse(parts[1]), int.parse(parts[2]), int.parse(parts[3]));
-           return entryTime.isBefore(cutoff);
-         }
-         return true; // Remove invalid keys
-       } catch (e) {
-         print("Error parsing hourly earnings key for removal: $key, Error: $e");
-         return true; // Remove keys that cause errors
-       }
-    });
-  }
-
-  // --- Boost Logic ---
-
-  double _tempClickBoostMultiplier = 1.0; // Temporary multiplier from PP items
-
-  void startBoost({int durationSeconds = 60, double multiplier = 10.0}) {
-    // Cancel any existing boost first to apply the new one correctly
-    _boostTimer?.cancel();
-    print("~~~ GameState.startBoost called. Duration: $durationSeconds, Multiplier: ${multiplier}x ~~~");
-
-    boostRemainingSeconds = durationSeconds;
-    _tempClickBoostMultiplier = multiplier;
-    print("~~~ GameState.startBoost: Set boostRemainingSeconds=$boostRemainingSeconds, _tempClickBoostMultiplier=$_tempClickBoostMultiplier. Notifying listeners... ~~~");
-    notifyListeners(); // Notify UI immediately that boost is active
-
-    print("~~~ GameState.startBoost: Creating Timer... ~~~");
-    _boostTimer = Timer.periodic(const Duration(seconds: 1), _tickBoostTimer);
-    print("🚀 Boost Started: $boostRemainingSeconds seconds remaining, ${_tempClickBoostMultiplier}x multiplier.");
-  }
-
-  void _tickBoostTimer(Timer timer) {
-    if (!isInitialized) { /* ... safety check ... */ return; }
-
-    boostRemainingSeconds--;
-
-    if (boostRemainingSeconds <= 0) {
-      boostRemainingSeconds = 0;
-      _tempClickBoostMultiplier = 1.0; // Reset multiplier when timer ends
-      timer.cancel();
-      _boostTimer = null;
-      print("✅ Boost Ended.");
-    } else {
-      // print("⏱️ Boost Tick: $boostRemainingSeconds seconds remaining.");
-    }
-    // print("~~~ GameState._tickBoostTimer: Tick processed (Seconds: $boostRemainingSeconds). Notifying listeners... ~~~");
+  // ADDED: Method to start the ad boost (10x for 60 seconds)
+  void startAdBoost() {
+    adBoostRemainingSeconds = 60; // 60 seconds
+    _startAdBoostTimer();
     notifyListeners();
   }
 
-  void cancelBoost() { // Method to manually cancel boost if needed elsewhere
-    _boostTimer?.cancel();
-    _boostTimer = null;
-    boostRemainingSeconds = 0;
-    _tempClickBoostMultiplier = 1.0; // Reset multiplier on manual cancel
-    print("🚫 Boost Cancelled Manually.");
-    notifyListeners();
-  }
-  // --- End Boost Logic ---
-
-  // >> START: Platinum Points System Methods <<
+  // ADDED: Method to award Platinum Points
   void awardPlatinumPoints(int amount) {
-    if (amount <= 0) return; // Don't award negative or zero points
+    if (amount <= 0) return;
     platinumPoints += amount;
-    print("💎 +$amount Platinum Points awarded! Total: $platinumPoints");
-    
-    // Trigger animation
-    showPPAnimation = true;
+    showPPAnimation = true; // Trigger animation
     notifyListeners();
-    
-    // Turn off animation after a delay
-    Future.delayed(const Duration(milliseconds: 2000), () {
-      if (showPPAnimation) {
-        showPPAnimation = false;
-        notifyListeners();
-      }
+    // Optional: Set a timer to turn off the animation flag after a short duration
+    Timer(const Duration(seconds: 3), () {
+      showPPAnimation = false;
+      notifyListeners();
     });
-    
-    // Analytics Placeholder:
-    print("[Analytics] Log event: pp_earned, amount: $amount, source: achievement");
-    // TODO: Log PP gain for analytics here (replace print)
   }
 
-  bool spendPlatinumPoints(String itemId, int cost, {bool isOneTime = false}) {
-    // Need BuildContext for ScaffoldMessenger, cannot directly use here.
-    // We should show feedback in the UI layer (e.g., VaultItemCard onPressed)
-
+  // ADDED: Method to spend Platinum Points, now with optional context
+  // TODO: Needs robust handling of item effects and limits
+  bool spendPlatinumPoints(String itemId, int cost, {Map<String, dynamic>? purchaseContext}) {
+    // Check if affordable
     if (platinumPoints < cost) {
-      print("❌ Cannot spend PP: Insufficient funds. Have: $platinumPoints, Need: $cost");
-      // Feedback moved to UI layer (VaultItemCard)
-      return false;
+        print("DEBUG: Cannot afford item $itemId. Cost: $cost, Have: $platinumPoints");
+        return false;
     }
 
-    if (isOneTime && ppOwnedItems.contains(itemId)) {
-      print("❌ Cannot spend PP: One-time item '$itemId' already owned.");
-      // Feedback moved to UI layer (VaultItemCard)
-      return false;
+    // Check ownership for one-time items
+    if (ppOwnedItems.contains(itemId)) {
+        print("DEBUG: Item $itemId already owned (one-time purchase).");
+        return false; // Already owned
     }
 
-    // Deduct points FIRST
+    // --- Specific checks for Platinum Foundation ---
+    if (itemId == 'platinum_foundation') {
+        // Check global limit
+        if (platinumFoundationsApplied.length >= 5) {
+            print("DEBUG: Cannot apply Foundation: Maximum limit (5) reached.");
+            return false;
+        }
+        // Check if the specific locale (passed in context) is already boosted
+        String? selectedLocaleId = purchaseContext?['selectedLocaleId'] as String?;
+        if (selectedLocaleId == null) {
+             print("ERROR: No locale ID provided for Platinum Foundation purchase.");
+             return false; // Need locale context
+        }
+        if (platinumFoundationsApplied.containsKey(selectedLocaleId)) {
+            print("DEBUG: Cannot apply Foundation: Locale $selectedLocaleId already has one.");
+            // Assuming 1 per locale limit for now
+            return false;
+        }
+    }
+    // --- End specific checks ---
+
+    // Basic check for repeatable item limits (Placeholder - needs specific item logic)
+    // Example: if (itemId == 'platinum_surge' && (ppPurchases[itemId] ?? 0) >= 3) return false;
+
     platinumPoints -= cost;
 
-    // Apply item effect
-    bool effectApplied = _applyVaultItemEffect(itemId);
-    if (!effectApplied) {
-      // If effect fails for some reason (e.g., cannot skip event), refund points
-      print("⚠️ Effect application failed for '$itemId'. Refunding $cost PP.");
-      platinumPoints += cost;
-      return false;
-    }
+    // Apply the actual effect of the item based on itemId, passing context
+    _applyVaultItemEffect(itemId, purchaseContext);
 
-    // If effect succeeded, record purchase
-    print("💰 Spent $cost PP on item '$itemId'. Remaining: $platinumPoints. Effect applied.");
-    if (isOneTime) {
-      ppOwnedItems.add(itemId);
-      print("  -> Added '$itemId' to one-time owned items.");
+    // Track purchase
+    // TODO: Differentiate between one-time and repeatable logic more cleanly
+    if (itemId == 'platinum_foundation' || itemId == 'platinum_challenge' || itemId == 'platinum_shield' || itemId == 'platinum_accelerator' || itemId == 'platinum_surge' || itemId == 'platinum_warp' || itemId == 'platinum_cache') {
+        ppPurchases[itemId] = (ppPurchases[itemId] ?? 0) + 1;
     } else {
-      ppPurchases[itemId] = (ppPurchases[itemId] ?? 0) + 1;
-      print("  -> Incremented purchase count for '$itemId' to ${ppPurchases[itemId]}.");
+        ppOwnedItems.add(itemId);
     }
-
-    // Analytics Placeholder:
-    print("[Analytics] Log event: pp_spent, item_id: $itemId, cost: $cost");
-    // TODO: Log purchase for analytics (replace print)
 
     notifyListeners();
     return true;
   }
 
-  // Helper method to apply effects based on item ID
-  bool _applyVaultItemEffect(String itemId) {
+  // ADDED: Placeholder for applying vault item effects - NEEDS IMPLEMENTATION
+  // Now accepts optional purchaseContext
+  void _applyVaultItemEffect(String itemId, Map<String, dynamic>? purchaseContext) {
+    print("INFO: Applying effect for Platinum Vault item: $itemId with context: $purchaseContext");
+    // --- This needs detailed implementation based on item ID ---
     switch (itemId) {
-      // --- Upgrades ---
-      case 'perm_income_boost_5pct':
-        incomeMultiplier += 0.05; // Additive permanent boost
-        print("✨ Applied +5% permanent income boost. New multiplier: $incomeMultiplier");
-        return true;
-      case 'perm_click_boost_10pct':
-        clickValue *= 1.10; // Multiplicative permanent boost to base click value
-        print("✨ Applied +10% permanent click boost. New base click value: $clickValue");
-        return true;
+        case 'platinum_efficiency':
+            isPlatinumEfficiencyActive = true;
+            // Logic to apply 1.05x multiplier needs to be integrated where business upgrades are calculated
+            // This might require modifying Business.getCurrentIncome or how upgrades are applied initially.
+            print("TODO: Integrate platinum_efficiency bonus calculation.");
+            break;
+        case 'platinum_portfolio':
+            isPlatinumPortfolioActive = true;
+            // Logic to apply 1.25x multiplier is integrated in investment dividend calculation.
+            break;
+        case 'platinum_foundation':
+            // Use the selected locale ID from the context
+            String? targetLocaleId = purchaseContext?['selectedLocaleId'] as String?;
 
-      // --- Unlockables ---
-      case 'unlock_golden_cursor':
-        isGoldenCursorUnlocked = true;
-        print("✨ Unlocked Golden Cursor!");
-        return true;
-      case 'unlock_stats_theme_1':
-        isExecutiveThemeUnlocked = true;
-        print("✨ Unlocked Executive Stats Theme!");
-        return true;
-
-      // --- Boosters ---
-      case 'temp_boost_10x_5min':
-        startBoost(durationSeconds: 5 * 60, multiplier: 10.0);
-        print("✨ Activated 10x Click Frenzy boost for 5 minutes!");
-        return true;
-      case 'temp_boost_2x_10min':
-        startBoost(durationSeconds: 10 * 60, multiplier: 2.0);
-        print("✨ Activated 2x Steady boost for 10 minutes!");
-        return true;
-
-      // --- Events & Challenges ---
-      case 'event_skip_ticket':
-        return _tryConsumeEventSkipTicket();
-
-      // --- Cosmetics ---
-      case 'cosmetic_platinum_frame':
-        isPlatinumFrameUnlocked = true;
-        print("✨ Unlocked Platinum UI Frame!");
-        return true;
-
-      default:
-        print("⚠️ No effect defined for vault item ID: $itemId");
-        return false; // Return false if no effect is defined for the ID
+            if (targetLocaleId != null) {
+                // Check limits again just in case (should be pre-checked in spendPlatinumPoints)
+                if (platinumFoundationsApplied.length < 5 && !platinumFoundationsApplied.containsKey(targetLocaleId)) {
+                   platinumFoundationsApplied[targetLocaleId] = 1; // Store that foundation is applied
+                   print("Applied Platinum Foundation to $targetLocaleId");
+                } else {
+                   print("WARNING: Attempted to apply foundation $itemId to $targetLocaleId but limits were reached or already applied.");
+                }
+            } else {
+               print("ERROR: Could not apply Platinum Foundation - missing selectedLocaleId in context.");
+            }
+            break;
+        case 'platinum_resilience':
+            isPlatinumResilienceActive = true;
+            // Logic is integrated where event penalties are calculated (e.g., resolveEvent).
+            break;
+        case 'platinum_tower':
+            isPlatinumTowerUnlocked = true;
+            _updateRealEstateUnlocks(); // Trigger unlock check
+            break;
+        case 'platinum_venture':
+            isPlatinumVentureUnlocked = true;
+            _updateBusinessUnlocks(); // Trigger unlock check
+            break;
+        case 'platinum_stock':
+            isPlatinumStockUnlocked = true;
+            // TODO: Add the actual 'platinum_stock' investment to the investments list if not present.
+            // Need to ensure it's only added once.
+            if (!investments.any((inv) => inv.id == 'platinum_stock')) {
+                _addPlatinumStockInvestment(); // Add helper function for this
+                print("Added Platinum Stock Investment.");
+            }
+            break;
+        case 'platinum_islands':
+            isPlatinumIslandsUnlocked = true;
+            _updateRealEstateUnlocks(); // Trigger unlock check
+            break;
+        case 'platinum_yacht':
+            isPlatinumYachtUnlocked = true;
+             // The UI should handle the actual purchase of the yacht *property* after this unlock.
+             // This flag just enables the ability to buy it.
+            print("Platinum Yacht purchase capability unlocked.");
+            break;
+        case 'platinum_island':
+             // Requires Platinum Islands locale to be unlocked FIRST (checked in UI ideally)
+             if (isPlatinumIslandsUnlocked) {
+                 isPlatinumIslandUnlocked = true;
+                 _updateRealEstateUnlocks(); // Trigger unlock check
+             } else {
+                 print("Cannot unlock Platinum Island property: Platinum Islands locale not unlocked.");
+                 // Optionally refund points?
+             }
+            break;
+        // --- Events & Challenges ---
+        case 'platinum_challenge':
+            if (activeChallenge != null) {
+              print("WARNING: Cannot start Platinum Challenge, another challenge is already active.");
+              // Optionally: refund points or prevent purchase in spendPlatinumPoints?
+              // For now, just don't start a new one.
+            } else {
+              // FIX: Use the getter 'totalIncomePerSecond', not method call
+              final currentIncomePerHour = totalIncomePerSecond * 3600;
+              final goalAmount = currentIncomePerHour * 2;
+              activeChallenge = Challenge(
+                itemId: itemId,
+                startTime: DateTime.now(),
+                duration: const Duration(hours: 1),
+                goalEarnedAmount: goalAmount,
+                startTotalEarned: totalEarned,
+                rewardPP: 30, // Hardcoded based on item definition
+              );
+              print("INFO: Platinum Challenge Started! Goal: Earn ${goalAmount.toStringAsFixed(2)} in 1 hour.");
+              // TODO: Add a user-facing notification for challenge start.
+              notifyListeners(); // Ensure UI can react to the challenge starting
+            }
+            break;
+        case 'platinum_shield':
+            if (isDisasterShieldActive) {
+              print("WARNING: Disaster Shield is already active.");
+              // TODO: Decide if purchasing again extends duration or is disallowed.
+              // For now, disallow re-purchase while active.
+            } else {
+              isDisasterShieldActive = true;
+              disasterShieldEndTime = DateTime.now().add(const Duration(days: 1)); // 1 day duration
+              print("INFO: Disaster Shield Activated! Ends at: $disasterShieldEndTime");
+              // TODO: Add user-facing notification for shield activation.
+              notifyListeners();
+            }
+            break;
+        case 'platinum_accelerator':
+            if (isCrisisAcceleratorActive) {
+              print("WARNING: Crisis Accelerator is already active.");
+              // TODO: Decide if purchasing again extends duration or is disallowed.
+            } else {
+              isCrisisAcceleratorActive = true;
+              crisisAcceleratorEndTime = DateTime.now().add(const Duration(days: 1)); // 24h duration
+              print("INFO: Crisis Accelerator Activated! Ends at: $crisisAcceleratorEndTime");
+              // TODO: Add user-facing notification.
+              notifyListeners();
+            }
+            break;
+        // --- Cosmetics ---
+        case 'platinum_mogul':
+            isExecutiveThemeUnlocked = true;
+            print("Unlocked Executive Theme (via Platinum Mogul).");
+            break;
+        case 'platinum_facade': 
+            // TODO: Implement UI to select which owned business gets the facade.
+            // For now, just acknowledge the purchase attempt.
+            print("TODO: Implement business selection UI for Platinum Facade. Effect not applied yet.");
+            // Example future logic:
+            // String? targetBusinessId = // ... get from purchase context ...;
+            // if (targetBusinessId != null && businesses.any((b) => b.id == targetBusinessId && b.level > 0) && !platinumFacadeAppliedBusinessIds.contains(targetBusinessId)) {
+            //     platinumFacadeAppliedBusinessIds.add(targetBusinessId);
+            //     print("Applied Platinum Facade to $targetBusinessId");
+            // } else {
+            //     print("Failed to apply Platinum Facade: Invalid target or already applied.");
+            //     // Optionally refund points
+            // }
+            break;
+        case 'platinum_crest': 
+            isPlatinumCrestUnlocked = true;
+            print("Unlocked Platinum Crest.");
+            break;
+        case 'platinum_spire': 
+            // TODO: Implement UI to select which unlocked locale gets the spire.
+            print("TODO: Implement locale selection UI for Platinum Spire. Effect not applied yet.");
+            // Example future logic:
+            // String? targetLocaleId = // ... get from purchase context ...;
+            // if (targetLocaleId != null && realEstateLocales.any((l) => l.id == targetLocaleId && l.unlocked) && platinumSpireLocaleId == null) {
+            //     platinumSpireLocaleId = targetLocaleId;
+            //     print("Placed Platinum Spire in $targetLocaleId");
+            // } else {
+            //     print("Failed to place Platinum Spire: Invalid target or spire already placed.");
+            //     // Optionally refund points
+            // }
+            break;
+        // --- Boosters ---
+        case 'platinum_surge':
+            if (isIncomeSurgeActive) {
+              print("WARNING: Income Surge is already active.");
+              // TODO: Extend duration or disallow?
+            } else {
+              isIncomeSurgeActive = true;
+              incomeSurgeEndTime = DateTime.now().add(const Duration(hours: 1));
+              print("INFO: Income Surge Activated! Ends at: $incomeSurgeEndTime");
+              // TODO: Add user-facing notification.
+              notifyListeners();
+            }
+            break;
+        case 'platinum_warp':
+            double offlineHours = 4.0; // Defined by the item
+            double offlineIncome = calculateOfflineIncome(Duration(hours: offlineHours.toInt())); 
+            if (offlineIncome > 0) {
+                money += offlineIncome;
+                totalEarned += offlineIncome;
+                passiveEarnings += offlineIncome; // Attribute to passive
+                print("INFO: Awarded ${offlineIncome.toStringAsFixed(2)} offline income via Platinum Warp (${offlineHours}h).");
+                // TODO: Add user-facing notification.
+                 notifyListeners();
+            } else {
+                 print("INFO: Platinum Warp: No offline income calculated (income/sec might be zero).");
+            }
+            break;
+        case 'platinum_cache':
+             double cashAward = _calculateScaledCashCache(); // Add helper for scaling
+             money += cashAward;
+             totalEarned += cashAward;
+             passiveEarnings += cashAward; // Attribute to passive for simplicity
+             print("Awarded ${cashAward.toStringAsFixed(2)} via Platinum Cache.");
+             // Ensure notifyListeners is called
+             notifyListeners(); 
+             break;
+        case 'golden_cursor': // Added missing case
+             isGoldenCursorUnlocked = true;
+            break;
+        default:
+            print("WARNING: Unknown Platinum Vault item ID: $itemId");
     }
+    notifyListeners(); // Notify after applying effect
   }
 
-  // Helper for Event Skip Ticket logic
-  bool _tryConsumeEventSkipTicket() {
-    GameEvent? eventToSkip;
-    for (var event in activeEvents) {
-      // Find the first active, non-disaster event
-      if (!event.isResolved && !event.type.isNaturalDisaster) {
-        eventToSkip = event;
-        break;
+  // ADDED: Helper to add the Platinum Stock investment
+  void _addPlatinumStockInvestment() {
+      investments.add(Investment(
+          id: 'platinum_stock',
+          name: 'Quantum Computing Inc.',
+          description: 'High-risk, high-reward venture in quantum computing.',
+          currentPrice: 1000000000.0, // 1B per share
+          basePrice: 1000000000.0,
+          volatility: 0.40, // High volatility
+          trend: 0.06, // High potential trend
+          owned: 0,
+          icon: Icons.memory, // Placeholder icon
+          color: Colors.cyan,
+          priceHistory: List.generate(30, (i) => 1000000000.0 * (0.95 + (Random().nextDouble() * 0.1))), // Wider random range
+          category: 'Technology', // Or a unique category like 'Quantum'
+          marketCap: 4.0e12, // 4 Trillion market cap
+          // Potentially add a high dividend yield as well for extra reward/risk
+          // dividendPerSecond: 50000.0, // Example: 50k/sec per share
+      ));
+  }
+
+  // ADDED: Helper to calculate scaled cash cache amount
+  double _calculateScaledCashCache() {
+      // Simple scaling based on total earned (adjust thresholds as needed)
+      if (totalEarned < 1e6) return 100000.0; // 100K early game (< $1M earned)
+      if (totalEarned < 1e9) return 1000000.0; // $1M mid game (< $1B earned)
+      return 10000000.0; // $10M late game (>= $1B earned)
+  }
+
+  // ADDED: Helper to calculate potential offline income for a given duration
+  double calculateOfflineIncome(Duration offlineDuration) {
+    // Cap maximum offline time to avoid exploits (e.g., max 8 hours)
+    final maxOfflineDuration = const Duration(hours: 8);
+    final cappedDuration = offlineDuration > maxOfflineDuration ? maxOfflineDuration : offlineDuration;
+
+    if (cappedDuration <= Duration.zero) return 0.0;
+
+    // Simple calculation: current total income/sec * duration in seconds
+    // Note: This doesn't account for potential unlocks/upgrades during offline time.
+    // More complex logic could simulate ticks, but this is simpler for a booster.
+    double incomePerSecond = totalIncomePerSecond; // Use the getter
+    double offlineIncome = incomePerSecond * cappedDuration.inSeconds;
+    
+    // Apply a potential reduction factor for offline income (e.g., 50%)?
+    // offlineIncome *= 0.5; // Example: only earn 50% while offline
+
+    print("Calculated offline income for ${cappedDuration.inHours}h: ${offlineIncome.toStringAsFixed(2)}");
+    return offlineIncome;
+  }
+
+  // ADDED: Calculate passive income per second for achievements
+  double calculatePassiveIncomePerSecond() {
+    double total = 0.0;
+
+    // Business income
+    for (var business in businesses) {
+      if (business.level > 0) {
+        bool hasEvent = hasActiveEventForBusiness(business.id);
+        total += business.getCurrentIncome(affectedByEvent: hasEvent) * 
+                 incomeMultiplier * 
+                 prestigeMultiplier;
       }
     }
 
-    if (eventToSkip != null) {
-      print("🎟️ Using Event Skip Ticket on event: ${eventToSkip.name}"); // Use .name instead of .title
-      eventToSkip.resolve(); // Remove resolutionMethod parameter
-      trackEventResolution(eventToSkip, "ticket"); // Use custom tracking method
-      // Potentially remove from activeEvents list immediately or let update loop handle it
-      activeEvents.remove(eventToSkip);
-      notifyListeners();
-      return true;
-    } else {
-      print("🎟️ No eligible event found to skip.");
-      return false; // Cannot consume if no eligible event
+    // Real estate income
+    total += getRealEstateIncomePerSecond() * incomeMultiplier * prestigeMultiplier;
+
+    // Dividend income from investments
+    double diversificationBonus = calculateDiversificationBonus();
+    for (var investment in investments) {
+      if (investment.owned > 0 && investment.hasDividends()) {
+        total += investment.getDividendIncomePerSecond() *
+                     incomeMultiplier *
+                     prestigeMultiplier *
+                     (1 + diversificationBonus); // Apply diversification bonus
+      }
     }
+    
+    // Apply global income boosts (e.g., Income Surge)
+    if (isIncomeSurgeActive) total *= 2.0;
+
+    return total;
   }
-  // >> END: Platinum Points System Methods <<
 }

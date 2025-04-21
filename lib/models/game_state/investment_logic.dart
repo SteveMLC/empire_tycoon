@@ -11,7 +11,8 @@ extension InvestmentLogic on GameState {
     Investment investment = investments[index];
     double cost = investment.currentPrice * quantity;
 
-    if (money >= cost) {
+    // Check if player has enough money AND if enough shares are available
+    if (money >= cost && quantity <= investment.availableShares) { // Use the availableShares getter
       money -= cost;
       investment.updatePurchasePrice(cost, quantity);
       investment.owned += quantity;

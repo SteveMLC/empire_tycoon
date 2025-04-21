@@ -336,7 +336,7 @@ class GameService {
       try {
         print('📖 Found saved game data of size: ${gameData.length} bytes');
         final Map<String, dynamic> gameJson = jsonDecode(gameData);
-        await _gameState.fromJson(gameJson);
+        _gameState.fromJson(gameJson);
         print('✅ Game loaded successfully from save');
       } catch (e) {
         print('❌ Error loading game: $e');
@@ -372,7 +372,7 @@ class GameService {
   Future<bool> importGameData(String data) async {
     try {
       final Map<String, dynamic> gameJson = jsonDecode(data);
-      await _gameState.fromJson(gameJson);
+      _gameState.fromJson(gameJson);
       await saveGame();
       return true;
     } catch (e) {

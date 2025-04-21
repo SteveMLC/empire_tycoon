@@ -53,6 +53,8 @@ extension BusinessLogic on GameState {
           business.unlocked = true;
         } else if (business.id == 'real_estate_developer' && money >= 100000000.0) {
           business.unlocked = true;
+        } else if (business.id == 'platinum_venture' && isPlatinumVentureUnlocked && money >= 500000000.0) {
+          business.unlocked = true;
         }
       }
     }

@@ -10,6 +10,9 @@ class NumberFormatter {
     locale: 'en_US',
   );
   
+  // Added: Format for integers with commas
+  static final NumberFormat _intFormat = NumberFormat.decimalPattern('en_US');
+  
   /// Format a number as currency with dollar sign
   /// Example: formatCurrency(1234.56) => "$1,234.56"
   static String formatCurrency(double value) {
@@ -21,6 +24,12 @@ class NumberFormatter {
   /// Example: formatCompact(1234567) => "$1.2M"
   static String formatCompact(double value) {
     return _compactFormat.format(value);
+  }
+  
+  /// Added: Format an integer with commas
+  /// Example: formatInt(1234567) => "1,234,567"
+  static String formatInt(int value) {
+    return _intFormat.format(value);
   }
   
   /// Format a percentage value with % sign

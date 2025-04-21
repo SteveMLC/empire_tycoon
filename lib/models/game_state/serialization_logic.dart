@@ -39,8 +39,22 @@ extension SerializationLogic on GameState {
       'reincorporationUsesAvailable': reincorporationUsesAvailable,
       'totalReincorporations': totalReincorporations, // Save total reincorporations performed
       'lastSaved': DateTime.now().toIso8601String(), // Save current time as last saved
-      'lastOpened': DateTime.now().toIso8601String(), // Also update lastOpened on save
+      'lastOpened': lastOpened.toIso8601String(),
       'isInitialized': isInitialized,
+      'activeMarketEvents': activeMarketEvents.map((e) => e.toJson()).toList(),
+      'lastEventResolvedTime': lastEventResolvedTime?.toIso8601String(),
+
+      // Platinum Points System Data
+      'platinumPoints': platinumPoints, // SAVE platinum points
+      '_retroactivePPAwarded': _retroactivePPAwarded,
+      'ppPurchases': ppPurchases,
+      'ppOwnedItems': ppOwnedItems.toList(), // Convert Set to List for JSON
+      'isGoldenCursorUnlocked': isGoldenCursorUnlocked,
+      'isExecutiveThemeUnlocked': isExecutiveThemeUnlocked,
+      'isPlatinumFrameUnlocked': isPlatinumFrameUnlocked,
+
+      // Boost Timer Data
+      'boostRemainingSeconds': boostRemainingSeconds,
     };
 
     if (clickBoostEndTime != null) {
@@ -398,8 +412,20 @@ extension SerializationLogic on GameState {
     }
     // Note: ResolvedEvents list is handled within eventsFromJson
 
-    // Ensure initialization flag is set AFTER loading and potential async ops
-    isInitialized = true;
+    // Load active/resolved events using the dedicated method
+    eventsFromJson(json);
+
+    // Load platinum points system data
+    platinumPoints = json['platinumPoints'] ?? 0; // LOAD platinum points, default to 0
+    _retroactivePPAwarded = json['_retroactivePPAwarded'] ?? false;
+    ppPurchases = Map<String, int>.from(json['ppPurchases'] ?? {});
+    ppOwnedItems = Set<String>.from(json['ppOwnedItems'] ?? []); // Load Set from List
+    isGoldenCursorUnlocked = json['isGoldenCursorUnlocked'] ?? false;
+    isExecutiveThemeUnlocked = json['isExecutiveThemeUnlocked'] ?? false;
+    isPlatinumFrameUnlocked = json['isPlatinumFrameUnlocked'] ?? false;
+
+    // Load boost timer data
+    boostRemainingSeconds = json['boostRemainingSeconds'] ?? 0;
 
     // Re-evaluate unlocks and achievements after loading everything
     _updateBusinessUnlocks();

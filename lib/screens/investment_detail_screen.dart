@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/services.dart';
+import 'dart:math'; // Import math for min function
 
 import '../models/game_state.dart';
 import '../models/investment.dart';
@@ -12,6 +13,10 @@ import '../widgets/investment_chart.dart';
 
 String formatCurrency(double value) {
   return NumberFormatter.formatCurrency(value);
+}
+
+String formatInt(int value) {
+  return NumberFormatter.formatInt(value);
 }
 
 class InvestmentDetailScreen extends StatefulWidget {
@@ -82,7 +87,13 @@ class _InvestmentDetailScreenState extends State<InvestmentDetailScreen> {
     final double totalCost = investment.currentPrice * _quantity;
     final bool canAfford = gameState.money >= totalCost;
     
-    _maxAffordable = (gameState.money / investment.currentPrice).floor();
+    // Calculate max affordable considering cash and available shares
+    int maxAffordableByCash = (investment.currentPrice > 0) 
+        ? (gameState.money / investment.currentPrice).floor()
+        : 0;
+    int maxAffordableByShares = investment.availableShares; // Use the new getter
+    _maxAffordable = min(maxAffordableByCash, maxAffordableByShares);
+    if (_maxAffordable < 0) _maxAffordable = 0; // Ensure it's not negative
     
     final int ownedShares = investment.owned;
     
@@ -229,6 +240,11 @@ class _InvestmentDetailScreenState extends State<InvestmentDetailScreen> {
                             'Market Cap',
                             '\$${investment.marketCap.toStringAsFixed(2)}B',
                             icon: Icons.pie_chart_outline,
+                          ),
+                          _buildDataItem(
+                            'Max Shares',
+                            formatInt(investment.maxShares),
+                            icon: Icons.inventory_2_outlined,
                           ),
                           _buildDataItem(
                             'Volume',

@@ -450,6 +450,13 @@ class SoundManager {
     
     _disposeCachedPlayers();
   }
+
+  // ADDED: Sound for Premium Purchase
+  void playPremiumPurchaseSound() {
+    if (_eventSoundsEnabled) { // Group with event sounds for now
+      _safelyPlaySound(SoundAssets.achievementMilestone); // Use the milestone sound as requested
+    }
+  }
 }
 
 class GameSounds {

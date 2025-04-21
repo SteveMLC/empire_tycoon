@@ -45,7 +45,7 @@ class RealEstateProperty {
   final String name;
   final double purchasePrice;
   final double baseCashFlowPerSecond; // Renamed from cashFlowPerSecond
-  final bool unlocked;
+  bool unlocked;
   int owned;
   List<RealEstateUpgrade> upgrades; // Changed from final to allow modification
   
@@ -91,12 +91,13 @@ class RealEstateProperty {
   }) : this.upgrades = upgrades ?? [];
 
   // Return the total income per second for this property based on how many are owned
-  double getTotalIncomePerSecond({bool affectedByEvent = false}) {
+  double getTotalIncomePerSecond({bool affectedByEvent = false, bool isResilienceActive = false}) {
     double baseIncome = cashFlowPerSecond * owned;
     
     // Apply event effect if affected
     if (affectedByEvent) {
-      return baseIncome * GameStateEvents.EVENT_INCOME_PENALTY; // -25% of income (negative value)
+      double penalty = GameStateEvents.EVENT_INCOME_PENALTY * (isResilienceActive ? 0.9 : 1.0);
+      return baseIncome * (1.0 + penalty); // Apply penalty relative to base
     }
     
     return baseIncome;

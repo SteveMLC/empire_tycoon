@@ -1,157 +1,6 @@
 part of '../game_state.dart';
 
 extension RealEstateLogic on GameState {
-  // Initialize real estate locales
-  void _initializeRealEstateLocales() {
-    realEstateLocales = [
-      // Beachfront
-      RealEstateLocale(
-        id: 'beachfront',
-        name: 'Beachfront',
-        unlocked: true, // Initially unlocked
-        theme: 'Prime properties with ocean views.',
-        icon: Icons.beach_access,
-        properties: [
-          // Beach House
-          RealEstateProperty(
-            id: 'beach_house',
-            name: 'Beach House',
-            purchasePrice: 150000.0,
-            baseCashFlowPerSecond: 250.0,
-            owned: 0,
-            upgrades: [], // Upgrades will be loaded from CSV
-          ),
-          // Luxury Villa
-          RealEstateProperty(
-            id: 'luxury_villa',
-            name: 'Luxury Villa',
-            purchasePrice: 750000.0,
-            baseCashFlowPerSecond: 1200.0,
-            owned: 0,
-            upgrades: [], // Upgrades will be loaded from CSV
-          ),
-        ],
-      ),
-
-      // Downtown
-      RealEstateLocale(
-        id: 'downtown',
-        name: 'Downtown',
-        unlocked: false, // Initially locked
-        theme: 'Commercial and residential properties in the city center.',
-        icon: Icons.location_city,
-        properties: [
-          // Loft Apartment
-          RealEstateProperty(
-            id: 'loft_apartment',
-            name: 'Loft Apartment',
-            purchasePrice: 300000.0,
-            baseCashFlowPerSecond: 450.0,
-            owned: 0,
-            upgrades: [], // Upgrades will be loaded from CSV
-          ),
-          // Office Space
-          RealEstateProperty(
-            id: 'office_space',
-            name: 'Office Space',
-            purchasePrice: 1000000.0,
-            baseCashFlowPerSecond: 1500.0,
-            owned: 0,
-            upgrades: [], // Upgrades will be loaded from CSV
-          ),
-        ],
-      ),
-
-      // Suburbs
-      RealEstateLocale(
-        id: 'suburbs',
-        name: 'Suburbs',
-        unlocked: false,
-        theme: 'Family homes and community spaces.',
-        icon: Icons.home_work,
-        properties: [
-          // Family Home
-          RealEstateProperty(
-            id: 'family_home',
-            name: 'Family Home',
-            purchasePrice: 400000.0,
-            baseCashFlowPerSecond: 600.0,
-            owned: 0,
-            upgrades: [], // Upgrades will be loaded from CSV
-          ),
-          // Community Center
-          RealEstateProperty(
-            id: 'community_center',
-            name: 'Community Center',
-            purchasePrice: 1500000.0,
-            baseCashFlowPerSecond: 2000.0,
-            owned: 0,
-            upgrades: [], // Upgrades will be loaded from CSV
-          ),
-        ],
-      ),
-
-      // Mountain Retreat
-      RealEstateLocale(
-        id: 'mountain_retreat',
-        name: 'Mountain Retreat',
-        unlocked: false,
-        theme: 'Secluded properties with scenic mountain views.',
-        icon: Icons.terrain,
-        properties: [
-          // Cozy Cabin
-          RealEstateProperty(
-            id: 'cozy_cabin',
-            name: 'Cozy Cabin',
-            purchasePrice: 250000.0,
-            baseCashFlowPerSecond: 350.0,
-            owned: 0,
-            upgrades: [], // Upgrades will be loaded from CSV
-          ),
-          // Ski Lodge
-          RealEstateProperty(
-            id: 'ski_lodge',
-            name: 'Ski Lodge',
-            purchasePrice: 5000000.0,
-            baseCashFlowPerSecond: 6000.0,
-            owned: 0,
-            upgrades: [], // Upgrades will be loaded from CSV
-          ),
-        ],
-      ),
-
-      // Private Island
-      RealEstateLocale(
-        id: 'private_island',
-        name: 'Private Island',
-        unlocked: false,
-        theme: 'The ultimate luxury real estate investment.',
-        icon: Icons.terrain,
-        properties: [
-          // Island Bungalow
-          RealEstateProperty(
-            id: 'island_bungalow',
-            name: 'Island Bungalow',
-            purchasePrice: 25000000.0,
-            baseCashFlowPerSecond: 30000.0,
-            owned: 0,
-            upgrades: [], // Upgrades will be loaded from CSV
-          ),
-          // Mega Resort
-          RealEstateProperty(
-            id: 'mega_resort',
-            name: 'Mega Resort',
-            purchasePrice: 500000000.0,
-            baseCashFlowPerSecond: 500000.0,
-            owned: 0,
-            upgrades: [], // Upgrades will be loaded from CSV
-          ),
-        ],
-      ),
-    ];
-    print("🏘️ Default Real Estate Locales Initialized.");
-  }
-
   // Update which real estate locales are unlocked
   void _updateRealEstateUnlocks() {
     int count = 0;
@@ -169,6 +18,11 @@ extension RealEstateLogic on GameState {
         shouldBeUnlocked = true;
       } else if (locale.id == 'private_island' && money >= 100000000) {
         shouldBeUnlocked = true;
+      }
+      
+      // ADDED: Check for Platinum Islands unlock flag
+      else if (locale.id == 'platinum_islands' && isPlatinumIslandsUnlocked) {
+          shouldBeUnlocked = true;
       }
 
       // Update if state needs to change
@@ -188,31 +42,102 @@ extension RealEstateLogic on GameState {
     if (changed) {
         notifyListeners(); // Notify only if an unlock happened
     }
+    
+    // ADDED: Explicitly unlock Platinum Tower if the flag is set
+    if (isPlatinumTowerUnlocked) {
+      var dubaiLocale = realEstateLocales.firstWhere((l) => l.id == 'dubai_uae', orElse: () => RealEstateLocale(id: '', name: '', theme: '', unlocked: false, icon: Icons.error, properties: []));
+      if (dubaiLocale.id.isNotEmpty) {
+          var towerProperty = dubaiLocale.properties.firstWhere((p) => p.id == 'platinum_tower', orElse: () => RealEstateProperty(id: '', name: '', purchasePrice: 0, baseCashFlowPerSecond: 0));
+          if (towerProperty.id.isNotEmpty && !towerProperty.unlocked) {
+             towerProperty.unlocked = true;
+             // Don't notify here, rely on the standard unlock notification above if changes occurred.
+          }
+      }
+    }
+    // --- End Platinum Tower Unlock ---
+    
+    // ADDED: Explicitly unlock Platinum Island property if the flag is set
+    if (isPlatinumIslandUnlocked) {
+        var islandsLocale = realEstateLocales.firstWhere((l) => l.id == 'platinum_islands', orElse: () => RealEstateLocale(id: '', name: '', theme: '', unlocked: false, icon: Icons.error, properties: []));
+        if (islandsLocale.id.isNotEmpty && islandsLocale.unlocked) { // Check if locale itself is unlocked first
+             var islandProperty = islandsLocale.properties.firstWhere((p) => p.id == 'platinum_island', orElse: () => RealEstateProperty(id: '', name: '', purchasePrice: 0, baseCashFlowPerSecond: 0));
+             if (islandProperty.id.isNotEmpty && !islandProperty.unlocked) {
+                islandProperty.unlocked = true; 
+             }
+        }
+    }
+    // --- End Platinum Island Unlock ---
   }
 
   // Get total income per second from all owned real estate properties
   double getRealEstateIncomePerSecond() {
     double total = 0.0;
-    bool hasEvent; // Declare outside loop for efficiency
-
     for (var locale in realEstateLocales) {
-      // Check if the entire locale is affected by an event
-      hasEvent = hasActiveEventForLocale(locale.id);
+      bool hasLocaleEvent = hasActiveEventForLocale(locale.id);
+      // Pass isResilienceActive down to the property calculation within the locale method
+      // This requires modifying RealEstateLocale.getTotalIncomePerSecond as well.
+      // Let's adjust RealEstateLocale.getTotalIncomePerSecond first.
+      // Assuming RealEstateLocale.getTotalIncomePerSecond is modified to accept the flag:
+      // double localeBaseIncome = locale.getTotalIncomePerSecond(
+      //   affectedByEvent: hasLocaleEvent, 
+      //   isResilienceActive: isPlatinumResilienceActive // Pass flag here
+      // );
 
+      // --- Alternative Approach: Apply resilience within the locale loop --- 
+      double localeBaseIncome = 0.0;
       for (var property in locale.properties) {
-        if (property.owned > 0) {
-          total += property.getTotalIncomePerSecond(affectedByEvent: hasEvent);
+          // Pass the flag to the property's income calculation
+          localeBaseIncome += property.getTotalIncomePerSecond(
+              affectedByEvent: hasLocaleEvent, // Use locale-wide event status for simplicity
+              isResilienceActive: isPlatinumResilienceActive 
+          );
+      }
+      // --- End Alternative Approach ---
+      
+      // Apply Platinum Tower regional boost (applies to Dubai locale's base income)
+      if (locale.id == 'dubai_uae') {
+        // Check if the tower property exists and is owned
+        var towerProperty = locale.properties.firstWhere((p) => p.id == 'platinum_tower', orElse: () => RealEstateProperty(id: '', name: '', purchasePrice: 0, baseCashFlowPerSecond: 0));
+        if (towerProperty.id.isNotEmpty && towerProperty.owned > 0) {
+          localeBaseIncome *= 1.10; // Apply +10% boost
         }
       }
+      
+      // Apply Platinum Yacht regional boost
+      if (isPlatinumYachtPurchased && platinumYachtDockedLocaleId == locale.id) {
+          // Check if boost amplifier upgrade is purchased
+          bool boostAmplified = platinumYachtUpgrades.any((u) => u.id == 'py_boost_amp' && u.purchased);
+          double yachtBoost = boostAmplified ? 1.075 : 1.05; // 7.5% if amplified, else 5%
+          localeBaseIncome *= yachtBoost;
+          print("DEBUG: Applying Yacht Boost (${(yachtBoost-1)*100}%) to locale ${locale.id}");
+      }
+      
+      // Apply Platinum Island regional boost (applies only to Platinum Islands locale)
+      if (locale.id == 'platinum_islands') {
+          var islandProperty = locale.properties.firstWhere((p) => p.id == 'platinum_island', orElse: () => RealEstateProperty(id: '', name: '', purchasePrice: 0, baseCashFlowPerSecond: 0));
+          if (islandProperty.id.isNotEmpty && islandProperty.owned > 0) {
+             localeBaseIncome *= 1.08; // Apply +8% boost
+          }
+      }
+      
+      // Apply Platinum Foundation bonus if applicable to this locale
+      if (platinumFoundationsApplied.containsKey(locale.id)) {
+        // Assuming count is always 1 for now, based on _applyVaultItemEffect logic
+        localeBaseIncome *= 1.05; 
+      }
+      
+      total += localeBaseIncome;
     }
+    // ADDED: Apply Income Surge
+    if (isIncomeSurgeActive) total *= 2.0;
     return total;
   }
 
   // Buy a real estate property
   bool buyRealEstateProperty(String localeId, String propertyId) {
     RealEstateLocale? locale = realEstateLocales.firstWhere(
-          (l) => l.id == localeId,
-      orElse: () => null as RealEstateLocale, // Explicit cast to expected type
+      (l) => l.id == localeId,
+      orElse: () => null as RealEstateLocale, 
     );
 
     if (locale == null || !locale.unlocked) {
@@ -221,8 +146,8 @@ extension RealEstateLogic on GameState {
     }
 
     RealEstateProperty? property = locale.properties.firstWhere(
-          (p) => p.id == propertyId,
-      orElse: () => null as RealEstateProperty, // Explicit cast
+      (p) => p.id == propertyId,
+      orElse: () => null as RealEstateProperty, 
     );
 
     if (property == null) {
@@ -257,22 +182,22 @@ extension RealEstateLogic on GameState {
   // Purchase a specific upgrade for a property
   bool purchasePropertyUpgrade(String localeId, String propertyId, String upgradeId) {
     RealEstateLocale? locale = realEstateLocales.firstWhere(
-          (l) => l.id == localeId,
-      orElse: () => null as RealEstateLocale, // Cast
+      (l) => l.id == localeId,
+      orElse: () => null as RealEstateLocale, 
     );
 
     if (locale == null) return false;
 
     RealEstateProperty? property = locale.properties.firstWhere(
-          (p) => p.id == propertyId,
-      orElse: () => null as RealEstateProperty, // Cast
+      (p) => p.id == propertyId,
+      orElse: () => null as RealEstateProperty, 
     );
 
     if (property == null) return false;
 
     RealEstateUpgrade? upgrade = property.upgrades.firstWhere(
-          (u) => u.id == upgradeId,
-      orElse: () => null as RealEstateUpgrade, // Cast
+      (u) => u.id == upgradeId,
+      orElse: () => null as RealEstateUpgrade, 
     );
 
     if (upgrade == null || upgrade.purchased) return false;
@@ -296,15 +221,15 @@ extension RealEstateLogic on GameState {
   // Sell a real estate property
   bool sellRealEstateProperty(String localeId, String propertyId) {
     RealEstateLocale? locale = realEstateLocales.firstWhere(
-          (l) => l.id == localeId,
-      orElse: () => null as RealEstateLocale, // Cast
+      (l) => l.id == localeId,
+      orElse: () => null as RealEstateLocale, 
     );
 
     if (locale == null) return false;
 
     RealEstateProperty? property = locale.properties.firstWhere(
-          (p) => p.id == propertyId,
-      orElse: () => null as RealEstateProperty, // Cast
+      (p) => p.id == propertyId,
+      orElse: () => null as RealEstateProperty, 
     );
 
     if (property == null || property.owned <= 0) return false;
@@ -368,5 +293,81 @@ extension RealEstateLogic on GameState {
       // Trigger locale-based achievement updates as well
       _updatePropertyOwnershipAchievements(property);
     }
+  }
+
+  void _unlockLocalesById(List<String> localeIds) {
+    // Implementation of _unlockLocalesById method
+  }
+
+  // Method to check if Platinum Stock should be unlocked
+  void _checkPlatinumStockUnlock() {
+    if (!isPlatinumStockUnlocked && ownsAllProperties()) {
+        isPlatinumStockUnlocked = true;
+        print("Platinum Stock Unlocked!");
+        notifyListeners();
+    }
+  }
+
+  // Method to reset real estate state for reincorporation
+  void _resetRealEstateForReincorporation() {
+    for (var locale in realEstateLocales) {
+      locale.unlocked = (locale.id == 'rural_kenya'); // Keep starter locale unlocked
+      for (var property in locale.properties) {
+        property.owned = 0; 
+        property.unlocked = false; 
+        for (var upgrade in property.upgrades) {
+          upgrade.purchased = false; 
+        }
+      }
+    }
+    _updateRealEstateUnlocks();
+    notifyListeners(); 
+  }
+
+  // Method to calculate the total number of properties owned across all locales
+  int getTotalOwnedProperties() {
+    int total = 0;
+    for (var locale in realEstateLocales) {
+      if (locale.unlocked) {
+        for (var property in locale.properties) {
+          total += property.owned;
+        }
+      }
+    }
+    return total;
+  }
+
+  // Method to check if all properties in all *unlocked* locales are owned
+  bool ownsAllProperties() {
+    for (var locale in realEstateLocales) {
+      if (locale.unlocked) {
+        for (var property in locale.properties) {
+          if (property.owned <= 0) {
+            return false;
+          }
+        }
+      }
+    }
+    return realEstateLocales.any((locale) => locale.unlocked);
+  }
+
+  // Method to get details of all owned properties
+  List<Map<String, dynamic>> getAllOwnedPropertiesWithDetails() {
+    List<Map<String, dynamic>> ownedProperties = [];
+    for (var locale in realEstateLocales) {
+      if (locale.unlocked) {
+        for (var property in locale.properties) {
+          if (property.owned > 0) {
+            ownedProperties.add({
+              'name': property.name,
+              'locale': locale.name,
+              'ownedCount': property.owned,
+              'currentIncomePerSecond': property.getTotalIncomePerSecond(),
+            });
+          }
+        }
+      }
+    }
+    return ownedProperties;
   }
 }

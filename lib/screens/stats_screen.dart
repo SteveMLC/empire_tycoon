@@ -751,6 +751,9 @@ class _StatsScreenState extends State<StatsScreen> {
   }
 
   void _showPremiumPurchaseDialog(BuildContext context, GameState gameState) {
+    // Log hashCode of the GameState instance passed to the dialog
+    print("🅿️ Dialog builder using gameState hashCode: ${gameState.hashCode}");
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -765,6 +768,7 @@ class _StatsScreenState extends State<StatsScreen> {
             ),
             const SizedBox(height: 8),
             const Text('• Remove all ads from the game'),
+            const Text('• Bonus +✦1500 platinum points'),
             const Text('• More features coming soon!'),
             const SizedBox(height: 16),
             const Text(
@@ -780,14 +784,32 @@ class _StatsScreenState extends State<StatsScreen> {
           ),
           TextButton(
             onPressed: () {
+              print("🅿️ Premium Purchase Button Pressed."); // Log before call
               // TODO: Implement actual purchase logic with Google Play Store
               // For now, just enable premium immediately
-              gameState.enablePremium();
+
+              // Log hashCode of the gameState instance used in onPressed
+              print("🅿️ onPressed using gameState hashCode: ${gameState.hashCode}");
+
+              // Option 1: Try accessing via Provider directly
+              Provider.of<GameState>(context, listen: false).enablePremium();
+              print("🅿️ Called Provider.of<GameState>.enablePremium()");
+
+              // Option 2: Original call (keep commented out for now)
+              // gameState.enablePremium();
+              // print("🅿️ After gameState.enablePremium() call."); // Log after call
+
               Navigator.of(context).pop();
 
+              // Play the sound effect AFTER enabling premium
+              Provider.of<GameService>(context, listen: false)
+                  .soundManager
+                  .playPremiumPurchaseSound();
+
+              // Snackbar is less important now with the dedicated notification, but keep for backup
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('Premium features activated!'),
+                  content: Text('Premium features activated! +1500 Platinum Points!'),
                   backgroundColor: Colors.green,
                   duration: Duration(seconds: 3),
                 ),

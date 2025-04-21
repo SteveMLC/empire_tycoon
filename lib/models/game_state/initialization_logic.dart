@@ -655,6 +655,31 @@ extension InitializationLogic on GameState {
           ),
         ],
       ),
+      // ADDED: Platinum Venture Business
+      Business(
+        id: 'platinum_venture',
+        name: 'Quantum Computing Lab',
+        description: 'Develops cutting-edge quantum algorithms and hardware.',
+        basePrice: 1000000000.0, // 1B
+        baseIncome: 1500000.0, // 1.5M/sec base
+        level: 0,
+        incomeInterval: 1,
+        unlocked: false, // Requires PP unlock flag
+        icon: Icons.memory, // Placeholder icon
+        levels: [
+          // Define 10 levels for the Quantum Lab
+          BusinessLevel(cost: 1.0e9, incomePerSecond: 1.5e6, description: 'Basic Qubit Setup'),
+          BusinessLevel(cost: 2.5e9, incomePerSecond: 4.0e6, description: 'Cryogenic Cooling Systems'),
+          BusinessLevel(cost: 6.0e9, incomePerSecond: 1.0e7, description: 'Algorithm Simulation Suite'),
+          BusinessLevel(cost: 1.5e10, incomePerSecond: 2.5e7, description: 'Entanglement Research Wing'),
+          BusinessLevel(cost: 4.0e10, incomePerSecond: 6.5e7, description: 'Quantum Supremacy Testbed'),
+          BusinessLevel(cost: 1.0e11, incomePerSecond: 1.6e8, description: 'Advanced Error Correction'),
+          BusinessLevel(cost: 2.5e11, incomePerSecond: 4.0e8, description: 'Secure Quantum Network'),
+          BusinessLevel(cost: 6.0e11, incomePerSecond: 1.0e9, description: 'AI Drug Discovery Platform'),
+          BusinessLevel(cost: 1.5e12, incomePerSecond: 2.5e9, description: 'Commercial Quantum Processor'),
+          BusinessLevel(cost: 4.0e12, incomePerSecond: 6.5e9, description: 'Global Quantum Dominance'),
+        ],
+      ),
     ];
   }
 
@@ -2416,7 +2441,50 @@ extension InitializationLogic on GameState {
             purchasePrice: 35000000.0,
             baseCashFlowPerSecond: 35000.0 * 2.05,
           ),
+          // ADDED: Platinum Tower Property
+          RealEstateProperty(
+            id: 'platinum_tower', 
+            name: 'Platinum Tower', 
+            purchasePrice: 50000000.0, // Example Price
+            baseCashFlowPerSecond: 60000.0, // Example Income
+            unlocked: false, // Initially locked by default, unlocked via PP purchase flag 
+            upgrades: [ // Example Upgrades
+               RealEstateUpgrade(id: 'pt_vip_lounge', description: 'VIP Lounge Access', cost: 5000000.0, newIncomePerSecond: 65000.0),
+               RealEstateUpgrade(id: 'pt_helipad', description: 'Rooftop Helipad', cost: 15000000.0, newIncomePerSecond: 75000.0),
+               RealEstateUpgrade(id: 'pt_global_comm', description: 'Global Communications Hub', cost: 30000000.0, newIncomePerSecond: 90000.0),
+            ]
+          ),
         ],
+      ),
+      RealEstateLocale(
+        id: 'platinum_islands', 
+        name: 'Platinum Islands', 
+        theme: 'Exclusive tropical paradise resorts and villas.', 
+        unlocked: false, // Requires PP unlock flag + achievement
+        icon: Icons.scuba_diving, // Placeholder icon
+        properties: [
+          // 10 unique properties for Platinum Islands
+          RealEstateProperty(id: 'pi_beach_bungalow', name: 'Coral Beach Bungalow', purchasePrice: 1.0e8, baseCashFlowPerSecond: 1.2e5), // 100M, 120K/s
+          RealEstateProperty(id: 'pi_marina_slip', name: 'Private Marina Slip', purchasePrice: 2.5e8, baseCashFlowPerSecond: 3.0e5),   // 250M, 300K/s
+          RealEstateProperty(id: 'pi_overwater_villa', name: 'Overwater Luxury Villa', purchasePrice: 5.0e8, baseCashFlowPerSecond: 6.5e5), // 500M, 650K/s
+          RealEstateProperty(id: 'pi_jungle_retreat', name: 'Secluded Jungle Retreat', purchasePrice: 8.0e8, baseCashFlowPerSecond: 1.0e6),  // 800M, 1M/s
+          RealEstateProperty(id: 'pi_cliffside_estate', name: 'Cliffside Panoramic Estate', purchasePrice: 1.2e9, baseCashFlowPerSecond: 1.5e6), // 1.2B, 1.5M/s
+          RealEstateProperty(id: 'pi_eco_resort', name: 'Sustainable Eco-Resort', purchasePrice: 2.0e9, baseCashFlowPerSecond: 2.5e6),   // 2B, 2.5M/s
+          RealEstateProperty(id: 'pi_volcano_lair', name: 'Extinct Volcano Lair', purchasePrice: 3.5e9, baseCashFlowPerSecond: 4.5e6), // 3.5B, 4.5M/s
+          RealEstateProperty(id: 'pi_underwater_hotel', name: 'Underwater Hotel Suite', purchasePrice: 6.0e9, baseCashFlowPerSecond: 7.5e6), // 6B, 7.5M/s
+          RealEstateProperty(id: 'pi_yacht_club', name: 'Platinum Yacht Club HQ', purchasePrice: 1.0e10, baseCashFlowPerSecond: 1.2e7), // 10B, 12M/s
+          RealEstateProperty(id: 'pi_sovereign_island', name: 'Sovereign Island Compound', purchasePrice: 2.5e10, baseCashFlowPerSecond: 3.0e7),// 25B, 30M/s
+          // ADDED: Platinum Island Property (within Platinum Islands locale)
+          RealEstateProperty(
+            id: 'platinum_island',
+            name: "The Sovereign's Platinum Isle", // Use double quotes to avoid escaping issues
+            purchasePrice: 1.0e18, // Example high cost
+            baseCashFlowPerSecond: 5.0e15, // Example high income
+            unlocked: false, // Initially locked, unlocked via Platinum Points
+            upgrades: [], // No upgrades initially
+             // Ensure all required named parameters are provided if the constructor demands them
+          ),
+        ]
       ),
     ];
   }

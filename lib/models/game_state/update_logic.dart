@@ -68,10 +68,20 @@ extension UpdateLogic on GameState {
       double businessIncomeThisTick = 0;
       for (var business in businesses) {
         if (business.level > 0) {
-          // Check for events affecting this specific business
-          bool hasEvent = hasActiveEventForBusiness(business.id);
-          // Calculate income applying multipliers and event status
-          businessIncomeThisTick += business.getCurrentIncome(affectedByEvent: hasEvent) * incomeMultiplier * prestigeMultiplier;
+          business.secondsSinceLastIncome++;
+          if (business.secondsSinceLastIncome >= business.incomeInterval) {
+            bool hasEvent = hasActiveEventForBusiness(business.id);
+            // Pass isPlatinumResilienceActive to getCurrentIncome
+            double income = business.getCurrentIncome(affectedByEvent: hasEvent, isResilienceActive: isPlatinumResilienceActive) * incomeMultiplier * prestigeMultiplier;
+            
+            // Apply Platinum Efficiency Module bonus
+            if (isPlatinumEfficiencyActive) {
+              income *= 1.05; // Apply 5% boost to the final calculated income for this tick
+            }
+            
+            businessIncomeThisTick += income;
+            business.secondsSinceLastIncome = 0;
+          }
         }
       }
       if (businessIncomeThisTick > 0) {
@@ -90,13 +100,28 @@ extension UpdateLogic on GameState {
       }
 
       // Dividend Income
-      double dividendIncomePerSecond = getTotalDividendIncomePerSecond(); // Base income per sec
+      double dividendIncomeThisTick = 0.0;
       double diversificationBonus = calculateDiversificationBonus();
-      double dividendIncomeThisTick = dividendIncomePerSecond * incomeMultiplier * prestigeMultiplier * (1 + diversificationBonus);
+      for (var investment in investments) {
+        if (investment.owned > 0 && investment.hasDividends()) {
+          double investmentDividend = investment.getDividendIncomePerSecond() *
+                                     incomeMultiplier *
+                                     prestigeMultiplier *
+                                     (1 + diversificationBonus); // Apply diversification bonus
+
+          // Apply Platinum Portfolio bonus
+          if (isPlatinumPortfolioActive) {
+            investmentDividend *= 1.25;
+          }
+
+          dividendIncomeThisTick += investmentDividend;
+        }
+      }
       if (dividendIncomeThisTick > 0) {
-        totalIncomeThisTick += dividendIncomeThisTick;
-        investmentDividendEarnings += dividendIncomeThisTick; // Track source
-        // print("DEBUG: Dividend Income Tick: $dividendIncomeThisTick");
+        money += dividendIncomeThisTick;
+        totalEarned += dividendIncomeThisTick;
+        investmentDividendEarnings += dividendIncomeThisTick;
+        _updateHourlyEarnings(hourKey, dividendIncomeThisTick);
       }
 
       // Apply total income for the tick

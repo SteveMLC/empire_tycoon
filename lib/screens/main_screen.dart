@@ -17,6 +17,7 @@ import '../widgets/money_display.dart';
 import '../widgets/achievement_notification.dart';
 import '../widgets/event_notification.dart';
 import '../widgets/offline_income_notification.dart';
+import '../widgets/premium_purchase_notification.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({Key? key}) : super(key: key);
@@ -199,6 +200,13 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
   Widget build(BuildContext context) {
     return Consumer<GameState>(
       builder: (context, gameState, child) {
+        // ADDED: Logging inside Consumer builder
+        print("🔄 MainScreen Consumer rebuilding...");
+        print("  -> gameState hashCode: ${gameState.hashCode}"); // Log hashCode
+        print("  -> PP: ${gameState.platinumPoints}");
+        print("  -> showPPAnimation: ${gameState.showPPAnimation}");
+        print("  -> showPremiumNotification: ${gameState.showPremiumPurchaseNotification}");
+
         if (!gameState.isInitialized) {
           return const Scaffold(
             body: Center(
@@ -234,6 +242,13 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
                 curve: Curves.easeInOut,
                 child: _buildAchievementNotifications(gameState),
               ),
+              
+              // ADDED: Premium Purchase Notification (Removed AnimatedSize temporarily)
+              // AnimatedSize(
+              //  duration: const Duration(milliseconds: 300),
+              //  curve: Curves.easeInOut,
+                _buildPremiumNotification(gameState), // Directly build
+              // ),
               
               // Event notifications
               AnimatedSize(
@@ -565,6 +580,18 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
           ],
         ),
       ),
+    );
+  }
+
+  // ADDED: Method to build premium notification
+  Widget _buildPremiumNotification(GameState gameState) {
+    if (!gameState.showPremiumPurchaseNotification) {
+      return const SizedBox.shrink(); // Return empty if flag is false
+    }
+
+    // Return the actual notification widget
+    return PremiumPurchaseNotification(
+      onDismiss: gameState.dismissPremiumPurchaseNotification, // Pass dismiss callback
     );
   }
 }
