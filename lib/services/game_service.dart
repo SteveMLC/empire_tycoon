@@ -92,41 +92,22 @@ class GameService {
       final Duration loadDuration = afterLoad.difference(beforeLoad);
       print("⏱️ Game loading took ${loadDuration.inMilliseconds}ms");
 
-      // CRITICAL FIX: Thoroughly analyze timestamp for offline calculations
+      // CRITICAL FIX: Timestamp analysis (keep for logging, but remove redundant calculation)
       final DateTime lastSavedTime = _gameState.lastSaved;
       print("⏱️ TIMESTAMP ANALYSIS: Last saved at ${TimeUtils.formatTime(lastSavedTime)}");
       print("⏱️ TIMESTAMP ANALYSIS: App started at ${TimeUtils.formatTime(appStartTime)}");
 
-      // Check if the last saved time is in the past compared to our app start time
+      // Check if the last saved time is potentially old (informational)
       if (lastSavedTime.isBefore(appStartTime)) {
-        final Duration offlineDuration = appStartTime.difference(lastSavedTime);
-
-        final int offlineDays = offlineDuration.inDays;
-        final int offlineHours = offlineDuration.inHours % 24;
-        final int offlineMinutes = offlineDuration.inMinutes % 60;
-        final int offlineSeconds = offlineDuration.inSeconds % 60;
-
-        print("⚠️ CRITICAL FIX: OFFLINE TIME DETECTED!");
-        print("⏰ Time since last save: ${offlineDays > 0 ? '$offlineDays days, ' : ''}${offlineHours > 0 ? '$offlineHours hours, ' : ''}${offlineMinutes > 0 ? '$offlineMinutes minutes, ' : ''}$offlineSeconds seconds");
-
-        if (offlineDuration.inSeconds > 5) { // Only apply if at least 5 seconds have passed
-          print("💰 CALCULATING OFFLINE INCOME for significant time away");
-          _calculateOfflineIncome(offlineDuration);
-          _gameState.notifyListeners();
-          saveGame();
-          print("✅ Offline income calculated and applied");
-        } else {
-          print("⏰ Offline duration too short (${offlineDuration.inSeconds}s), skipping income calculation");
-        }
+          final Duration offlineDurationCheck = appStartTime.difference(lastSavedTime);
+          print("⏰ Informational: Time since last save vs app start: ${offlineDurationCheck.inSeconds} seconds. Actual offline calculation occurs during GameState.fromJson based on loaded lastOpened time.");
       } else {
-        print("⚠️ No offline time detected - lastSaved time is not before app start time");
-        print("⏰ This is likely the first run or the timestamps are incorrect");
+          print("⏰ Informational: lastSaved time is not before app start time. Likely first run or clock issue. Actual offline calculation occurs during GameState.fromJson.");
       }
 
       _gameState.isInitialized = true;
 
-      // CRITICAL FIX: Completely rebuild the auto-save system from scratch
-      // Instead of relying solely on the listener pattern, we'll implement a direct approach
+      // CRITICAL FIX: Auto-save system setup
       print("🔄 CRITICAL FIX: Removing all existing listeners - complete reset");
       final int listenerCount = _gameState.hasListeners ? 1 : 0;
       print("🔢 Current listener count: $listenerCount");
@@ -301,51 +282,89 @@ class GameService {
   // }
 
   Future<bool> saveGame() async {
+    DateTime saveStartTime = DateTime.now();
+    print('💾 [${TimeUtils.formatTime(saveStartTime)}] saveGame initiated...');
     try {
       final Map<String, dynamic> gameJson = _gameState.toJson();
       final String gameData = jsonEncode(gameJson);
+      final int dataLength = gameData.length;
 
       // Print diagnostics for web platform due to potential size limits
       if (kIsWeb) {
-        print("📊 Game data size: ${gameData.length} bytes");
-        if (gameData.length > 500000) { // 500KB precaution
-          print("⚠️ Game data is very large, might exceed storage limits on web");
+        print("📊 [SAVE] Game data size: $dataLength bytes");
+        if (dataLength > 500000) { // 500KB precaution
+          print("⚠️ [SAVE] Game data is very large, might exceed storage limits on web");
         }
       }
 
-      _gameState.lastSaved = DateTime.now();
+      // Log snippet of data being saved
+      String dataSnippet = dataLength > 200 ? '${gameData.substring(0, 100)}...${gameData.substring(dataLength - 100)}' : gameData;
+      print('💾 [SAVE] Preparing to save data snippet: $dataSnippet');
 
+      _gameState.lastSaved = DateTime.now(); // Update timestamp *just* before saving
+
+      print('💾 [SAVE] Calling SharedPreferences.setString for key: $_saveKey');
       bool success = await _prefs.setString(_saveKey, gameData);
+      DateTime saveEndTime = DateTime.now();
+      Duration saveDuration = saveEndTime.difference(saveStartTime);
+      print('💾 [SAVE] SharedPreferences.setString completed in ${saveDuration.inMilliseconds}ms. Success: $success');
+
       if (success) {
         print('✅ Game saved successfully at ${TimeUtils.formatTime(DateTime.now())}');
       } else {
-        print('❌ Failed to save game data');
+        print('❌ Failed to save game data (SharedPreferences.setString returned false)');
       }
       return success;
-    } catch (e) {
-      print('❌ Error preparing game save: $e');
+    } catch (e, stackTrace) {
+      print('❌ Error preparing or executing game save: $e');
+      print('❌ StackTrace: $stackTrace'); // Print stack trace for save errors
       return false;
     }
   }
 
   Future<void> _loadGame() async {
-    print('🔍 Attempting to load saved game data');
+    DateTime loadStartTime = DateTime.now();
+    print('🔍 [${TimeUtils.formatTime(loadStartTime)}] Attempting to load saved game data for key: $_saveKey');
     final String? gameData = _prefs.getString(_saveKey);
 
     if (gameData != null && gameData.isNotEmpty) {
+      final int dataLength = gameData.length;
+      print('📖 [LOAD] Found saved game data of size: $dataLength bytes');
+      // Log snippet of data being loaded
+      String dataSnippet = dataLength > 200 ? '${gameData.substring(0, 100)}...${gameData.substring(dataLength - 100)}' : gameData;
+      print('📖 [LOAD] Retrieved data snippet: $dataSnippet');
       try {
-        print('📖 Found saved game data of size: ${gameData.length} bytes');
+        print('📖 [LOAD] Attempting jsonDecode...');
         final Map<String, dynamic> gameJson = jsonDecode(gameData);
-        _gameState.fromJson(gameJson);
-        print('✅ Game loaded successfully from save');
-      } catch (e) {
-        print('❌ Error loading game: $e');
-        // Continue with new game if loading fails
+        print('📖 [LOAD] jsonDecode successful. Calling GameState.fromJson...');
+        await _gameState.fromJson(gameJson); // ADDED await - fromJson is ASYNCHRONOUS
+        DateTime loadEndTime = DateTime.now();
+        Duration loadDuration = loadEndTime.difference(loadStartTime);
+        print('✅ Game loaded successfully from save in ${loadDuration.inMilliseconds}ms');
+      } catch (e, stackTrace) {
+        print('❌ Error loading/parsing game data: $e');
+        print('❌ StackTrace: $stackTrace'); // Print stack trace for load errors
+        print('⚠️ Proceeding with default/new game state due to load error.');
+        // Ensure real estate is initialized even if load fails
+        if (_gameState.realEstateInitializationFuture != null) {
+           print('⏳ [LOAD_ERROR] Ensuring real estate upgrades are initialized...');
+           await _gameState.realEstateInitializationFuture;
+        }
+        // Optionally: Clear the corrupted save data?
+        // await _prefs.remove(_saveKey);
+        // print('🗑️ Removed potentially corrupted save data after load error.');
       }
     } else {
-      print('ℹ️ No saved game found, starting new game');
+      if (gameData == null) {
+        print('ℹ️ No saved game found (key: $_saveKey not found). Starting new game.');
+      } else { // gameData is empty string
+         print('ℹ️ Saved game data is empty string. Starting new game.');
+         // Optionally remove the empty key
+         // await _prefs.remove(_saveKey);
+      }
       // Ensure real estate is initialized even for a new game
       if (_gameState.realEstateInitializationFuture != null) {
+          print('⏳ [NEW_GAME] Ensuring real estate upgrades are initialized...');
           await _gameState.realEstateInitializationFuture;
       }
     }

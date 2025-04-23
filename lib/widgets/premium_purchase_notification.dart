@@ -138,7 +138,7 @@ class _PremiumPurchaseNotificationState
                       ),
                     ),
                     const SizedBox(height: 4),
-                    // PP Reward Section
+                    // P Reward Section
                     Row(
                       children: [
                          Container(
@@ -168,7 +168,7 @@ class _PremiumPurchaseNotificationState
                          ),
                          const SizedBox(width: 6),
                          Text(
-                           '+1500 PP Bonus!',
+                           '+1500 P Bonus!',
                            style: TextStyle(
                              fontSize: 14,
                              fontWeight: FontWeight.w600,

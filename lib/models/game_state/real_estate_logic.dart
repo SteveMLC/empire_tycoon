@@ -6,30 +6,35 @@ extension RealEstateLogic on GameState {
     int count = 0;
     bool changed = false;
     for (var locale in realEstateLocales) {
-      // Determine if locale *should* be unlocked based on money
+      // Determine if locale *should* be unlocked based on money or flags
       bool shouldBeUnlocked = false;
-      if (locale.id == 'beachfront') {
-        shouldBeUnlocked = true;
-      } else if (locale.id == 'downtown' && money >= 500000) {
-        shouldBeUnlocked = true;
-      } else if (locale.id == 'suburbs' && money >= 2000000) {
-        shouldBeUnlocked = true;
-      } else if (locale.id == 'mountain_retreat' && money >= 10000000) {
-        shouldBeUnlocked = true;
-      } else if (locale.id == 'private_island' && money >= 100000000) {
-        shouldBeUnlocked = true;
-      }
       
-      // ADDED: Check for Platinum Islands unlock flag
+      if (locale.unlocked) {
+        shouldBeUnlocked = true; // Already unlocked, skip checks
+      } 
+      // Platinum Islands Check (Independent of money)
       else if (locale.id == 'platinum_islands' && isPlatinumIslandsUnlocked) {
           shouldBeUnlocked = true;
+      } 
+      // Money Threshold Checks (Based on real_estate_screen.dart)
+      else if (money >= 10000.0 && ['lagos_nigeria', 'rural_thailand', 'rural_mexico'].contains(locale.id)) {
+        shouldBeUnlocked = true;
+      } else if (money >= 50000.0 && ['cape_town_sa', 'mumbai_india', 'ho_chi_minh_city', 'bucharest_romania', 'lima_peru', 'sao_paulo_brazil'].contains(locale.id)) {
+        shouldBeUnlocked = true;
+      } else if (money >= 250000.0 && ['lisbon_portugal', 'berlin_germany', 'mexico_city'].contains(locale.id)) {
+        shouldBeUnlocked = true;
+      } else if (money >= 1000000.0 && ['singapore', 'london_uk', 'miami_florida', 'new_york_city', 'los_angeles'].contains(locale.id)) {
+        shouldBeUnlocked = true;
+      } else if (money >= 5000000.0 && ['hong_kong', 'dubai_uae'].contains(locale.id)) {
+        shouldBeUnlocked = true;
       }
+      // Note: 'rural_kenya' should start unlocked in initialization logic.
 
       // Update if state needs to change
       if (!locale.unlocked && shouldBeUnlocked) {
         locale.unlocked = true;
         changed = true;
-        print("🔓 Locale Unlocked: ${locale.name}");
+        print("🔓 Locale Unlocked: ${locale.name} (Money: $money)");
         // Potentially add a notification or event here
       }
 
@@ -43,30 +48,25 @@ extension RealEstateLogic on GameState {
         notifyListeners(); // Notify only if an unlock happened
     }
     
-    // ADDED: Explicitly unlock Platinum Tower if the flag is set
+    // Explicit Platinum Item Unlocks (Keep this logic)
     if (isPlatinumTowerUnlocked) {
       var dubaiLocale = realEstateLocales.firstWhere((l) => l.id == 'dubai_uae', orElse: () => RealEstateLocale(id: '', name: '', theme: '', unlocked: false, icon: Icons.error, properties: []));
       if (dubaiLocale.id.isNotEmpty) {
           var towerProperty = dubaiLocale.properties.firstWhere((p) => p.id == 'platinum_tower', orElse: () => RealEstateProperty(id: '', name: '', purchasePrice: 0, baseCashFlowPerSecond: 0));
           if (towerProperty.id.isNotEmpty && !towerProperty.unlocked) {
              towerProperty.unlocked = true;
-             // Don't notify here, rely on the standard unlock notification above if changes occurred.
           }
       }
     }
-    // --- End Platinum Tower Unlock ---
-    
-    // ADDED: Explicitly unlock Platinum Island property if the flag is set
     if (isPlatinumIslandUnlocked) {
         var islandsLocale = realEstateLocales.firstWhere((l) => l.id == 'platinum_islands', orElse: () => RealEstateLocale(id: '', name: '', theme: '', unlocked: false, icon: Icons.error, properties: []));
-        if (islandsLocale.id.isNotEmpty && islandsLocale.unlocked) { // Check if locale itself is unlocked first
+        if (islandsLocale.id.isNotEmpty && islandsLocale.unlocked) {
              var islandProperty = islandsLocale.properties.firstWhere((p) => p.id == 'platinum_island', orElse: () => RealEstateProperty(id: '', name: '', purchasePrice: 0, baseCashFlowPerSecond: 0));
              if (islandProperty.id.isNotEmpty && !islandProperty.unlocked) {
                 islandProperty.unlocked = true; 
              }
         }
     }
-    // --- End Platinum Island Unlock ---
   }
 
   // Get total income per second from all owned real estate properties

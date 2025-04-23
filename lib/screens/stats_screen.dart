@@ -768,7 +768,7 @@ class _StatsScreenState extends State<StatsScreen> {
             ),
             const SizedBox(height: 8),
             const Text('• Remove all ads from the game'),
-            const Text('• Bonus +✦1500 platinum points'),
+            const Text('• Bonus +✦1500 Platinum'),
             const Text('• More features coming soon!'),
             const SizedBox(height: 16),
             const Text(
@@ -808,10 +808,10 @@ class _StatsScreenState extends State<StatsScreen> {
 
               // Snackbar is less important now with the dedicated notification, but keep for backup
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Premium features activated! +1500 Platinum Points!'),
-                  backgroundColor: Colors.green,
-                  duration: Duration(seconds: 3),
+                SnackBar(
+                  backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
+                  content: Text('Premium features activated! +1500 Platinum!'),
+                  duration: const Duration(seconds: 4),
                 ),
               );
             },

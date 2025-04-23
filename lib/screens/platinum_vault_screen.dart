@@ -135,7 +135,7 @@ class _PlatinumVaultScreenState extends State<PlatinumVaultScreen> with SingleTi
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  '${gameState.platinumPoints.toString()} PP',
+                  gameState.platinumPoints.toString(),
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -377,7 +377,7 @@ class _PlatinumVaultScreenState extends State<PlatinumVaultScreen> with SingleTi
       } else {
           String errorMessage = 'Purchase failed.';
           if (gameState.platinumPoints < item.cost) {
-              errorMessage = 'Not enough Platinum Points to purchase ${item.name}.';
+              errorMessage = 'Not enough Platinum to purchase ${item.name}.';
           } else if (item.type == VaultItemType.oneTime && gameState.ppOwnedItems.contains(item.id)) {
               errorMessage = 'You already own this item.';
           } else if (item.id == 'platinum_foundation' && gameState.platinumFoundationsApplied.length >= 5){
@@ -427,7 +427,7 @@ class _PlatinumVaultScreenState extends State<PlatinumVaultScreen> with SingleTi
           ),
           const SizedBox(height: 8),
           Text(
-            "Keep earning Platinum Points!",
+            "Keep earning Platinum!",
             style: TextStyle(
               fontSize: 14,
               color: Colors.grey.shade500,

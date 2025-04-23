@@ -38,7 +38,6 @@ extension SerializationLogic on GameState {
       'networkWorth': networkWorth,
       'reincorporationUsesAvailable': reincorporationUsesAvailable,
       'totalReincorporations': totalReincorporations, // Save total reincorporations performed
-      'lastSaved': DateTime.now().toIso8601String(), // Save current time as last saved
       'lastOpened': lastOpened.toIso8601String(),
       'isInitialized': isInitialized,
       'activeMarketEvents': activeMarketEvents.map((e) => e.toJson()).toList(),

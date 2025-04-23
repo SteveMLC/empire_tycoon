@@ -290,7 +290,7 @@ class _AchievementNotificationState extends State<AchievementNotification> with 
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
-                                  '+${widget.achievement.ppReward}',
+                                  '+${widget.achievement.ppReward} P!',
                                   style: TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.bold,
@@ -382,7 +382,7 @@ class _AchievementNotificationState extends State<AchievementNotification> with 
                             ),
                             const SizedBox(width: 6),
                             Text(
-                              '+${widget.achievement.ppReward} PP!',
+                              '+${widget.achievement.ppReward} P!',
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.bold,

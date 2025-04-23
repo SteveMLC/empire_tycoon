@@ -19,7 +19,7 @@ class VaultItem {
   final String description;
   final VaultItemCategory category;
   final VaultItemType type;
-  final int cost; // Cost in Platinum Points
+  final int cost; // Cost in Platinum
   final String iconAsset; // Path to an icon asset (e.g., 'assets/icons/placeholder_item.png')
   final IconData? iconData; // Alternative: Use Material Icon
 
@@ -42,7 +42,7 @@ List<VaultItem> getVaultItems() {
     // --- Upgrades --- (One-Time)
     VaultItem(
       id: 'platinum_efficiency',
-      name: 'Platinum Efficiency Module',
+      name: 'Platinum Efficiency',
       description: 'Permanently boosts all business upgrade effectiveness by 5%.',
       category: VaultItemCategory.upgrades,
       type: VaultItemType.oneTime,
@@ -69,7 +69,7 @@ List<VaultItem> getVaultItems() {
     ),
     VaultItem(
       id: 'platinum_resilience',
-      name: 'Platinum Resilience Core',
+      name: 'Platinum Resilience',
       description: 'Reduces negative event impacts (costs, penalties) by 10%.',
       category: VaultItemCategory.upgrades,
       type: VaultItemType.oneTime,
@@ -123,15 +123,15 @@ List<VaultItem> getVaultItems() {
       cost: 150,
       iconData: Icons.memory, // Chip/memory icon
     ),
-    VaultItem(
-      id: 'unlock_golden_cursor',
-      name: 'Golden Cursor',
-      description: 'Unlock a flashy golden cursor effect for tapping!',
-      category: VaultItemCategory.unlockables,
-      type: VaultItemType.oneTime,
-      cost: 75,
-      iconData: Icons.mouse,
-    ),
+    // VaultItem(
+    //   id: 'unlock_golden_cursor',
+    //   name: 'Golden Cursor',
+    //   description: 'Unlock a flashy golden cursor effect for tapping!',
+    //   category: VaultItemCategory.unlockables,
+    //   type: VaultItemType.oneTime,
+    //   cost: 75,
+    //   iconData: Icons.mouse,
+    // ),
     VaultItem(
       id: 'unlock_stats_theme_1',
       name: 'Executive Stats Theme',
@@ -176,7 +176,7 @@ List<VaultItem> getVaultItems() {
     VaultItem(
       id: 'platinum_challenge',
       name: 'Platinum Challenge',
-      description: 'Challenge: Earn double your current hourly income within the next hour! Reward: 30 PP.',
+      description: 'Challenge: Earn double your current hourly income within the next hour! Reward: 30 P.',
       category: VaultItemCategory.eventsAndChallenges,
       type: VaultItemType.repeatable, // TODO: Implement 2x per day limit later
       cost: 20,
@@ -259,7 +259,7 @@ List<VaultItem> getVaultItems() {
       name: 'Income Surge (1h)',
       description: 'Doubles ALL income sources for 1 hour.',
       category: VaultItemCategory.boosters,
-      type: VaultItemType.repeatable, // TODO: Implement 3x per week limit
+      type: VaultItemType.repeatable, // TODO: Implement 1x per day limit
       cost: 25,
       iconData: Icons.flash_on, // Example icon
     ),

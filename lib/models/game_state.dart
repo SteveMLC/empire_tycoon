@@ -717,9 +717,9 @@ class GameState with ChangeNotifier {
 */
 
   void _setupTimers() {
-    _saveTimer = Timer.periodic(const Duration(minutes: 1), (_) {
-      notifyListeners(); // This will trigger the save in GameService
-    });
+    // REMOVED: _saveTimer = Timer.periodic(const Duration(minutes: 1), (_) {
+    //   notifyListeners(); // This comment is incorrect; GameService uses its own timer.
+    // });
 
     _updateTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       _updateGameState();
@@ -1199,133 +1199,6 @@ class GameState with ChangeNotifier {
     return money + businessesValue + investmentsValue + realEstateValue;
   }
 
-  Map<String, dynamic> toJson() {
-    print("💾 GameState.toJson starting...");
-    Map<String, dynamic> json = {
-      'money': money,
-      'totalEarned': totalEarned,
-      'manualEarnings': manualEarnings,
-      'passiveEarnings': passiveEarnings,
-      'investmentEarnings': investmentEarnings,
-      'investmentDividendEarnings': investmentDividendEarnings,
-      'realEstateEarnings': realEstateEarnings,
-      'clickValue': clickValue,
-      'taps': taps,
-      'clickLevel': clickLevel,
-      'totalRealEstateUpgradesPurchased': totalRealEstateUpgradesPurchased,
-      'totalUpgradeSpending': totalUpgradeSpending,
-      'luxuryUpgradeSpending': luxuryUpgradeSpending,
-      'fullyUpgradedPropertyIds': fullyUpgradedPropertyIds.toList(),
-      'fullyUpgradedPropertiesPerLocale': fullyUpgradedPropertiesPerLocale,
-      'localesWithOneFullyUpgradedProperty': localesWithOneFullyUpgradedProperty.toList(),
-      'fullyUpgradedLocales': fullyUpgradedLocales.toList(),
-      'isPremium': isPremium,
-      'platinumPoints': platinumPoints, // Save PP
-      '_retroactivePPAwarded': _retroactivePPAwarded, // Save flag
-      'ppPurchases': ppPurchases, // Save repeatable purchases
-      'ppOwnedItems': ppOwnedItems.toList(), // Save one-time purchases
-      'isGoldenCursorUnlocked': isGoldenCursorUnlocked,
-      'isExecutiveThemeUnlocked': isExecutiveThemeUnlocked,
-      'isPlatinumFrameUnlocked': isPlatinumFrameUnlocked,
-      'lifetimeTaps': lifetimeTaps,
-      'gameStartTime': gameStartTime.toIso8601String(),
-      'currentDay': currentDay,
-      'incomeMultiplier': incomeMultiplier,
-      'clickMultiplier': clickMultiplier,
-      'prestigeMultiplier': prestigeMultiplier,
-      'networkWorth': networkWorth,
-      'reincorporationUsesAvailable': reincorporationUsesAvailable,
-      'totalReincorporations': totalReincorporations,
-      'lastSaved': lastSaved.toIso8601String(),
-      'events': eventsToJson(),
-      'lastOpened': DateTime.now().toIso8601String(),
-      'isInitialized': true, // Assuming saving means it's initialized
-      // >> START: Platinum Vault Item State Serialization <<
-      'isPlatinumEfficiencyActive': isPlatinumEfficiencyActive,
-      'isPlatinumPortfolioActive': isPlatinumPortfolioActive,
-      'platinumFoundationsApplied': platinumFoundationsApplied,
-      'isPlatinumResilienceActive': isPlatinumResilienceActive,
-      'isPlatinumTowerUnlocked': isPlatinumTowerUnlocked,
-      'isPlatinumVentureUnlocked': isPlatinumVentureUnlocked,
-      'isPlatinumStockUnlocked': isPlatinumStockUnlocked,
-      'isPlatinumIslandsUnlocked': isPlatinumIslandsUnlocked,
-      'isPlatinumYachtUnlocked': isPlatinumYachtUnlocked,
-      'isPlatinumYachtPurchased': isPlatinumYachtPurchased,
-      'platinumYachtDockedLocaleId': platinumYachtDockedLocaleId,
-      'platinumYachtUpgrades': platinumYachtUpgrades.map((u) => u.toJson()).toList(),
-      'isPlatinumIslandUnlocked': isPlatinumIslandUnlocked,
-      // >> END: Platinum Vault Item State Serialization <<
-      
-      // Save both types of boost timers
-      'boostRemainingSeconds': boostRemainingSeconds,
-      'adBoostRemainingSeconds': adBoostRemainingSeconds,
-      'clickBoostEndTime': clickBoostEndTime?.toIso8601String(),
-    };
-    print("💾 GameState.toJson finished.");
-    return json;
-  }
-
-  void fromJson(Map<String, dynamic> json) {
-    try {
-      // ... existing code ...
-      
-      // Restore boost timers
-      boostRemainingSeconds = json['boostRemainingSeconds'] ?? 0;
-      adBoostRemainingSeconds = json['adBoostRemainingSeconds'] ?? 0;
-      
-      if (json['clickBoostEndTime'] != null) {
-        try {
-          clickBoostEndTime = DateTime.parse(json['clickBoostEndTime']);
-        } catch (e) {
-          print("Error parsing clickBoostEndTime: $e");
-          clickBoostEndTime = null;
-        }
-      }
-      
-      // Restart boost timers if needed
-      if (boostRemainingSeconds > 0) {
-        _startBoostTimer();
-      }
-      
-      if (adBoostRemainingSeconds > 0) {
-        _startAdBoostTimer();
-      }
-      
-      // ... existing code ...
-    } catch (e, stackTrace) {
-      print("❌❌❌ CRITICAL ERROR in fromJson: $e");
-      print(stackTrace);
-    }
-  }
-
-  // Helper method to start the boost timer
-  void _startBoostTimer() {
-    _boostTimer?.cancel();
-    _boostTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (boostRemainingSeconds > 0) {
-        boostRemainingSeconds--;
-      } else {
-        timer.cancel();
-        _boostTimer = null;
-      }
-      notifyListeners();
-    });
-  }
-
-  // Helper method to start the ad boost timer
-  void _startAdBoostTimer() {
-    _adBoostTimer?.cancel();
-    _adBoostTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (adBoostRemainingSeconds > 0) {
-        adBoostRemainingSeconds--;
-      } else {
-        timer.cancel();
-        _adBoostTimer = null;
-      }
-      notifyListeners();
-    });
-  }
-
   // Dispose timers when GameState is disposed
   @override
   void dispose() {
@@ -1708,5 +1581,33 @@ class GameState with ChangeNotifier {
     if (isIncomeSurgeActive) total *= 2.0;
 
     return total;
+  }
+
+  // Helper method to start the boost timer
+  void _startBoostTimer() {
+    _boostTimer?.cancel();
+    _boostTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (boostRemainingSeconds > 0) {
+        boostRemainingSeconds--;
+      } else {
+        timer.cancel();
+        _boostTimer = null;
+      }
+      notifyListeners();
+    });
+  }
+
+  // Helper method to start the ad boost timer
+  void _startAdBoostTimer() {
+    _adBoostTimer?.cancel();
+    _adBoostTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (adBoostRemainingSeconds > 0) {
+        adBoostRemainingSeconds--;
+      } else {
+        timer.cancel();
+        _adBoostTimer = null;
+      }
+      notifyListeners();
+    });
   }
 }
