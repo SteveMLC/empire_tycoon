@@ -11,6 +11,8 @@ class VaultItemCard extends StatefulWidget {
   final VoidCallback onBuy;
   final int? purchaseCount; // Optional: Current purchase count for repeatable items
   final int? maxPurchaseCount; // Optional: Max purchase count for repeatable items
+  final bool isAnyPlatinumBoostActive;
+  final int? activeBoostRemainingSeconds; // Remaining seconds if THIS booster is active
 
   const VaultItemCard({
     Key? key,
@@ -20,6 +22,8 @@ class VaultItemCard extends StatefulWidget {
     required this.onBuy,
     this.purchaseCount,
     this.maxPurchaseCount,
+    this.isAnyPlatinumBoostActive = false,
+    this.activeBoostRemainingSeconds,
   }) : super(key: key);
 
   @override
@@ -63,11 +67,29 @@ class _VaultItemCardState extends State<VaultItemCard> with SingleTickerProvider
                            widget.maxPurchaseCount != null && 
                            widget.purchaseCount != null && 
                            widget.purchaseCount! >= widget.maxPurchaseCount!;
+    final bool isBoosterItem = widget.item.id == 'temp_boost_10x_5min' || widget.item.id == 'temp_boost_2x_10min';
+    final bool isThisBoosterActive = isBoosterItem && widget.activeBoostRemainingSeconds != null && widget.activeBoostRemainingSeconds! > 0;
     final bool isPurchasable = (isRepeatable && !isMaxedOut) || (!isRepeatable && !widget.isOwned);
-    final bool isBuyButtonEnabled = canAfford && isPurchasable;
+    bool isBuyButtonEnabled = canAfford && isPurchasable;
+    if (isBoosterItem && widget.isAnyPlatinumBoostActive) {
+      isBuyButtonEnabled = false;
+    }
 
     final buttonText = _getButtonText(canAfford, isRepeatable, widget.isOwned, isMaxedOut, 
                                      widget.purchaseCount, widget.maxPurchaseCount);
+
+    // Check for mobile screen size
+    final bool isMobile = MediaQuery.of(context).size.width < 600;
+    
+    // Adjusted for better mobile readability
+    final double iconSize = isMobile ? 50 : 55; 
+    final double borderRadius = isMobile ? 16.0 : 16.0;
+    final double titleFontSize = isMobile ? 15.0 : 16.0;
+    final double descFontSize = isMobile ? 13.0 : 12.0;
+    final EdgeInsets contentPadding = isMobile 
+        ? const EdgeInsets.fromLTRB(12.0, 10.0, 12.0, 6.0)
+        : const EdgeInsets.fromLTRB(12.0, 12.0, 12.0, 4.0);
+    final double buttonHeight = isMobile ? 42 : 38;
 
     return MouseRegion(
       onEnter: (_) {
@@ -90,7 +112,7 @@ class _VaultItemCardState extends State<VaultItemCard> with SingleTickerProvider
               child: Container(
                 clipBehavior: Clip.antiAlias,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16.0),
+                  borderRadius: BorderRadius.circular(borderRadius),
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
@@ -134,7 +156,7 @@ class _VaultItemCardState extends State<VaultItemCard> with SingleTickerProvider
                       children: [
                         // Top section with icon
                         Container(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          padding: EdgeInsets.symmetric(vertical: isMobile ? 12 : 12),
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               begin: Alignment.topLeft,
@@ -166,8 +188,8 @@ class _VaultItemCardState extends State<VaultItemCard> with SingleTickerProvider
                               
                               // Icon with animated glow
                               Container(
-                                width: 65,
-                                height: 65,
+                                width: iconSize,
+                                height: iconSize,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
                                   gradient: RadialGradient(
@@ -193,7 +215,7 @@ class _VaultItemCardState extends State<VaultItemCard> with SingleTickerProvider
                                 ),
                                 child: Icon(
                                   widget.item.iconData ?? Icons.shopping_bag,
-                                  size: 32,
+                                  size: isMobile ? 28 : 28,
                                   color: canAfford
                                       ? const Color(0xFFFFD700).withOpacity(0.8 + (_glowAnimation.value * 0.2))
                                       : Colors.grey.shade400,
@@ -206,7 +228,7 @@ class _VaultItemCardState extends State<VaultItemCard> with SingleTickerProvider
                                   top: 0,
                                   right: 16,
                                   child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                     decoration: BoxDecoration(
                                       color: widget.isOwned 
                                           ? const Color(0xFFFFD700).withOpacity(0.9)
@@ -224,7 +246,7 @@ class _VaultItemCardState extends State<VaultItemCard> with SingleTickerProvider
                                       widget.isOwned ? 'Owned' : 'Maxed',
                                       style: TextStyle(
                                         color: widget.isOwned ? Colors.black : Colors.white,
-                                        fontSize: 10,
+                                        fontSize: isMobile ? 12 : 10,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
@@ -237,7 +259,7 @@ class _VaultItemCardState extends State<VaultItemCard> with SingleTickerProvider
                                   top: 0,
                                   right: 16,
                                   child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                     decoration: BoxDecoration(
                                       color: const Color(0xFFFFD700).withOpacity(0.9),
                                       borderRadius: BorderRadius.circular(12),
@@ -249,11 +271,11 @@ class _VaultItemCardState extends State<VaultItemCard> with SingleTickerProvider
                                         ),
                                       ],
                                     ),
-                                    child: const Text(
+                                    child: Text(
                                       'Tap to Buy',
                                       style: TextStyle(
                                         color: Colors.black,
-                                        fontSize: 10,
+                                        fontSize: isMobile ? 12 : 10,
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
@@ -263,62 +285,75 @@ class _VaultItemCardState extends State<VaultItemCard> with SingleTickerProvider
                           ),
                         ),
                         
-                        // Title and description
+                        // Title and description - allow 2 lines for title to avoid truncation
                         Padding(
-                          padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 8.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                widget.item.name,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18,
-                                  color: widget.isOwned
-                                      ? const Color(0xFFFFD700)
-                                      : Colors.white,
-                                  letterSpacing: 0.5,
-                                  shadows: [
-                                    Shadow(
-                                      color: Colors.black.withOpacity(0.6),
-                                      blurRadius: 2,
-                                      offset: const Offset(0, 1),
-                                    ),
-                                  ],
-                                ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 6),
-                              Container(
-                                height: 60, // Increased height for more text visibility
-                                child: Text(
-                                  widget.item.description,
+                          padding: contentPadding,
+                          child: LayoutBuilder(
+                            builder: (context, constraints) => Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  widget.item.name,
                                   style: TextStyle(
-                                    fontSize: 13,
-                                    color: Colors.grey.shade300,
-                                    height: 1.3,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: titleFontSize,
+                                    color: widget.isOwned
+                                        ? const Color(0xFFFFD700)
+                                        : Colors.white,
+                                    height: 1.2, // Add line height to ensure readability
+                                    letterSpacing: 0.5,
+                                    shadows: [
+                                      Shadow(
+                                        color: Colors.black.withOpacity(0.6),
+                                        blurRadius: 2,
+                                        offset: const Offset(0, 1),
+                                      ),
+                                    ],
                                   ),
-                                  maxLines: 3, // Allow up to 3 lines for description
+                                  maxLines: 2, // Allow two lines for title
                                   overflow: TextOverflow.ellipsis,
                                 ),
-                              ),
-                              // Optional tooltip/info button for full description
-                              if (widget.item.description.length > 100)
-                                Align(
-                                  alignment: Alignment.centerRight,
-                                  child: GestureDetector(
-                                    onTap: () {
-                                      _showFullDescription(context);
-                                    },
-                                    child: Icon(
-                                      Icons.info_outline,
-                                      size: 16,
-                                      color: Colors.grey.shade400,
+                                SizedBox(height: isMobile ? 8 : 4),
+                                Container(
+                                  constraints: BoxConstraints(
+                                    maxHeight: constraints.maxHeight * (isMobile ? 0.25 : 0.3)
+                                  ),
+                                  child: Text(
+                                    widget.item.description,
+                                    style: TextStyle(
+                                      fontSize: descFontSize,
+                                      color: Colors.grey.shade300,
+                                      height: 1.3, // Increase line height for better readability
                                     ),
+                                    maxLines: isMobile ? 3 : 3,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
-                            ],
+                                // Info button for detailed description
+                                if (widget.item.description.length > 80)
+                                  Align(
+                                    alignment: Alignment.centerRight,
+                                    child: GestureDetector(
+                                      onTap: () {
+                                        _showFullDescription(context);
+                                      },
+                                      child: Container(
+                                        margin: const EdgeInsets.only(top: 4),
+                                        padding: const EdgeInsets.all(4),
+                                        decoration: BoxDecoration(
+                                          color: Colors.black12,
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: Icon(
+                                          Icons.info_outline,
+                                          size: isMobile ? 16 : 16,
+                                          color: const Color(0xFFFFD700).withOpacity(0.7),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
                           ),
                         ),
                         
@@ -327,8 +362,9 @@ class _VaultItemCardState extends State<VaultItemCard> with SingleTickerProvider
                         
                         // Cost display and buy button
                         Padding(
-                          padding: const EdgeInsets.fromLTRB(16.0, 0, 16.0, 16.0),
+                          padding: EdgeInsets.fromLTRB(12.0, 0, 12.0, isMobile ? 12.0 : 8.0),
                           child: Column(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
                               // Cost with premium coin indicator
                               GestureDetector(
@@ -359,8 +395,8 @@ class _VaultItemCardState extends State<VaultItemCard> with SingleTickerProvider
                                     children: [
                                       // Premium coin
                                       Container(
-                                        width: 20,
-                                        height: 20,
+                                        width: isMobile ? 20 : 18,
+                                        height: isMobile ? 20 : 18,
                                         decoration: BoxDecoration(
                                           shape: BoxShape.circle,
                                           gradient: RadialGradient(
@@ -393,7 +429,7 @@ class _VaultItemCardState extends State<VaultItemCard> with SingleTickerProvider
                                         widget.item.cost.toString(),
                                         style: TextStyle(
                                           fontWeight: FontWeight.bold,
-                                          fontSize: 16,
+                                          fontSize: isMobile ? 16 : 14,
                                           color: canAfford
                                               ? const Color(0xFFFFD700)
                                               : Colors.red.shade300,
@@ -413,12 +449,12 @@ class _VaultItemCardState extends State<VaultItemCard> with SingleTickerProvider
                               ),
                               const SizedBox(height: 12),
                               
-                              // Buy button with improved styling
+                              // Buy button with improved styling for mobile
                               SizedBox(
                                 width: double.infinity,
                                 child: AnimatedContainer(
                                   duration: const Duration(milliseconds: 200),
-                                  height: 46,
+                                  height: buttonHeight,
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(12),
                                     gradient: LinearGradient(
@@ -472,7 +508,7 @@ class _VaultItemCardState extends State<VaultItemCard> with SingleTickerProvider
                                                 padding: const EdgeInsets.only(right: 8.0),
                                                 child: Icon(
                                                   Icons.shopping_cart,
-                                                  size: 18,
+                                                  size: isMobile ? 18 : 16,
                                                   color: const Color(0xFFFFD700),
                                                 ),
                                               ),
@@ -483,7 +519,7 @@ class _VaultItemCardState extends State<VaultItemCard> with SingleTickerProvider
                                                     ? const Color(0xFFFFD700)
                                                     : Colors.grey.shade500,
                                                 fontWeight: FontWeight.bold,
-                                                fontSize: 15,
+                                                fontSize: isMobile ? 16 : 14,
                                                 letterSpacing: 0.8,
                                                 shadows: isBuyButtonEnabled
                                                     ? [
@@ -523,7 +559,7 @@ class _VaultItemCardState extends State<VaultItemCard> with SingleTickerProvider
                                                   ? const Color(0xFFFFD700).withOpacity(0.7)
                                                   : const Color(0xFFAA00FF).withOpacity(0.7),
                                             ),
-                                            minHeight: 4,
+                                            minHeight: isMobile ? 4 : 3,
                                           ),
                                         ),
                                       ),
@@ -531,7 +567,7 @@ class _VaultItemCardState extends State<VaultItemCard> with SingleTickerProvider
                                       Text(
                                         "${widget.purchaseCount}/${widget.maxPurchaseCount}",
                                         style: TextStyle(
-                                          fontSize: 12,
+                                          fontSize: isMobile ? 14 : 10,
                                           color: isMaxedOut
                                               ? const Color(0xFFFFD700)
                                               : Colors.grey.shade400,
@@ -556,10 +592,9 @@ class _VaultItemCardState extends State<VaultItemCard> with SingleTickerProvider
     );
   }
 
-  // Modified helper function to determine button text
+  // Helper function to determine button text
   String _getButtonText(bool canAfford, bool isRepeatable, bool isOwned, bool isMaxedOut, int? purchaseCount, int? maxPurchaseCount) {
     if (!canAfford) {
-      // Change to make the button text more informative without relying on external "Not Enough P" text
       return 'Need More P';
     } else if (isMaxedOut) {
       return 'Maxed Out';
@@ -573,6 +608,8 @@ class _VaultItemCardState extends State<VaultItemCard> with SingleTickerProvider
   }
 
   void _showFullDescription(BuildContext context) {
+    final bool isMobile = MediaQuery.of(context).size.width < 600;
+    
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -581,24 +618,149 @@ class _VaultItemCardState extends State<VaultItemCard> with SingleTickerProvider
           style: const TextStyle(
             fontWeight: FontWeight.bold,
             color: Color(0xFFFFD700),
+            fontSize: 18,
           ),
         ),
-        content: Text(widget.item.description),
+        content: Container(
+          constraints: BoxConstraints(
+            maxWidth: isMobile ? double.infinity : 400,
+            maxHeight: isMobile ? 300 : 400,
+          ),
+          child: SingleChildScrollView(
+            child: Text(
+              widget.item.description,
+              style: TextStyle(
+                fontSize: isMobile ? 16 : 14,
+                color: Colors.white,
+                height: 1.4,
+              ),
+            ),
+          ),
+        ),
         backgroundColor: const Color(0xFF2D0C3E),
         contentTextStyle: const TextStyle(color: Colors.white),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: const BorderSide(color: Color(0xFFFFD700), width: 1),
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: Color(0xFFFFD700), width: 1.5),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text(
-              'Close',
-              style: TextStyle(color: Color(0xFFFFD700)),
+          Center(
+            child: TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              style: TextButton.styleFrom(
+                backgroundColor: const Color(0xFF8E44AD),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: const BorderSide(color: Color(0xFFFFD700), width: 1),
+                ),
+              ),
+              child: const Text(
+                'Close',
+                style: TextStyle(
+                  color: Color(0xFFFFD700),
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
             ),
           ),
         ],
+        actionsPadding: const EdgeInsets.only(bottom: 16),
+      ),
+    );
+  }
+
+  Widget _buildActiveBoosterStatus() {
+    if (widget.activeBoostRemainingSeconds == null || widget.activeBoostRemainingSeconds! <= 0) {
+      return const SizedBox.shrink(); // Should not happen if isThisBoosterActive is true
+    }
+
+    final minutes = widget.activeBoostRemainingSeconds! ~/ 60;
+    final seconds = widget.activeBoostRemainingSeconds! % 60;
+    final timeString = '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+
+    return Container(
+      height: 42, // Match button height
+      decoration: BoxDecoration(
+        color: Colors.purple.shade700, // Use a distinct active color
+        borderRadius: BorderRadius.circular(12.0),
+        border: Border.all(color: Colors.purple.shade300),
+      ),
+      child: Center(
+        child: Text(
+          'Active: $timeString',
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 14,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPurchaseButton(bool isEnabled, String text, bool canAfford, double height) {
+    return Opacity(
+      opacity: isEnabled ? 1.0 : 0.6,
+      child: Container(
+        height: height,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: isEnabled
+                ? [const Color(0xFFFFD700), const Color(0xFFE5C100)]
+                : [Colors.grey.shade600, Colors.grey.shade500],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+          borderRadius: BorderRadius.circular(12.0),
+          boxShadow: isEnabled
+              ? [
+                  BoxShadow(
+                    color: const Color(0xFFFFD700).withOpacity(0.4),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ]
+              : [],
+        ),
+        child: Center(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Optional: Add cost icon
+              if (isEnabled && canAfford)
+                Container(
+                  width: 14,
+                  height: 14,
+                  margin: const EdgeInsets.only(right: 6),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: const Color(0xFF260B33), // Dark purple contrast
+                  ),
+                  child: const Center(
+                    child: Text(
+                      '✦',
+                      style: TextStyle(
+                        fontSize: 9,
+                        color: Color(0xFFFFD700),
+                        fontWeight: FontWeight.bold,
+                        height: 1.0,
+                      ),
+                    ),
+                  ),
+                ),
+              Text(
+                isEnabled ? '${widget.item.cost} - $text' : text,
+                style: TextStyle(
+                  color: isEnabled ? Colors.black : Colors.white70,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

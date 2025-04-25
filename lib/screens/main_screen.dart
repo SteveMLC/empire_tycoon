@@ -50,6 +50,28 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
       if (mounted) { // Check if the widget is still in the tree
         _gameState.tryShowingNextAchievement();
         print("🔔 Initial achievement check triggered.");
+
+        // ADDED: Check and display offline income notification via Overlay
+        if (_gameState.offlineEarningsAwarded > 0 && _gameState.offlineDurationForNotification != null) {
+          print("Overlay: Attempting to show offline income notification.");
+          OverlayEntry? overlayEntry; // Declare overlayEntry here
+          overlayEntry = OverlayEntry(
+            builder: (context) => OfflineIncomeNotification(
+              amount: _gameState.offlineEarningsAwarded,
+              offlineDuration: _gameState.offlineDurationForNotification!,
+              onDismiss: () {
+                print("Overlay: Dismissing offline income notification.");
+                _gameState.clearOfflineNotification(); // Clear state in GameState
+                overlayEntry?.remove(); // Remove the overlay
+                overlayEntry = null; // Ensure it's cleared
+              },
+            ),
+          );
+          Overlay.of(context)?.insert(overlayEntry!); // Use non-null assertion !
+        } else {
+          print("Overlay: No offline income to notify (${_gameState.offlineEarningsAwarded} / ${_gameState.offlineDurationForNotification}).");
+        }
+        // END ADDED
       }
     });
     // >> END NEW <<
@@ -132,70 +154,6 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     }
   }
 
-  // Build offline income notification with improved error handling
-  Widget _buildOfflineIncomeNotification() {
-    try {
-      print("🔄 Attempting to build offline income notification");
-      
-      // Get the GameService instance - check for null first
-      final GameService? gameService = Provider.of<GameService>(context, listen: false);
-      if (gameService == null) {
-        print("❌ CRITICAL ERROR: GameService is null - cannot build offline income notification");
-        return const SizedBox();
-      }
-      
-      // Get the values with null safety
-      final double? earnedAmount = gameService.offlineIncomeEarned;
-      final Duration? awayDuration = gameService.offlineDuration;
-      
-      // Comprehensive logging for debugging
-      print("📊 NOTIFICATION DATA CHECK:");
-      print("💰 Offline income amount: ${earnedAmount != null ? NumberFormatter.formatCurrency(earnedAmount) : 'null'}");
-      print("⏰ Offline duration: ${awayDuration != null ? '${awayDuration.inMinutes} minutes' : 'null'}");
-      
-      // Check for all required conditions
-      if (earnedAmount == null || awayDuration == null) {
-        print("ℹ️ Missing offline income data - not showing notification");
-        return const SizedBox();
-      }
-      
-      // Further validation
-      if (earnedAmount <= 0) {
-        print("ℹ️ Offline income is zero or negative (${NumberFormatter.formatCurrency(earnedAmount)}) - not showing notification");
-        return const SizedBox();
-      }
-      
-      // Extra safeguard against unreasonable values
-      if (awayDuration.inSeconds <= 0) {
-        print("⚠️ Invalid offline duration (${awayDuration.inSeconds}s) - not showing notification");
-        return const SizedBox();
-      }
-      
-      // Everything validated - log and build the notification
-      print("✅ SHOWING OFFLINE INCOME NOTIFICATION:");
-      print("💰 Amount: ${NumberFormatter.formatCurrency(earnedAmount)}");
-      print("⏰ Duration: ${awayDuration.inMinutes} minutes");
-      
-      // Return the notification widget with safe values
-      return OfflineIncomeNotification(
-        amount: earnedAmount,
-        offlineDuration: awayDuration,
-        onDismiss: () {
-          print("🔄 Dismissing offline income notification");
-          // Clear the notification data in the service
-          gameService.clearOfflineIncomeNotification();
-          // Force UI refresh
-          setState(() {});
-        },
-      );
-    } catch (e, stackTrace) {
-      // Enhanced error logging with stack trace
-      print("❌ ERROR BUILDING OFFLINE INCOME NOTIFICATION: $e");
-      print("📋 STACK TRACE: $stackTrace");
-      return const SizedBox(); // Return empty widget on error
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Consumer<GameState>(
@@ -230,11 +188,6 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
             children: [
               // Top panel with money display
               _buildTopPanel(gameState),
-              
-              // Check for offline income data before building the notification
-              if (Provider.of<GameService>(context, listen: false).offlineIncomeEarned != null &&
-                  Provider.of<GameService>(context, listen: false).offlineDuration != null)
-                _buildOfflineIncomeNotification(), // Only build if data exists
               
               // Achievement notifications
               AnimatedSize(

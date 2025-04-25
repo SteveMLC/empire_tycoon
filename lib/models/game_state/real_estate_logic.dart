@@ -73,60 +73,18 @@ extension RealEstateLogic on GameState {
   double getRealEstateIncomePerSecond() {
     double total = 0.0;
     for (var locale in realEstateLocales) {
-      bool hasLocaleEvent = hasActiveEventForLocale(locale.id);
-      // Pass isResilienceActive down to the property calculation within the locale method
-      // This requires modifying RealEstateLocale.getTotalIncomePerSecond as well.
-      // Let's adjust RealEstateLocale.getTotalIncomePerSecond first.
-      // Assuming RealEstateLocale.getTotalIncomePerSecond is modified to accept the flag:
-      // double localeBaseIncome = locale.getTotalIncomePerSecond(
-      //   affectedByEvent: hasLocaleEvent, 
-      //   isResilienceActive: isPlatinumResilienceActive // Pass flag here
-      // );
+      double localeIncome = 0;
+      if (locale.unlocked) {
+        bool isFoundationApplied = platinumFoundationsApplied.containsKey(locale.id);
+        bool isYachtDocked = platinumYachtDockedLocaleId == locale.id;
+        double foundationMultiplier = isFoundationApplied ? 1.05 : 1.0;
+        double yachtMultiplier = isYachtDocked ? 1.05 : 1.0;
+        localeIncome = locale.getTotalIncomePerSecond() * foundationMultiplier;
 
-      // --- Alternative Approach: Apply resilience within the locale loop --- 
-      double localeBaseIncome = 0.0;
-      for (var property in locale.properties) {
-          // Pass the flag to the property's income calculation
-          localeBaseIncome += property.getTotalIncomePerSecond(
-              affectedByEvent: hasLocaleEvent, // Use locale-wide event status for simplicity
-              isResilienceActive: isPlatinumResilienceActive 
-          );
+        // Apply Yacht boost multiplicatively AFTER foundation boost
+        localeIncome *= yachtMultiplier;
       }
-      // --- End Alternative Approach ---
-      
-      // Apply Platinum Tower regional boost (applies to Dubai locale's base income)
-      if (locale.id == 'dubai_uae') {
-        // Check if the tower property exists and is owned
-        var towerProperty = locale.properties.firstWhere((p) => p.id == 'platinum_tower', orElse: () => RealEstateProperty(id: '', name: '', purchasePrice: 0, baseCashFlowPerSecond: 0));
-        if (towerProperty.id.isNotEmpty && towerProperty.owned > 0) {
-          localeBaseIncome *= 1.10; // Apply +10% boost
-        }
-      }
-      
-      // Apply Platinum Yacht regional boost
-      if (isPlatinumYachtPurchased && platinumYachtDockedLocaleId == locale.id) {
-          // Check if boost amplifier upgrade is purchased
-          bool boostAmplified = platinumYachtUpgrades.any((u) => u.id == 'py_boost_amp' && u.purchased);
-          double yachtBoost = boostAmplified ? 1.075 : 1.05; // 7.5% if amplified, else 5%
-          localeBaseIncome *= yachtBoost;
-          print("DEBUG: Applying Yacht Boost (${(yachtBoost-1)*100}%) to locale ${locale.id}");
-      }
-      
-      // Apply Platinum Island regional boost (applies only to Platinum Islands locale)
-      if (locale.id == 'platinum_islands') {
-          var islandProperty = locale.properties.firstWhere((p) => p.id == 'platinum_island', orElse: () => RealEstateProperty(id: '', name: '', purchasePrice: 0, baseCashFlowPerSecond: 0));
-          if (islandProperty.id.isNotEmpty && islandProperty.owned > 0) {
-             localeBaseIncome *= 1.08; // Apply +8% boost
-          }
-      }
-      
-      // Apply Platinum Foundation bonus if applicable to this locale
-      if (platinumFoundationsApplied.containsKey(locale.id)) {
-        // Assuming count is always 1 for now, based on _applyVaultItemEffect logic
-        localeBaseIncome *= 1.05; 
-      }
-      
-      total += localeBaseIncome;
+      total += localeIncome;
     }
     // ADDED: Apply Income Surge
     if (isIncomeSurgeActive) total *= 2.0;

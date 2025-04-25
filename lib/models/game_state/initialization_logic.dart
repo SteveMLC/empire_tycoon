@@ -2445,13 +2445,13 @@ extension InitializationLogic on GameState {
           RealEstateProperty(
             id: 'platinum_tower', 
             name: 'Platinum Tower', 
-            purchasePrice: 50000000.0, // Example Price
-            baseCashFlowPerSecond: 60000.0, // Example Income
+            purchasePrice: 1000000000.0, // Example Price
+            baseCashFlowPerSecond: 1200000.0, // Example Income
             unlocked: false, // Initially locked by default, unlocked via PP purchase flag 
             upgrades: [ // Example Upgrades
-               RealEstateUpgrade(id: 'pt_vip_lounge', description: 'VIP Lounge Access', cost: 5000000.0, newIncomePerSecond: 65000.0),
-               RealEstateUpgrade(id: 'pt_helipad', description: 'Rooftop Helipad', cost: 15000000.0, newIncomePerSecond: 75000.0),
-               RealEstateUpgrade(id: 'pt_global_comm', description: 'Global Communications Hub', cost: 30000000.0, newIncomePerSecond: 90000.0),
+               RealEstateUpgrade(id: 'pt_vip_lounge', description: 'VIP Lounge Access', cost: 10000000.0, newIncomePerSecond: 130000.0),
+               RealEstateUpgrade(id: 'pt_helipad', description: 'Rooftop Helipad', cost: 30000000.0, newIncomePerSecond: 390000.0),
+               RealEstateUpgrade(id: 'pt_global_comm', description: 'Global Communications Hub', cost: 120000000.0, newIncomePerSecond: 780000.0),
             ]
           ),
         ],
@@ -2478,8 +2478,8 @@ extension InitializationLogic on GameState {
           RealEstateProperty(
             id: 'platinum_island',
             name: "The Sovereign's Platinum Isle", // Use double quotes to avoid escaping issues
-            purchasePrice: 1.0e18, // Example high cost
-            baseCashFlowPerSecond: 5.0e15, // Example high income
+            purchasePrice: 1.0e12, // Example high cost
+            baseCashFlowPerSecond: 5.0e8, // Example high income
             unlocked: false, // Initially locked, unlocked via Platinum Points
             upgrades: [], // No upgrades initially
              // Ensure all required named parameters are provided if the constructor demands them

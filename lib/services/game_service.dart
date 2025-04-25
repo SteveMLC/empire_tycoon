@@ -20,20 +20,6 @@ class GameService {
   final SoundManager _soundManager = SoundManager();
   bool _isInitialized = false;
 
-  double? _offlineIncomeEarned;
-  Duration? _offlineDuration;
-
-  double? get offlineIncomeEarned => _offlineIncomeEarned;
-  Duration? get offlineDuration => _offlineDuration;
-
-  void clearOfflineIncomeNotification() {
-    print("📣 CLEARING OFFLINE INCOME NOTIFICATION DATA");
-    print("💰 Previous values: Amount=${NumberFormatter.formatCurrency(_offlineIncomeEarned ?? 0)}, Duration=${_offlineDuration?.inMinutes ?? 0} minutes");
-    _offlineIncomeEarned = null;
-    _offlineDuration = null;
-    print("✅ Offline income notification data cleared");
-  }
-
   GameService(this._prefs, this._gameState);
 
   void playSound(Future<void> Function() soundFunction) {
@@ -56,8 +42,6 @@ class GameService {
 
       // CRITICAL FIXES: Start with a clean slate
       _isInitialized = false;
-      _offlineIncomeEarned = null;
-      _offlineDuration = null;
 
       if (_autoSaveTimer != null) {
         print("⏱️ INIT: Cancelling any existing auto-save timer");
@@ -206,73 +190,6 @@ class GameService {
     }
   }
 
-  void _calculateOfflineIncome(Duration offlineDuration) {
-    if (offlineDuration.inSeconds <= 0) return;
-    print("💰 Calculating offline income...");
-
-    double incomePerSecond = _gameState.totalIncomePerSecond;
-
-    // Cap offline duration to a maximum value (5 days)
-    int offlineSeconds = offlineDuration.inSeconds;
-    final int maxOfflineSeconds = 5 * 24 * 60 * 60; // 5 days
-    Duration cappedDuration;
-
-    if (offlineSeconds > maxOfflineSeconds) {
-      print("⚠️ Capping offline time from ${Duration(seconds: offlineSeconds).inDays} days to ${Duration(seconds: maxOfflineSeconds).inDays} days");
-      cappedDuration = Duration(seconds: maxOfflineSeconds);
-      offlineSeconds = maxOfflineSeconds;
-    } else {
-      cappedDuration = offlineDuration;
-    }
-
-    double offlineIncome = incomePerSecond * offlineSeconds;
-
-    print("💰 OFFLINE INCOME DEBUG: Earned ${NumberFormatter.formatCurrency(offlineIncome)} in ${cappedDuration.inMinutes} minutes");
-
-    // CRITICAL FIX: Always set these values for notification system debugging.
-    _offlineIncomeEarned = offlineIncome;
-    _offlineDuration = cappedDuration;
-
-    print("📣 OFFLINE NOTIFICATION DATA SET:");
-    print("💰 Amount: ${NumberFormatter.formatCurrency(_offlineIncomeEarned ?? 0)}");
-    print("⏰ Duration: ${_offlineDuration?.inMinutes ?? 0} minutes");
-
-    _gameState.money += offlineIncome;
-    _gameState.totalEarned += offlineIncome;
-
-    // Distribute the earnings to appropriate categories based on current ratios
-    double totalActiveIncome = _gameState.passiveEarnings +
-                              _gameState.investmentDividendEarnings +
-                              _gameState.realEstateEarnings;
-
-    if (totalActiveIncome > 0) {
-      _gameState.passiveEarnings += offlineIncome * (_gameState.passiveEarnings / totalActiveIncome);
-      _gameState.investmentDividendEarnings += offlineIncome * (_gameState.investmentDividendEarnings / totalActiveIncome);
-      _gameState.realEstateEarnings += offlineIncome * (_gameState.realEstateEarnings / totalActiveIncome);
-    } else {
-      // If no existing distribution, assign it all to passive earnings
-      _gameState.passiveEarnings += offlineIncome;
-    }
-
-    print("💰 Earned ${NumberFormatter.formatCurrency(offlineIncome)} while offline (${offlineDuration.inMinutes} minutes)");
-
-    // Evaluate achievements after applying offline income
-    try {
-      print("🏆 Checking for achievements unlocked offline...");
-      List<Achievement> offlineCompleted = _gameState.achievementManager.evaluateAchievements(_gameState);
-      if (offlineCompleted.isNotEmpty) {
-        print("🏅 Found ${offlineCompleted.length} achievements completed offline: ${offlineCompleted.map((a) => a.name).join(', ')}");
-        _gameState.queueAchievementsForDisplay(offlineCompleted);
-      } else {
-        print("🏅 No new achievements completed offline.");
-      }
-    } catch (e) {
-      print("❌ Error evaluating offline achievements: $e");
-    }
-
-    _gameState.notifyListeners();
-  }
-
   SoundManager get soundManager => _soundManager;
   GameState get gameState => _gameState;
 
@@ -285,6 +202,9 @@ class GameService {
     DateTime saveStartTime = DateTime.now();
     print('💾 [${TimeUtils.formatTime(saveStartTime)}] saveGame initiated...');
     try {
+      // Log the lastOpened timestamp BEFORE creating JSON
+      print('💾 [SAVE] GameState.lastOpened timestamp before toJson: ${_gameState.lastOpened.toIso8601String()}');
+
       final Map<String, dynamic> gameJson = _gameState.toJson();
       final String gameData = jsonEncode(gameJson);
       final int dataLength = gameData.length;

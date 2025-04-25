@@ -57,7 +57,7 @@ flutter:
     - assets/sounds/real_estate/
     - assets/sounds/events/
     - assets/sounds/feedback/
-    - assets/images/
+    - assets/sounds/platinum/
     - assets/
     - web/assets/
     - assets/fonts/
@@ -83,6 +83,7 @@ flutter:
     - assets/images/los_angeles/
     - assets/images/hong_kong/
     - assets/images/dubai_uae/
+    - assets/images/platinum_islands/
     
   fonts:
     - family: Roboto

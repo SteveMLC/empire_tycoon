@@ -6,6 +6,7 @@ import '../models/real_estate.dart'; // Import RealEstateLocale
 import '../utils/number_formatter.dart'; // For formatting PP display
 import '../data/platinum_vault_items.dart'; // Import actual item data
 import '../widgets/vault_item_card.dart'; // Import the new card widget
+import '../services/game_service.dart'; // Added import for GameService
 
 class PlatinumVaultScreen extends StatefulWidget {
   const PlatinumVaultScreen({Key? key}) : super(key: key);
@@ -247,12 +248,23 @@ class _PlatinumVaultScreenState extends State<PlatinumVaultScreen> with SingleTi
     }
   }
 
-  // Builds the grid view for a specific category
+  // Helper to build the grid for each category
   Widget _buildItemGrid(List<VaultItem> items, GameState gameState) {
     if (items.isEmpty) {
       return _buildPlaceholderTab("No items available in this category yet.");
     }
 
+    // Adjust grid based on screen size
+    final width = MediaQuery.of(context).size.width;
+    final bool isMobile = width < 600;
+    
+    // For mobile: always use 2 columns with better aspect ratio
+    // For desktop: use 3-4 columns based on width
+    final int crossAxisCount = isMobile ? 2 : (width < 1200 ? 3 : 4);
+    
+    // Use taller cards on mobile to fit content properly
+    final double aspectRatio = isMobile ? 0.68 : 0.75;
+    
     return Container(
       // Add subtle animated shine effect
       foregroundDecoration: BoxDecoration(
@@ -268,25 +280,47 @@ class _PlatinumVaultScreenState extends State<PlatinumVaultScreen> with SingleTi
         ),
       ),
       child: GridView.builder(
-        padding: const EdgeInsets.all(16.0),
-        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-          maxCrossAxisExtent: 200.0,
-          childAspectRatio: 2 / 3.5,
-          crossAxisSpacing: 16.0,
-          mainAxisSpacing: 16.0,
+        padding: EdgeInsets.all(isMobile ? 8.0 : 16.0),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: crossAxisCount,
+          childAspectRatio: aspectRatio,
+          crossAxisSpacing: isMobile ? 10.0 : 16.0,
+          mainAxisSpacing: isMobile ? 12.0 : 16.0,
         ),
         itemCount: items.length,
         itemBuilder: (context, index) {
           final item = items[index];
+          final bool isOwned = gameState.ppOwnedItems.contains(item.id);
+          final int purchaseCount = gameState.ppPurchases[item.id] ?? 0;
+
+          // --- ADDED: Determine active booster state for passing to card ---
+          bool isAnyPlatinumBoostActive = gameState.isPlatinumBoostActive;
+          int? activeBoostRemainingSeconds;
+          if (item.id == 'temp_boost_10x_5min') {
+            activeBoostRemainingSeconds = gameState.platinumClickFrenzyRemainingSeconds;
+          } else if (item.id == 'temp_boost_2x_10min') {
+            activeBoostRemainingSeconds = gameState.platinumSteadyBoostRemainingSeconds;
+          }
+          // --- END: Determine active booster state ---
+
+          // Define max purchases (example for platinum_foundation)
+          int? maxPurchases;
+          if (item.id == 'platinum_foundation') {
+            maxPurchases = 5; // Example limit
+          }
+
           return VaultItemCard(
             item: item,
             currentPoints: gameState.platinumPoints,
-            isOwned: (item.type == VaultItemType.oneTime && gameState.ppOwnedItems.contains(item.id)) ||
-                     (item.id == 'platinum_foundation' && gameState.platinumFoundationsApplied.length >= 5), // Check global limit for foundation
-            purchaseCount: item.id == 'platinum_foundation' ? gameState.platinumFoundationsApplied.length : null, // Pass count for foundation
-            maxPurchaseCount: item.id == 'platinum_foundation' ? 5 : null, // Pass max count for foundation
+            isOwned: isOwned,
+            purchaseCount: purchaseCount,
+            maxPurchaseCount: maxPurchases,
+            // --- ADDED: Pass booster state to card ---
+            isAnyPlatinumBoostActive: isAnyPlatinumBoostActive,
+            activeBoostRemainingSeconds: activeBoostRemainingSeconds,
+            // --- END: Pass booster state ---
             onBuy: () {
-               _handlePurchase(context, gameState, item); // Use handler function
+              _handlePurchase(context, gameState, item);
             },
           );
         },
@@ -299,6 +333,16 @@ class _PlatinumVaultScreenState extends State<PlatinumVaultScreen> with SingleTi
       if (item.id == 'platinum_foundation') {
         // --- Special handling for Platinum Foundation ---
         _showLocaleSelectionDialog(context, gameState, item);
+      } else if (item.id == 'platinum_yacht') {
+        // --- Special handling for Platinum Yacht ---
+        // Check if yacht is already unlocked (it's a one-time purchase effect)
+        if (gameState.isPlatinumYachtUnlocked) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("Platinum Yacht already unlocked."), backgroundColor: Colors.orange),
+            );
+            return;
+        }
+        _showYachtDockingDialog(context, gameState, item);
       } else {
         // --- Default purchase logic for other items ---
         bool success = gameState.spendPlatinumPoints(item.id, item.cost);
@@ -349,12 +393,72 @@ class _PlatinumVaultScreenState extends State<PlatinumVaultScreen> with SingleTi
     );
   }
 
+  // Show dialog for selecting Yacht Docking locale
+  void _showYachtDockingDialog(BuildContext context, GameState gameState, VaultItem item) {
+    // Define eligible "mega locales"
+    const List<String> megaLocaleIds = [
+      'dubai_uae', 'hong_kong', 'los_angeles', 'new_york_city', 
+      'platinum_islands', 'miami_florida', 'london_uk', 'singapore'
+    ];
+
+    // Filter eligible locales: must be in megaLocaleIds AND unlocked
+    final eligibleLocales = gameState.realEstateLocales
+        .where((locale) => megaLocaleIds.contains(locale.id) && locale.unlocked)
+        .toList();
+
+    // Check if yacht already docked (should technically be covered by isPlatinumYachtUnlocked, but good safeguard)
+    if (gameState.platinumYachtDockedLocaleId != null) {
+         ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Yacht already docked elsewhere."), backgroundColor: Colors.orange),
+        );
+        return;
+    }
+
+    if (eligibleLocales.isEmpty) {
+         ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("No eligible mega-locales unlocked to dock the yacht."), backgroundColor: Colors.orange),
+        );
+        return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        // Use a stateful builder for the dropdown inside the dialog
+        return _YachtDockingSelectionDialog(
+          eligibleLocales: eligibleLocales,
+          onConfirm: (selectedLocaleId) {
+            if (selectedLocaleId != null) {
+                // Pass context for the purchase
+                bool success = gameState.spendPlatinumPoints(
+                    item.id,
+                    item.cost,
+                    purchaseContext: {'selectedLocaleId': selectedLocaleId} // Pass selected locale ID
+                );
+                // Use selectedLocaleName in feedback if needed
+                String? selectedName = eligibleLocales.firstWhere((l) => l.id == selectedLocaleId, orElse: () => RealEstateLocale(id: '', name: 'Unknown', properties: [], theme: '', icon: Icons.error, unlocked: false)).name;
+                _showPurchaseFeedback(context, success, item, gameState, selectedLocaleName: selectedName);
+            }
+          },
+        );
+      },
+    );
+  }
+
   // Show SnackBar feedback after purchase attempt
   void _showPurchaseFeedback(BuildContext context, bool success, VaultItem item, GameState gameState, {String? selectedLocaleName}) {
       if (success) {
+          try {
+            final gameService = Provider.of<GameService>(context, listen: false);
+            gameService.soundManager.playPlatinumPurchaseSound();
+          } catch (e) {
+            print("Error playing platinum purchase sound: $e");
+          }
           String message = 'Successfully purchased ${item.name}!';
           if (item.id == 'platinum_foundation' && selectedLocaleName != null) {
               message += ' Applied to $selectedLocaleName.';
+          } else if (item.id == 'platinum_yacht' && selectedLocaleName != null) {
+              message += ' Docked at $selectedLocaleName.';
           }
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -507,6 +611,83 @@ class __LocaleSelectionDialogState extends State<_LocaleSelectionDialog> {
         ),
         TextButton(
           child: const Text('Confirm'),
+          onPressed: _selectedLocaleId == null ? null : () { // Disable confirm if nothing selected
+            widget.onConfirm(_selectedLocaleId);
+            Navigator.of(context).pop(); // Close the dialog
+          },
+        ),
+      ],
+    );
+  }
+}
+
+// --- ADDED: Yacht Docking Selection Dialog Widget ---
+
+class _YachtDockingSelectionDialog extends StatefulWidget {
+  final List<RealEstateLocale> eligibleLocales;
+  final Function(String?) onConfirm;
+
+  const _YachtDockingSelectionDialog({
+    required this.eligibleLocales,
+    required this.onConfirm,
+  });
+
+  @override
+  __YachtDockingSelectionDialogState createState() => __YachtDockingSelectionDialogState();
+}
+
+class __YachtDockingSelectionDialogState extends State<_YachtDockingSelectionDialog> {
+  String? _selectedLocaleId;
+
+  @override
+  void initState() {
+    super.initState();
+    // Pre-select the first eligible locale if available
+    if (widget.eligibleLocales.isNotEmpty) {
+      _selectedLocaleId = widget.eligibleLocales.first.id;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Select Docking Location'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Choose a mega-locale to dock the Platinum Yacht (+5% Income):'),
+          const SizedBox(height: 16),
+          if (widget.eligibleLocales.isNotEmpty)
+            DropdownButton<String>(
+              value: _selectedLocaleId,
+              isExpanded: true,
+              hint: const Text('Select Location'),
+              items: widget.eligibleLocales.map((locale) {
+                return DropdownMenuItem<String>(
+                  value: locale.id,
+                  child: Text(locale.name), // Display locale name
+                );
+              }).toList(),
+              onChanged: (String? newValue) {
+                setState(() {
+                  _selectedLocaleId = newValue;
+                });
+              },
+            )
+          else
+            const Text('No locations available for docking.', style: TextStyle(color: Colors.grey)),
+        ],
+      ),
+      actions: <Widget>[
+        TextButton(
+          child: const Text('Cancel'),
+          onPressed: () {
+            Navigator.of(context).pop(); // Close the dialog
+          },
+        ),
+        TextButton(
+          child: const Text('Confirm Docking'),
           onPressed: _selectedLocaleId == null ? null : () { // Disable confirm if nothing selected
             widget.onConfirm(_selectedLocaleId);
             Navigator.of(context).pop(); // Close the dialog

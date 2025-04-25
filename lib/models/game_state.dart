@@ -55,11 +55,19 @@ class GameState with ChangeNotifier {
   bool showPremiumPurchaseNotification = false; // ADDED: Flag for premium notification
   // >> END: Platinum Points System Fields <<
 
+  // ADDED: Variable to track offline earnings for notification
+  double offlineEarningsAwarded = 0.0;
+  Duration? offlineDurationForNotification; // ADDED: Track duration for notification
+
   // >> START: Platinum Vault Item State <<
-  bool isPlatinumEfficiencyActive = false; // platinum_efficiency
-  bool isPlatinumPortfolioActive = false; // platinum_portfolio
+  // --- Permanent Boost Flags (from Upgrades category) ---
+  bool isPlatinumEfficiencyActive = false; // platinum_efficiency: Business upgrade effectiveness +5%
+  bool isPlatinumPortfolioActive = false; // platinum_portfolio: Dividend income +25%
+  bool isPlatinumResilienceActive = false; // platinum_resilience: Negative event impact -10%
+  bool isPermanentIncomeBoostActive = false; // perm_income_boost_5pct: All passive income +5%
+  bool isPermanentClickBoostActive = false; // perm_click_boost_10pct: Manual tap value +10%
+  // --- Other Unlock/State Flags ---
   Map<String, int> platinumFoundationsApplied = {}; // { localeId: count } - platinum_foundation (Max 5 total)
-  bool isPlatinumResilienceActive = false; // platinum_resilience
   bool isPlatinumTowerUnlocked = false; // platinum_tower (Unlocks property)
   bool isPlatinumVentureUnlocked = false; // platinum_venture (Unlocks business)
   bool isPlatinumIslandsUnlocked = false; // platinum_islands (Unlocks locale)
@@ -109,6 +117,19 @@ class GameState with ChangeNotifier {
   int adBoostRemainingSeconds = 0;
   Timer? _adBoostTimer;
   bool get isAdBoostActive => adBoostRemainingSeconds > 0;
+
+  // >> START: Platinum Booster State (Click Frenzy / Steady Boost) <<
+  int platinumClickFrenzyRemainingSeconds = 0;
+  DateTime? platinumClickFrenzyEndTime;
+  Timer? _platinumClickFrenzyTimer;
+
+  int platinumSteadyBoostRemainingSeconds = 0;
+  DateTime? platinumSteadyBoostEndTime;
+  Timer? _platinumSteadyBoostTimer;
+
+  // Getter to check if *any* platinum click booster is active
+  bool get isPlatinumBoostActive => platinumClickFrenzyRemainingSeconds > 0 || platinumSteadyBoostRemainingSeconds > 0;
+  // << END: Platinum Booster State >>
 
   // >> START: Add Achievement Tracking Fields Declaration <<
   // These fields are explicitly marked as needed for achievement tracking
@@ -198,12 +219,16 @@ class GameState with ChangeNotifier {
     int current = tapData['current'] ?? 0;
     int required = tapData['required'] ?? 0;
 
+    // Apply Platinum Resilience: Reduce required taps by 10% if active
+    double resilienceMultiplier = isPlatinumResilienceActive ? 0.9 : 1.0;
+    int finalRequired = (required * resilienceMultiplier).ceil(); // Use ceil to ensure it doesn't become 0 easily
+
     current++;
     tapData['current'] = current;
 
     lifetimeTaps++; // Increment lifetime taps to track event taps as well
 
-    if (current >= required) {
+    if (current >= finalRequired) {
       event.resolve();
 
       totalEventsResolved++;
@@ -825,15 +850,22 @@ class GameState with ChangeNotifier {
       _updateRealEstateUnlocks();
 
       double previousMoney = money;
+      double permanentIncomeBoostMultiplier = isPermanentIncomeBoostActive ? 1.05 : 1.0;
 
       // Update businesses income
       double businessIncomeThisTick = 0;
+      double businessEfficiencyMultiplier = isPlatinumEfficiencyActive ? 1.05 : 1.0;
       for (var business in businesses) {
         if (business.level > 0) {
           business.secondsSinceLastIncome++;
           if (business.secondsSinceLastIncome >= business.incomeInterval) {
             bool hasEvent = hasActiveEventForBusiness(business.id);
-            double income = business.getCurrentIncome(affectedByEvent: hasEvent) * incomeMultiplier * prestigeMultiplier;
+            // Apply Platinum Efficiency to base income first
+            double income = business.getCurrentIncome(affectedByEvent: hasEvent) * businessEfficiencyMultiplier;
+            // Then apply standard multipliers
+            income *= incomeMultiplier * prestigeMultiplier;
+            // Then apply the overall permanent boost
+            income *= permanentIncomeBoostMultiplier;
             // ADDED: Apply Income Surge
             if (isIncomeSurgeActive) income *= 2.0;
             businessIncomeThisTick += income;
@@ -850,7 +882,12 @@ class GameState with ChangeNotifier {
 
       // Generate real estate income
       double realEstateIncomePerSecond = getRealEstateIncomePerSecond();
+      // Apply standard multipliers
       double realEstateIncomeThisTick = realEstateIncomePerSecond * incomeMultiplier * prestigeMultiplier;
+      // Apply the overall permanent boost
+      realEstateIncomeThisTick *= permanentIncomeBoostMultiplier;
+      // Apply Income Surge (if applicable)
+      if (isIncomeSurgeActive) realEstateIncomeThisTick *= 2.0;
       if (realEstateIncomeThisTick > 0) {
         money += realEstateIncomeThisTick;
         totalEarned += realEstateIncomeThisTick;
@@ -861,12 +898,16 @@ class GameState with ChangeNotifier {
       // Generate dividend income from investments
       double dividendIncomeThisTick = 0.0;
       double diversificationBonus = calculateDiversificationBonus();
+      double portfolioMultiplier = isPlatinumPortfolioActive ? 1.25 : 1.0;
       for (var investment in investments) {
         if (investment.owned > 0 && investment.hasDividends()) {
-          double investmentDividend = investment.getDividendIncomePerSecond() *
-                                     incomeMultiplier *
-                                     prestigeMultiplier *
-                                     (1 + diversificationBonus); // Apply diversification bonus
+          // Apply Platinum Portfolio and Diversification Bonus first
+          double investmentDividend = investment.getDividendIncomePerSecond() * portfolioMultiplier *
+                                     (1 + diversificationBonus);
+          // Then apply standard multipliers
+          investmentDividend *= incomeMultiplier *
+                               prestigeMultiplier *
+                               permanentIncomeBoostMultiplier;
           // ADDED: Apply Income Surge
           if (isIncomeSurgeActive) investmentDividend *= 2.0;
           dividendIncomeThisTick += investmentDividend;
@@ -1056,17 +1097,31 @@ class GameState with ChangeNotifier {
   }
 
   void tap() {
-    // Calculate earnings based on click value and potential boost effects
-    double baseEarnings = clickValue * clickMultiplier; // Base click value * permanent PP multiplier
-    
-    // Apply temporary boosts - they can stack multiplicatively
-    double boostMultiplier = 1.0;
-    if (isBoostActive) boostMultiplier *= 2.0;
-    if (isAdBoostActive) boostMultiplier *= 10.0;
-    
-    double finalEarnings = baseEarnings * boostMultiplier;
+    // Calculate base earnings including permanent boost
+    double permanentClickMultiplier = isPermanentClickBoostActive ? 1.1 : 1.0;
+    double baseEarnings = clickValue * permanentClickMultiplier; // Base * Permanent Vault Boost
 
-    print("~~~ GameState.tap() called. BaseClick: $clickValue, PermClickMult: $clickMultiplier, PlatBoostMult: ${isBoostActive ? '2.0x' : '1.0x'}, AdBoostMult: ${isAdBoostActive ? '10.0x' : '1.0x'}, Final: $finalEarnings ~~~ "); // DEBUG LOG
+    // Apply Ad boost multiplier
+    double adBoostMultiplier = isAdBoostActive ? 10.0 : 1.0;
+
+    // Apply Platinum Boosters multiplier
+    double platinumBoostMultiplier = 1.0;
+    if (platinumClickFrenzyRemainingSeconds > 0) {
+        platinumBoostMultiplier = 10.0;
+    } else if (platinumSteadyBoostRemainingSeconds > 0) {
+        platinumBoostMultiplier = 2.0;
+    }
+
+    // Combine all multipliers: Base * Ad * Platinum
+    double finalEarnings = baseEarnings * adBoostMultiplier * platinumBoostMultiplier;
+
+    // --- REMOVED potentially conflicting old boost logic (isBoostActive, clickMultiplier) ---
+    // double boostMultiplier = 1.0;
+    // if (isBoostActive) boostMultiplier *= 2.0; 
+    // baseEarnings = clickValue * clickMultiplier * permanentClickMultiplier; 
+    // finalEarnings = baseEarnings * boostMultiplier * platinumBoostMultiplier; 
+
+    print("~~~ GameState.tap() called. BaseClick: $clickValue, PermVaultMult: ${permanentClickMultiplier.toStringAsFixed(1)}x, AdBoostMult: ${adBoostMultiplier.toStringAsFixed(1)}x, PlatinumBoostMult: ${platinumBoostMultiplier.toStringAsFixed(1)}x, Final: $finalEarnings ~~~ "); // Updated DEBUG LOG
 
     money += finalEarnings;
     totalEarned += finalEarnings;
@@ -1209,6 +1264,7 @@ class GameState with ChangeNotifier {
     _boostTimer?.cancel();
     _adBoostTimer?.cancel(); // ADDED: Cancel ad boost timer
     _achievementNotificationTimer?.cancel();
+    _cancelPlatinumTimers(); // ADDED: Cancel platinum booster timers
     super.dispose();
   }
 
@@ -1277,6 +1333,14 @@ class GameState with ChangeNotifier {
     }
     // --- End specific checks ---
 
+    // --- ADDED: Check if a Platinum Click Booster is already active ---
+    if ((itemId == 'temp_boost_10x_5min' || itemId == 'temp_boost_2x_10min') && isPlatinumBoostActive) {
+        print("DEBUG: Cannot purchase booster $itemId because another platinum click booster is already active.");
+        // Optionally show a user message here
+        return false;
+    }
+    // --- END: Platinum Click Booster Check ---
+
     // Basic check for repeatable item limits (Placeholder - needs specific item logic)
     // Example: if (itemId == 'platinum_surge' && (ppPurchases[itemId] ?? 0) >= 3) return false;
 
@@ -1305,13 +1369,11 @@ class GameState with ChangeNotifier {
     switch (itemId) {
         case 'platinum_efficiency':
             isPlatinumEfficiencyActive = true;
-            // Logic to apply 1.05x multiplier needs to be integrated where business upgrades are calculated
-            // This might require modifying Business.getCurrentIncome or how upgrades are applied initially.
-            print("TODO: Integrate platinum_efficiency bonus calculation.");
+            print("Activated Platinum Efficiency (Business Upgrade +5%). Effect applied in income calculation.");
             break;
         case 'platinum_portfolio':
             isPlatinumPortfolioActive = true;
-            // Logic to apply 1.25x multiplier is integrated in investment dividend calculation.
+            print("Activated Platinum Portfolio (Dividend +25%). Effect applied in income calculation.");
             break;
         case 'platinum_foundation':
             // Use the selected locale ID from the context
@@ -1331,7 +1393,7 @@ class GameState with ChangeNotifier {
             break;
         case 'platinum_resilience':
             isPlatinumResilienceActive = true;
-            // Logic is integrated where event penalties are calculated (e.g., resolveEvent).
+            print("Activated Platinum Resilience (Event Impact -10%). Effect applied in event processing.");
             break;
         case 'platinum_tower':
             isPlatinumTowerUnlocked = true;
@@ -1355,10 +1417,16 @@ class GameState with ChangeNotifier {
             _updateRealEstateUnlocks(); // Trigger unlock check
             break;
         case 'platinum_yacht':
-            isPlatinumYachtUnlocked = true;
-             // The UI should handle the actual purchase of the yacht *property* after this unlock.
-             // This flag just enables the ability to buy it.
-            print("Platinum Yacht purchase capability unlocked.");
+            // Apply effect: Set unlock flag and store docked location from context
+            String? targetLocaleId = purchaseContext?['selectedLocaleId'] as String?;
+            if (targetLocaleId != null) {
+                isPlatinumYachtUnlocked = true;
+                platinumYachtDockedLocaleId = targetLocaleId;
+                print("Activated Platinum Yacht and docked at $targetLocaleId.");
+            } else {
+                print("ERROR: Could not apply Platinum Yacht effect - missing selectedLocaleId in context.");
+                // Attempt to refund points? This requires more complex logic.
+            }
             break;
         case 'platinum_island':
              // Requires Platinum Islands locale to be unlocked FIRST (checked in UI ideally)
@@ -1490,9 +1558,33 @@ class GameState with ChangeNotifier {
              // Ensure notifyListeners is called
              notifyListeners(); 
              break;
-        case 'golden_cursor': // Added missing case
+        case 'perm_income_boost_5pct':
+            isPermanentIncomeBoostActive = true;
+            print("Activated Permanent Income Boost (+5%). Effect applied in income calculation.");
+            break;
+        case 'perm_click_boost_10pct':
+            isPermanentClickBoostActive = true;
+            print("Activated Permanent Click Boost (+10%). Effect applied in tap calculation.");
+            break;
+        case 'golden_cursor': // Cosmetic Unlock - Kept separate for clarity
              isGoldenCursorUnlocked = true;
             break;
+        // --- ADDED: Platinum Click Boosters ---
+        case 'temp_boost_10x_5min': // Click Frenzy
+             platinumClickFrenzyEndTime = DateTime.now().add(const Duration(minutes: 5));
+             platinumClickFrenzyRemainingSeconds = 300;
+             _startPlatinumClickFrenzyTimer();
+             print("INFO: Click Frenzy (10x) Activated! Ends at: $platinumClickFrenzyEndTime");
+             notifyListeners();
+             break;
+        case 'temp_boost_2x_10min': // Steady Boost
+             platinumSteadyBoostEndTime = DateTime.now().add(const Duration(minutes: 10));
+             platinumSteadyBoostRemainingSeconds = 600;
+             _startPlatinumSteadyBoostTimer();
+             print("INFO: Steady Boost (2x) Activated! Ends at: $platinumSteadyBoostEndTime");
+             notifyListeners();
+             break;
+        // --- END: Platinum Click Boosters ---
         default:
             print("WARNING: Unknown Platinum Vault item ID: $itemId");
     }
@@ -1513,7 +1605,8 @@ class GameState with ChangeNotifier {
           icon: Icons.memory, // Placeholder icon
           color: Colors.cyan,
           priceHistory: List.generate(30, (i) => 1000000000.0 * (0.95 + (Random().nextDouble() * 0.1))), // Wider random range
-          category: 'Technology', // Or a unique category like 'Quantum'
+          category: 'Technology',// Or a unique category like 'Quantum'
+          dividendPerSecond: 1750000, // 1.75 million per second
           marketCap: 4.0e12, // 4 Trillion market cap
           // Potentially add a high dividend yield as well for extra reward/risk
           // dividendPerSecond: 50000.0, // Example: 50k/sec per share
@@ -1552,31 +1645,52 @@ class GameState with ChangeNotifier {
   // ADDED: Calculate passive income per second for achievements
   double calculatePassiveIncomePerSecond() {
     double total = 0.0;
+    double businessTotal = 0.0;
+    double realEstateTotal = 0.0;
+    double dividendTotal = 0.0;
+
+    // --- Calculate Component Multipliers from Vault Upgrades ---
+    double businessEfficiencyMultiplier = isPlatinumEfficiencyActive ? 1.05 : 1.0;
+    double portfolioMultiplier = isPlatinumPortfolioActive ? 1.25 : 1.0;
+    double permanentIncomeMultiplier = isPermanentIncomeBoostActive ? 1.05 : 1.0;
 
     // Business income
     for (var business in businesses) {
       if (business.level > 0) {
         bool hasEvent = hasActiveEventForBusiness(business.id);
-        total += business.getCurrentIncome(affectedByEvent: hasEvent) * 
-                 incomeMultiplier * 
-                 prestigeMultiplier;
+        // Apply Platinum Efficiency boost to the *base* income calculated by getCurrentIncome
+        double businessBaseIncome = business.getCurrentIncome(affectedByEvent: hasEvent);
+        businessTotal += businessBaseIncome * businessEfficiencyMultiplier;
       }
     }
 
     // Real estate income
-    total += getRealEstateIncomePerSecond() * incomeMultiplier * prestigeMultiplier;
+    // Note: getRealEstateIncomePerSecond already includes platinum foundation boost internally
+    realEstateTotal += getRealEstateIncomePerSecond();
 
     // Dividend income from investments
     double diversificationBonus = calculateDiversificationBonus();
     for (var investment in investments) {
       if (investment.owned > 0 && investment.hasDividends()) {
-        total += investment.getDividendIncomePerSecond() *
-                     incomeMultiplier *
-                     prestigeMultiplier *
-                     (1 + diversificationBonus); // Apply diversification bonus
+        // Apply Platinum Portfolio boost here
+        dividendTotal += investment.getDividendIncomePerSecond() * portfolioMultiplier *
+                         (1 + diversificationBonus); // Apply diversification bonus
       }
     }
-    
+
+    // --- Combine Totals and Apply Global Multipliers ---
+    // Apply gameState multipliers (incomeMultiplier, prestigeMultiplier) to each component first
+    // The Platinum Efficiency boost is applied *before* these multipliers
+    businessTotal *= incomeMultiplier * prestigeMultiplier;
+    realEstateTotal *= incomeMultiplier * prestigeMultiplier;
+    dividendTotal *= incomeMultiplier * prestigeMultiplier;
+
+    // Combine the boosted component totals
+    total = businessTotal + realEstateTotal + dividendTotal;
+
+    // Apply the Permanent Income Boost (5%) to the combined total
+    total *= permanentIncomeMultiplier;
+
     // Apply global income boosts (e.g., Income Surge)
     if (isIncomeSurgeActive) total *= 2.0;
 
@@ -1610,4 +1724,45 @@ class GameState with ChangeNotifier {
       notifyListeners();
     });
   }
+
+  // --- ADDED: Helper methods for Platinum Booster Timers ---
+  void _startPlatinumClickFrenzyTimer() {
+    _platinumClickFrenzyTimer?.cancel(); // Cancel existing timer if any
+    _platinumClickFrenzyTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (platinumClickFrenzyRemainingSeconds > 0) {
+        platinumClickFrenzyRemainingSeconds--;
+        notifyListeners(); // Notify UI about remaining time change
+      } else {
+        timer.cancel();
+        _platinumClickFrenzyTimer = null;
+        platinumClickFrenzyEndTime = null; // Clear end time when timer finishes
+        print("INFO: Click Frenzy boost expired.");
+        notifyListeners(); // Notify UI that boost is no longer active
+      }
+    });
+  }
+
+  void _startPlatinumSteadyBoostTimer() {
+    _platinumSteadyBoostTimer?.cancel(); // Cancel existing timer if any
+    _platinumSteadyBoostTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (platinumSteadyBoostRemainingSeconds > 0) {
+        platinumSteadyBoostRemainingSeconds--;
+        notifyListeners(); // Notify UI about remaining time change
+      } else {
+        timer.cancel();
+        _platinumSteadyBoostTimer = null;
+        platinumSteadyBoostEndTime = null; // Clear end time when timer finishes
+        print("INFO: Steady Boost expired.");
+        notifyListeners(); // Notify UI that boost is no longer active
+      }
+    });
+  }
+
+  void _cancelPlatinumTimers() {
+    _platinumClickFrenzyTimer?.cancel();
+    _platinumSteadyBoostTimer?.cancel();
+    _platinumClickFrenzyTimer = null;
+    _platinumSteadyBoostTimer = null;
+  }
+  // --- END: Helper methods for Platinum Booster Timers ---
 }

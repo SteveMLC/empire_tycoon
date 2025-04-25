@@ -240,4 +240,13 @@ extension UtilityLogic on GameState {
     // No super.dispose() call here
     print("✅ Timers cancelled.");
   }
+
+  // ADDED: Method to clear offline notification state
+  void clearOfflineNotification() {
+    offlineEarningsAwarded = 0.0;
+    offlineDurationForNotification = null;
+    // No notifyListeners here, typically called from UI dismiss action
+    // which will handle its own state update/rebuild.
+    print("Cleared offline notification state.");
+  }
 } 

@@ -52,6 +52,27 @@ extension SerializationLogic on GameState {
       'isExecutiveThemeUnlocked': isExecutiveThemeUnlocked,
       'isPlatinumFrameUnlocked': isPlatinumFrameUnlocked,
 
+      // --- Added: Serialize persistent upgrade flags ---
+      'isPlatinumEfficiencyActive': isPlatinumEfficiencyActive,
+      'isPlatinumPortfolioActive': isPlatinumPortfolioActive,
+      'isPlatinumResilienceActive': isPlatinumResilienceActive,
+      'isPermanentIncomeBoostActive': isPermanentIncomeBoostActive,
+      'isPermanentClickBoostActive': isPermanentClickBoostActive,
+      // --- End Added ---
+
+      // --- Added: Serialize unlockable flags ---
+      'isPlatinumTowerUnlocked': isPlatinumTowerUnlocked,
+      'isPlatinumVentureUnlocked': isPlatinumVentureUnlocked,
+      'isPlatinumStockUnlocked': isPlatinumStockUnlocked,
+      'isPlatinumIslandsUnlocked': isPlatinumIslandsUnlocked,
+      'isPlatinumYachtUnlocked': isPlatinumYachtUnlocked,
+      'isPlatinumIslandUnlocked': isPlatinumIslandUnlocked,
+      // --- End Added ---
+
+      // --- Added: Serialize Yacht Docking Location ---
+      'platinumYachtDockedLocaleId': platinumYachtDockedLocaleId,
+      // --- End Added ---
+
       // Boost Timer Data
       'boostRemainingSeconds': boostRemainingSeconds,
     };
@@ -208,9 +229,16 @@ extension SerializationLogic on GameState {
 
     // Process offline progress if significant time elapsed
     if (secondsElapsed > 10) { // Threshold to avoid processing for brief closes
-      print("💰 Processing offline progress for $secondsElapsed seconds...");
+      print("💰 --- Calling _processOfflineProgress --- 💰");
+      print("  Pre-Offline Money: $money");
+      print("  Pre-Offline incomeMultiplier: $incomeMultiplier");
+      print("  Pre-Offline prestigeMultiplier: $prestigeMultiplier");
+      print("  Pre-Offline isPermanentIncomeBoostActive: $isPermanentIncomeBoostActive");
       _processOfflineProgress(secondsElapsed);
-      print("✅ Offline progress complete.");
+      print("✅ --- Returned from _processOfflineProgress --- ✅");
+      print("  Post-Offline Money: $money"); // Verify if money was updated
+    } else {
+       print("ℹ️ Skipping offline progress calculation (elapsed time <= 10s).");
     }
 
     // Load click boost state
@@ -423,8 +451,36 @@ extension SerializationLogic on GameState {
     isExecutiveThemeUnlocked = json['isExecutiveThemeUnlocked'] ?? false;
     isPlatinumFrameUnlocked = json['isPlatinumFrameUnlocked'] ?? false;
 
+    // --- Added: Load persistent upgrade flags ---
+    isPlatinumEfficiencyActive = json['isPlatinumEfficiencyActive'] ?? false;
+    isPlatinumPortfolioActive = json['isPlatinumPortfolioActive'] ?? false;
+    isPlatinumResilienceActive = json['isPlatinumResilienceActive'] ?? false;
+    isPermanentIncomeBoostActive = json['isPermanentIncomeBoostActive'] ?? false;
+    isPermanentClickBoostActive = json['isPermanentClickBoostActive'] ?? false;
+    // --- End Added ---
+
+    // --- Added: Load unlockable flags ---
+    isPlatinumTowerUnlocked = json['isPlatinumTowerUnlocked'] ?? false;
+    isPlatinumVentureUnlocked = json['isPlatinumVentureUnlocked'] ?? false;
+    isPlatinumStockUnlocked = json['isPlatinumStockUnlocked'] ?? false;
+    isPlatinumIslandsUnlocked = json['isPlatinumIslandsUnlocked'] ?? false;
+    isPlatinumYachtUnlocked = json['isPlatinumYachtUnlocked'] ?? false;
+    isPlatinumIslandUnlocked = json['isPlatinumIslandUnlocked'] ?? false;
+    // --- End Added ---
+
+    // --- Added: Load Yacht Docking Location ---
+    platinumYachtDockedLocaleId = json['platinumYachtDockedLocaleId'] as String?; // Load as nullable String
+    // --- End Added ---
+
     // Load boost timer data
     boostRemainingSeconds = json['boostRemainingSeconds'] ?? 0;
+
+    // --- Added: Re-apply unlocks based on loaded flags ---
+    if (isPlatinumStockUnlocked) {
+      _addPlatinumStockInvestment(); // Ensure stock exists if unlocked
+    }
+    // Business/Real Estate unlocks are handled by the update calls below
+    // --- End Added ---
 
     // Re-evaluate unlocks and achievements after loading everything
     _updateBusinessUnlocks();
@@ -440,62 +496,148 @@ extension SerializationLogic on GameState {
 
   // Process progress while game was closed
   void _processOfflineProgress(int secondsElapsed) {
-    if (secondsElapsed <= 0) return;
+    print("--- START Offline Progress Calculation ---"); // START Logging Block
+    print("Input secondsElapsed: $secondsElapsed");
+
+    if (secondsElapsed <= 0) {
+      print("Offline time <= 0 seconds. Skipping calculation.");
+      print("--- END Offline Progress Calculation (Skipped) ---");
+      return;
+    }
 
     // Cap offline progress to a reasonable limit (e.g., 1 day) to prevent exploits/overload
     final int maxOfflineSeconds = 86400; // 24 hours
     int cappedSeconds = min(secondsElapsed, maxOfflineSeconds);
+    print("Capped offline seconds: $cappedSeconds");
 
     // Declare income variables locally
     double offlineBusinessIncome = 0;
     double offlineRealEstateIncome = 0;
     double offlineDividendIncome = 0;
 
+    // ADDED: Store the duration used for calculation
+    offlineDurationForNotification = Duration(seconds: cappedSeconds);
+    print("Stored offlineDurationForNotification: ${offlineDurationForNotification?.inSeconds}s");
+
     print("💵 Processing offline income for $cappedSeconds seconds (capped from $secondsElapsed)");
-    print("📊 Time away: ${_formatTimeInterval(secondsElapsed)}");
-    print("📊 Income period: ${_formatTimeInterval(cappedSeconds)}");
+    // Removed duplicate logs from previous attempt
+
+    // --- Get relevant persistent boost multipliers ---
+    print("Multiplier Check:");
+    double businessEfficiencyMultiplier = isPlatinumEfficiencyActive ? 1.05 : 1.0;
+    print("  businessEfficiencyMultiplier: $businessEfficiencyMultiplier (isPlatinumEfficiencyActive: $isPlatinumEfficiencyActive)");
+    double portfolioMultiplier = isPlatinumPortfolioActive ? 1.25 : 1.0;
+    print("  portfolioMultiplier: $portfolioMultiplier (isPlatinumPortfolioActive: $isPlatinumPortfolioActive)");
+    double permanentIncomeMultiplier = isPermanentIncomeBoostActive ? 1.05 : 1.0;
+    print("  permanentIncomeMultiplier: $permanentIncomeMultiplier (isPermanentIncomeBoostActive: $isPermanentIncomeBoostActive)");
+    print("  incomeMultiplier (global): $incomeMultiplier");
+    print("  prestigeMultiplier (global): $prestigeMultiplier");
+    // --- End Get relevant boost multipliers ---
 
     // Calculate offline income from businesses
+    print("Business Income Calculation:");
+    double totalBusinessBaseIncomePerCycle = 0;
     for (var business in businesses) {
       if (business.level > 0) {
         int cycles = cappedSeconds ~/ business.incomeInterval;
         if (cycles > 0) {
           bool hasEvent = hasActiveEventForBusiness(business.id); // Check if affected during offline period (simplification)
-          double income = business.getCurrentIncome(affectedByEvent: hasEvent) * cycles * incomeMultiplier * prestigeMultiplier;
-          offlineBusinessIncome += income;
+          double baseIncomePerCycleRaw = business.getCurrentIncome(affectedByEvent: hasEvent);
+          double baseIncomePerCycleWithEfficiency = baseIncomePerCycleRaw * businessEfficiencyMultiplier;
+          totalBusinessBaseIncomePerCycle += baseIncomePerCycleWithEfficiency; // Sum base * efficiency for logging
+          // Apply standard game multipliers
+          double incomeForThisBusiness = baseIncomePerCycleWithEfficiency * cycles * incomeMultiplier * prestigeMultiplier;
+          offlineBusinessIncome += incomeForThisBusiness;
+          print("  Business '${business.name}' (Lvl ${business.level}): Cycles=$cycles, RawBaseIncome=$baseIncomePerCycleRaw, BaseWithEff=$baseIncomePerCycleWithEfficiency, Event=$hasEvent -> Added $incomeForThisBusiness");
         }
       }
     }
+    print("  Total Business Base*Efficiency (sum): $totalBusinessBaseIncomePerCycle");
+    print("  Subtotal Business Offline Income (after global multi): $offlineBusinessIncome");
 
     // Calculate offline income from real estate (continuous per second)
-    double realEstateIncomePerSecond = getRealEstateIncomePerSecond(); // Already considers events
-    if (realEstateIncomePerSecond > 0) {
-      offlineRealEstateIncome = realEstateIncomePerSecond * cappedSeconds * incomeMultiplier * prestigeMultiplier;
+    print("Real Estate Income Calculation:");
+    double realEstateIncomePerSecondRaw = getRealEstateIncomePerSecond(); // Already considers events and platinum foundation
+    print("  Raw RE Income/sec (incl. foundation/events): $realEstateIncomePerSecondRaw");
+    if (realEstateIncomePerSecondRaw > 0) {
+      // Apply standard game multipliers
+      offlineRealEstateIncome = realEstateIncomePerSecondRaw * cappedSeconds * incomeMultiplier * prestigeMultiplier;
+      print("  Subtotal RE Offline Income (after global multi): $offlineRealEstateIncome");
+    } else {
+       print("  Subtotal RE Offline Income: \$0.00 (Raw rate was zero)");
     }
+
 
     // Calculate offline income from dividends
+    print("Dividend Income Calculation:");
     double diversificationBonus = calculateDiversificationBonus();
+    print("  Diversification Bonus: ${diversificationBonus.toStringAsFixed(4)}");
+    double totalDividendBasePerSecond = 0;
     for (var investment in investments) {
       if (investment.owned > 0 && investment.hasDividends()) {
-          offlineDividendIncome += investment.getDividendIncomePerSecond() * investment.owned * cappedSeconds *
-                                    incomeMultiplier * prestigeMultiplier * (1 + diversificationBonus);
+          double baseDividendPerSecondRaw = investment.getDividendIncomePerSecond();
+          // Apply Platinum Portfolio and Diversification bonus first
+          double baseDividendPerSecondWithBonuses = baseDividendPerSecondRaw * portfolioMultiplier * (1 + diversificationBonus);
+          totalDividendBasePerSecond += baseDividendPerSecondWithBonuses * investment.owned; // Sum base * bonuses * owned for logging
+          // Apply standard game multipliers
+          double incomeForThisInvestment = baseDividendPerSecondWithBonuses * investment.owned * cappedSeconds *
+                                    incomeMultiplier * prestigeMultiplier;
+          offlineDividendIncome += incomeForThisInvestment;
+          print("  Investment '${investment.name}' (Owned ${investment.owned}): RawDiv/s=$baseDividendPerSecondRaw, DivWithBonus=$baseDividendPerSecondWithBonuses -> Added $incomeForThisInvestment");
+
       }
     }
+     print("  Total Dividend Base*Bonus*Owned (sum): $totalDividendBasePerSecond");
+     print("  Subtotal Dividend Offline Income (after global multi): $offlineDividendIncome");
 
-    // Add calculated offline income
+    // --- Apply Permanent Income Boost (+5%) to the sub-totals ---
+    print("Applying Permanent Income Boost ($permanentIncomeMultiplier x):");
+    print("  Business Before: $offlineBusinessIncome");
+    offlineBusinessIncome *= permanentIncomeMultiplier;
+    print("  Business After: $offlineBusinessIncome");
+    print("  RE Before: $offlineRealEstateIncome");
+    offlineRealEstateIncome *= permanentIncomeMultiplier;
+    print("  RE After: $offlineRealEstateIncome");
+    print("  Dividends Before: $offlineDividendIncome");
+    offlineDividendIncome *= permanentIncomeMultiplier;
+    print("  Dividends After: $offlineDividendIncome");
+    // --- End Apply Permanent Income Boost ---
+
+    // Calculate total and store for notification *before* adding to main money
     double totalOfflineEarnings = offlineBusinessIncome + offlineRealEstateIncome + offlineDividendIncome;
+    print("Calculated Total Offline Earnings: \$${totalOfflineEarnings.toStringAsFixed(2)}");
+
+    if (totalOfflineEarnings > 0) {
+        offlineEarningsAwarded = totalOfflineEarnings;
+        // Duration is already set above
+        print("📬 Stored \$${offlineEarningsAwarded.toStringAsFixed(2)} and duration ${offlineDurationForNotification?.inSeconds}s in GameState for notification.");
+    } else {
+        offlineEarningsAwarded = 0.0; // Ensure it's zero if no earnings
+        print("📬 No positive offline earnings, setting offlineEarningsAwarded to 0.");
+    }
+
+
+    // Add calculated offline income to game state totals
+    print("Applying offline earnings to GameState:");
+    print("  Money BEFORE: $money");
     money += totalOfflineEarnings;
+    print("  Money AFTER: $money");
+    print("  TotalEarned BEFORE: $totalEarned");
     totalEarned += totalOfflineEarnings;
+    print("  TotalEarned AFTER: $totalEarned");
+    print("  PassiveEarnings (Business) BEFORE: $passiveEarnings");
     passiveEarnings += offlineBusinessIncome; // Attribute business to passive
+    print("  PassiveEarnings AFTER: $passiveEarnings");
+    print("  RealEstateEarnings BEFORE: $realEstateEarnings");
     realEstateEarnings += offlineRealEstateIncome;
+    print("  RealEstateEarnings AFTER: $realEstateEarnings");
+    print("  InvestmentDividendEarnings BEFORE: $investmentDividendEarnings");
     investmentDividendEarnings += offlineDividendIncome;
+    print("  InvestmentDividendEarnings AFTER: $investmentDividendEarnings");
 
-     print("   Offline Business: \$${offlineBusinessIncome.toStringAsFixed(2)}");
-     print("   Offline Real Estate: \$${offlineRealEstateIncome.toStringAsFixed(2)}");
-     print("   Offline Dividends: \$${offlineDividendIncome.toStringAsFixed(2)}");
-     print("   Total Offline Earnings: \$${totalOfflineEarnings.toStringAsFixed(2)}");
+    // Removed duplicate summary logs
 
-    // Note: No need to call notifyListeners here, as it's called at the end of fromJson
+    print("--- END Offline Progress Calculation ---"); // END Logging Block
   }
 
   // Helper to prune old hourly earnings (e.g., older than 7 days)

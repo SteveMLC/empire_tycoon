@@ -237,6 +237,9 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
   }
   
   Widget _buildClickInfoCard(GameState gameState, double progress, double nextClickValue) {
+    // Calculate effective click value including ALL boosts (permanent, ad, platinum)
+    double finalClickValue = _calculateClickValue(gameState);
+
     return Card(
       margin: const EdgeInsets.all(16.0),
       shape: RoundedRectangleBorder(
@@ -265,7 +268,7 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
                   text: TextSpan(
                     children: [
                       TextSpan(
-                        text: '${NumberFormatter.formatCurrency(gameState.clickValue * (gameState.isAdBoostActive ? 10.0 : 1.0))} ',
+                        text: '${NumberFormatter.formatCurrency(finalClickValue)} ',
                         style: const TextStyle(
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
@@ -555,6 +558,8 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
                                   : Colors.blue.shade800,
                             ),
                           ),
+                          if (gameState.isPlatinumBoostActive)
+                            _buildPlatinumBoostStatus(gameState),
                           if (gameState.isAdBoostActive)
                             Padding(
                               padding: const EdgeInsets.only(top: 8.0),
@@ -590,10 +595,64 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
   }
 
   double _calculateClickValue(GameState gameState) {
-    double baseValue = gameState.clickValue * gameState.clickMultiplier;
-    double boostMultiplier = 1.0;
-    if (gameState.isBoostActive) boostMultiplier *= 2.0;
-    if (gameState.isAdBoostActive) boostMultiplier *= 10.0;
-    return baseValue * boostMultiplier;
+    // Calculate base earnings including permanent boost
+    double permanentClickMultiplier = gameState.isPermanentClickBoostActive ? 1.1 : 1.0;
+    double baseValue = gameState.clickValue * permanentClickMultiplier; // Base * Permanent Vault Boost
+
+    // Apply Ad boost multiplier
+    double adBoostMultiplier = gameState.isAdBoostActive ? 10.0 : 1.0;
+
+    // Apply Platinum Boosters multiplier
+    double platinumBoostMultiplier = 1.0;
+    if (gameState.platinumClickFrenzyRemainingSeconds > 0) {
+        platinumBoostMultiplier = 10.0;
+    } else if (gameState.platinumSteadyBoostRemainingSeconds > 0) {
+        platinumBoostMultiplier = 2.0;
+    }
+
+    // Combine all multipliers: Base * Ad * Platinum
+    return baseValue * adBoostMultiplier * platinumBoostMultiplier;
+  }
+
+  Widget _buildPlatinumBoostStatus(GameState gameState) {
+    String boostName = '';
+    String boostMultiplier = '';
+    int remainingSeconds = 0;
+
+    if (gameState.platinumClickFrenzyRemainingSeconds > 0) {
+      boostName = 'Click Frenzy';
+      boostMultiplier = '10x';
+      remainingSeconds = gameState.platinumClickFrenzyRemainingSeconds;
+    } else if (gameState.platinumSteadyBoostRemainingSeconds > 0) {
+      boostName = 'Steady Boost';
+      boostMultiplier = '2x';
+      remainingSeconds = gameState.platinumSteadyBoostRemainingSeconds;
+    } else {
+      return const SizedBox.shrink();
+    }
+
+    final minutes = remainingSeconds ~/ 60;
+    final seconds = remainingSeconds % 60;
+    final timeString = '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 8.0),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+        decoration: BoxDecoration(
+          color: Colors.purple.shade100,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.purple),
+        ),
+        child: Text(
+          '$boostName Active ($boostMultiplier) - $timeString remaining',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.purple.shade800,
+            fontSize: 12,
+          ),
+        ),
+      ),
+    );
   }
 }

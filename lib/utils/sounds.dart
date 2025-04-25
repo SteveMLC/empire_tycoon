@@ -39,6 +39,8 @@ class SoundAssets {
   static const String feedbackError = 'sounds/feedback/error.mp3';
   static const String feedbackSuccess = 'sounds/feedback/success.mp3';
   static const String feedbackNotification = 'sounds/feedback/notification.mp3';
+  
+  static const String platinumPurchase = 'sounds/platinum/platinum_purchase.mp3';
 }
 
 class SoundManager {
@@ -439,6 +441,12 @@ class SoundManager {
   Future<void> playFeedbackNotificationSound() async {
     if (_feedbackSoundsEnabled) {
       await _safelyPlaySound(SoundAssets.feedbackNotification);
+    }
+  }
+  
+  Future<void> playPlatinumPurchaseSound() async {
+    if (_feedbackSoundsEnabled) {
+      await _safelyPlaySound(SoundAssets.platinumPurchase);
     }
   }
   

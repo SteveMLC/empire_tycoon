@@ -27,6 +27,13 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
       ),
     );
 
+    // Calculate displayed total RE income
+    double permanentIncomeBoostMultiplier = gameState.isPermanentIncomeBoostActive ? 1.05 : 1.0;
+    double displayedTotalREIncome = gameState.getRealEstateIncomePerSecond() *
+                                    gameState.incomeMultiplier *
+                                    gameState.prestigeMultiplier *
+                                    permanentIncomeBoostMultiplier;
+
     return Scaffold(
       body: Column(
         children: [
@@ -71,11 +78,7 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
                 const SizedBox(height: 8),
 
                 Text(
-                  '\$${NumberFormatter.formatCompact(
-                    gameState.getRealEstateIncomePerSecond() *
-                    gameState.incomeMultiplier *
-                    gameState.prestigeMultiplier
-                  )}/sec',
+                  '\$${NumberFormatter.formatCompact(displayedTotalREIncome)}/sec',
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 24,
@@ -343,6 +346,61 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
                 ),
               ),
 
+              // ADDED: Platinum Yacht Indicator
+              if (gameState.platinumYachtDockedLocaleId == locale.id)
+                Padding(
+                  padding: const EdgeInsets.only(left: 8.0), // Add some spacing
+                  child: Tooltip(
+                    message: 'Platinum Yacht Docked (+5% Income)',
+                    child: Icon(
+                      Icons.directions_boat, // Yacht icon
+                      size: 20,
+                      color: Colors.blue.shade700, // Example color
+                      shadows: [
+                        Shadow(
+                          color: Colors.blue.withOpacity(0.5),
+                          blurRadius: 3,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              // END ADDED
+
+              if (gameState.platinumFoundationsApplied.containsKey(locale.id))
+                Padding(
+                  padding: const EdgeInsets.only(left: 8.0),
+                  child: Tooltip(
+                    message: 'Platinum Foundation Applied (+5% Income)',
+                    child: Container(
+                      width: 20,
+                      height: 20,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: const Color(0xFFFFD700),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFFFFD700).withOpacity(0.6),
+                            blurRadius: 4,
+                            spreadRadius: 0,
+                          ),
+                        ],
+                      ),
+                      child: const Center(
+                        child: Text(
+                          '✦',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            height: 1.0,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
               const SizedBox(width: 8),
 
               Container(
@@ -372,6 +430,19 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
   }
 
   Widget _buildPropertiesList(RealEstateLocale locale, GameState gameState, ThemeData theme) {
+    // Calculate displayed total RE income
+    double permanentIncomeBoostMultiplier = gameState.isPermanentIncomeBoostActive ? 1.05 : 1.0;
+    double displayedTotalREIncome = gameState.getRealEstateIncomePerSecond() *
+                                    gameState.incomeMultiplier *
+                                    gameState.prestigeMultiplier *
+                                    permanentIncomeBoostMultiplier;
+
+    // Calculate displayed locale income
+    double displayedLocaleIncome = locale.getTotalIncomePerSecond() *
+                                     gameState.incomeMultiplier *
+                                     gameState.prestigeMultiplier *
+                                     permanentIncomeBoostMultiplier;
+
     return ListView(
       key: ValueKey<String>(locale.id),
       padding: const EdgeInsets.only(bottom: 24),
@@ -483,11 +554,7 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            '${NumberFormatter.formatCompact(
-                              locale.getTotalIncomePerSecond() *
-                              gameState.incomeMultiplier *
-                              gameState.prestigeMultiplier
-                            )}/sec',
+                            '\$${NumberFormatter.formatCompact(displayedLocaleIncome)}/sec',
                             style: const TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.bold,
@@ -657,6 +724,14 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
     bool canAffordUpgrade = hasUpgrade && gameState.money >= nextUpgrade.cost;
     bool allUpgradesPurchased = isOwned && property.allUpgradesPurchased;
 
+    // Calculate displayed property income
+    double permanentIncomeBoostMultiplier = gameState.isPermanentIncomeBoostActive ? 1.05 : 1.0;
+    double baseIncome = isOwned ? property.getTotalIncomePerSecond() : property.cashFlowPerSecond;
+    double displayedIncome = baseIncome *
+                               gameState.incomeMultiplier *
+                               gameState.prestigeMultiplier *
+                               permanentIncomeBoostMultiplier;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -774,17 +849,7 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      isOwned
-                        ? '${NumberFormatter.formatCompact(
-                            property.getTotalIncomePerSecond() *
-                            gameState.incomeMultiplier *
-                            gameState.prestigeMultiplier
-                          )}/sec'
-                        : '${NumberFormatter.formatCompact(
-                            property.cashFlowPerSecond *
-                            gameState.incomeMultiplier *
-                            gameState.prestigeMultiplier
-                          )}/sec',
+                      '\$${NumberFormatter.formatCompact(displayedIncome)}/sec',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,

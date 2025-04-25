@@ -167,15 +167,25 @@ class BusinessItem extends StatelessWidget {
   Widget _buildBusinessStats() {
     return Consumer<GameState>(
       builder: (context, gameState, child) {
-        // Calculate business income with all multipliers applied
-        double incomeWithMultipliers = business.getCurrentIncome() * gameState.incomeMultiplier * gameState.prestigeMultiplier;
         // Check if this business is affected by an active event
         bool hasActiveEvent = gameState.hasActiveEventForBusiness(business.id);
         
-        // Calculate income with event effects (if any)
-        double incomePerSecondWithMultipliers = business.getIncomePerSecond(affectedByEvent: hasActiveEvent) * 
-                                              gameState.incomeMultiplier * 
-                                              gameState.prestigeMultiplier;
+        // --- Calculate Effective Income for Display ---
+        // Start with base income, considering event effects
+        double baseIncome = business.getIncomePerSecond(affectedByEvent: hasActiveEvent);
+
+        // Apply permanent Platinum boosts
+        double businessEfficiencyMultiplier = gameState.isPlatinumEfficiencyActive ? 1.05 : 1.0;
+        double permanentIncomeBoostMultiplier = gameState.isPermanentIncomeBoostActive ? 1.05 : 1.0;
+
+        // Calculate the final displayed income
+        double displayedIncomePerSecond = baseIncome * 
+                                          businessEfficiencyMultiplier * 
+                                          gameState.incomeMultiplier * 
+                                          gameState.prestigeMultiplier * 
+                                          permanentIncomeBoostMultiplier;
+        // Note: Temporary boosts like Income Surge are not included in this static display
+        // --- End Calculation ---
         
         return Column(
           children: [
@@ -187,7 +197,7 @@ class BusinessItem extends StatelessWidget {
                 Row(
                   children: [
                     Text(
-                      '${NumberFormatter.formatCurrency(incomePerSecondWithMultipliers)}/s',
+                      '${NumberFormatter.formatCurrency(displayedIncomePerSecond)}/s',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         color: hasActiveEvent ? Colors.red : null,
