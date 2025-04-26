@@ -216,6 +216,10 @@ class GameState with ChangeNotifier {
   DateTime? lastEventResolvedTime;
   List<GameEvent> resolvedEvents = []; // History of resolved events (limited)
 
+  // Add near the other theme-related variables like isExecutiveThemeUnlocked
+  bool isExecutiveStatsThemeUnlocked = false;  // Whether the user has unlocked the theme
+  String? selectedStatsTheme = null;  // The currently selected theme for stats screen
+
   bool hasActiveEventForBusiness(String businessId) {
     for (var event in activeEvents) {
       if (!event.isResolved && event.affectedBusinessIds.contains(businessId)) {
@@ -1326,6 +1330,12 @@ class GameState with ChangeNotifier {
              notifyListeners();
              break;
         // --- END: Platinum Click Boosters ---
+        case 'unlock_stats_theme_1':
+            print("DEBUG: Before unlock: isExecutiveStatsThemeUnlocked=$isExecutiveStatsThemeUnlocked");
+            isExecutiveStatsThemeUnlocked = true;
+            print("DEBUG: After unlock: isExecutiveStatsThemeUnlocked=$isExecutiveStatsThemeUnlocked");
+            print("Unlocked Executive Stats Theme. User can now select it as an option.");
+            break;
         default:
             print("WARNING: Unknown Platinum Vault item ID: $itemId");
     }
@@ -1549,5 +1559,17 @@ class GameState with ChangeNotifier {
   void dismissPremiumPurchaseNotification() {
     showPremiumPurchaseNotification = false;
     notifyListeners();
+  }
+
+  // Function to select a stats theme (add this function)
+  void selectStatsTheme(String? theme) {
+    print("DEBUG: Selecting stats theme: $theme, Current unlock status: isExecutiveStatsThemeUnlocked=$isExecutiveStatsThemeUnlocked");
+    if (theme == null || theme == 'default' || (theme == 'executive' && isExecutiveStatsThemeUnlocked)) {
+      selectedStatsTheme = theme;
+      notifyListeners();
+      print("Stats theme changed to: ${theme ?? 'default'}");
+    } else {
+      print("Cannot select theme '$theme': Not unlocked or invalid theme.");
+    }
   }
 }

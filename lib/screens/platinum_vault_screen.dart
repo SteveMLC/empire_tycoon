@@ -336,6 +336,12 @@ class _PlatinumVaultScreenState extends State<PlatinumVaultScreen> with SingleTi
               maxPurchases = 5; // Assign value here
               // This item doesn't have a simple active/cooldown state at the item level
               break;
+            case 'unlock_stats_theme_1':
+              print("DEBUG VAULT CARD: Item 'unlock_stats_theme_1' - isExecutiveStatsThemeUnlocked=${gameState.isExecutiveStatsThemeUnlocked}, selectedStatsTheme=${gameState.selectedStatsTheme}");
+              // Consider the item "active" if it's unlocked, even if not currently selected
+              isActive = gameState.isExecutiveStatsThemeUnlocked;
+              activeEndTime = null; // Stats theme is permanent, no end time
+              break;
             // Add other items if they gain timed states later
           }
 
@@ -428,6 +434,14 @@ class _PlatinumVaultScreenState extends State<PlatinumVaultScreen> with SingleTi
             return;
         }
         _showYachtDockingDialog(context, gameState, item);
+      } else if (item.id == 'unlock_stats_theme_1') {
+        // --- Special handling for Stats Theme ---
+        bool success = gameState.spendPlatinumPoints(item.id, item.cost);
+        if (success) {
+          _showStatsThemeUnlockDialog(context, gameState);
+        } else {
+          _showPurchaseFeedback(context, success, item, gameState);
+        }
       } else {
         // --- Default purchase logic for other items ---
         bool success = gameState.spendPlatinumPoints(item.id, item.cost);
@@ -531,7 +545,7 @@ class _PlatinumVaultScreenState extends State<PlatinumVaultScreen> with SingleTi
   }
 
   // Show SnackBar feedback after purchase attempt
-  void _showPurchaseFeedback(BuildContext context, bool success, VaultItem item, GameState gameState, {String? selectedLocaleName}) {
+  void _showPurchaseFeedback(BuildContext context, bool success, VaultItem item, GameState gameState, {String? selectedLocaleName, String? extraMessage}) {
       if (success) {
           try {
             final gameService = Provider.of<GameService>(context, listen: false);
@@ -544,6 +558,9 @@ class _PlatinumVaultScreenState extends State<PlatinumVaultScreen> with SingleTi
               message += ' Applied to $selectedLocaleName.';
           } else if (item.id == 'platinum_yacht' && selectedLocaleName != null) {
               message += ' Docked at $selectedLocaleName.';
+          }
+          if (extraMessage != null) {
+              message += ' $extraMessage';
           }
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -596,6 +613,79 @@ class _PlatinumVaultScreenState extends State<PlatinumVaultScreen> with SingleTi
       }
   }
 
+  // Add the method to show the theme unlock dialog
+  void _showStatsThemeUnlockDialog(BuildContext context, GameState gameState) {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) => AlertDialog(
+        title: const Text('Executive Stats Theme Unlocked!', 
+          style: TextStyle(color: Color(0xFFE5C100)),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'You\'ve unlocked the premium Executive Stats Theme!',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            const Text('This exclusive theme gives your Stats screen a professional, executive look.'),
+            const SizedBox(height: 16),
+            const Text('Would you like to apply this theme now?'),
+          ],
+        ),
+        backgroundColor: const Color(0xFF2D2D3A),
+        contentTextStyle: const TextStyle(color: Colors.white),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: Color(0xFFE5C100), width: 1.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              // Don't activate theme yet
+              Navigator.of(dialogContext).pop();
+              _showPurchaseFeedback(context, true, VaultItem(
+                id: 'unlock_stats_theme_1',
+                name: 'Executive Stats Theme',
+                description: 'Unlock a sleek executive theme for the Stats screen.',
+                category: VaultItemCategory.unlockables,
+                type: VaultItemType.oneTime,
+                cost: 100,
+                iconData: Icons.style,
+              ), gameState);
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.white70,
+            ),
+            child: const Text('Maybe Later'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              // Activate the theme
+              gameState.selectStatsTheme('executive');
+              Navigator.of(dialogContext).pop();
+              _showPurchaseFeedback(context, true, VaultItem(
+                id: 'unlock_stats_theme_1',
+                name: 'Executive Stats Theme',
+                description: 'Unlock a sleek executive theme for the Stats screen.',
+                category: VaultItemCategory.unlockables,
+                type: VaultItemType.oneTime,
+                cost: 100,
+                iconData: Icons.style,
+              ), gameState, extraMessage: 'Theme activated!');
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFE5C100),
+              foregroundColor: Colors.black,
+            ),
+            child: const Text('Apply Now'),
+          ),
+        ],
+      ),
+    );
+  }
 
   // Placeholder for empty categories or initial state
   Widget _buildPlaceholderTab(String message) {

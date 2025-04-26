@@ -8,6 +8,7 @@ import '../utils/number_formatter.dart';
 import '../utils/time_utils.dart';
 import '../utils/sounds.dart';
 import '../widgets/achievements_section.dart';
+import '../themes/stats_themes.dart';
 
 class StatsScreen extends StatefulWidget {
   const StatsScreen({Key? key}) : super(key: key);
@@ -34,35 +35,55 @@ class _StatsScreenState extends State<StatsScreen> {
   Widget build(BuildContext context) {
     return Consumer<GameState>(
       builder: (context, gameState, child) {
-        return Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: SingleChildScrollView(
+        // Get the appropriate theme based on user selection and unlock status
+        final StatsTheme theme = getStatsTheme(
+          gameState.selectedStatsTheme, 
+          gameState.isExecutiveStatsThemeUnlocked
+        );
+        
+        return Container(
+          color: theme.backgroundColor,
+          child: Padding(
+            padding: theme.padding,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildOverviewCard(gameState),
+                // Show the theme toggle button when executive theme is unlocked
+                if (gameState.isExecutiveStatsThemeUnlocked)
+                  _buildThemeToggle(context, gameState, theme),
+                
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildOverviewCard(gameState, theme),
 
-                const SizedBox(height: 20),
+                        const SizedBox(height: 20),
 
-                _buildEarningsBreakdown(gameState),
+                        _buildEarningsBreakdown(gameState, theme),
 
-                const SizedBox(height: 20),
+                        const SizedBox(height: 20),
 
-                _buildAssetsBreakdown(gameState),
+                        _buildAssetsBreakdown(gameState, theme),
 
-                const SizedBox(height: 20),
+                        const SizedBox(height: 20),
 
-                _buildHourlyEarningsChart(gameState),
+                        _buildHourlyEarningsChart(gameState, theme),
 
-                const SizedBox(height: 20),
+                        const SizedBox(height: 20),
 
-                _buildNetWorthChart(gameState),
+                        _buildNetWorthChart(gameState, theme),
 
-                const SizedBox(height: 20),
+                        const SizedBox(height: 20),
 
-                const AchievementsSection(),
+                        AchievementsSection(theme: theme),
 
-                const SizedBox(height: 50),
+                        const SizedBox(height: 50),
+                      ],
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
@@ -71,30 +92,311 @@ class _StatsScreenState extends State<StatsScreen> {
     );
   }
 
-  Widget _buildOverviewCard(GameState gameState) {
+  Widget _buildThemeToggle(BuildContext context, GameState gameState, StatsTheme currentTheme) {
+    final bool isExecutive = currentTheme.id == 'executive';
+    
+    return Align(
+      alignment: Alignment.topRight,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+        margin: const EdgeInsets.only(bottom: 12.0),
+        decoration: BoxDecoration(
+          color: isExecutive 
+              ? const Color(0xFF1E2430).withOpacity(0.8) 
+              : Colors.white.withOpacity(0.9),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isExecutive 
+                ? const Color(0xFFE5B100).withOpacity(0.6) 
+                : Colors.blue.shade300,
+            width: 1.5,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: isExecutive 
+                  ? Colors.black.withOpacity(0.2)
+                  : Colors.black.withOpacity(0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(20),
+            onTap: () {
+              _showThemeSelectionDialog(context, gameState, currentTheme);
+            },
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    isExecutive ? Icons.workspace_premium : Icons.format_paint,
+                    color: isExecutive 
+                        ? const Color(0xFFE5B100)
+                        : Colors.blue,
+                    size: 18,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    isExecutive ? 'Executive' : 'Default',
+                    style: TextStyle(
+                      color: isExecutive 
+                          ? Colors.white
+                          : Colors.black87,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+                  const SizedBox(width: 2),
+                  Icon(
+                    Icons.arrow_drop_down,
+                    color: isExecutive 
+                        ? Colors.white.withOpacity(0.7)
+                        : Colors.black54,
+                    size: 16,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showThemeSelectionDialog(BuildContext context, GameState gameState, StatsTheme currentTheme) {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: Text(
+            'Select Stats Theme',
+            style: TextStyle(
+              color: currentTheme.id == 'executive' ? const Color(0xFFE5C100) : Colors.blue,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Choose a visual theme for your statistics screen:'),
+              const SizedBox(height: 16),
+              
+              // Default theme option
+              _buildThemeOptionCard(
+                context,
+                'Default',
+                'Standard clean look',
+                isSelected: gameState.selectedStatsTheme == null || gameState.selectedStatsTheme == 'default',
+                onTap: () {
+                  gameState.selectStatsTheme('default');
+                  Navigator.of(dialogContext).pop();
+                },
+                icon: Icons.auto_awesome_mosaic,
+                theme: currentTheme,
+              ),
+              
+              const SizedBox(height: 12),
+              
+              // Executive theme option
+              _buildThemeOptionCard(
+                context,
+                'Executive',
+                'Premium dark theme with gold accents',
+                isSelected: gameState.selectedStatsTheme == 'executive',
+                onTap: () {
+                  if (gameState.isExecutiveStatsThemeUnlocked) {
+                    gameState.selectStatsTheme('executive');
+                    Navigator.of(dialogContext).pop();
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('This theme is locked. Purchase it from the Platinum Vault.'),
+                        backgroundColor: Colors.orange,
+                      ),
+                    );
+                    Navigator.of(dialogContext).pop();
+                  }
+                },
+                icon: Icons.star,
+                isLocked: !gameState.isExecutiveStatsThemeUnlocked,
+                theme: currentTheme,
+              ),
+            ],
+          ),
+          backgroundColor: currentTheme.id == 'executive' ? const Color(0xFF2D2D3A) : Colors.white,
+          contentTextStyle: TextStyle(
+            color: currentTheme.id == 'executive' ? Colors.white : Colors.black87
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(
+              color: currentTheme.id == 'executive' ? const Color(0xFFE5C100) : Colors.blue.shade200,
+              width: 1.5,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              style: TextButton.styleFrom(
+                foregroundColor: currentTheme.id == 'executive' ? Colors.white70 : Colors.blue,
+              ),
+              child: const Text('Close'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildThemeOptionCard(
+    BuildContext context, 
+    String name, 
+    String description,
+    {required bool isSelected, 
+    required VoidCallback onTap,
+    required IconData icon,
+    bool isLocked = false,
+    required StatsTheme theme}
+  ) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: isSelected 
+              ? (theme.id == 'executive' ? const Color(0xFF3E3E4E) : Colors.blue.withOpacity(0.1))
+              : (theme.id == 'executive' ? const Color(0xFF232330) : Colors.grey.withOpacity(0.1)),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isSelected 
+                ? (theme.id == 'executive' ? const Color(0xFFE5C100) : Colors.blue)
+                : (theme.id == 'executive' ? const Color(0xFF3D3D4D) : Colors.grey.shade300),
+            width: 1.5,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: isSelected 
+                    ? (theme.id == 'executive' ? const Color(0xFFE5C100) : Colors.blue)
+                    : (theme.id == 'executive' ? const Color(0xFF3D3D4D) : Colors.grey.shade300),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                color: isSelected 
+                    ? (theme.id == 'executive' ? Colors.black : Colors.white)
+                    : (theme.id == 'executive' ? Colors.white : Colors.black54),
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        name,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: theme.id == 'executive' ? Colors.white : Colors.black87,
+                        ),
+                      ),
+                      if (isLocked) ...[
+                        const SizedBox(width: 8),
+                        Icon(
+                          Icons.lock,
+                          size: 14,
+                          color: theme.id == 'executive' ? Colors.grey : Colors.grey,
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    description,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: theme.id == 'executive' ? Colors.grey.shade300 : Colors.grey.shade700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (isSelected)
+              Icon(
+                Icons.check_circle,
+                color: theme.id == 'executive' ? const Color(0xFFE5C100) : Colors.blue,
+                size: 20,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOverviewCard(GameState gameState, StatsTheme theme) {
     double netWorth = gameState.calculateNetWorth();
     double minNetWorthRequired = gameState.getMinimumNetWorthForReincorporation();
+    final bool isExecutive = theme.id == 'executive';
 
     // Can reincorporate only if there are uses available AND we meet the net worth requirement
     bool canReincorporate = gameState.reincorporationUsesAvailable > 0 && netWorth >= minNetWorthRequired;
 
     return Card(
+      elevation: theme.elevation,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(theme.borderRadius),
+        side: BorderSide(
+          color: isExecutive 
+              ? const Color(0xFF2A3142)
+              : theme.cardBorderColor,
+        ),
+      ),
+      color: theme.cardBackgroundColor,
+      shadowColor: theme.cardShadow?.color ?? Colors.black26,
+      margin: EdgeInsets.zero,
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Overview',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+            Row(
+              children: [
+                Icon(
+                  Icons.analytics,
+                  color: theme.titleColor,
+                  size: 22,
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  'Overview',
+                  style: theme.cardTitleStyle,
+                ),
+              ],
             ),
 
-            const SizedBox(height: 16),
+            Divider(
+              height: 30,
+              thickness: 1,
+              color: isExecutive
+                  ? const Color(0xFF2A3142)
+                  : Colors.grey.withOpacity(0.2),
+            ),
 
-            _buildStatRow('Net Worth', NumberFormatter.formatCurrency(netWorth)),
+            _buildStatRow('Net Worth', NumberFormatter.formatCurrency(netWorth), theme),
 
             if (gameState.incomeMultiplier > 1.0)
               Builder(builder: (context) {
@@ -103,49 +405,91 @@ class _StatsScreenState extends State<StatsScreen> {
                 if (gameState.networkWorth > 0) {
                   currentPrestigeLevel = (log(gameState.networkWorth * 100 + 1) / log(10)).floor();
                 }
-                return _buildStatRow('Prestige Multiplier', '${gameState.incomeMultiplier.toStringAsFixed(2)}x (1.2 compounded ${currentPrestigeLevel}x)');
+                return _buildStatRow('Prestige Multiplier', '${gameState.incomeMultiplier.toStringAsFixed(2)}x (1.2 compounded ${currentPrestigeLevel}x)', theme);
               }),
 
             // Show network worth as lifetime stat (doesn't reset with reincorporation)
-            _buildStatRow('Lifetime Network Worth', NumberFormatter.formatCurrency(gameState.networkWorth * 100000000 + gameState.calculateNetWorth())),
+            _buildStatRow('Lifetime Network Worth', NumberFormatter.formatCurrency(gameState.networkWorth * 100000000 + gameState.calculateNetWorth()), theme),
 
-            _buildStatRow('Total Money Earned', NumberFormatter.formatCurrency(gameState.totalEarned)),
-            _buildStatRow('Lifetime Taps', gameState.lifetimeTaps.toString()),
-            _buildStatRow('Time Playing', _calculateTimePlayed(gameState)),
+            _buildStatRow('Total Money Earned', NumberFormatter.formatCurrency(gameState.totalEarned), theme),
+            _buildStatRow('Lifetime Taps', gameState.lifetimeTaps.toString(), theme),
+            _buildStatRow('Time Playing', _calculateTimePlayed(gameState), theme),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
 
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: canReincorporate
-                        ? () => _showReincorporateConfirmation(context, gameState)
-                        : null,
-                    icon: const Icon(Icons.refresh),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.indigo,
-                      foregroundColor: Colors.white,
-                      disabledBackgroundColor: Colors.grey[300],
-                      disabledForegroundColor: Colors.grey[600],
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+            Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                color: isExecutive 
+                    ? const Color(0xFF242C3B)
+                    : Colors.blue.withOpacity(0.05),
+              ),
+              padding: const EdgeInsets.all(14),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: canReincorporate
+                          ? () => _showReincorporateConfirmation(context, gameState)
+                          : null,
+                      icon: Icon(
+                        Icons.refresh,
+                        color: canReincorporate ? Colors.white : Colors.grey[400],
+                        size: 18,
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: isExecutive 
+                            ? const Color(0xFF1A56DB) // Rich blue for executive theme
+                            : Colors.indigo,
+                        foregroundColor: Colors.white,
+                        disabledBackgroundColor: isExecutive 
+                            ? const Color(0xFF1E2430) 
+                            : Colors.grey[300],
+                        disabledForegroundColor: isExecutive 
+                            ? Colors.grey[600] 
+                            : Colors.grey[600],
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        elevation: isExecutive ? 2 : 1,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      label: Text(
+                          gameState.reincorporationUsesAvailable > 0
+                            ? 'Re-Incorporate (${gameState.reincorporationUsesAvailable} use${gameState.reincorporationUsesAvailable > 1 ? 's' : ''} available)'
+                            : gameState.totalReincorporations >= 9
+                              ? 'Re-Incorporate (Maxed Out)'
+                              : netWorth >= minNetWorthRequired
+                                ? 'Re-Incorporate (No uses available)'
+                                : 'Re-Incorporate (${NumberFormatter.formatCurrency(minNetWorthRequired)} needed)'),
                     ),
-                    label: Text(
-                        gameState.reincorporationUsesAvailable > 0
-                          ? 'Re-Incorporate (${gameState.reincorporationUsesAvailable} use${gameState.reincorporationUsesAvailable > 1 ? 's' : ''} available)'
-                          : gameState.totalReincorporations >= 9
-                            ? 'Re-Incorporate (Maxed Out)'
-                            : netWorth >= minNetWorthRequired
-                              ? 'Re-Incorporate (No uses available)'
-                              : 'Re-Incorporate (${NumberFormatter.formatCurrency(minNetWorthRequired)} needed)'),
                   ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.info_outline, color: Colors.blue),
-                  onPressed: () => _showReincorporateInfo(context),
-                  tooltip: 'About Re-Incorporation',
-                ),
-              ],
+                  const SizedBox(width: 8),
+                  Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: isExecutive 
+                          ? const Color(0xFF1E2430) 
+                          : Colors.white,
+                      border: Border.all(
+                        color: isExecutive
+                            ? theme.cardBorderColor
+                            : Colors.blue.shade100,
+                        width: 1,
+                      ),
+                    ),
+                    child: IconButton(
+                      icon: Icon(
+                        Icons.info_outline,
+                        color: isExecutive ? Colors.blue.shade300 : Colors.blue,
+                        size: 22,
+                      ),
+                      onPressed: () => _showReincorporateInfo(context),
+                      tooltip: 'About Re-Incorporation',
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -153,7 +497,8 @@ class _StatsScreenState extends State<StatsScreen> {
     );
   }
 
-  Widget _buildEarningsBreakdown(GameState gameState) {
+  Widget _buildEarningsBreakdown(GameState gameState, StatsTheme theme) {
+    final bool isExecutive = theme.id == 'executive';
     double totalEarned = gameState.manualEarnings +
                          gameState.passiveEarnings +
                          gameState.investmentEarnings +
@@ -166,73 +511,114 @@ class _StatsScreenState extends State<StatsScreen> {
     double realEstatePercent = totalEarned > 0 ? (gameState.realEstateEarnings / totalEarned) * 100 : 0;
 
     return Card(
+      elevation: theme.elevation,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(theme.borderRadius),
+        side: BorderSide(
+          color: isExecutive 
+              ? const Color(0xFF2A3142)
+              : theme.cardBorderColor,
+        ),
+      ),
+      color: theme.cardBackgroundColor,
+      shadowColor: theme.cardShadow?.color ?? Colors.black26,
+      margin: EdgeInsets.zero,
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Earnings Breakdown',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+            Row(
+              children: [
+                Icon(
+                  Icons.bar_chart,
+                  color: theme.titleColor,
+                  size: 22,
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  'Earnings Breakdown',
+                  style: theme.cardTitleStyle,
+                ),
+              ],
+            ),
+
+            Divider(
+              height: 30,
+              thickness: 1,
+              color: isExecutive
+                  ? const Color(0xFF2A3142)
+                  : Colors.grey.withOpacity(0.2),
+            ),
+
+            // Enhanced earnings breakdown with icons
+            _buildStatRowWithIcon(
+              'Hustle Earnings',
+              '${NumberFormatter.formatCurrency(gameState.manualEarnings)} (${manualPercent.toStringAsFixed(1)}%)', 
+              Icons.touch_app,
+              theme.primaryChartColor,
+              theme,
+            ),
+            
+            _buildStatRowWithIcon(
+              'Business Earnings',
+              '${NumberFormatter.formatCurrency(gameState.passiveEarnings)} (${passivePercent.toStringAsFixed(1)}%)', 
+              Icons.business,
+              theme.secondaryChartColor,
+              theme,
+            ),
+            
+            _buildStatRowWithIcon(
+              'Investment Earnings',
+              '${NumberFormatter.formatCurrency(gameState.investmentEarnings + gameState.investmentDividendEarnings)} (${investmentPercent.toStringAsFixed(1)}%)', 
+              Icons.trending_up,
+              theme.tertiaryChartColor,
+              theme,
+            ),
+            
+            _buildStatRowWithIcon(
+              'Real Estate Earnings',
+              '${NumberFormatter.formatCurrency(gameState.realEstateEarnings)} (${realEstatePercent.toStringAsFixed(1)}%)', 
+              Icons.home,
+              theme.quaternaryChartColor,
+              theme,
             ),
 
             const SizedBox(height: 16),
 
-            _buildStatRow('Hustle Earnings',
-                '${NumberFormatter.formatCurrency(gameState.manualEarnings)} (${manualPercent.toStringAsFixed(1)}%)'),
-            _buildStatRow('Business Earnings',
-                '${NumberFormatter.formatCurrency(gameState.passiveEarnings)} (${passivePercent.toStringAsFixed(1)}%)'),
-            _buildStatRow('Investment Earnings',
-                '${NumberFormatter.formatCurrency(gameState.investmentEarnings + gameState.investmentDividendEarnings)} (${investmentPercent.toStringAsFixed(1)}%)'),
-            _buildStatRow('Real Estate Earnings',
-                '${NumberFormatter.formatCurrency(gameState.realEstateEarnings)} (${realEstatePercent.toStringAsFixed(1)}%)'),
-
-            const SizedBox(height: 10),
-
-            Container(
-              height: 20,
-              clipBehavior: Clip.antiAlias,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(10),
-                color: Colors.grey[200],
-              ),
-              child: Row(
-                children: [
-                  Flexible(
-                    flex: (manualPercent * 100).round(),
-                    child: Container(color: Colors.blue),
-                  ),
-                  Flexible(
-                    flex: (passivePercent * 100).round(),
-                    child: Container(color: Colors.green),
-                  ),
-                  Flexible(
-                    flex: (investmentPercent * 100).round(),
-                    child: Container(color: Colors.orange),
-                  ),
-                  Flexible(
-                    flex: (realEstatePercent * 100).round(),
-                    child: Container(color: Colors.red),
-                  ),
-                ],
+            // Enhanced bar chart visualization
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: Container(
+                height: 24,
+                decoration: BoxDecoration(
+                  color: isExecutive
+                      ? const Color(0xFF242C3B)
+                      : theme.backgroundColor.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  children: [
+                    _buildBreakdownSegment(manualPercent, theme.primaryChartColor, isExecutive),
+                    _buildBreakdownSegment(passivePercent, theme.secondaryChartColor, isExecutive),
+                    _buildBreakdownSegment(investmentPercent, theme.tertiaryChartColor, isExecutive),
+                    _buildBreakdownSegment(realEstatePercent, theme.quaternaryChartColor, isExecutive),
+                  ],
+                ),
               ),
             ),
 
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
 
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+            // Legend with better styling
+            Wrap(
+              spacing: 16,
+              runSpacing: 8,
               children: [
-                _buildLegendItem(Colors.blue, 'Hustle'),
-                const SizedBox(width: 10),
-                _buildLegendItem(Colors.green, 'Business'),
-                const SizedBox(width: 10),
-                _buildLegendItem(Colors.orange, 'Investment'),
-                const SizedBox(width: 10),
-                _buildLegendItem(Colors.red, 'Real Estate'),
+                _buildEnhancedLegendItem(theme.primaryChartColor, 'Hustle', theme),
+                _buildEnhancedLegendItem(theme.secondaryChartColor, 'Business', theme),
+                _buildEnhancedLegendItem(theme.tertiaryChartColor, 'Investment', theme),
+                _buildEnhancedLegendItem(theme.quaternaryChartColor, 'Real Estate', theme),
               ],
             ),
           ],
@@ -240,8 +626,122 @@ class _StatsScreenState extends State<StatsScreen> {
       ),
     );
   }
+  
+  Widget _buildBreakdownSegment(double percent, Color color, bool isExecutive) {
+    // Handle zero percentage gracefully
+    if (percent <= 0) return const SizedBox.shrink();
+    
+    return Flexible(
+      flex: max((percent * 100).round(), 1), // Ensure at least 1 flex for visibility
+      child: Container(
+        decoration: BoxDecoration(
+          color: color,
+          boxShadow: isExecutive ? [
+            BoxShadow(
+              color: color.withOpacity(0.3),
+              blurRadius: 1,
+              offset: const Offset(0, 1),
+            ),
+          ] : null,
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildStatRowWithIcon(String label, String value, IconData icon, Color iconColor, StatsTheme theme) {
+    final bool isExecutive = theme.id == 'executive';
+    
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: Row(
+        children: [
+          Container(
+            width: 30,
+            height: 30,
+            decoration: BoxDecoration(
+              color: isExecutive 
+                  ? iconColor.withOpacity(0.1)
+                  : theme.backgroundColor.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Center(
+              child: Icon(
+                icon,
+                color: iconColor,
+                size: 16,
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              label,
+              style: theme.statLabelStyle,
+            ),
+          ),
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            decoration: BoxDecoration(
+              color: isExecutive 
+                  ? const Color(0xFF242C3B) 
+                  : Colors.blue.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: isExecutive 
+                    ? theme.cardBorderColor 
+                    : Colors.transparent,
+                width: 1,
+              ),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            child: Text(
+              value,
+              style: theme.statValueStyle.copyWith(
+                letterSpacing: 0.3,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildEnhancedLegendItem(Color color, String label, StatsTheme theme) {
+    final bool isExecutive = theme.id == 'executive';
+    
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(2),
+            boxShadow: isExecutive ? [
+              BoxShadow(
+                color: color.withOpacity(0.3),
+                blurRadius: 2,
+                offset: const Offset(0, 1),
+              ),
+            ] : null,
+          ),
+        ),
+        const SizedBox(width: 6),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: isExecutive ? FontWeight.w500 : FontWeight.normal,
+            color: theme.textColor.withOpacity(isExecutive ? 0.9 : 0.7),
+          ),
+        ),
+      ],
+    );
+  }
 
-  Widget _buildAssetsBreakdown(GameState gameState) {
+  Widget _buildAssetsBreakdown(GameState gameState, StatsTheme theme) {
+    final bool isExecutive = theme.id == 'executive';
     double cash = gameState.money;
     double businessValue = gameState.businesses.fold(0.0, (sum, business) => sum + business.getCurrentValue());
     double investmentValue = gameState.investments.fold(0.0, (sum, investment) => sum + investment.getCurrentValue());
@@ -260,73 +760,114 @@ class _StatsScreenState extends State<StatsScreen> {
     double realEstatePercent = totalAssets > 0 ? (realEstateValue / totalAssets) * 100 : 0;
 
     return Card(
+      elevation: theme.elevation,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(theme.borderRadius),
+        side: BorderSide(
+          color: isExecutive 
+              ? const Color(0xFF2A3142)
+              : theme.cardBorderColor,
+        ),
+      ),
+      color: theme.cardBackgroundColor,
+      shadowColor: theme.cardShadow?.color ?? Colors.black26,
+      margin: EdgeInsets.zero,
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Assets Breakdown',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+            Row(
+              children: [
+                Icon(
+                  Icons.account_balance_wallet,
+                  color: theme.titleColor,
+                  size: 22,
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  'Assets Breakdown',
+                  style: theme.cardTitleStyle,
+                ),
+              ],
+            ),
+
+            Divider(
+              height: 30,
+              thickness: 1,
+              color: isExecutive
+                  ? const Color(0xFF2A3142)
+                  : Colors.grey.withOpacity(0.2),
+            ),
+
+            // Enhanced assets breakdown with icons
+            _buildStatRowWithIcon(
+              'Cash',
+              '${NumberFormatter.formatCurrency(cash)} (${cashPercent.toStringAsFixed(1)}%)', 
+              Icons.attach_money,
+              theme.primaryChartColor,
+              theme,
+            ),
+            
+            _buildStatRowWithIcon(
+              'Business Value',
+              '${NumberFormatter.formatCurrency(businessValue)} (${businessPercent.toStringAsFixed(1)}%)', 
+              Icons.store,
+              theme.secondaryChartColor,
+              theme,
+            ),
+            
+            _buildStatRowWithIcon(
+              'Investment Value',
+              '${NumberFormatter.formatCurrency(investmentValue)} (${investmentPercent.toStringAsFixed(1)}%)', 
+              Icons.insert_chart,
+              theme.tertiaryChartColor,
+              theme,
+            ),
+            
+            _buildStatRowWithIcon(
+              'Real Estate Value',
+              '${NumberFormatter.formatCurrency(realEstateValue)} (${realEstatePercent.toStringAsFixed(1)}%)', 
+              Icons.apartment,
+              theme.quaternaryChartColor,
+              theme,
             ),
 
             const SizedBox(height: 16),
 
-            _buildStatRow('Cash',
-                '${NumberFormatter.formatCurrency(cash)} (${cashPercent.toStringAsFixed(1)}%)'),
-            _buildStatRow('Business Value',
-                '${NumberFormatter.formatCurrency(businessValue)} (${businessPercent.toStringAsFixed(1)}%)'),
-            _buildStatRow('Investment Value',
-                '${NumberFormatter.formatCurrency(investmentValue)} (${investmentPercent.toStringAsFixed(1)}%)'),
-            _buildStatRow('Real Estate Value',
-                '${NumberFormatter.formatCurrency(realEstateValue)} (${realEstatePercent.toStringAsFixed(1)}%)'),
-
-            const SizedBox(height: 10),
-
-            Container(
-              height: 20,
-              clipBehavior: Clip.antiAlias,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(10),
-                color: Colors.grey[200],
-              ),
-              child: Row(
-                children: [
-                  Flexible(
-                    flex: (cashPercent * 100).round(),
-                    child: Container(color: Colors.blue),
-                  ),
-                  Flexible(
-                    flex: (businessPercent * 100).round(),
-                    child: Container(color: Colors.green),
-                  ),
-                  Flexible(
-                    flex: (investmentPercent * 100).round(),
-                    child: Container(color: Colors.orange),
-                  ),
-                  Flexible(
-                    flex: (realEstatePercent * 100).round(),
-                    child: Container(color: Colors.red),
-                  ),
-                ],
+            // Enhanced bar chart visualization
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: Container(
+                height: 24,
+                decoration: BoxDecoration(
+                  color: isExecutive
+                      ? const Color(0xFF242C3B)
+                      : theme.backgroundColor.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  children: [
+                    _buildBreakdownSegment(cashPercent, theme.primaryChartColor, isExecutive),
+                    _buildBreakdownSegment(businessPercent, theme.secondaryChartColor, isExecutive),
+                    _buildBreakdownSegment(investmentPercent, theme.tertiaryChartColor, isExecutive),
+                    _buildBreakdownSegment(realEstatePercent, theme.quaternaryChartColor, isExecutive),
+                  ],
+                ),
               ),
             ),
 
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
 
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+            // Legend with better styling
+            Wrap(
+              spacing: 16,
+              runSpacing: 8,
               children: [
-                _buildLegendItem(Colors.blue, 'Cash'),
-                const SizedBox(width: 10),
-                _buildLegendItem(Colors.green, 'Business'),
-                const SizedBox(width: 10),
-                _buildLegendItem(Colors.orange, 'Investment'),
-                const SizedBox(width: 10),
-                _buildLegendItem(Colors.red, 'Real Estate'),
+                _buildEnhancedLegendItem(theme.primaryChartColor, 'Cash', theme),
+                _buildEnhancedLegendItem(theme.secondaryChartColor, 'Business', theme),
+                _buildEnhancedLegendItem(theme.tertiaryChartColor, 'Investment', theme),
+                _buildEnhancedLegendItem(theme.quaternaryChartColor, 'Real Estate', theme),
               ],
             ),
           ],
@@ -335,7 +876,8 @@ class _StatsScreenState extends State<StatsScreen> {
     );
   }
 
-  Widget _buildHourlyEarningsChart(GameState gameState) {
+  Widget _buildHourlyEarningsChart(GameState gameState, StatsTheme theme) {
+    final bool isExecutive = theme.id == 'executive';
     final now = DateTime.now();
     Map<String, double> hourlyDataMap = {};
 
@@ -353,26 +895,78 @@ class _StatsScreenState extends State<StatsScreen> {
         .toList();
 
     return Card(
+      elevation: theme.elevation,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(theme.borderRadius),
+        side: BorderSide(
+          color: isExecutive 
+              ? const Color(0xFF2A3142)
+              : theme.cardBorderColor,
+        ),
+      ),
+      color: theme.cardBackgroundColor,
+      shadowColor: theme.cardShadow?.color ?? Colors.black26,
+      margin: EdgeInsets.zero,
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Hourly Earnings (Last 24h)',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+            Row(
+              children: [
+                Icon(
+                  Icons.timeline,
+                  color: theme.titleColor,
+                  size: 22,
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  'Hourly Earnings (Last 24h)',
+                  style: theme.cardTitleStyle,
+                ),
+              ],
             ),
 
-            const SizedBox(height: 16),
+            Divider(
+              height: 30,
+              thickness: 1,
+              color: isExecutive
+                  ? const Color(0xFF2A3142) 
+                  : Colors.grey.withOpacity(0.2),
+            ),
 
             SizedBox(
               height: 200,
               child: hourlyData.isEmpty
-                  ? const Center(child: Text('No earnings data available'))
-                  : _buildBarChart(hourlyData),
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.analytics_outlined,
+                            color: theme.textColor.withOpacity(0.5),
+                            size: 40,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'No earnings data available yet',
+                            style: TextStyle(
+                              color: theme.textColor.withOpacity(0.7),
+                              fontWeight: isExecutive ? FontWeight.w500 : FontWeight.normal,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Earnings will be tracked hourly as you play',
+                            style: TextStyle(
+                              color: theme.textColor.withOpacity(0.5),
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : _buildBarChart(hourlyData, theme),
             ),
           ],
         ),
@@ -380,7 +974,8 @@ class _StatsScreenState extends State<StatsScreen> {
     );
   }
 
-  Widget _buildNetWorthChart(GameState gameState) {
+  Widget _buildNetWorthChart(GameState gameState, StatsTheme theme) {
+    final bool isExecutive = theme.id == 'executive';
     Map<int, double> historyMap = gameState.persistentNetWorthHistory;
 
     // Sort by timestamp (key)
@@ -388,29 +983,112 @@ class _StatsScreenState extends State<StatsScreen> {
     List<double> history = sortedTimestamps.map((ts) => historyMap[ts]!).toList();
 
     // Removed dynamic timeframe logic
-    String timeframeText = 'Net Worth History (Persistent)';
+    String timeframeText = 'Net Worth History';
 
     return Card(
+      elevation: theme.elevation,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(theme.borderRadius),
+        side: BorderSide(
+          color: isExecutive 
+              ? const Color(0xFF2A3142)
+              : theme.cardBorderColor,
+        ),
+      ),
+      color: theme.cardBackgroundColor,
+      shadowColor: theme.cardShadow?.color ?? Colors.black26,
+      margin: EdgeInsets.zero,
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              timeframeText,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.area_chart,
+                      color: theme.titleColor,
+                      size: 22,
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      timeframeText,
+                      style: theme.cardTitleStyle,
+                    ),
+                  ],
+                ),
+                
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: isExecutive 
+                        ? const Color(0xFF242C3B)
+                        : theme.backgroundColor.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isExecutive
+                          ? const Color(0xFF2A3142)
+                          : Colors.transparent,
+                      width: 1,
+                    ),
+                  ),
+                  child: Text(
+                    'Persistent',
+                    style: TextStyle(
+                      color: isExecutive
+                          ? const Color(0xFFE5B100)
+                          : theme.primaryChartColor,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
             ),
 
-            const SizedBox(height: 16),
+            Divider(
+              height: 30,
+              thickness: 1,
+              color: isExecutive
+                  ? const Color(0xFF2A3142)
+                  : Colors.grey.withOpacity(0.2),
+            ),
 
             SizedBox(
               height: 200,
               child: history.isEmpty
-                  ? const Center(child: Text('No net worth history available'))
-                  : _buildLineChart(history),
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.show_chart,
+                            color: theme.textColor.withOpacity(0.5),
+                            size: 40,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'No net worth history available yet',
+                            style: TextStyle(
+                              color: theme.textColor.withOpacity(0.7),
+                              fontWeight: isExecutive ? FontWeight.w500 : FontWeight.normal,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Your net worth will be tracked as you play',
+                            style: TextStyle(
+                              color: theme.textColor.withOpacity(0.5),
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : _buildLineChart(history, theme),
             ),
           ],
         ),
@@ -418,7 +1096,8 @@ class _StatsScreenState extends State<StatsScreen> {
     );
   }
 
-  Widget _buildBarChart(List<MapEntry<String, double>> data) {
+  Widget _buildBarChart(List<MapEntry<String, double>> data, StatsTheme theme) {
+    final bool isExecutive = theme.id == 'executive';
     double maxValue = 0;
     for (var entry in data) {
       if (entry.value > maxValue) {
@@ -428,42 +1107,113 @@ class _StatsScreenState extends State<StatsScreen> {
 
     maxValue = maxValue == 0 ? 1 : maxValue;
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: data.map((entry) {
-        double heightPercent = entry.value / maxValue;
-
-        String hour = entry.key.substring(entry.key.length - 2);
-
-        return Expanded(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                Container(
-                  height: 160 * heightPercent,
+    // Add subtle grid lines for executive theme
+    return Stack(
+      children: [
+        // Background grid for executive theme
+        if (isExecutive)
+          Column(
+            children: List.generate(5, (i) {
+              return Expanded(
+                child: Container(
+                  width: double.infinity,
                   decoration: BoxDecoration(
-                    color: Colors.blue,
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(4),
-                      topRight: Radius.circular(4),
+                    border: Border(
+                      bottom: i < 4 ? BorderSide(
+                        color: const Color(0xFF2A3142).withOpacity(0.5),
+                        width: 0.5,
+                      ) : BorderSide.none,
                     ),
                   ),
                 ),
-                const SizedBox(height: 8),
-                Text(hour, style: TextStyle(fontSize: 12)),
-              ],
-            ),
+              );
+            }),
           ),
-        );
-      }).toList(),
+        
+        // Bars
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: data.map((entry) {
+            double heightPercent = entry.value / maxValue;
+            
+            // Make very small values still visible
+            if (heightPercent > 0 && heightPercent < 0.02) {
+              heightPercent = 0.02;
+            }
+    
+            String hour = entry.key.substring(entry.key.length - 2);
+    
+            return Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 3),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Container(
+                      height: 160 * heightPercent,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: isExecutive
+                              ? [
+                                  theme.primaryChartColor,
+                                  theme.primaryChartColor.withOpacity(0.7),
+                                ]
+                              : [
+                                  theme.primaryChartColor,
+                                  theme.primaryChartColor.withOpacity(0.8),
+                                ],
+                        ),
+                        borderRadius: theme.barChartBorderRadius,
+                        boxShadow: isExecutive
+                            ? [
+                                BoxShadow(
+                                  color: theme.primaryChartColor.withOpacity(0.2),
+                                  blurRadius: 3,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ]
+                            : null,
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 6),
+                    
+                    // Hour label with better styling
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 4,
+                        vertical: 2,
+                      ),
+                      decoration: isExecutive
+                          ? BoxDecoration(
+                              color: const Color(0xFF1E2430),
+                              borderRadius: BorderRadius.circular(4),
+                            )
+                          : null,
+                      child: Text(
+                        hour,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: isExecutive ? FontWeight.bold : FontWeight.normal,
+                          color: theme.textColor.withOpacity(isExecutive ? 0.9 : 0.7),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ],
     );
   }
 
-  Widget _buildLineChart(List<double> data) {
+  Widget _buildLineChart(List<double> data, StatsTheme theme) {
     if (data.length < 2) {
-      return const Center(child: Text('Not enough data for chart'));
+      return Center(child: Text('Not enough data for chart', style: TextStyle(color: theme.textColor)));
     }
 
     double maxValue = data.reduce((a, b) => a > b ? a : b);
@@ -478,21 +1228,43 @@ class _StatsScreenState extends State<StatsScreen> {
         data: data,
         minValue: minValue,
         maxValue: maxValue,
+        theme: theme,
       ),
     );
   }
 
-  Widget _buildStatRow(String label, String value) {
+  Widget _buildStatRow(String label, String value, StatsTheme theme) {
+    final bool isExecutive = theme.id == 'executive';
+    
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
+      padding: const EdgeInsets.only(bottom: 12.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label),
           Text(
-            value,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
+            label,
+            style: theme.statLabelStyle,
+          ),
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            decoration: BoxDecoration(
+              color: isExecutive 
+                  ? const Color(0xFF242C3B) 
+                  : Colors.blue.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: isExecutive 
+                    ? theme.cardBorderColor 
+                    : Colors.transparent,
+                width: 1,
+              ),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            child: Text(
+              value,
+              style: theme.statValueStyle.copyWith(
+                letterSpacing: 0.3,
+              ),
             ),
           ),
         ],
@@ -500,7 +1272,7 @@ class _StatsScreenState extends State<StatsScreen> {
     );
   }
 
-  Widget _buildLegendItem(Color color, String label) {
+  Widget _buildLegendItem(Color color, String label, StatsTheme theme) {
     return Row(
       children: [
         Container(
@@ -513,7 +1285,7 @@ class _StatsScreenState extends State<StatsScreen> {
           label,
           style: TextStyle(
             fontSize: 12,
-            color: Colors.grey[600],
+            color: theme.textColor.withOpacity(0.7),
           ),
         ),
       ],
@@ -722,22 +1494,76 @@ class ChartPainter extends CustomPainter {
   final List<double> data;
   final double minValue;
   final double maxValue;
+  final StatsTheme theme;
 
   ChartPainter({
     required this.data,
     required this.minValue,
     required this.maxValue,
+    required this.theme,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
+    final bool isExecutiveTheme = theme.id == 'executive';
+    
     final paint = Paint()
-      ..color = Colors.blue
+      ..color = theme.primaryChartColor
       ..strokeWidth = 3
       ..style = PaintingStyle.stroke;
 
+    // Create gradient paint for the path with enhanced colors
+    final gradientPaint = Paint()
+      ..shader = LinearGradient(
+        colors: theme.chartGradient,
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height))
+      ..strokeWidth = 3
+      ..style = PaintingStyle.stroke;
+
+    // Create enhanced fill paint for area under the curve
+    final fillPaint = Paint()
+      ..shader = LinearGradient(
+        colors: [
+          theme.primaryChartColor.withOpacity(isExecutiveTheme ? 0.3 : 0.2),
+          theme.primaryChartColor.withOpacity(isExecutiveTheme ? 0.03 : 0.05),
+        ],
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height))
+      ..style = PaintingStyle.fill;
+
+    // Add subtle grid lines for executive theme
+    if (isExecutiveTheme) {
+      final gridPaint = Paint()
+        ..color = const Color(0xFF2A3142).withOpacity(0.5)
+        ..strokeWidth = 0.5
+        ..style = PaintingStyle.stroke;
+        
+      // Draw horizontal grid lines
+      for (int i = 1; i < 5; i++) {
+        final y = (size.height - 20) * i / 5;
+        canvas.drawLine(
+          Offset(0, y),
+          Offset(size.width, y),
+          gridPaint,
+        );
+      }
+      
+      // Draw vertical grid lines
+      for (int i = 1; i < data.length; i += 2) {
+        final x = size.width * i / (data.length - 1);
+        canvas.drawLine(
+          Offset(x, 0),
+          Offset(x, size.height - 20),
+          gridPaint,
+        );
+      }
+    }
+
     final textStyle = TextStyle(
-      color: Colors.grey[600],
+      color: theme.textColor.withOpacity(0.7),
       fontSize: 10,
     );
     final textPainter = TextPainter(
@@ -752,47 +1578,141 @@ class ChartPainter extends CustomPainter {
 
     final range = (maxValue - minValue) == 0 ? 1 : maxValue - minValue;
 
+    // Create fill path (start from bottom)
+    final fillPath = Path();
+    
+    // Add the points for the line path and fill path
     for (int i = 0; i < data.length; i++) {
       final x = i * xStep;
       final y = height - ((data[i] - minValue) / range * height);
 
       if (i == 0) {
         path.moveTo(x, y);
+        fillPath.moveTo(x, y);
       } else {
-        path.lineTo(x, y);
+        // Use a smoother curve for Executive theme
+        if (isExecutiveTheme && i > 0 && i < data.length - 1) {
+          final prevX = (i - 1) * xStep;
+          final prevY = height - ((data[i - 1] - minValue) / range * height);
+          final controlX = (x + prevX) / 2;
+          
+          path.quadraticBezierTo(controlX, prevY, x, y);
+          fillPath.quadraticBezierTo(controlX, prevY, x, y);
+        } else {
+          path.lineTo(x, y);
+          fillPath.lineTo(x, y);
+        }
       }
     }
+    
+    // Complete the fill path by drawing down to the bottom and back to start
+    fillPath.lineTo((data.length - 1) * xStep, height);
+    fillPath.lineTo(0, height);
+    fillPath.close();
 
-    canvas.drawPath(path, paint);
+    // Draw the filled area under the curve
+    canvas.drawPath(fillPath, fillPaint);
+    
+    // Draw the main line with gradient
+    canvas.drawPath(path, gradientPaint);
 
+    // Draw enhanced points on the line with subtle glow for executive theme
     final pointPaint = Paint()
-      ..color = Colors.blue
+      ..color = isExecutiveTheme ? Colors.white : theme.primaryChartColor
       ..strokeWidth = 2
       ..style = PaintingStyle.fill;
+      
+    // For glowing effect in executive theme
+    final glowPaint = isExecutiveTheme ? (Paint()
+      ..color = theme.primaryChartColor.withOpacity(0.4)
+      ..strokeWidth = 2
+      ..style = PaintingStyle.fill) : null;
 
-    for (int i = 0; i < data.length; i++) {
+    // Draw fewer points for a cleaner look
+    final pointInterval = data.length > 20 ? 3 : 2;
+    
+    for (int i = 0; i < data.length; i += pointInterval) {
       final x = i * xStep;
       final y = height - ((data[i] - minValue) / range * height);
 
-      canvas.drawCircle(Offset(x, y), 4, pointPaint);
+      // For executive theme, add subtle point glow
+      if (isExecutiveTheme && glowPaint != null) {
+        canvas.drawCircle(Offset(x, y), 5, glowPaint);
+      }
+      
+      // Draw the actual point
+      canvas.drawCircle(
+        Offset(x, y), 
+        isExecutiveTheme ? 3 : 4, 
+        pointPaint
+      );
+      
+      // Add white center for executive theme points
+      if (isExecutiveTheme) {
+        final centerPaint = Paint()
+          ..color = theme.primaryChartColor
+          ..strokeWidth = 2
+          ..style = PaintingStyle.fill;
+        canvas.drawCircle(Offset(x, y), 1.5, centerPaint);
+      }
     }
 
-    // Draw min and max value labels on y-axis
+    // Draw min and max value labels on y-axis with enhanced styling
     if (maxValue > minValue) {
+      // Draw background for labels in executive theme
+      if (isExecutiveTheme) {
+        final labelBgPaint = Paint()
+          ..color = const Color(0xFF1E2430)
+          ..style = PaintingStyle.fill;
+          
+        canvas.drawRect(
+          Rect.fromLTWH(0, 0, 50, 16),
+          labelBgPaint
+        );
+        
+        canvas.drawRect(
+          Rect.fromLTWH(0, height / 2 - 8, 50, 16),
+          labelBgPaint
+        );
+        
+        canvas.drawRect(
+          Rect.fromLTWH(0, height - 16, 50, 16),
+          labelBgPaint
+        );
+      }
+    
       String maxLabel = _formatValue(maxValue);
-      textPainter.text = TextSpan(text: maxLabel, style: textStyle);
+      textPainter.text = TextSpan(
+        text: maxLabel, 
+        style: textStyle.copyWith(
+          fontWeight: isExecutiveTheme ? FontWeight.bold : FontWeight.normal,
+          fontSize: isExecutiveTheme ? 11 : 10,
+        )
+      );
       textPainter.layout();
-      textPainter.paint(canvas, Offset(0, 0));
+      textPainter.paint(canvas, Offset(4, 4));
 
       String midLabel = _formatValue(minValue + range / 2);
-      textPainter.text = TextSpan(text: midLabel, style: textStyle);
+      textPainter.text = TextSpan(
+        text: midLabel, 
+        style: textStyle.copyWith(
+          fontWeight: isExecutiveTheme ? FontWeight.bold : FontWeight.normal,
+          fontSize: isExecutiveTheme ? 11 : 10,
+        )
+      );
       textPainter.layout();
-      textPainter.paint(canvas, Offset(0, height / 2 - textPainter.height / 2));
+      textPainter.paint(canvas, Offset(4, height / 2 - textPainter.height / 2));
 
       String minLabel = _formatValue(minValue);
-      textPainter.text = TextSpan(text: minLabel, style: textStyle);
+      textPainter.text = TextSpan(
+        text: minLabel, 
+        style: textStyle.copyWith(
+          fontWeight: isExecutiveTheme ? FontWeight.bold : FontWeight.normal,
+          fontSize: isExecutiveTheme ? 11 : 10,
+        )
+      );
       textPainter.layout();
-      textPainter.paint(canvas, Offset(0, height - textPainter.height));
+      textPainter.paint(canvas, Offset(4, height - textPainter.height - 4));
     }
   }
 

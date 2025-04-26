@@ -98,6 +98,10 @@ extension SerializationLogic on GameState {
 
       'username': username,
       'userAvatar': userAvatar,
+
+      // New Executive Stats Theme properties
+      'isExecutiveStatsThemeUnlocked': isExecutiveStatsThemeUnlocked,
+      'selectedStatsTheme': selectedStatsTheme,
     };
 
     if (clickBoostEndTime != null) {
@@ -537,6 +541,10 @@ extension SerializationLogic on GameState {
     offlineDurationForNotification = durationSeconds != null ? Duration(seconds: durationSeconds) : null;
     shouldShowOfflineEarnings = json['shouldShowOfflineEarnings'] ?? false;
     // --- End ADDED ---
+
+    // New Executive Stats Theme properties
+    isExecutiveStatsThemeUnlocked = json['isExecutiveStatsThemeUnlocked'] ?? false;
+    selectedStatsTheme = json['selectedStatsTheme']; // Can be null
 
     notifyListeners(); // Notify UI after loading is complete
     print("✅ GameState.fromJson complete.");

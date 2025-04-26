@@ -4,122 +4,109 @@ import '../models/achievement.dart';
 import '../models/game_state.dart';
 import '../utils/number_formatter.dart';
 import '../models/achievement_data.dart';
+import '../themes/stats_themes.dart';
 
 class AchievementsSection extends StatelessWidget {
-  const AchievementsSection({Key? key}) : super(key: key);
+  final StatsTheme? theme;
+  
+  const AchievementsSection({Key? key, this.theme}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    final bool isExecutive = theme?.id == 'executive' ?? false;
+    final defaultTheme = defaultStatsTheme; // Fallback theme
+    
     return Consumer<GameState>(
       builder: (context, gameState, child) {
         final achievementManager = gameState.achievementManager;
         
+        // Get counts for each tab
+        final totalEarned = achievementManager.getCompletedAchievements().length;
+        final totalPending = achievementManager.achievements.isEmpty 
+            ? 0 
+            : achievementManager.achievements.length - totalEarned;
+        final progressPercent = achievementManager.achievements.isEmpty 
+            ? 0.0 
+            : (totalEarned / achievementManager.achievements.length) * 100;
+        
         return Card(
-          elevation: 2,
+          elevation: theme?.elevation ?? defaultTheme.elevation,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(theme?.borderRadius ?? defaultTheme.borderRadius),
+            side: BorderSide(
+              color: theme?.id == 'executive' 
+                  ? const Color(0xFF2A3142)
+                  : theme?.cardBorderColor ?? defaultTheme.cardBorderColor,
+            ),
           ),
+          color: theme?.cardBackgroundColor ?? defaultTheme.cardBackgroundColor,
+          shadowColor: theme?.cardShadow?.color ?? Colors.black26,
+          margin: EdgeInsets.zero,
           child: Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(20.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Section header
                 Row(
                   children: [
-                    const Icon(Icons.emoji_events, color: Colors.amber, size: 28),
+                    Icon(
+                      Icons.emoji_events,
+                      color: theme?.titleColor ?? defaultTheme.titleColor,
+                      size: 22, 
+                    ),
                     const SizedBox(width: 10),
-                    const Text(
+                    Text(
                       'Achievements',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
-                      ),
+                      style: theme?.cardTitleStyle ?? defaultTheme.cardTitleStyle,
                     ),
                   ],
                 ),
                 
-                const SizedBox(height: 16),
-              
-                // Summary
-                Row(
-                  children: [
-                    _buildSummaryCard(
-                      context,
-                      title: 'Earned',
-                      value: '${achievementManager.getCompletedAchievements().length}',
-                      color: Colors.green.shade600,
-                      iconData: Icons.check_circle,
-                    ),
-                    const SizedBox(width: 12),
-                    _buildSummaryCard(
-                      context,
-                      title: 'Pending',
-                      value: '${achievementManager.achievements.length - achievementManager.getCompletedAchievements().length}',
-                      color: Colors.blue.shade600,
-                      iconData: Icons.pending_actions,
-                    ),
-                    const SizedBox(width: 12),
-                    _buildSummaryCard(
-                      context,
-                      title: 'Progress',
-                      value: '${(achievementManager.getCompletedAchievements().length / achievementManager.achievements.length * 100).toStringAsFixed(0)}%',
-                      color: Colors.purple.shade600,
-                      iconData: Icons.insights,
-                    ),
-                  ],
+                Divider(
+                  height: 30,
+                  thickness: 1,
+                  color: theme?.id == 'executive'
+                      ? const Color(0xFF2A3142)
+                      : Colors.grey.withOpacity(0.2),
                 ),
                 
-                const SizedBox(height: 24),
-                
-                // Achievement Tabs for categories
-                DefaultTabController(
-                  length: AchievementCategory.values.length,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                // Stats cards with enhanced styling
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: Row(
                     children: [
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade100,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: TabBar(
-                          labelColor: Colors.blue.shade700,
-                          unselectedLabelColor: Colors.grey.shade600,
-                          indicatorColor: Colors.blue.shade700,
-                          indicatorSize: TabBarIndicatorSize.label,
-                          padding: const EdgeInsets.symmetric(vertical: 4),
-                          tabs: [
-                            for (final category in AchievementCategory.values)
-                              Tab(
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                                  child: Text(
-                                    _getCategoryName(category),
-                                    style: const TextStyle(fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                              ),
-                          ],
-                        ),
+                      _buildAchievementStatCard(
+                        theme?.id == 'executive' ?? false,
+                        Icons.check_circle,
+                        'Earned',
+                        totalEarned.toString(),
+                        theme?.id == 'executive' ? const Color(0xFF4CD97B) : Colors.green,
+                        theme ?? defaultTheme,
                       ),
-                      const SizedBox(height: 16),
-                      ConstrainedBox(
-                        constraints: const BoxConstraints(
-                          maxHeight: 370, // Slightly shorter to help avoid scroll issues
-                          maxWidth: 500, // Control max width to prevent excessive width
-                        ),
-                        child: TabBarView(
-                          children: [
-                            for (final category in AchievementCategory.values)
-                              _buildAchievementList(context, category, achievementManager, gameState),
-                          ],
-                        ),
+                      const SizedBox(width: 16),
+                      _buildAchievementStatCard(
+                        theme?.id == 'executive' ?? false,
+                        Icons.pending_actions,
+                        'Pending',
+                        totalPending.toString(),
+                        theme?.id == 'executive' ? const Color(0xFF4B9FFF) : Colors.blue,
+                        theme ?? defaultTheme,
+                      ),
+                      const SizedBox(width: 16),
+                      _buildAchievementStatCard(
+                        theme?.id == 'executive' ?? false,
+                        Icons.trending_up,
+                        'Progress',
+                        '${progressPercent.toStringAsFixed(0)}%',
+                        theme?.id == 'executive' ? const Color(0xFFFFB648) : Colors.orange,
+                        theme ?? defaultTheme,
                       ),
                     ],
                   ),
                 ),
+                
+                // Categories
+                _buildTabBar(context, achievementManager, gameState),
               ],
             ),
           ),
@@ -128,45 +115,59 @@ class AchievementsSection extends StatelessWidget {
     );
   }
   
-  // Helper to build the summary cards
-  Widget _buildSummaryCard(BuildContext context, {
-    required String title,
-    required String value,
-    required Color color,
-    required IconData iconData,
-  }) {
+  Widget _buildAchievementStatCard(
+    bool isExecutive,
+    IconData icon,
+    String label,
+    String value,
+    Color accentColor,
+    StatsTheme theme,
+  ) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: isExecutive
+              ? const Color(0xFF242C3B)
+              : theme.backgroundColor.withOpacity(0.1),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withOpacity(0.3), width: 1),
+          border: Border.all(
+            color: isExecutive
+                ? const Color(0xFF2A3142)
+                : Colors.transparent,
+            width: 1,
+          ),
+          boxShadow: isExecutive ? [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 2,
+              offset: const Offset(0, 1),
+            ),
+          ] : null,
         ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Icon(iconData, color: color, size: 18),
-                const SizedBox(width: 8),
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: color,
-                  ),
-                ),
-              ],
+            Icon(
+              icon,
+              color: accentColor,
+              size: 22,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                color: theme.textColor.withOpacity(0.8),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 4),
             Text(
               value,
               style: TextStyle(
-                fontSize: 20,
+                fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: color,
+                color: accentColor,
               ),
             ),
           ],
@@ -193,201 +194,251 @@ class AchievementsSection extends StatelessWidget {
     AchievementCategory category,
     AchievementManager achievementManager,
     GameState gameState,
+    StatsTheme theme,
   ) {
     final achievements = achievementManager.getAchievementsByCategory(category);
+    final defaultTheme = defaultStatsTheme; // Fallback theme
     
     return ListView.builder(
       itemCount: achievements.length,
       padding: EdgeInsets.zero,
       itemBuilder: (context, index) {
         final achievement = achievements[index];
-        final progress = achievementManager.calculateProgress(achievement.id, gameState);
+        final double progress = achievementManager.calculateProgress(achievement.id, gameState);
+        final completedColor = achievement.completed 
+            ? const Color(0xFF4CD97B) // Rich green for completed
+            : theme.titleColor;
+        final incompleteColor = theme.textColor.withOpacity(0.7);
         
         return Card(
+          elevation: 0,
           margin: const EdgeInsets.only(bottom: 12),
-          elevation: 2,
-          shadowColor: achievement.completed 
-              ? Colors.green.withOpacity(0.3)
-              : Colors.blue.withOpacity(0.2),
+          color: theme.backgroundColor.withOpacity(0.1),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
             side: BorderSide(
               color: achievement.completed
-                  ? Colors.green.shade200
-                  : Colors.grey.shade300,
+                  ? completedColor.withOpacity(0.3)
+                  : Colors.transparent,
               width: 1,
             ),
           ),
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topRight,
-                end: Alignment.bottomLeft,
-                colors: achievement.completed
-                    ? [Colors.white, Colors.green.shade50]
-                    : [Colors.white, Colors.grey.shade50],
-              ),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Achievement icon/badge with improved styling
-                  Container(
-                    width: 50,
-                    height: 50,
-                    decoration: BoxDecoration(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Icon with improved styling
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: achievement.completed
+                        ? completedColor.withOpacity(0.2)
+                        : theme.backgroundColor.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
                       color: achievement.completed
-                          ? Colors.green.withOpacity(0.1)
-                          : Colors.grey.withOpacity(0.1),
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: achievement.completed
-                              ? Colors.green.withOpacity(0.2)
-                              : Colors.grey.withOpacity(0.1),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                      border: Border.all(
-                        color: achievement.completed
-                            ? Colors.green.withOpacity(0.3)
-                            : Colors.grey.withOpacity(0.2),
-                        width: 1,
-                      ),
-                    ),
-                    child: Icon(
-                      achievement.icon,
-                      color: achievement.completed
-                          ? Colors.green
-                          : Colors.grey,
-                      size: 24,
+                          ? completedColor.withOpacity(0.3)
+                          : Colors.transparent,
+                      width: 1,
                     ),
                   ),
-                  
-                  const SizedBox(width: 16),
-                  
-                  // Achievement details with improved styling
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                achievement.name,
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: achievement.completed
-                                      ? Colors.green.shade800
-                                      : Colors.grey.shade800,
-                                ),
-                              ),
-                            ),
-                            if (achievement.completed)
-                              const Icon(
-                                Icons.check_circle,
-                                color: Colors.green,
-                                size: 16,
-                              ),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          achievement.description,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey.shade700,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-
-                        // Display PP Reward
-                        Row(
-                          children: [
-                            Container(
-                              width: 14,
-                              height: 14,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: const Color(0xFFFFD700), // Solid gold background
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: const Color(0xFFFFD700).withOpacity(0.6),
-                                    blurRadius: 4,
-                                    spreadRadius: 0,
-                                  ),
-                                ],
-                              ),
-                              child: const Center(
-                                child: Text(
-                                  '✦',
-                                  style: TextStyle(
-                                    fontSize: 8,
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    height: 1.0,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              '${achievement.ppReward}',
+                  child: Icon(
+                    achievement.icon,
+                    color: achievement.completed
+                        ? completedColor
+                        : theme.textColor.withOpacity(0.7),
+                    size: 24,
+                  ),
+                ),
+                
+                const SizedBox(width: 16),
+                
+                // Achievement details with improved styling
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              achievement.name,
                               style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.black87,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: achievement.completed
+                                    ? completedColor
+                                    : theme.textColor,
                               ),
                             ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 12),
-                        
-                        // Progress bar with improved styling
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(6),
-                          child: LinearProgressIndicator(
-                            value: progress,
-                            backgroundColor: Colors.grey.shade200,
-                            valueColor: AlwaysStoppedAnimation(
-                              achievement.completed
-                                  ? Colors.green.shade600
-                                  : Colors.blue.shade600,
+                          ),
+                          if (achievement.completed)
+                            Icon(
+                              Icons.check_circle,
+                              color: completedColor,
+                              size: 16,
                             ),
-                            minHeight: 8,
-                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        achievement.description,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: theme.textColor.withOpacity(0.8),
                         ),
-                        
-                        const SizedBox(height: 6),
-                        
-                        // Progress text with improved styling
-                        Text(
-                          achievement.completed
-                              ? 'Earned'
-                              : '${(progress * 100).toStringAsFixed(0)}% complete',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            color: achievement.completed
-                                ? Colors.green.shade600
-                                : Colors.blue.shade600,
+                      ),
+                      const SizedBox(height: 8),
+
+                      // Display PP Reward
+                      Row(
+                        children: [
+                          Container(
+                            width: 14,
+                            height: 14,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: const Color(0xFFFFD700), // Solid gold background
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFFFFD700).withOpacity(0.6),
+                                  blurRadius: 4,
+                                  spreadRadius: 0,
+                                ),
+                              ],
+                            ),
+                            child: const Center(
+                              child: Text(
+                                '✦',
+                                style: TextStyle(
+                                  fontSize: 8,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  height: 1.0,
+                                ),
+                              ),
+                            ),
                           ),
+                          const SizedBox(width: 6),
+                          Text(
+                            '${achievement.ppReward}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: theme.textColor,
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 12),
+                      
+                      // Progress bar with improved styling
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(6),
+                        child: LinearProgressIndicator(
+                          value: progress,
+                          backgroundColor: theme.backgroundColor.withOpacity(0.3),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            achievement.completed
+                                ? completedColor
+                                : incompleteColor,
+                          ),
+                          minHeight: 8,
                         ),
-                      ],
-                    ),
+                      ),
+                      
+                      const SizedBox(height: 6),
+                      
+                      // Progress text with improved styling
+                      Text(
+                        achievement.completed
+                            ? 'Earned'
+                            : '${(progress * 100).toStringAsFixed(0)}% complete',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: achievement.completed
+                              ? completedColor
+                              : incompleteColor,
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         );
       },
+    );
+  }
+
+  Widget _buildTabBar(BuildContext context, AchievementManager achievementManager, GameState gameState) {
+    final bool isExecutive = theme?.id == 'executive' ?? false;
+    final defaultTheme = defaultStatsTheme; // Fallback theme
+    
+    return DefaultTabController(
+      length: AchievementCategory.values.length,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Enhanced tab bar with better styling
+          Container(
+            decoration: BoxDecoration(
+              color: isExecutive 
+                  ? const Color(0xFF1E2430) 
+                  : (theme?.backgroundColor ?? defaultTheme.backgroundColor).withOpacity(0.3),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isExecutive 
+                    ? const Color(0xFF2A3142) 
+                    : Colors.transparent,
+                width: 1,
+              ),
+            ),
+            child: TabBar(
+              labelColor: theme?.titleColor ?? defaultTheme.titleColor,
+              unselectedLabelColor: (theme?.textColor ?? defaultTheme.textColor).withOpacity(0.5),
+              indicatorColor: theme?.titleColor ?? defaultTheme.titleColor,
+              indicatorSize: TabBarIndicatorSize.label,
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              labelStyle: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+                letterSpacing: 0.3,
+              ),
+              unselectedLabelStyle: const TextStyle(
+                fontWeight: FontWeight.normal,
+                fontSize: 14,
+              ),
+              tabs: [
+                for (final category in AchievementCategory.values)
+                  Tab(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4.0, vertical: 8.0),
+                      child: Text(_getCategoryName(category)),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          
+          const SizedBox(height: 20),
+          
+          // Achievement list with fixed height
+          SizedBox(
+            height: 370,
+            child: TabBarView(
+              children: [
+                for (final category in AchievementCategory.values)
+                  _buildAchievementList(context, category, achievementManager, gameState, theme ?? defaultTheme),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
