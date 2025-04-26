@@ -91,14 +91,8 @@ class RealEstateProperty {
   }) : this.upgrades = upgrades ?? [];
 
   // Return the total income per second for this property based on how many are owned
-  double getTotalIncomePerSecond({bool affectedByEvent = false, bool isResilienceActive = false}) {
+  double getTotalIncomePerSecond({bool isResilienceActive = false}) {
     double baseIncome = cashFlowPerSecond * owned;
-    
-    // Apply event effect if affected
-    if (affectedByEvent) {
-      double penalty = GameStateEvents.EVENT_INCOME_PENALTY * (isResilienceActive ? 0.9 : 1.0);
-      return baseIncome * (1.0 + penalty); // Apply penalty relative to base
-    }
     
     return baseIncome;
   }
@@ -197,12 +191,12 @@ class RealEstateLocale {
   }
 
   // Get the total income from this locale per second
-  double getTotalIncomePerSecond({bool affectedByEvent = false}) {
+  double getTotalIncomePerSecond() {
     double total = 0.0;
     if (properties.isEmpty) return total;
     
     for (var property in properties) {
-      total += property.getTotalIncomePerSecond(affectedByEvent: affectedByEvent);
+      total += property.getTotalIncomePerSecond();
     }
     return total;
   }

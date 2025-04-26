@@ -270,7 +270,7 @@ List<VaultItem> getVaultItems() {
       description: 'Instantly receive 4 hours worth of passive income.',
       category: VaultItemCategory.boosters,
       type: VaultItemType.repeatable, // TODO: Implement 2x per week limit
-      cost: 40,
+      cost: 50,
       iconData: Icons.hourglass_bottom, // Example icon
     ),
     // ADDED: Platinum Cash Cache
@@ -280,7 +280,7 @@ List<VaultItem> getVaultItems() {
       description: 'Instantly receive a cash injection (scales with progress).',
       category: VaultItemCategory.boosters,
       type: VaultItemType.repeatable, // TODO: Implement 5x per week limit
-      cost: 15,
+      cost: 25,
       iconData: Icons.attach_money, // Example icon
     ),
     // ADDED: Platinum Islands (Missing from original implementation)

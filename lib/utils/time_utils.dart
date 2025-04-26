@@ -66,4 +66,20 @@ class TimeUtils {
   static String getHourKey(DateTime dateTime) {
     return DateFormat('yyyy-MM-dd-HH').format(dateTime);
   }
+
+  /// Finds the next occurrence of a specific weekday starting from the given date.
+  /// Example: findNextWeekday(DateTime.now(), DateTime.monday) finds the next Monday.
+  static DateTime findNextWeekday(DateTime startDate, int targetWeekday) {
+    // Normalize targetWeekday to be between 1 (Monday) and 7 (Sunday)
+    if (targetWeekday < 1 || targetWeekday > 7) {
+      throw ArgumentError('targetWeekday must be between 1 and 7');
+    }
+
+    DateTime currentDate = DateTime(startDate.year, startDate.month, startDate.day);
+    int daysToAdd = targetWeekday - currentDate.weekday;
+    if (daysToAdd <= 0) { // If it's today or already passed this week
+      daysToAdd += 7;
+    }
+    return currentDate.add(Duration(days: daysToAdd));
+  }
 }

@@ -54,29 +54,17 @@ class Business {
   }
   
   // Calculate current income per second based on level
-  double getCurrentIncome({bool affectedByEvent = false, bool isResilienceActive = false}) {
+  double getCurrentIncome({bool isResilienceActive = false}) {
     if (level <= 0) return 0.0; // Not owned yet
     double baseIncome = levels[level-1].incomePerSecond * incomeInterval;
-    
-    // Apply event effect if affected by an event
-    if (affectedByEvent) {
-      double penalty = GameStateEvents.EVENT_INCOME_PENALTY * (isResilienceActive ? 0.9 : 1.0);
-      return baseIncome * (1.0 + penalty); // Apply penalty relative to base
-    }
     
     return baseIncome;
   }
   
   // Get current income per second
-  double getIncomePerSecond({bool affectedByEvent = false, bool isResilienceActive = false}) {
+  double getIncomePerSecond({bool isResilienceActive = false}) {
     if (level <= 0) return 0.0; // Not owned yet
     double baseIncome = levels[level-1].incomePerSecond;
-    
-    // Apply event effect if affected by an event
-    if (affectedByEvent) {
-      double penalty = GameStateEvents.EVENT_INCOME_PENALTY * (isResilienceActive ? 0.9 : 1.0);
-      return baseIncome * (1.0 + penalty); // Apply penalty relative to base
-    }
     
     return baseIncome;
   }

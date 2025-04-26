@@ -136,26 +136,52 @@ class RealEstatePropertyItem extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     if (property.owned > 0) {
-                      // Check if property's locale is affected by an event
-                      bool hasEvent = gameState.hasActiveEventForLocale(localeId);
-                      double income = property.getTotalIncomePerSecond(
-                            affectedByEvent: hasEvent
-                          ) * 
-                          gameState.incomeMultiplier * 
-                          gameState.prestigeMultiplier;
+                      // --- Calculate Correct Display Income --- 
+                      bool isLocaleAffectedByEvent = gameState.hasActiveEventForLocale(localeId);
+                      
+                      // Fetch relevant multipliers from GameState
+                      double permanentIncomeBoostMultiplier = gameState.isPermanentIncomeBoostActive ? 1.05 : 1.0;
+                      bool isFoundationApplied = gameState.platinumFoundationsApplied.containsKey(localeId);
+                      bool isYachtDocked = gameState.platinumYachtDockedLocaleId == localeId;
+                      double foundationMultiplier = isFoundationApplied ? 1.05 : 1.0;
+                      double yachtMultiplier = isYachtDocked ? 1.05 : 1.0;
+                      
+                      // Get base income per property
+                      double basePropertyIncome = property.getTotalIncomePerSecond(isResilienceActive: gameState.isPlatinumResilienceActive);
+                      
+                      // Apply locale-specific multipliers
+                      double incomeWithLocaleBoosts = basePropertyIncome * foundationMultiplier * yachtMultiplier;
+
+                      // Apply standard global multipliers
+                      double finalPropertyIncome = incomeWithLocaleBoosts * gameState.incomeMultiplier * gameState.prestigeMultiplier;
+
+                      // Apply the overall permanent boost
+                      finalPropertyIncome *= permanentIncomeBoostMultiplier;
+                      
+                      // Apply Income Surge (if applicable)
+                      if (gameState.isIncomeSurgeActive) finalPropertyIncome *= 2.0;
+
+                      // Check for negative event affecting the LOCALE and apply multiplier AFTER all bonuses
+                      if (isLocaleAffectedByEvent) {
+                        finalPropertyIncome *= GameStateEvents.NEGATIVE_EVENT_MULTIPLIER; // Apply -0.25
+                      }
+                      // --- End Calculation ---
                       
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
-                            'Income: \$${NumberFormatter.formatCompact(income)}/sec',
+                            // Use the correctly calculated finalPropertyIncome
+                            'Income: \$${NumberFormatter.formatCompact(finalPropertyIncome)}/sec',
                             style: TextStyle(
                               fontSize: 14,
-                              color: hasEvent ? Colors.red.shade700 : Colors.green.shade700,
-                              fontWeight: hasEvent ? FontWeight.bold : FontWeight.normal,
+                              // Use isLocaleAffectedByEvent for color
+                              color: isLocaleAffectedByEvent ? Colors.red.shade700 : Colors.green.shade700,
+                              fontWeight: isLocaleAffectedByEvent ? FontWeight.bold : FontWeight.normal,
                             ),
                           ),
-                          if (hasEvent)
+                          // Use isLocaleAffectedByEvent for warning icon
+                          if (isLocaleAffectedByEvent)
                             const Padding(
                               padding: EdgeInsets.only(left: 4),
                               child: Icon(

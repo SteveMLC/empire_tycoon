@@ -68,8 +68,8 @@ extension BusinessLogic on GameState {
       if (business.level > 0) {
         // Check if business is affected by an event
         bool hasEvent = hasActiveEventForBusiness(business.id);
-        // Apply multipliers and event status
-        total += business.getCurrentIncome(affectedByEvent: hasEvent) * incomeMultiplier * prestigeMultiplier;
+        // Apply multipliers
+        total += business.getCurrentIncome() * incomeMultiplier * prestigeMultiplier;
       }
     }
     return total;

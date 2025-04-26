@@ -18,6 +18,10 @@ import 'market_event.dart';
 import 'achievement_data.dart'; // Added import
 import '../data/achievement_definitions.dart'; // Import needed for retroactive PP
 import 'challenge.dart'; // ADDED: Import for Challenge model
+import '../data/business_definitions.dart'; // ADDED: Import for business data
+import '../data/investment_definitions.dart'; // ADDED: Import for investment data
+import '../data/platinum_vault_items.dart'; // ADDED: Import for vault items
+import '../utils/number_formatter.dart'; // ADDED: Import for formatting
 
 part 'game_state/initialization_logic.dart';
 part 'game_state/business_logic.dart';
@@ -46,6 +50,16 @@ class GameState with ChangeNotifier {
   int clickLevel = 1;
   int totalRealEstateUpgradesPurchased = 0; // Track total upgrades purchased
 
+  // User profile properties
+  String? username;
+  String? userAvatar;
+
+  // ADDED: Variable to track offline earnings for notification
+  double offlineEarningsAwarded = 0.0;
+  Duration? offlineDurationForNotification; // ADDED: Track duration for notification
+  // ADDED: Flag to indicate whether to show offline earnings notification
+  bool shouldShowOfflineEarnings = false;
+
   // >> START: Platinum Points System Fields <<
   int platinumPoints = 0;
   bool _retroactivePPAwarded = false; // Flag for retroactive PP grant
@@ -56,9 +70,6 @@ class GameState with ChangeNotifier {
   // >> END: Platinum Points System Fields <<
 
   // ADDED: Variable to track offline earnings for notification
-  double offlineEarningsAwarded = 0.0;
-  Duration? offlineDurationForNotification; // ADDED: Track duration for notification
-
   // >> START: Platinum Vault Item State <<
   // --- Permanent Boost Flags (from Upgrades category) ---
   bool isPlatinumEfficiencyActive = false; // platinum_efficiency: Business upgrade effectiveness +5%
@@ -77,6 +88,11 @@ class GameState with ChangeNotifier {
   List<RealEstateUpgrade> platinumYachtUpgrades = []; // Upgrades for the yacht itself
   bool isPlatinumIslandUnlocked = false; // platinum_island (Unlocks property in Platinum Islands)
   bool isPlatinumStockUnlocked = false; // ADDED: platinum_stock (Unlocks investment)
+  // --- Cooldowns and Usage Limits ---
+  DateTime? incomeSurgeCooldownEnd; // Cooldown for 'platinum_surge' (1x per day)
+  DateTime? cashCacheCooldownEnd; // Cooldown for 'platinum_cache' (1x per day - previously 5x/week)
+  int timeWarpUsesThisPeriod = 0; // Counter for 'platinum_warp' (2x per week)
+  DateTime? lastTimeWarpReset; // Timestamp for weekly reset of 'platinum_warp'
   // >> END: Platinum Vault Item State <<
 
   // ADDED: Active Challenge State
@@ -130,6 +146,12 @@ class GameState with ChangeNotifier {
   // Getter to check if *any* platinum click booster is active
   bool get isPlatinumBoostActive => platinumClickFrenzyRemainingSeconds > 0 || platinumSteadyBoostRemainingSeconds > 0;
   // << END: Platinum Booster State >>
+
+  // >> START: Derived Active Flags for Boosters <<
+  // Used to easily check if a specific booster is active for UI/logic
+  bool get isClickFrenzyActive => platinumClickFrenzyRemainingSeconds > 0;
+  bool get isSteadyBoostActive => platinumSteadyBoostRemainingSeconds > 0;
+  // >> END: Derived Active Flags for Boosters <<
 
   // >> START: Add Achievement Tracking Fields Declaration <<
   // These fields are explicitly marked as needed for achievement tracking
@@ -345,376 +367,11 @@ class GameState with ChangeNotifier {
   }
 
   void _initializeDefaultBusinesses() {
-    businesses = [
-      // 1. Mobile Car Wash
-      Business(
-        id: 'mobile_car_wash',
-        name: 'Mobile Car Wash',
-        description: 'A van-based car wash service with direct customer service',
-        basePrice: 250.0,
-        baseIncome: 0.43, // Adjusted income
-        level: 0,
-        incomeInterval: 1,
-        unlocked: true,
-        icon: Icons.local_car_wash,
-        levels: [
-          BusinessLevel(cost: 250.0, incomePerSecond: 0.43, description: 'Better van and supplies'),
-          BusinessLevel(cost: 500.0, incomePerSecond: 1.09, description: 'Pressure washer'),
-          BusinessLevel(cost: 1000.0, incomePerSecond: 2.60, description: 'Extra staff'),
-          BusinessLevel(cost: 2000.0, incomePerSecond: 6.50, description: 'Second van'),
-          BusinessLevel(cost: 4000.0, incomePerSecond: 17.34, description: 'Eco-friendly soap'),
-          BusinessLevel(cost: 8000.0, incomePerSecond: 43.35, description: 'Mobile app rollout'),
-          BusinessLevel(cost: 16000.0, incomePerSecond: 108.38, description: 'Franchise model'),
-          BusinessLevel(cost: 32000.0, incomePerSecond: 260.1, description: 'Fleet expansion'),
-          BusinessLevel(cost: 64000.0, incomePerSecond: 650.25, description: 'VIP detailing'),
-          BusinessLevel(cost: 128000.0, incomePerSecond: 1625.63, description: 'Citywide coverage'),
-        ],
-      ),
-      // 2. Pop-Up Food Stall
-      Business(
-        id: 'food_stall',
-        name: 'Pop-Up Food Stall',
-        description: 'A street stall selling food like burgers or tacos',
-        basePrice: 1000.0,
-        baseIncome: 2.17, // Adjusted income
-        level: 0,
-        incomeInterval: 1,
-        unlocked: true,
-        icon: Icons.fastfood,
-        levels: [
-          BusinessLevel(cost: 1000.0, incomePerSecond: 2.17, description: 'Basic stall'),
-          BusinessLevel(cost: 2000.0, incomePerSecond: 5.20, description: 'Better grill'),
-          BusinessLevel(cost: 4000.0, incomePerSecond: 13.01, description: 'Menu expansion'),
-          BusinessLevel(cost: 8000.0, incomePerSecond: 32.51, description: 'More staff'),
-          BusinessLevel(cost: 16000.0, incomePerSecond: 82.37, description: 'Branded tent'),
-          BusinessLevel(cost: 32000.0, incomePerSecond: 205.91, description: 'Weekend markets'),
-          BusinessLevel(cost: 64000.0, incomePerSecond: 520.2, description: 'Food truck expansion'),
-          BusinessLevel(cost: 128000.0, incomePerSecond: 1300.5, description: 'Multi-city stalls'),
-          BusinessLevel(cost: 256000.0, incomePerSecond: 3251.25, description: 'Catering gigs'),
-          BusinessLevel(cost: 512000.0, incomePerSecond: 8128.13, description: 'Chain operation'),
-        ],
-      ),
-      // 3. Boutique Coffee Roaster
-      Business(
-        id: 'coffee_roaster',
-        name: 'Boutique Coffee Roaster',
-        description: 'A small-batch coffee roasting and retail business',
-        basePrice: 5000.0,
-        baseIncome: 8.67, // Adjusted income
-        level: 0,
-        incomeInterval: 1,
-        unlocked: true,
-        icon: Icons.coffee,
-        levels: [
-          BusinessLevel(cost: 5000.0, incomePerSecond: 8.67, description: 'Home roaster offering'),
-          BusinessLevel(cost: 10000.0, incomePerSecond: 21.68, description: 'Premium beans'),
-          BusinessLevel(cost: 20000.0, incomePerSecond: 54.19, description: 'Cafe counter'),
-          BusinessLevel(cost: 40000.0, incomePerSecond: 130.05, description: 'Wholesale deals'),
-          BusinessLevel(cost: 80000.0, incomePerSecond: 325.13, description: 'Efficient Roasting machines'),
-          BusinessLevel(cost: 160000.0, incomePerSecond: 812.81, description: 'Local chain'),
-          BusinessLevel(cost: 320000.0, incomePerSecond: 2037.45, description: 'Online store launch'),
-          BusinessLevel(cost: 640000.0, incomePerSecond: 5093.63, description: 'Brand licensing'),
-          BusinessLevel(cost: 1280000.0, incomePerSecond: 12734.06, description: 'Export market'),
-          BusinessLevel(cost: 2560000.0, incomePerSecond: 31862.25, description: 'Global supplier'),
-        ],
-      ),
-      // 4. Fitness Studio
-      Business(
-        id: 'fitness_studio',
-        name: 'Fitness Studio',
-        description: 'A gym offering classes and personal training',
-        basePrice: 20000.0,
-        baseIncome: 36.0, // Adjusted income
-        level: 0,
-        incomeInterval: 1,
-        unlocked: false,
-        icon: Icons.fitness_center,
-        levels: [
-          BusinessLevel(cost: 20000.0, incomePerSecond: 36.0, description: 'Small space upgrade'),
-          BusinessLevel(cost: 40000.0, incomePerSecond: 90.0, description: 'New equipment'),
-          BusinessLevel(cost: 80000.0, incomePerSecond: 225.0, description: 'Group classes'),
-          BusinessLevel(cost: 160000.0, incomePerSecond: 540.0, description: 'Hire more trainers'),
-          BusinessLevel(cost: 320000.0, incomePerSecond: 1350.0, description: 'Acquire expanded space'),
-          BusinessLevel(cost: 640000.0, incomePerSecond: 3375.0, description: 'App membership'),
-          BusinessLevel(cost: 1280000.0, incomePerSecond: 8460.0, description: 'Second location'),
-          BusinessLevel(cost: 2560000.0, incomePerSecond: 21150.0, description: 'Franchise rights'),
-          BusinessLevel(cost: 5120000.0, incomePerSecond: 52920.0, description: 'Influencer endorsements'),
-          BusinessLevel(cost: 10240000.0, incomePerSecond: 132300.0, description: 'National chain'),
-        ],
-      ),
-      // 5. E-Commerce Store
-      Business(
-        id: 'ecommerce_store',
-        name: 'E-Commerce Store',
-        description: 'An online shop selling niche products like gadgets or apparel',
-        basePrice: 100000.0,
-        baseIncome: 240.0, // Adjusted income
-        level: 0,
-        incomeInterval: 1,
-        unlocked: false,
-        icon: Icons.shopping_basket,
-        levels: [
-          BusinessLevel(cost: 100000.0, incomePerSecond: 240.0, description: 'Basic website'),
-          BusinessLevel(cost: 200000.0, incomePerSecond: 600.0, description: 'SEO boost'),
-          BusinessLevel(cost: 400000.0, incomePerSecond: 1500.0, description: 'Expanded inventory offering'),
-          BusinessLevel(cost: 800000.0, incomePerSecond: 3744.0, description: 'Faster shipping processes'),
-          BusinessLevel(cost: 1600000.0, incomePerSecond: 9360.0, description: 'Ad campaigns'),
-          BusinessLevel(cost: 3200000.0, incomePerSecond: 23400.0, description: 'Mobile app'),
-          BusinessLevel(cost: 6400000.0, incomePerSecond: 58560.0, description: 'Warehouse expansion'),
-          BusinessLevel(cost: 12800000.0, incomePerSecond: 146400.0, description: 'Multi-brand'),
-          BusinessLevel(cost: 25600000.0, incomePerSecond: 366000.0, description: 'Global reach'),
-          BusinessLevel(cost: 51200000.0, incomePerSecond: 912000.0, description: 'Market leader'),
-        ],
-      ),
-      // 6. Craft Brewery
-      Business(
-        id: 'craft_brewery',
-        name: 'Craft Brewery',
-        description: 'A brewery producing artisanal beers for local and regional sale',
-        basePrice: 500000.0,
-        baseIncome: 720.0, // Adjusted income
-        level: 0,
-        incomeInterval: 1,
-        unlocked: false,
-        icon: Icons.sports_bar,
-        levels: [
-          BusinessLevel(cost: 500000.0, incomePerSecond: 720.0, description: 'Small batch production'),
-          BusinessLevel(cost: 1000000.0, incomePerSecond: 1800.0, description: 'Tasting room at brewery'),
-          BusinessLevel(cost: 2000000.0, incomePerSecond: 4500.0, description: 'New flavors'),
-          BusinessLevel(cost: 4000000.0, incomePerSecond: 11250.0, description: 'Bigger tanks'),
-          BusinessLevel(cost: 8000000.0, incomePerSecond: 28125.0, description: 'Distribution agreements'),
-          BusinessLevel(cost: 16000000.0, incomePerSecond: 70200.0, description: 'Pub chain'),
-          BusinessLevel(cost: 32000000.0, incomePerSecond: 175500.0, description: 'Canning line'),
-          BusinessLevel(cost: 64000000.0, incomePerSecond: 439200.0, description: 'National sales team'),
-          BusinessLevel(cost: 128000000.0, incomePerSecond: 1098000.0, description: 'Export deals'),
-          BusinessLevel(cost: 256000000.0, incomePerSecond: 2743200.0, description: 'Industry giant'),
-        ],
-      ),
-      // 7. Boutique Hotel
-      Business(
-        id: 'boutique_hotel',
-        name: 'Boutique Hotel',
-        description: 'A stylish hotel catering to travelers and locals',
-        basePrice: 2000000.0,
-        baseIncome: 3375.0, // Adjusted income
-        level: 0,
-        incomeInterval: 1,
-        unlocked: false,
-        icon: Icons.hotel,
-        levels: [
-          BusinessLevel(cost: 2000000.0, incomePerSecond: 3375.0, description: 'Small property'),
-          BusinessLevel(cost: 4000000.0, incomePerSecond: 8437.5, description: 'More rooms'),
-          BusinessLevel(cost: 8000000.0, incomePerSecond: 21093.75, description: 'Restaurant opening'),
-          BusinessLevel(cost: 16000000.0, incomePerSecond: 52734.38, description: 'Spa add-on'),
-          BusinessLevel(cost: 32000000.0, incomePerSecond: 131835.94, description: 'Luxury suites'),
-          BusinessLevel(cost: 64000000.0, incomePerSecond: 329400.0, description: 'Event and convention space'),
-          BusinessLevel(cost: 128000000.0, incomePerSecond: 823500.0, description: 'Second location'),
-          BusinessLevel(cost: 256000000.0, incomePerSecond: 2058750.0, description: 'Chain branding'),
-          BusinessLevel(cost: 512000000.0, incomePerSecond: 5146875.0, description: 'Global presence'),
-          BusinessLevel(cost: 1000000000.0, incomePerSecond: 12858750.0, description: 'Luxury empire'),
-        ],
-      ),
-      // 8. Film Production Studio
-      Business(
-        id: 'film_studio',
-        name: 'Film Production Studio',
-        description: 'A studio making indie films and streaming content',
-        basePrice: 10000000.0,
-        baseIncome: 16875.0, // Adjusted income
-        level: 0,
-        incomeInterval: 1,
-        unlocked: false,
-        icon: Icons.movie,
-        levels: [
-          BusinessLevel(cost: 10000000.0, incomePerSecond: 16875.0, description: 'Small crew'),
-          BusinessLevel(cost: 20000000.0, incomePerSecond: 42187.5, description: 'Better film and studio gear'),
-          BusinessLevel(cost: 40000000.0, incomePerSecond: 105468.75, description: 'Bigger castings'),
-          BusinessLevel(cost: 80000000.0, incomePerSecond: 263671.88, description: 'Studio lot acquired'),
-          BusinessLevel(cost: 160000000.0, incomePerSecond: 658125.0, description: 'Streaming deal with major brand'),
-          BusinessLevel(cost: 320000000.0, incomePerSecond: 1647000.0, description: 'Blockbuster releases'),
-          BusinessLevel(cost: 640000000.0, incomePerSecond: 4117500.0, description: 'Franchise IP'),
-          BusinessLevel(cost: 1280000000.0, incomePerSecond: 10293750.0, description: 'Global releases'),
-          BusinessLevel(cost: 2560000000.0, incomePerSecond: 25734375.0, description: 'Awards buzz'),
-          BusinessLevel(cost: 5120000000.0, incomePerSecond: 64125000.0, description: 'Media titan'),
-        ],
-      ),
-      // 9. Logistics Company
-      Business(
-        id: 'logistics_company',
-        name: 'Logistics Company',
-        description: 'A freight and delivery service for businesses',
-        basePrice: 50000000.0,
-        baseIncome: 84375.0, // Adjusted income
-        level: 0,
-        incomeInterval: 1,
-        unlocked: false,
-        icon: Icons.local_shipping,
-        levels: [
-          BusinessLevel(cost: 50000000.0, incomePerSecond: 84375.0, description: 'Additional trucks'),
-          BusinessLevel(cost: 100000000.0, incomePerSecond: 210937.5, description: 'Strategic route expansion'),
-          BusinessLevel(cost: 200000000.0, incomePerSecond: 526500.0, description: 'Multiple warehouses acquired'),
-          BusinessLevel(cost: 400000000.0, incomePerSecond: 1316250.0, description: 'Fleet upgrade with high tech truck and trailers'),
-          BusinessLevel(cost: 800000000.0, incomePerSecond: 3290625.0, description: 'Air shipping'),
-          BusinessLevel(cost: 1600000000.0, incomePerSecond: 8235000.0, description: 'Automation with robotics'),
-          BusinessLevel(cost: 3200000000.0, incomePerSecond: 20587500.0, description: 'Regional hub expansion'),
-          BusinessLevel(cost: 6400000000.0, incomePerSecond: 51468750.0, description: 'National scale'),
-          BusinessLevel(cost: 12800000000.0, incomePerSecond: 128587500.0, description: 'Global network with tanker shipping'),
-          BusinessLevel(cost: 25600000000.0, incomePerSecond: 321300000.0, description: 'Industry leader'),
-        ],
-      ),
-      // 10. Luxury Real Estate Developer
-      Business(
-        id: 'real_estate_developer',
-        name: 'Luxury Real Estate Developer',
-        description: 'Builds and sells high-end homes and condos',
-        basePrice: 250000000.0,
-        baseIncome: 337500.0, // Adjusted income
-        level: 0,
-        incomeInterval: 1,
-        unlocked: false,
-        icon: Icons.apartment,
-        levels: [
-          BusinessLevel(cost: 250000000.0, incomePerSecond: 337500.0, description: 'Single high end project'),
-          BusinessLevel(cost: 500000000.0, incomePerSecond: 843750.0, description: 'Multiple gated community projects'),
-          BusinessLevel(cost: 1000000000.0, incomePerSecond: 2109375.0, description: 'Luxury towers'),
-          BusinessLevel(cost: 2000000000.0, incomePerSecond: 5265000.0, description: 'Beachfront high rises'),
-          BusinessLevel(cost: 4000000000.0, incomePerSecond: 13162500.0, description: 'Smart homes for ultra rich'),
-          BusinessLevel(cost: 8000000000.0, incomePerSecond: 32906250.0, description: 'City expansion projects'),
-          BusinessLevel(cost: 16000000000.0, incomePerSecond: 82350000.0, description: 'Resort chain development deals'),
-          BusinessLevel(cost: 32000000000.0, incomePerSecond: 205875000.0, description: 'Global brand'),
-          BusinessLevel(cost: 64000000000.0, incomePerSecond: 513000000.0, description: 'Billionaire clients'),
-          BusinessLevel(cost: 128000000000.0, incomePerSecond: 1285875000.0, description: 'Real estate empire'),
-        ],
-      ),
-    ];
+    businesses = defaultBusinesses; // Use the imported list
   }
 
   void _initializeDefaultInvestments() {
-    investments = [
-      // STOCKS
-      Investment(
-        id: 'nxt', name: 'NexTech', description: 'A tech firm specializing in AI software.',
-        currentPrice: 10.0, basePrice: 10.0, volatility: 0.15, trend: 0.02, owned: 0,
-        icon: Icons.computer, color: Colors.blue, category: 'Technology', marketCap: 2.5,
-        priceHistory: List.generate(30, (i) => 10.0 * (0.98 + (Random().nextDouble() * 0.04))),
-      ),
-      Investment(
-        id: 'grv', name: 'GreenVolt', description: 'Renewable energy company with steady growth.',
-        currentPrice: 25.0, basePrice: 25.0, volatility: 0.12, trend: 0.03, owned: 0,
-        icon: Icons.eco, color: Colors.green, category: 'Energy', marketCap: 5.0,
-        priceHistory: List.generate(30, (i) => 25.0 * (0.98 + (Random().nextDouble() * 0.04))),
-      ),
-      Investment(
-        id: 'mft', name: 'MegaFreight', description: 'Logistics and shipping giant.',
-        currentPrice: 50.0, basePrice: 50.0, volatility: 0.15, trend: 0.01, owned: 0,
-        icon: Icons.local_shipping, color: Colors.blueGrey, category: 'Transportation', marketCap: 12.0,
-        priceHistory: List.generate(30, (i) => 50.0 * (0.98 + (Random().nextDouble() * 0.04))),
-      ),
-      Investment(
-        id: 'lxw', name: 'LuxWear', description: 'High-end fashion brand with trendy spikes.',
-        currentPrice: 100.0, basePrice: 100.0, volatility: 0.20, trend: 0.02, owned: 0,
-        icon: Icons.diamond_outlined, color: Colors.pink, category: 'Fashion', marketCap: 3.2,
-        priceHistory: List.generate(30, (i) => 100.0 * (0.98 + (Random().nextDouble() * 0.04))),
-      ),
-      Investment(
-        id: 'stf', name: 'StarForge', description: 'Space exploration company with high risk/reward.',
-        currentPrice: 500.0, basePrice: 500.0, volatility: 0.25, trend: 0.04, owned: 0,
-        icon: Icons.rocket_launch, color: Colors.deepPurple, category: 'Aerospace', marketCap: 20.0,
-        priceHistory: List.generate(30, (i) => 500.0 * (0.98 + (Random().nextDouble() * 0.04))),
-      ),
-      // CRYPTOCURRENCIES
-      Investment(
-        id: 'bcl', name: 'BitCoinLite', description: 'A beginner-friendly crypto with moderate swings.',
-        currentPrice: 50.0, basePrice: 50.0, volatility: 0.30, trend: 0.02, owned: 0,
-        icon: Icons.currency_bitcoin, color: Colors.amber, category: 'Cryptocurrency', marketCap: 0.85,
-        priceHistory: List.generate(30, (i) => 50.0 * (0.98 + (Random().nextDouble() * 0.04))),
-      ),
-      Investment(
-        id: 'etc', name: 'EtherCore', description: 'A blockchain platform with growing adoption.',
-        currentPrice: 200.0, basePrice: 200.0, volatility: 0.25, trend: 0.03, owned: 0,
-        icon: Icons.hub, color: Colors.blue.shade800, category: 'Cryptocurrency', marketCap: 2.4,
-        priceHistory: List.generate(30, (i) => 200.0 * (0.98 + (Random().nextDouble() * 0.04))),
-      ),
-      Investment(
-        id: 'mtk', name: 'MoonToken', description: 'A meme coin with wild volatility.',
-        currentPrice: 10.0, basePrice: 10.0, volatility: 0.50, trend: -0.01, owned: 0,
-        icon: Icons.nightlight_round, color: Colors.purple.shade300, category: 'Cryptocurrency', marketCap: 0.25,
-        priceHistory: List.generate(30, (i) => 10.0 * (0.98 + (Random().nextDouble() * 0.04))),
-      ),
-      Investment(
-        id: 'sbx', name: 'StableX', description: 'A low-risk crypto pegged to real-world value.',
-        currentPrice: 100.0, basePrice: 100.0, volatility: 0.03, trend: 0.001, owned: 0,
-        icon: Icons.lock, color: Colors.teal, category: 'Cryptocurrency', marketCap: 5.7,
-        priceHistory: List.generate(30, (i) => 100.0 * (0.98 + (Random().nextDouble() * 0.04))),
-      ),
-      Investment(
-        id: 'qbt', name: 'QuantumBit', description: 'Cutting-edge crypto tied to quantum computing.',
-        currentPrice: 1000.0, basePrice: 1000.0, volatility: 0.35, trend: 0.05, owned: 0,
-        icon: Icons.pending, color: Colors.cyan.shade700, category: 'Cryptocurrency', marketCap: 3.2,
-        priceHistory: List.generate(30, (i) => 1000.0 * (0.98 + (Random().nextDouble() * 0.04))),
-      ),
-      // DIVIDEND INVESTMENTS
-      Investment(
-        id: 'btf', name: 'BioTech Innovators Fund', description: 'Fund for biotech startups in gene therapy and vaccines.',
-        currentPrice: 500.0, basePrice: 500.0, volatility: 0.20, trend: 0.03, owned: 0,
-        icon: Icons.healing, color: Colors.lightBlue.shade700, category: 'Healthcare', dividendPerSecond: 1.89, marketCap: 12.5,
-        priceHistory: List.generate(30, (i) => 500.0 * (0.98 + (Random().nextDouble() * 0.04))),
-      ),
-      Investment(
-        id: 'sme', name: 'Streaming Media ETF', description: 'ETF of streaming platforms and content creators.',
-        currentPrice: 2000.0, basePrice: 2000.0, volatility: 0.20, trend: 0.04, owned: 0,
-        icon: Icons.live_tv, color: Colors.red.shade700, category: 'Entertainment', dividendPerSecond: 7.56, marketCap: 35.8,
-        priceHistory: List.generate(30, (i) => 2000.0 * (0.98 + (Random().nextDouble() * 0.04))),
-      ),
-      Investment(
-        id: 'sab', name: 'Sustainable Agriculture Bonds', description: 'Bonds for organic farming and sustainable food production.',
-        currentPrice: 10000.0, basePrice: 10000.0, volatility: 0.10, trend: 0.02, owned: 0,
-        icon: Icons.agriculture, color: Colors.green.shade800, category: 'Agriculture', dividendPerSecond: 39, marketCap: 22.7,
-        priceHistory: List.generate(30, (i) => 10000.0 * (0.98 + (Random().nextDouble() * 0.04))),
-      ),
-      Investment(
-        id: 'gti', name: 'Global Tourism Index', description: 'Index fund of major tourism companies.',
-        currentPrice: 50000.0, basePrice: 50000.0, volatility: 0.20, trend: 0.03, owned: 0,
-        icon: Icons.flight, color: Colors.amber.shade800, category: 'Tourism', dividendPerSecond: 191, marketCap: 86.5,
-        priceHistory: List.generate(30, (i) => 50000.0 * (0.98 + (Random().nextDouble() * 0.04))),
-      ),
-      Investment(
-        id: 'urt', name: 'Urban REIT', description: 'REIT for urban commercial properties.',
-        currentPrice: 200000.0, basePrice: 200000.0, volatility: 0.10, trend: 0.02, owned: 0,
-        icon: Icons.business, color: Colors.brown.shade600, category: 'REITs', dividendPerSecond: 762, marketCap: 125.8,
-        priceHistory: List.generate(30, (i) => 200000.0 * (0.98 + (Random().nextDouble() * 0.04))),
-      ),
-      Investment(
-        id: 'vrv', name: 'Virtual Reality Ventures', description: 'Stocks in VR gaming and entertainment companies.',
-        currentPrice: 1000000.0, basePrice: 1000000.0, volatility: 0.30, trend: 0.05, owned: 0,
-        icon: Icons.vrpano, color: Colors.deepPurple.shade600, category: 'Entertainment', dividendPerSecond: 3900, marketCap: 75.2,
-        priceHistory: List.generate(30, (i) => 1000000.0 * (0.98 + (Random().nextDouble() * 0.04))),
-      ),
-      Investment(
-        id: 'mrc', name: 'Medical Robotics Corp', description: 'Company producing robotic surgery and AI diagnostics.',
-        currentPrice: 5000000.0, basePrice: 5000000.0, volatility: 0.20, trend: 0.04, owned: 0,
-        icon: Icons.biotech, color: Colors.blue.shade800, category: 'Healthcare', dividendPerSecond: 19500.0, marketCap: 120.7,
-        priceHistory: List.generate(30, (i) => 5000000.0 * (0.98 + (Random().nextDouble() * 0.04))),
-      ),
-      Investment(
-        id: 'atf', name: 'AgroTech Futures', description: 'Futures on agrotech firms in vertical farming.',
-        currentPrice: 20000000.0, basePrice: 20000000.0, volatility: 0.30, trend: 0.03, owned: 0,
-        icon: Icons.eco, color: Colors.lightGreen.shade800, category: 'Agriculture', dividendPerSecond: 83000, marketCap: 195.3,
-        priceHistory: List.generate(30, (i) => 20000000.0 * (0.98 + (Random().nextDouble() * 0.04))),
-      ),
-      Investment(
-        id: 'lrr', name: 'Luxury Resort REIT', description: 'REIT for luxury resorts and vacation properties.',
-        currentPrice: 100000000.0, basePrice: 100000000.0, volatility: 0.10, trend: 0.02, owned: 0,
-        icon: Icons.beach_access, color: Colors.teal.shade600, category: 'REITs', dividendPerSecond: 385000, marketCap: 580.6,
-        priceHistory: List.generate(30, (i) => 100000000.0 * (0.98 + (Random().nextDouble() * 0.04))),
-      ),
-      Investment(
-        id: 'ath', name: 'Adventure Travel Holdings', description: 'Holdings in adventure travel and eco-tourism operators.',
-        currentPrice: 500000000.0, basePrice: 500000000.0, volatility: 0.20, trend: 0.03, owned: 0,
-        icon: Icons.terrain, color: Colors.orange.shade800, category: 'Tourism', dividendPerSecond: 1900000, marketCap: 1250.0,
-        priceHistory: List.generate(30, (i) => 500000000.0 * (0.98 + (Random().nextDouble() * 0.04))),
-      ),
-    ];
+    investments = defaultInvestments; // Use the imported list
   }
 
   String _formatTimeInterval(int seconds) {
@@ -733,13 +390,6 @@ class GameState with ChangeNotifier {
       return '$remainingSeconds seconds';
     }
   }
-/*
-  void enablePremium() {
-    isPremium = true;
-    notifyListeners();
-    print("Premium status enabled");
-  }
-*/
 
   void _setupTimers() {
     // REMOVED: _saveTimer = Timer.periodic(const Duration(minutes: 1), (_) {
@@ -861,7 +511,7 @@ class GameState with ChangeNotifier {
           if (business.secondsSinceLastIncome >= business.incomeInterval) {
             bool hasEvent = hasActiveEventForBusiness(business.id);
             // Apply Platinum Efficiency to base income first
-            double income = business.getCurrentIncome(affectedByEvent: hasEvent) * businessEfficiencyMultiplier;
+            double income = business.getCurrentIncome() * businessEfficiencyMultiplier;
             // Then apply standard multipliers
             income *= incomeMultiplier * prestigeMultiplier;
             // Then apply the overall permanent boost
@@ -1297,74 +947,170 @@ class GameState with ChangeNotifier {
     });
   }
 
+  // Method to enable premium features
+  void enablePremium() {
+    if (isPremium) return; // Already premium
+    
+    isPremium = true;
+    // Award bonus platinum points
+    platinumPoints += 1500;
+    // Show premium purchase notification
+    showPremiumPurchaseNotification = true;
+    
+    // After short delay, hide notification
+    Timer(const Duration(seconds: 5), () {
+      showPremiumPurchaseNotification = false;
+      notifyListeners();
+    });
+    
+    notifyListeners();
+  }
+
   // ADDED: Method to spend Platinum Points, now with optional context
   // TODO: Needs robust handling of item effects and limits
   bool spendPlatinumPoints(String itemId, int cost, {Map<String, dynamic>? purchaseContext}) {
+    DateTime now = DateTime.now(); // Get current time for checks
+
     // Check if affordable
     if (platinumPoints < cost) {
         print("DEBUG: Cannot afford item $itemId. Cost: $cost, Have: $platinumPoints");
-        return false;
+        return false; // Not enough PP
     }
 
-    // Check ownership for one-time items
+    // Check ownership for one-time items (before cooldowns)
     if (ppOwnedItems.contains(itemId)) {
-        print("DEBUG: Item $itemId already owned (one-time purchase).");
-        return false; // Already owned
+        // Find the item definition to confirm it's one-time (should be, but good practice)
+        // VaultItem itemDef = getVaultItems().firstWhere((item) => item.id == itemId); // Assuming access or cached list
+        // if (itemDef.type == VaultItemType.oneTime) {
+             print("DEBUG: Item $itemId already owned (one-time purchase).");
+             return false; // Already owned
+        // }
     }
 
-    // --- Specific checks for Platinum Foundation ---
-    if (itemId == 'platinum_foundation') {
-        // Check global limit
-        if (platinumFoundationsApplied.length >= 5) {
-            print("DEBUG: Cannot apply Foundation: Maximum limit (5) reached.");
-            return false;
-        }
-        // Check if the specific locale (passed in context) is already boosted
-        String? selectedLocaleId = purchaseContext?['selectedLocaleId'] as String?;
-        if (selectedLocaleId == null) {
-             print("ERROR: No locale ID provided for Platinum Foundation purchase.");
-             return false; // Need locale context
-        }
-        if (platinumFoundationsApplied.containsKey(selectedLocaleId)) {
-            print("DEBUG: Cannot apply Foundation: Locale $selectedLocaleId already has one.");
-            // Assuming 1 per locale limit for now
-            return false;
-        }
+    // --- Specific Cooldown/Limit/Active Checks ---
+    switch (itemId) {
+        case 'platinum_surge':
+            if (isIncomeSurgeActive) {
+                print("DEBUG: Cannot purchase $itemId: Already active.");
+                return false; // Prevent purchase if already active
+            }
+            if (incomeSurgeCooldownEnd != null && now.isBefore(incomeSurgeCooldownEnd!)) {
+                print("DEBUG: Cannot purchase $itemId: On cooldown until $incomeSurgeCooldownEnd.");
+                return false; // On cooldown
+            }
+            break;
+        case 'platinum_cache':
+            if (cashCacheCooldownEnd != null && now.isBefore(cashCacheCooldownEnd!)) {
+                print("DEBUG: Cannot purchase $itemId: On cooldown until $cashCacheCooldownEnd.");
+                return false; // On cooldown
+            }
+            break;
+        case 'platinum_warp':
+            _checkAndResetTimeWarpLimit(now); // Ensure weekly limit is current
+            if (timeWarpUsesThisPeriod >= 2) {
+                print("DEBUG: Cannot purchase $itemId: Weekly limit (2) reached.");
+                return false; // Limit reached
+            }
+            break;
+        case 'platinum_shield':
+            if (isDisasterShieldActive) {
+                 print("DEBUG: Cannot purchase $itemId: Already active.");
+                 return false; // Already active, don't allow stacking/extending for now
+            }
+            break;
+        case 'platinum_accelerator':
+            if (isCrisisAcceleratorActive) {
+                 print("DEBUG: Cannot purchase $itemId: Already active.");
+                 return false; // Already active, don't allow stacking/extending for now
+            }
+            break;
+        case 'temp_boost_10x_5min':
+            if (isClickFrenzyActive) {
+                print("DEBUG: Cannot purchase $itemId: Already active.");
+                return false; // Prevent stacking
+            }
+            if (isSteadyBoostActive) {
+                 print("DEBUG: Cannot purchase $itemId: Another Platinum booster (Steady Boost) is active.");
+                 return false; // Prevent running both simultaneously
+            }
+            break;
+        case 'temp_boost_2x_10min':
+            if (isSteadyBoostActive) {
+                print("DEBUG: Cannot purchase $itemId: Already active.");
+                return false; // Prevent stacking
+            }
+             if (isClickFrenzyActive) {
+                 print("DEBUG: Cannot purchase $itemId: Another Platinum booster (Click Frenzy) is active.");
+                 return false; // Prevent running both simultaneously
+            }
+            break;
+        case 'platinum_foundation':
+             // Check global limit
+             if (platinumFoundationsApplied.length >= 5) {
+                 print("DEBUG: Cannot apply Foundation: Maximum limit (5) reached.");
+                 return false;
+             }
+             // Check if the specific locale (passed in context) is already boosted
+             String? selectedLocaleId = purchaseContext?['selectedLocaleId'] as String?;
+             if (selectedLocaleId == null) {
+                  print("ERROR: No locale ID provided for Platinum Foundation purchase.");
+                  return false; // Need locale context
+             }
+             if (platinumFoundationsApplied.containsKey(selectedLocaleId)) {
+                 print("DEBUG: Cannot apply Foundation: Locale $selectedLocaleId already has one.");
+                 // Assuming 1 per locale limit for now
+                 return false;
+             }
+             break;
+        // Add other specific checks here if needed
     }
     // --- End specific checks ---
 
-    // --- ADDED: Check if a Platinum Click Booster is already active ---
-    if ((itemId == 'temp_boost_10x_5min' || itemId == 'temp_boost_2x_10min') && isPlatinumBoostActive) {
-        print("DEBUG: Cannot purchase booster $itemId because another platinum click booster is already active.");
-        // Optionally show a user message here
-        return false;
-    }
-    // --- END: Platinum Click Booster Check ---
 
-    // Basic check for repeatable item limits (Placeholder - needs specific item logic)
-    // Example: if (itemId == 'platinum_surge' && (ppPurchases[itemId] ?? 0) >= 3) return false;
-
+    // If all checks passed, proceed with purchase
     platinumPoints -= cost;
 
-    // Apply the actual effect of the item based on itemId, passing context
-    _applyVaultItemEffect(itemId, purchaseContext);
+    // Apply the actual effect of the item based on itemId, passing context and current time
+    _applyVaultItemEffect(itemId, now, purchaseContext);
 
-    // Track purchase
-    // TODO: Differentiate between one-time and repeatable logic more cleanly
-    if (itemId == 'platinum_foundation' || itemId == 'platinum_challenge' || itemId == 'platinum_shield' || itemId == 'platinum_accelerator' || itemId == 'platinum_surge' || itemId == 'platinum_warp' || itemId == 'platinum_cache') {
+    // Track purchase - distinguish one-time vs repeatable
+    // Note: This logic might need refinement based on exact item types from definition
+    var itemDefinition = getVaultItems().firstWhere((item) => item.id == itemId, orElse: () => VaultItem(id: 'unknown', name: 'Unknown', description: '', category: VaultItemCategory.cosmetics, type: VaultItemType.oneTime, cost: 0)); // Basic fallback
+
+    if (itemDefinition.type == VaultItemType.repeatable) {
         ppPurchases[itemId] = (ppPurchases[itemId] ?? 0) + 1;
     } else {
-        ppOwnedItems.add(itemId);
+        // Check again before adding, just in case logic changes
+        if (!ppOwnedItems.contains(itemId)) {
+             ppOwnedItems.add(itemId);
+        }
     }
 
     notifyListeners();
     return true;
   }
 
+  // ADDED: Helper to check and reset the weekly Time Warp limit
+  void _checkAndResetTimeWarpLimit(DateTime now) {
+    if (lastTimeWarpReset == null) {
+      // First use ever, set the reset time to next week (e.g., next Monday)
+      lastTimeWarpReset = TimeUtils.findNextWeekday(now, DateTime.monday);
+      timeWarpUsesThisPeriod = 0;
+       print("Time Warp: Initializing weekly limit. Resets on $lastTimeWarpReset");
+    } else if (now.isAfter(lastTimeWarpReset!)) {
+      // It's past the reset time, reset the counter and set the next reset time
+      int periodsPassed = now.difference(lastTimeWarpReset!).inDays ~/ 7;
+      lastTimeWarpReset = TimeUtils.findNextWeekday(lastTimeWarpReset!.add(Duration(days: (periodsPassed + 1) * 7)), DateTime.monday);
+      timeWarpUsesThisPeriod = 0;
+      print("Time Warp: Weekly limit reset. Uses reset to 0. Next reset: $lastTimeWarpReset");
+    }
+    // Otherwise, the limit is still valid for the current week
+  }
+
   // ADDED: Placeholder for applying vault item effects - NEEDS IMPLEMENTATION
-  // Now accepts optional purchaseContext
-  void _applyVaultItemEffect(String itemId, Map<String, dynamic>? purchaseContext) {
-    print("INFO: Applying effect for Platinum Vault item: $itemId with context: $purchaseContext");
+  // Now accepts optional purchaseContext and the purchase time
+  void _applyVaultItemEffect(String itemId, DateTime purchaseTime, Map<String, dynamic>? purchaseContext) {
+    print("Applying effect for $itemId at $purchaseTime");
     // --- This needs detailed implementation based on item ID ---
     switch (itemId) {
         case 'platinum_efficiency':
@@ -1462,29 +1208,20 @@ class GameState with ChangeNotifier {
             }
             break;
         case 'platinum_shield':
-            if (isDisasterShieldActive) {
-              print("WARNING: Disaster Shield is already active.");
-              // TODO: Decide if purchasing again extends duration or is disallowed.
-              // For now, disallow re-purchase while active.
-            } else {
-              isDisasterShieldActive = true;
-              disasterShieldEndTime = DateTime.now().add(const Duration(days: 1)); // 1 day duration
-              print("INFO: Disaster Shield Activated! Ends at: $disasterShieldEndTime");
-              // TODO: Add user-facing notification for shield activation.
-              notifyListeners();
-            }
+            // Pre-check in spendPlatinumPoints ensures it's not already active
+            isDisasterShieldActive = true;
+            disasterShieldEndTime = purchaseTime.add(const Duration(days: 1)); // 24h duration
+            print("INFO: Disaster Shield Activated! Ends at: $disasterShieldEndTime");
+            // TODO: Add user-facing notification for shield activation.
+            // notifyListeners(); // Called at the end of the method
             break;
         case 'platinum_accelerator':
-            if (isCrisisAcceleratorActive) {
-              print("WARNING: Crisis Accelerator is already active.");
-              // TODO: Decide if purchasing again extends duration or is disallowed.
-            } else {
-              isCrisisAcceleratorActive = true;
-              crisisAcceleratorEndTime = DateTime.now().add(const Duration(days: 1)); // 24h duration
-              print("INFO: Crisis Accelerator Activated! Ends at: $crisisAcceleratorEndTime");
-              // TODO: Add user-facing notification.
-              notifyListeners();
-            }
+             // Pre-check in spendPlatinumPoints ensures it's not already active
+            isCrisisAcceleratorActive = true;
+            crisisAcceleratorEndTime = purchaseTime.add(const Duration(days: 1)); // 24h duration
+            print("INFO: Crisis Accelerator Activated! Ends at: $crisisAcceleratorEndTime");
+            // TODO: Add user-facing notification.
+             // notifyListeners(); // Called at the end of the method
             break;
         // --- Cosmetics ---
         case 'platinum_mogul':
@@ -1524,39 +1261,43 @@ class GameState with ChangeNotifier {
             break;
         // --- Boosters ---
         case 'platinum_surge':
-            if (isIncomeSurgeActive) {
-              print("WARNING: Income Surge is already active.");
-              // TODO: Extend duration or disallow?
-            } else {
-              isIncomeSurgeActive = true;
-              incomeSurgeEndTime = DateTime.now().add(const Duration(hours: 1));
-              print("INFO: Income Surge Activated! Ends at: $incomeSurgeEndTime");
-              // TODO: Add user-facing notification.
-              notifyListeners();
-            }
+            // Pre-check in spendPlatinumPoints ensures it's not already active and not on cooldown
+            isIncomeSurgeActive = true;
+            incomeSurgeEndTime = purchaseTime.add(const Duration(hours: 1));
+            incomeSurgeCooldownEnd = purchaseTime.add(const Duration(days: 1)); // 24h cooldown
+            print("INFO: Income Surge Activated! Ends at: $incomeSurgeEndTime. Cooldown until: $incomeSurgeCooldownEnd");
+            // TODO: Add user-facing notification.
+            // notifyListeners(); // Called at the end of the method
             break;
         case 'platinum_warp':
+            // Pre-check in spendPlatinumPoints ensures limit not reached
             double offlineHours = 4.0; // Defined by the item
-            double offlineIncome = calculateOfflineIncome(Duration(hours: offlineHours.toInt())); 
+            // Use the existing calculateOfflineIncome which respects multipliers etc.
+            double offlineIncome = calculateOfflineIncome(Duration(hours: offlineHours.toInt()));
             if (offlineIncome > 0) {
                 money += offlineIncome;
                 totalEarned += offlineIncome;
                 passiveEarnings += offlineIncome; // Attribute to passive
-                print("INFO: Awarded ${offlineIncome.toStringAsFixed(2)} offline income via Platinum Warp (${offlineHours}h).");
+                print("INFO: Awarded ${NumberFormatter.formatCompact(offlineIncome)} offline income via Platinum Warp (${offlineHours}h).");
                 // TODO: Add user-facing notification.
-                 notifyListeners();
             } else {
                  print("INFO: Platinum Warp: No offline income calculated (income/sec might be zero).");
             }
+            timeWarpUsesThisPeriod++; // Increment usage count
+            print("INFO: Time Warp uses this period: $timeWarpUsesThisPeriod/2");
+            // notifyListeners(); // Called at the end of the method
             break;
         case 'platinum_cache':
-             double cashAward = _calculateScaledCashCache(); // Add helper for scaling
+             // Pre-check in spendPlatinumPoints ensures not on cooldown
+             double cashAward = _calculateScaledCashCache(); // Use helper for scaling
              money += cashAward;
-             totalEarned += cashAward;
-             passiveEarnings += cashAward; // Attribute to passive for simplicity
-             print("Awarded ${cashAward.toStringAsFixed(2)} via Platinum Cache.");
-             // Ensure notifyListeners is called
-             notifyListeners(); 
+             totalEarned += cashAward; // Track earnings
+             // Maybe attribute to a specific category later?
+             // passiveEarnings += cashAward; // Or maybe manualEarnings?
+             cashCacheCooldownEnd = purchaseTime.add(const Duration(days: 1)); // 24h cooldown
+             print("Awarded ${NumberFormatter.formatCompact(cashAward)} via Platinum Cache. Cooldown until: $cashCacheCooldownEnd");
+             // TODO: Add user-facing notification.
+             // notifyListeners(); // Called at the end of the method
              break;
         case 'perm_income_boost_5pct':
             isPermanentIncomeBoostActive = true;
@@ -1591,6 +1332,24 @@ class GameState with ChangeNotifier {
     notifyListeners(); // Notify after applying effect
   }
 
+  // ADDED: Helper to calculate scaled cash cache amount
+  double _calculateScaledCashCache() {
+    // Example scaling: 15 minutes of current passive income?
+    // Or based on total earned, net worth, etc.
+    // Let's use 15 minutes of total passive income per second for now.
+    double passiveIncomePerSecond = calculatePassiveIncomePerSecond(); // Use the detailed calculation
+    double cashAmount = passiveIncomePerSecond * 60 * 15; // 15 minutes worth
+
+    // Add a small floor value and potentially cap it?
+    cashAmount = max(cashAmount, 1000.0); // Minimum $1k
+    // Example cap: Maybe 1% of current money or net worth?
+    // cashAmount = min(cashAmount, money * 0.01); // Cap at 1% of current cash (can be low)
+    // cashAmount = min(cashAmount, calculateNetWorth() * 0.005); // Cap at 0.5% of net worth
+
+    print("Calculating Cash Cache: Passive/sec=$passiveIncomePerSecond, Base Award=$cashAmount");
+    return cashAmount;
+  }
+
   // ADDED: Helper to add the Platinum Stock investment
   void _addPlatinumStockInvestment() {
       investments.add(Investment(
@@ -1611,14 +1370,6 @@ class GameState with ChangeNotifier {
           // Potentially add a high dividend yield as well for extra reward/risk
           // dividendPerSecond: 50000.0, // Example: 50k/sec per share
       ));
-  }
-
-  // ADDED: Helper to calculate scaled cash cache amount
-  double _calculateScaledCashCache() {
-      // Simple scaling based on total earned (adjust thresholds as needed)
-      if (totalEarned < 1e6) return 100000.0; // 100K early game (< $1M earned)
-      if (totalEarned < 1e9) return 1000000.0; // $1M mid game (< $1B earned)
-      return 10000000.0; // $10M late game (>= $1B earned)
   }
 
   // ADDED: Helper to calculate potential offline income for a given duration
@@ -1659,7 +1410,7 @@ class GameState with ChangeNotifier {
       if (business.level > 0) {
         bool hasEvent = hasActiveEventForBusiness(business.id);
         // Apply Platinum Efficiency boost to the *base* income calculated by getCurrentIncome
-        double businessBaseIncome = business.getCurrentIncome(affectedByEvent: hasEvent);
+        double businessBaseIncome = business.getCurrentIncome();
         businessTotal += businessBaseIncome * businessEfficiencyMultiplier;
       }
     }
@@ -1765,4 +1516,38 @@ class GameState with ChangeNotifier {
     _platinumSteadyBoostTimer = null;
   }
   // --- END: Helper methods for Platinum Booster Timers ---
+
+  // ADDED: Check and trigger notification display
+  bool checkAndClearOfflineEarnings() {
+    if (shouldShowOfflineEarnings && offlineEarningsAwarded > 0 && offlineDurationForNotification != null) {
+      bool hasEarnings = true;
+      // Clear flag after checking (caller will show notification)
+      shouldShowOfflineEarnings = false;
+      notifyListeners();
+      return hasEarnings;
+    }
+    return false;
+  }
+
+  // ADDED: Get offline earnings data for notification
+  Map<String, dynamic> getOfflineEarningsData() {
+    return {
+      'amount': offlineEarningsAwarded,
+      'duration': offlineDurationForNotification ?? Duration.zero
+    };
+  }
+  
+  // ADDED: Clear offline notification state
+  void clearOfflineNotification() {
+    shouldShowOfflineEarnings = false;
+    offlineEarningsAwarded = 0.0;
+    offlineDurationForNotification = null;
+    notifyListeners();
+  }
+  
+  // ADDED: Method to dismiss premium purchase notification
+  void dismissPremiumPurchaseNotification() {
+    showPremiumPurchaseNotification = false;
+    notifyListeners();
+  }
 }

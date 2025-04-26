@@ -9,11 +9,14 @@ import 'real_estate.dart';
 // Extension for game_state.dart to handle game events
 extension GameStateEvents on GameState {
   // Constants
-  static const double EVENT_INCOME_PENALTY = -0.25; // -25% income (negative value)
-  static const int EVENT_COOLDOWN_SECONDS = 900; // 15 minutes between events
-  static const int EVENT_MIN_BUSINESSES = 4; // Min businesses needed to trigger events
+  static const double EVENT_INCOME_PENALTY = -0.25; // Existing penalty (will be superseded by the multiplier)
+  static const int EVENT_COOLDOWN_SECONDS = 600; // 10 minutes between events
+  static const int EVENT_MIN_BUSINESSES = 3; // Min businesses needed to trigger events
   static const int EVENT_MIN_LOCALES = 2; // Min locales with properties needed to trigger events
-  static const int EVENT_MAX_PER_HOUR = 3; // Maximum 3 events in a 60-minute window
+  static const int EVENT_MAX_PER_HOUR = 4; // Maximum 4 events in a 60-minute window
+  
+  // Negative Multiplier for active, unresolved events
+  static const double NEGATIVE_EVENT_MULTIPLIER = -0.25;
   
   // Check if event system should be unlocked
   void _checkEventUnlockConditions() {

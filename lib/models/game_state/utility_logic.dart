@@ -137,6 +137,11 @@ extension UtilityLogic on GameState {
   // Use for full game reset, not reincorporation
   void resetToDefaults() {
     print("🔄 Resetting game state to defaults...");
+    
+    // Save premium status and platinum points before reset
+    bool premiumStatus = isPremium;
+    int pPoints = platinumPoints;
+    
     // Reset basic player stats
     money = 500.0;
     totalEarned = 500.0;
@@ -149,9 +154,6 @@ extension UtilityLogic on GameState {
     taps = 0;
     clickLevel = 1;
     totalRealEstateUpgradesPurchased = 0;
-
-    // Don't reset premium status
-    // isPremium stays unchanged
 
     // Reset lifetime stats
     lifetimeTaps = 0;
@@ -180,13 +182,42 @@ extension UtilityLogic on GameState {
     // Reset market events
     activeMarketEvents = [];
 
-    // Re-initialize businesses, investments, and real estate
+    // Re-initialize businesses, investments, and real estate with default values
     _initializeDefaultBusinesses();
     _initializeDefaultInvestments();
     _initializeRealEstateLocales();
-    // Need to handle potential async upgrade loading if called outside constructor context
-    // For simplicity, assuming upgrades will be loaded if needed elsewhere or sync loading
-
+    
+    // CRITICAL FIX: Ensure all businesses are explicitly reset to level 0
+    for (var business in businesses) {
+      business.level = 0;
+      business.secondsSinceLastIncome = 0;
+      business.unlocked = business.id == 'mobile_car_wash' || business.id == 'food_stall' || business.id == 'coffee_roaster';
+    }
+    
+    // CRITICAL FIX: Ensure all investments are explicitly reset to owned = 0
+    for (var investment in investments) {
+      investment.owned = 0;
+      investment.purchasePrice = 0.0;
+      investment.autoInvestEnabled = false;
+      investment.autoInvestAmount = 0.0;
+    }
+    
+    // CRITICAL FIX: Ensure all real estate properties are reset
+    for (var locale in realEstateLocales) {
+      // Only unlock the first locale (Rural Kenya)
+      locale.unlocked = locale.id == 'rural_kenya';
+      
+      for (var property in locale.properties) {
+        property.owned = 0;
+        property.unlocked = locale.id == 'rural_kenya'; // Only unlock properties in the first locale
+        
+        // Reset all upgrades
+        for (var upgrade in property.upgrades) {
+          upgrade.purchased = false;
+        }
+      }
+    }
+    
     // Reset Achievement tracking fields
     totalUpgradeSpending = 0.0;
     luxuryUpgradeSpending = 0.0;
@@ -199,6 +230,7 @@ extension UtilityLogic on GameState {
     for (var achievement in achievementManager.achievements) {
       achievement.completed = false;
     }
+    
     // Reset notification queue
     _pendingAchievementNotifications.clear();
     _currentAchievementNotification = null;
@@ -220,7 +252,11 @@ extension UtilityLogic on GameState {
     lastEventResolvedTime = null;
     resolvedEvents = [];
 
-     // Update unlocks based on starting money
+    // Restore premium status and platinum points
+    isPremium = premiumStatus;
+    platinumPoints = pPoints;
+
+    // Update unlocks based on starting money
     _updateBusinessUnlocks();
     _updateRealEstateUnlocks();
 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'dart:math'; // ADDED: Import for max()
 
 import '../models/game_state.dart';
 import '../models/real_estate.dart'; // Import RealEstateLocale
@@ -292,34 +293,118 @@ class _PlatinumVaultScreenState extends State<PlatinumVaultScreen> with SingleTi
           final item = items[index];
           final bool isOwned = gameState.ppOwnedItems.contains(item.id);
           final int purchaseCount = gameState.ppPurchases[item.id] ?? 0;
+          final now = DateTime.now(); // For calculating remaining time
 
-          // --- ADDED: Determine active booster state for passing to card ---
-          bool isAnyPlatinumBoostActive = gameState.isPlatinumBoostActive;
-          int? activeBoostRemainingSeconds;
-          if (item.id == 'temp_boost_10x_5min') {
-            activeBoostRemainingSeconds = gameState.platinumClickFrenzyRemainingSeconds;
-          } else if (item.id == 'temp_boost_2x_10min') {
-            activeBoostRemainingSeconds = gameState.platinumSteadyBoostRemainingSeconds;
+          // --- Determine specific item status from GameState --- 
+          bool isActive = false;
+          DateTime? cooldownEndTime;
+          DateTime? activeEndTime;
+          int usesLeft = 0; // Default/unused
+          int maxUses = 0; // Default/unused
+          int? maxPurchases; // MOVED declaration BEFORE switch
+
+          switch (item.id) {
+            case 'platinum_surge':
+              isActive = gameState.isIncomeSurgeActive;
+              activeEndTime = gameState.incomeSurgeEndTime;
+              cooldownEndTime = gameState.incomeSurgeCooldownEnd;
+              break;
+            case 'platinum_cache':
+              cooldownEndTime = gameState.cashCacheCooldownEnd;
+              break;
+            case 'platinum_warp':
+              maxUses = 2;
+              usesLeft = max(0, maxUses - gameState.timeWarpUsesThisPeriod);
+              break;
+            case 'platinum_shield':
+              isActive = gameState.isDisasterShieldActive;
+              activeEndTime = gameState.disasterShieldEndTime;
+              break;
+            case 'platinum_accelerator':
+              isActive = gameState.isCrisisAcceleratorActive;
+              activeEndTime = gameState.crisisAcceleratorEndTime;
+              break;
+            case 'temp_boost_10x_5min':
+              isActive = gameState.isClickFrenzyActive;
+              // activeEndTime = gameState.platinumClickFrenzyEndTime; // Can use this if needed
+              break;
+            case 'temp_boost_2x_10min':
+              isActive = gameState.isSteadyBoostActive;
+              // activeEndTime = gameState.platinumSteadyBoostEndTime; // Can use this if needed
+              break;
+            case 'platinum_foundation':
+              maxPurchases = 5; // Assign value here
+              // This item doesn't have a simple active/cooldown state at the item level
+              break;
+            // Add other items if they gain timed states later
           }
-          // --- END: Determine active booster state ---
+
+          // Determine if the item is currently on cooldown
+          bool onCooldown = cooldownEndTime != null && now.isBefore(cooldownEndTime);
+          Duration? cooldownRemaining = onCooldown ? cooldownEndTime.difference(now) : null;
+
+          // Determine remaining active duration
+          Duration? activeRemaining = isActive && activeEndTime != null ? activeEndTime.difference(now) : null;
+          if (activeRemaining != null && activeRemaining.isNegative) {
+            activeRemaining = Duration.zero; // Ensure it doesn't show negative
+            isActive = false; // Correct the state if timer ran out but flag not cleared yet
+          }
+
+          // --- END Determine specific item status --- 
 
           // Define max purchases (example for platinum_foundation)
-          int? maxPurchases;
           if (item.id == 'platinum_foundation') {
-            maxPurchases = 5; // Example limit
+             // Max purchases is now set within the switch case above
+             // maxPurchases = 5; 
           }
 
           return VaultItemCard(
             item: item,
             currentPoints: gameState.platinumPoints,
-            isOwned: isOwned,
-            purchaseCount: purchaseCount,
-            maxPurchaseCount: maxPurchases,
-            // --- ADDED: Pass booster state to card ---
-            isAnyPlatinumBoostActive: isAnyPlatinumBoostActive,
-            activeBoostRemainingSeconds: activeBoostRemainingSeconds,
-            // --- END: Pass booster state ---
+            isOwned: isOwned, // For one-time items
+            purchaseCount: purchaseCount, // For repeatable count display
+            maxPurchaseCount: maxPurchases, // Pass the value (might be null for non-foundation)
+
+            // --- Pass calculated status to card ---
+            isActive: isActive,
+            activeDurationRemaining: activeRemaining,
+            isOnCooldown: onCooldown,
+            cooldownDurationRemaining: cooldownRemaining,
+            usesLeft: usesLeft, // e.g., for Time Warp
+            maxUses: maxUses,   // e.g., for Time Warp
+
+            // --- Keep existing booster logic for now, might refactor later ---
+            isAnyPlatinumBoostActive: gameState.isPlatinumBoostActive, // For general booster checks if needed
+            activeBoostRemainingSeconds: (item.id == 'temp_boost_10x_5min')
+                ? gameState.platinumClickFrenzyRemainingSeconds
+                : (item.id == 'temp_boost_2x_10min')
+                    ? gameState.platinumSteadyBoostRemainingSeconds
+                    : null,
+            // --- END --- 
+
             onBuy: () {
+              // --- ADDED: Pre-purchase check in UI for instant feedback ---
+              if (isActive) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text("${item.name} is already active."), backgroundColor: Colors.orange),
+                );
+                return;
+              }
+              if (onCooldown) {
+                 ScaffoldMessenger.of(context).showSnackBar(
+                   SnackBar(content: Text("${item.name} is on cooldown."), backgroundColor: Colors.orange),
+                 );
+                 return;
+              }
+              if (item.id == 'platinum_warp' && usesLeft <= 0) {
+                 ScaffoldMessenger.of(context).showSnackBar(
+                   SnackBar(content: Text("${item.name} weekly limit reached."), backgroundColor: Colors.orange),
+                 );
+                 return;
+              }
+              // --- END Pre-purchase check ---
+
+              // Proceed with purchase logic (dialogs or direct call)
               _handlePurchase(context, gameState, item);
             },
           );

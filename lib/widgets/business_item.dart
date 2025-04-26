@@ -171,8 +171,9 @@ class BusinessItem extends StatelessWidget {
         bool hasActiveEvent = gameState.hasActiveEventForBusiness(business.id);
         
         // --- Calculate Effective Income for Display ---
-        // Start with base income, considering event effects
-        double baseIncome = business.getIncomePerSecond(affectedByEvent: hasActiveEvent);
+        // Start with base income - REMOVED affectedByEvent parameter
+        // NOTE: Event multiplier applied in GameState._updateGameState
+        double baseIncome = business.getIncomePerSecond();
 
         // Apply permanent Platinum boosts
         double businessEfficiencyMultiplier = gameState.isPlatinumEfficiencyActive ? 1.05 : 1.0;

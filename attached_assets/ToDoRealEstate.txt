@@ -1,0 +1,16 @@
+  ✅ Upgrades added successfully. Property now has 3 upgrades.
+
+  
+! No upgrades found for property: Platinum Tower (platinum_tower)
+📍 Processing locale: Platinum Islands (platinum_islands)
+! No upgrades found for property: Coral Beach Bungalow (pi_beach_bungalow)
+! No upgrades found for property: Private Marina Slip (pi_marina_slip)
+! No upgrades found for property: Overwater Luxury Villa (pi_overwater_villa)
+! No upgrades found for property: Secluded Jungle Retreat (pi_jungle_retreat)
+! No upgrades found for property: Cliffside Panoramic Estate (pi_cliffside_estate)
+! No upgrades found for property: Sustainable Eco-Resort (pi_eco_resort)
+! No upgrades found for property: Extinct Volcano Lair (pi_volcano_lair)
+! No upgrades found for property: Underwater Hotel Suite (pi_underwater_hotel)
+! No upgrades found for property: Platinum Yacht Club HQ (pi_yacht_club)
+! No upgrades found for property: Sovereign Island Compound (pi_sovereign_island)
+! No upgrades found for property: The Sovereign's Platinum Isle (platinum_island)

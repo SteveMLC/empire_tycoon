@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart'; // To potentially access GameState for owned status?
+import 'dart:async'; // Import for Timer
 
 import '../data/platinum_vault_items.dart';
 import '../utils/number_formatter.dart'; // For formatting cost
@@ -11,6 +12,12 @@ class VaultItemCard extends StatefulWidget {
   final VoidCallback onBuy;
   final int? purchaseCount; // Optional: Current purchase count for repeatable items
   final int? maxPurchaseCount; // Optional: Max purchase count for repeatable items
+  final bool isActive; // Is the effect currently active?
+  final Duration? activeDurationRemaining; // Remaining duration if active
+  final bool isOnCooldown; // Is the item on cooldown?
+  final Duration? cooldownDurationRemaining; // Remaining duration if on cooldown
+  final int usesLeft; // Uses left for limited-use items (e.g., Time Warp)
+  final int maxUses; // Max uses for limited-use items
   final bool isAnyPlatinumBoostActive;
   final int? activeBoostRemainingSeconds; // Remaining seconds if THIS booster is active
 
@@ -22,6 +29,12 @@ class VaultItemCard extends StatefulWidget {
     required this.onBuy,
     this.purchaseCount,
     this.maxPurchaseCount,
+    this.isActive = false,
+    this.activeDurationRemaining,
+    this.isOnCooldown = false,
+    this.cooldownDurationRemaining,
+    this.usesLeft = 0,
+    this.maxUses = 0,
     this.isAnyPlatinumBoostActive = false,
     this.activeBoostRemainingSeconds,
   }) : super(key: key);
@@ -35,6 +48,9 @@ class _VaultItemCardState extends State<VaultItemCard> with SingleTickerProvider
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
   late Animation<double> _glowAnimation;
+  Timer? _timer; // Timer for updating remaining duration display
+  Duration? _currentActiveRemaining;
+  Duration? _currentCooldownRemaining;
 
   @override
   void initState() {
@@ -51,32 +67,172 @@ class _VaultItemCardState extends State<VaultItemCard> with SingleTickerProvider
     _glowAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
+
+    _updateTimers();
+  }
+
+  @override
+  void didUpdateWidget(covariant VaultItemCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Update timers if the relevant durations change
+    if (widget.activeDurationRemaining != oldWidget.activeDurationRemaining ||
+        widget.cooldownDurationRemaining != oldWidget.cooldownDurationRemaining) {
+      _updateTimers();
+    }
+  }
+
+  void _updateTimers() {
+    _timer?.cancel();
+    _currentActiveRemaining = widget.activeDurationRemaining;
+    _currentCooldownRemaining = widget.cooldownDurationRemaining;
+
+    if ((_currentActiveRemaining != null && _currentActiveRemaining! > Duration.zero) ||
+        (_currentCooldownRemaining != null && _currentCooldownRemaining! > Duration.zero)) {
+      _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+        if (!mounted) {
+          timer.cancel();
+          return;
+        }
+        setState(() {
+          bool activeTimerRunning = false;
+          bool cooldownTimerRunning = false;
+
+          if (_currentActiveRemaining != null && _currentActiveRemaining! > Duration.zero) {
+            _currentActiveRemaining = _currentActiveRemaining! - const Duration(seconds: 1);
+            if (_currentActiveRemaining! <= Duration.zero) {
+              _currentActiveRemaining = Duration.zero;
+            } else {
+               activeTimerRunning = true;
+            }
+          }
+          if (_currentCooldownRemaining != null && _currentCooldownRemaining! > Duration.zero) {
+            _currentCooldownRemaining = _currentCooldownRemaining! - const Duration(seconds: 1);
+             if (_currentCooldownRemaining! <= Duration.zero) {
+              _currentCooldownRemaining = Duration.zero;
+            } else {
+              cooldownTimerRunning = true;
+            }
+          }
+
+          if (!activeTimerRunning && !cooldownTimerRunning) {
+            timer.cancel();
+            _timer = null;
+            // Optionally trigger a state refresh from GameState if needed
+          }
+        });
+      });
+    }
   }
 
   @override
   void dispose() {
+    _timer?.cancel();
     _animationController.dispose();
     super.dispose();
+  }
+
+  // Helper to format duration into HH:MM:SS or MM:SS
+  String _formatDuration(Duration duration) {
+    String twoDigits(int n) => n.toString().padLeft(2, '0');
+    final hours = duration.inHours;
+    final minutes = duration.inMinutes.remainder(60);
+    final seconds = duration.inSeconds.remainder(60);
+    if (hours > 0) {
+      return "${twoDigits(hours)}:${twoDigits(minutes)}:${twoDigits(seconds)}";
+    } else {
+      return "${twoDigits(minutes)}:${twoDigits(seconds)}";
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final bool canAfford = widget.currentPoints >= widget.item.cost;
     final bool isRepeatable = widget.item.type == VaultItemType.repeatable;
+    final bool isOneTimeOwned = !isRepeatable && widget.isOwned;
     final bool isMaxedOut = isRepeatable && 
                            widget.maxPurchaseCount != null && 
                            widget.purchaseCount != null && 
                            widget.purchaseCount! >= widget.maxPurchaseCount!;
-    final bool isBoosterItem = widget.item.id == 'temp_boost_10x_5min' || widget.item.id == 'temp_boost_2x_10min';
-    final bool isThisBoosterActive = isBoosterItem && widget.activeBoostRemainingSeconds != null && widget.activeBoostRemainingSeconds! > 0;
-    final bool isPurchasable = (isRepeatable && !isMaxedOut) || (!isRepeatable && !widget.isOwned);
-    bool isBuyButtonEnabled = canAfford && isPurchasable;
-    if (isBoosterItem && widget.isAnyPlatinumBoostActive) {
-      isBuyButtonEnabled = false;
+    
+    // --- Determine purchasability based on new states --- 
+    bool isPurchasable = true;
+    if (isOneTimeOwned) isPurchasable = false;
+    if (isMaxedOut) isPurchasable = false;
+    // Use the locally updating timer values for checks
+    if (widget.isActive && (_currentActiveRemaining == null || _currentActiveRemaining! > Duration.zero)) isPurchasable = false; // Cannot buy if already active
+    if (widget.isOnCooldown && (_currentCooldownRemaining == null || _currentCooldownRemaining! > Duration.zero)) isPurchasable = false; // Cannot buy if on cooldown
+    if (widget.item.id == 'platinum_warp' && widget.usesLeft <= 0) isPurchasable = false;
+    if ((widget.item.id == 'temp_boost_10x_5min' || widget.item.id == 'temp_boost_2x_10min') && widget.isAnyPlatinumBoostActive) {
+       isPurchasable = false; // Cannot buy one booster if another plat booster is active
     }
+    // --- End purchasability logic --- 
 
-    final buttonText = _getButtonText(canAfford, isRepeatable, widget.isOwned, isMaxedOut, 
-                                     widget.purchaseCount, widget.maxPurchaseCount);
+    bool isBuyButtonEnabled = canAfford && isPurchasable;
+
+    // --- Determine Button Text and Style based on state --- 
+    String buttonText = "Purchase"; // Default
+    Color buttonColor = const Color(0xFF8E44AD); // Default purple
+    Color buttonTextColor = const Color(0xFFFFD700); // Default gold text
+    Color buttonBorderColor = const Color(0xFFFFD700).withOpacity(0.4);
+    List<BoxShadow>? buttonShadow = [ // Default shadow
+      BoxShadow(
+        color: const Color(0xFFAA00FF).withOpacity(0.2),
+        blurRadius: 6,
+        spreadRadius: 0,
+      ),
+    ];
+
+    if (!canAfford) {
+      buttonText = "Insufficient PP";
+      buttonColor = const Color(0xFF38134A); // Darker disabled color
+      buttonTextColor = Colors.grey.shade600;
+      buttonBorderColor = Colors.grey.shade700;
+      buttonShadow = [];
+    } else if (isOneTimeOwned) {
+      buttonText = "Owned";
+      buttonColor = const Color(0xFFFFD700); // Gold color for owned
+      buttonTextColor = Colors.black;
+      buttonBorderColor = const Color(0xFFFFD700).withOpacity(0.8);
+       buttonShadow = [BoxShadow(color: const Color(0xFFFFD700).withOpacity(0.3), blurRadius: 8)];
+    } else if (isMaxedOut) {
+       buttonText = "Maxed Out";
+       buttonColor = Colors.grey.shade700;
+       buttonTextColor = Colors.grey.shade400;
+       buttonBorderColor = Colors.grey.shade600;
+       buttonShadow = [];
+    } else if (widget.isActive && _currentActiveRemaining != null && _currentActiveRemaining! > Duration.zero) {
+       buttonText = "Active: ${_formatDuration(_currentActiveRemaining!)}";
+       buttonColor = Colors.blue.shade800; // Distinct color for active
+       buttonTextColor = Colors.lightBlue.shade100;
+       buttonBorderColor = Colors.blue.shade400;
+       buttonShadow = [BoxShadow(color: Colors.blue.withOpacity(0.4), blurRadius: 8)];
+    } else if (widget.isOnCooldown && _currentCooldownRemaining != null && _currentCooldownRemaining! > Duration.zero) {
+      buttonText = "Cooldown: ${_formatDuration(_currentCooldownRemaining!)}";
+       buttonColor = Colors.orange.shade900; // Distinct color for cooldown
+       buttonTextColor = Colors.orange.shade100;
+       buttonBorderColor = Colors.orange.shade600;
+       buttonShadow = [BoxShadow(color: Colors.orange.withOpacity(0.4), blurRadius: 8)];
+    } else if (widget.item.id == 'platinum_warp') {
+       if (widget.usesLeft > 0) {
+         buttonText = "Purchase (${widget.usesLeft}/${widget.maxUses} Left)";
+         // Keep default purchase colors
+       } else {
+         buttonText = "Limit Reached";
+         buttonColor = Colors.grey.shade700;
+         buttonTextColor = Colors.grey.shade400;
+         buttonBorderColor = Colors.grey.shade600;
+         buttonShadow = [];
+       }
+    } else if ((widget.item.id == 'temp_boost_10x_5min' || widget.item.id == 'temp_boost_2x_10min') && widget.isAnyPlatinumBoostActive) {
+       // Find which booster IS active to display its timer potentially
+       // For now, just show generic text
+       buttonText = "Boost Active"; 
+       buttonColor = Colors.blue.shade800;
+       buttonTextColor = Colors.lightBlue.shade100;
+       buttonBorderColor = Colors.blue.shade400;
+       buttonShadow = [BoxShadow(color: Colors.blue.withOpacity(0.4), blurRadius: 8)];
+    }
+    // --- End Button Text and Style Logic --- 
 
     // Check for mobile screen size
     final bool isMobile = MediaQuery.of(context).size.width < 600;
@@ -222,64 +378,12 @@ class _VaultItemCardState extends State<VaultItemCard> with SingleTickerProvider
                                 ),
                               ),
                               
-                              // Status indicator for owned items
-                              if (widget.isOwned || isMaxedOut)
+                              // Status indicator for owned items OR maxed out
+                              if (isOneTimeOwned || isMaxedOut)
                                 Positioned(
                                   top: 0,
                                   right: 16,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                    decoration: BoxDecoration(
-                                      color: widget.isOwned 
-                                          ? const Color(0xFFFFD700).withOpacity(0.9)
-                                          : Colors.grey.withOpacity(0.9),
-                                      borderRadius: BorderRadius.circular(12),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withOpacity(0.3),
-                                          blurRadius: 4,
-                                          offset: const Offset(0, 2),
-                                        ),
-                                      ],
-                                    ),
-                                    child: Text(
-                                      widget.isOwned ? 'Owned' : 'Maxed',
-                                      style: TextStyle(
-                                        color: widget.isOwned ? Colors.black : Colors.white,
-                                        fontSize: isMobile ? 12 : 10,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              
-                              // Purchasable indicator
-                              if (isBuyButtonEnabled && _isHovering)
-                                Positioned(
-                                  top: 0,
-                                  right: 16,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFFFD700).withOpacity(0.9),
-                                      borderRadius: BorderRadius.circular(12),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withOpacity(0.3),
-                                          blurRadius: 4,
-                                          offset: const Offset(0, 2),
-                                        ),
-                                      ],
-                                    ),
-                                    child: Text(
-                                      'Tap to Buy',
-                                      style: TextStyle(
-                                        color: Colors.black,
-                                        fontSize: isMobile ? 12 : 10,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
+                                  child: _buildStatusIndicator(isOneTimeOwned, isMaxedOut),
                                 ),
                             ],
                           ),
@@ -463,32 +567,26 @@ class _VaultItemCardState extends State<VaultItemCard> with SingleTickerProvider
                                       colors: isBuyButtonEnabled
                                           ? [
                                               _isHovering
-                                                  ? const Color(0xFF9A55BE)
-                                                  : const Color(0xFF8E44AD),
+                                                  ? Color.lerp(buttonColor, Colors.white, 0.1)! // Slightly lighter on hover
+                                                  : buttonColor,
                                               _isHovering
-                                                  ? const Color(0xFF7D36A0)
-                                                  : const Color(0xFF6C3384),
+                                                  ? Color.lerp(buttonColor, Colors.black, 0.1)! // Slightly darker on hover
+                                                  : buttonColor.withOpacity(0.8),
                                             ]
                                           : [
-                                              const Color(0xFF38134A),
-                                              const Color(0xFF2D0C3E),
+                                              buttonColor, // Use the determined disabled/status color
+                                              buttonColor.withOpacity(0.8),
                                             ],
                                     ),
                                     boxShadow: isBuyButtonEnabled
-                                        ? [
-                                            BoxShadow(
-                                              color: const Color(0xFFAA00FF).withOpacity(_isHovering ? 0.4 : 0.2),
-                                              blurRadius: _isHovering ? 12 : 6,
-                                              spreadRadius: _isHovering ? 1 : 0,
-                                            ),
-                                          ]
-                                        : [],
+                                        ? buttonShadow // Use determined shadow
+                                        : [], // No shadow when disabled
                                     border: Border.all(
                                       color: isBuyButtonEnabled
                                           ? (_isHovering
-                                              ? const Color(0xFFFFD700).withOpacity(0.8)
-                                              : const Color(0xFFFFD700).withOpacity(0.4))
-                                          : Colors.grey.shade700,
+                                              ? buttonBorderColor.withOpacity(0.8)
+                                              : buttonBorderColor)
+                                          : buttonBorderColor, // Use determined border color
                                       width: 1.5,
                                     ),
                                   ),
@@ -513,23 +611,14 @@ class _VaultItemCardState extends State<VaultItemCard> with SingleTickerProvider
                                                 ),
                                               ),
                                             Text(
-                                              buttonText,
+                                              buttonText, // Use the determined text
                                               style: TextStyle(
                                                 color: isBuyButtonEnabled
-                                                    ? const Color(0xFFFFD700)
-                                                    : Colors.grey.shade500,
+                                                    ? buttonTextColor // Use determined text color
+                                                    : buttonTextColor, // Use determined disabled/status text color
                                                 fontWeight: FontWeight.bold,
                                                 fontSize: isMobile ? 16 : 14,
                                                 letterSpacing: 0.8,
-                                                shadows: isBuyButtonEnabled
-                                                    ? [
-                                                        Shadow(
-                                                          color: Colors.black.withOpacity(0.6),
-                                                          blurRadius: 2,
-                                                          offset: const Offset(0, 1),
-                                                        ),
-                                                      ]
-                                                    : [],
                                               ),
                                             ),
                                           ],
@@ -590,21 +679,6 @@ class _VaultItemCardState extends State<VaultItemCard> with SingleTickerProvider
         },
       ),
     );
-  }
-
-  // Helper function to determine button text
-  String _getButtonText(bool canAfford, bool isRepeatable, bool isOwned, bool isMaxedOut, int? purchaseCount, int? maxPurchaseCount) {
-    if (!canAfford) {
-      return 'Need More P';
-    } else if (isMaxedOut) {
-      return 'Maxed Out';
-    } else if (!isRepeatable && isOwned) {
-      return 'Owned';
-    } else if (isRepeatable) {
-      return 'Purchase';
-    } else {
-      return 'Buy Now';
-    }
   }
 
   void _showFullDescription(BuildContext context) {
@@ -760,6 +834,49 @@ class _VaultItemCardState extends State<VaultItemCard> with SingleTickerProvider
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  // Helper to build the status indicator (Owned/Maxed)
+  Widget _buildStatusIndicator(bool isOneTimeOwned, bool isMaxedOut) {
+    String text = "";
+    Color bgColor = Colors.grey;
+    Color textColor = Colors.white;
+
+    if (isOneTimeOwned) {
+      text = "Owned";
+      bgColor = const Color(0xFFFFD700).withOpacity(0.9);
+      textColor = Colors.black;
+    } else if (isMaxedOut) {
+      text = "Maxed";
+      bgColor = Colors.grey.withOpacity(0.9);
+    } else {
+      return const SizedBox.shrink(); // No indicator if not owned/maxed
+    }
+
+    final bool isMobile = MediaQuery.of(context).size.width < 600;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.3),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: textColor,
+          fontSize: isMobile ? 12 : 10,
+          fontWeight: FontWeight.bold,
         ),
       ),
     );

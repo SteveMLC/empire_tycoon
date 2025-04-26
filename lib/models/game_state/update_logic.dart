@@ -39,6 +39,32 @@ extension UpdateLogic on GameState {
     try {
       DateTime now = DateTime.now();
       String hourKey = TimeUtils.getHourKey(now);
+      bool stateChanged = false; // Track if notifyListeners is needed
+
+      // --- [0] Check/Reset Timed Effects & Limits First --- 
+      // Income Surge
+      if (isIncomeSurgeActive && incomeSurgeEndTime != null && now.isAfter(incomeSurgeEndTime!)) {
+        print("INFO: Income Surge expired.");
+        isIncomeSurgeActive = false;
+        incomeSurgeEndTime = null;
+        stateChanged = true;
+      }
+      // Disaster Shield
+      if (isDisasterShieldActive && disasterShieldEndTime != null && now.isAfter(disasterShieldEndTime!)) {
+        print("INFO: Disaster Shield expired.");
+        isDisasterShieldActive = false;
+        disasterShieldEndTime = null;
+        stateChanged = true;
+      }
+       // Crisis Accelerator
+      if (isCrisisAcceleratorActive && crisisAcceleratorEndTime != null && now.isAfter(crisisAcceleratorEndTime!)) {
+        print("INFO: Crisis Accelerator expired.");
+        isCrisisAcceleratorActive = false;
+        crisisAcceleratorEndTime = null;
+        stateChanged = true;
+      }
+      // Time Warp Weekly Reset
+      _checkAndResetTimeWarpLimit(now); // Check/handle weekly reset (may update state internally)
 
       // --- [1] Event System --- 
       checkAndTriggerEvents(); // From game_state_events.dart extension
@@ -66,68 +92,121 @@ extension UpdateLogic on GameState {
 
       // Business Income
       double businessIncomeThisTick = 0;
+      // Define multipliers used across income sources
+      double businessEfficiencyMultiplier = isPlatinumEfficiencyActive ? 1.05 : 1.0;
+      double permanentIncomeBoostMultiplier = isPermanentIncomeBoostActive ? 1.05 : 1.0;
+      
       for (var business in businesses) {
         if (business.level > 0) {
           business.secondsSinceLastIncome++;
           if (business.secondsSinceLastIncome >= business.incomeInterval) {
-            bool hasEvent = hasActiveEventForBusiness(business.id);
-            // Pass isPlatinumResilienceActive to getCurrentIncome
-            double income = business.getCurrentIncome(affectedByEvent: hasEvent, isResilienceActive: isPlatinumResilienceActive) * incomeMultiplier * prestigeMultiplier;
+            // Get base income (already includes interval factor)
+            // Note: isResilienceActive might be needed if other effects use it
+            double baseIncome = business.getCurrentIncome(isResilienceActive: isPlatinumResilienceActive); 
             
-            // Apply Platinum Efficiency Module bonus
-            if (isPlatinumEfficiencyActive) {
-              income *= 1.05; // Apply 5% boost to the final calculated income for this tick
+            // Apply Platinum Efficiency first
+            double incomeWithEfficiency = baseIncome * businessEfficiencyMultiplier;
+
+            // Apply standard multipliers
+            double finalIncome = incomeWithEfficiency * incomeMultiplier * prestigeMultiplier;
+            
+            // Apply the overall permanent boost
+            finalIncome *= permanentIncomeBoostMultiplier;
+
+            // Apply Income Surge (if applicable)
+            if (isIncomeSurgeActive) finalIncome *= 2.0;
+
+            // Check for negative event and apply multiplier AFTER all bonuses
+            bool hasEvent = hasActiveEventForBusiness(business.id);
+            if (hasEvent) {
+              finalIncome *= GameStateEvents.NEGATIVE_EVENT_MULTIPLIER; // Apply -0.25
             }
             
-            businessIncomeThisTick += income;
+            businessIncomeThisTick += finalIncome;
             business.secondsSinceLastIncome = 0;
           }
         }
       }
-      if (businessIncomeThisTick > 0) {
-        totalIncomeThisTick += businessIncomeThisTick;
-        passiveEarnings += businessIncomeThisTick; // Track source
-        // print("DEBUG: Business Income Tick: $businessIncomeThisTick");
-      }
+      // Add business income to total (can be negative now)
+      totalIncomeThisTick += businessIncomeThisTick;
+      passiveEarnings += businessIncomeThisTick; // Track net passive earnings
 
-      // Real Estate Income
-      double realEstateIncomePerSecond = getRealEstateIncomePerSecond(); // Already considers events
-      double realEstateIncomeThisTick = realEstateIncomePerSecond * incomeMultiplier * prestigeMultiplier;
-      if (realEstateIncomeThisTick > 0) {
-        totalIncomeThisTick += realEstateIncomeThisTick;
-        realEstateEarnings += realEstateIncomeThisTick; // Track source
-        // print("DEBUG: RE Income Tick: $realEstateIncomeThisTick");
-      }
+      // Real Estate Income (Process per property for event checks)
+      double realEstateIncomeThisTick = 0.0;
+      for (var locale in realEstateLocales) {
+        if (locale.unlocked) {
+          bool isLocaleAffectedByEvent = hasActiveEventForLocale(locale.id);
+          bool isFoundationApplied = platinumFoundationsApplied.containsKey(locale.id);
+          bool isYachtDocked = platinumYachtDockedLocaleId == locale.id;
+          double foundationMultiplier = isFoundationApplied ? 1.05 : 1.0;
+          double yachtMultiplier = isYachtDocked ? 1.05 : 1.0;
 
-      // Dividend Income
-      double dividendIncomeThisTick = 0.0;
-      double diversificationBonus = calculateDiversificationBonus();
-      for (var investment in investments) {
-        if (investment.owned > 0 && investment.hasDividends()) {
-          double investmentDividend = investment.getDividendIncomePerSecond() *
-                                     incomeMultiplier *
-                                     prestigeMultiplier *
-                                     (1 + diversificationBonus); // Apply diversification bonus
+          for (var property in locale.properties) {
+            if (property.owned > 0) {
+              // Get base income per property (already includes owned count)
+              // Note: isResilienceActive might be needed if other effects use it
+              double basePropertyIncome = property.getTotalIncomePerSecond(isResilienceActive: isPlatinumResilienceActive); 
+              
+              // Apply locale-specific multipliers (Foundation, Yacht)
+              double incomeWithLocaleBoosts = basePropertyIncome * foundationMultiplier * yachtMultiplier;
 
-          // Apply Platinum Portfolio bonus
-          if (isPlatinumPortfolioActive) {
-            investmentDividend *= 1.25;
+              // Apply standard global multipliers
+              double finalPropertyIncome = incomeWithLocaleBoosts * incomeMultiplier * prestigeMultiplier;
+
+              // Apply the overall permanent boost
+              finalPropertyIncome *= permanentIncomeBoostMultiplier;
+              
+              // Apply Income Surge (if applicable)
+              if (isIncomeSurgeActive) finalPropertyIncome *= 2.0;
+
+              // Check for negative event affecting the LOCALE and apply multiplier AFTER all bonuses
+              if (isLocaleAffectedByEvent) {
+                finalPropertyIncome *= GameStateEvents.NEGATIVE_EVENT_MULTIPLIER; // Apply -0.25
+              }
+              
+              realEstateIncomeThisTick += finalPropertyIncome;
+            }
           }
-
-          dividendIncomeThisTick += investmentDividend;
         }
       }
-      if (dividendIncomeThisTick > 0) {
-        money += dividendIncomeThisTick;
-        totalEarned += dividendIncomeThisTick;
-        investmentDividendEarnings += dividendIncomeThisTick;
-        _updateHourlyEarnings(hourKey, dividendIncomeThisTick);
-      }
+      // Add real estate income to total (can be negative now)
+      totalIncomeThisTick += realEstateIncomeThisTick;
+      realEstateEarnings += realEstateIncomeThisTick; // Track net real estate earnings
 
-      // Apply total income for the tick
-      if (totalIncomeThisTick > 0) {
+      // Dividend Income (Events don't affect dividends directly - Reverted to simpler calculation)
+      double dividendIncomeThisTick = 0.0;
+      double diversificationBonus = calculateDiversificationBonus();
+      double portfolioMultiplier = isPlatinumPortfolioActive ? 1.25 : 1.0; // Platinum portfolio boost
+      
+      for (var investment in investments) {
+        if (investment.owned > 0 && investment.hasDividends()) {
+          double baseDividend = investment.getDividendIncomePerSecond(); 
+          
+          // Calculate effective dividend per share considering portfolio/diversification
+          double effectiveDividendPerShare = baseDividend * portfolioMultiplier * (1 + diversificationBonus);
+          
+          // Apply global multipliers and owned count
+          double finalInvestmentDividend = effectiveDividendPerShare * investment.owned *
+                                             incomeMultiplier *
+                                             prestigeMultiplier;
+                                             
+           // Apply the overall permanent boost
+           finalInvestmentDividend *= permanentIncomeBoostMultiplier;
+
+           // Apply Income Surge (if applicable)
+           if (isIncomeSurgeActive) finalInvestmentDividend *= 2.0; 
+
+          dividendIncomeThisTick += finalInvestmentDividend;
+        }
+      }
+      // Add dividend income to total
+      totalIncomeThisTick += dividendIncomeThisTick;
+      investmentDividendEarnings += dividendIncomeThisTick; // Track net dividend earnings
+
+      // Apply total NET income for the tick (can be negative)
+      if (totalIncomeThisTick != 0) { // Add or subtract based on the final value
           money += totalIncomeThisTick;
-          totalEarned += totalIncomeThisTick;
+          totalEarned += totalIncomeThisTick; // totalEarned can now decrease if income is negative
           // Update hourly earnings (aggregate for the hour)
           _updateHourlyEarnings(hourKey, totalIncomeThisTick);
       }
@@ -154,9 +233,13 @@ extension UpdateLogic on GameState {
       }
 
       // --- [8] Final Notification --- 
-      // Notify if money actually changed during the tick
       if (money != previousMoney) {
-         notifyListeners();
+         stateChanged = true; // Money changed, need notification
+      }
+
+      // --- [8] Final Notification --- 
+      if (stateChanged) {
+        notifyListeners(); // Notify if any relevant state changed during the tick
       }
 
     } catch (e, stackTrace) {
