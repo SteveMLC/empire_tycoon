@@ -15,9 +15,20 @@ class NumberFormatter {
   
   /// Format a number as currency with dollar sign
   /// Example: formatCurrency(1234.56) => "$1,234.56"
-  static String formatCurrency(double value) {
-    // Always use full currency format with $ symbol, never compact
-    return _currencyFormat.format(value);
+  static String formatCurrency(double amount) {
+    if (amount == 0) {
+      return "\$0.00";
+    }
+    
+    // Handle negative numbers
+    bool isNegative = amount < 0;
+    amount = amount.abs();
+    
+    // Always use full number format with commas
+    String formattedAmount = _currencyFormat.format(amount);
+    
+    // Add negative sign if needed
+    return isNegative ? "-$formattedAmount" : formattedAmount;
   }
   
   /// Format a number in compact notation for large numbers

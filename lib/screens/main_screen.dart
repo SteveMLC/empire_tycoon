@@ -1,5 +1,5 @@
 import 'dart:async'; // Import dart:async for Timer
-import 'dart:math'; // Import dart:math for Random
+import 'dart:math'; // Import dart:math for Random, pi, cos, sin
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -304,23 +304,66 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
   }
   
   Widget _buildTabBar() {
+    // Check if platinum frame is active
+    final bool isPlatinumFrameActive = Provider.of<GameState>(context, listen: false).isPlatinumFrameUnlocked && 
+                                      Provider.of<GameState>(context, listen: false).isPlatinumFrameActive;
+    
     return Container(
       decoration: BoxDecoration(
+        gradient: isPlatinumFrameActive
+            ? const LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Color(0xFF3D2B5B),  // Deep royal purple
+                  Color(0xFF34385E),  // Rich royal blue
+                ],
+              )
+            : null,
+        color: isPlatinumFrameActive ? null : Colors.white,
         border: Border(
-          top: BorderSide(color: Colors.grey.shade300, width: 1),
-          bottom: BorderSide(color: Colors.grey.shade300, width: 1),
+          top: BorderSide(
+            color: isPlatinumFrameActive ? const Color(0xFFFFD700) : Colors.grey.shade300,
+            width: isPlatinumFrameActive ? 2.0 : 1.0,
+          ),
+          bottom: BorderSide(
+            color: isPlatinumFrameActive ? const Color(0xFFFFD700) : Colors.grey.shade300,
+            width: isPlatinumFrameActive ? 0.5 : 1.0,
+          ),
         ),
+        boxShadow: isPlatinumFrameActive
+            ? [
+                BoxShadow(
+                  color: const Color(0xFFFFD700).withOpacity(0.3),
+                  blurRadius: 8,
+                  spreadRadius: -4,
+                  offset: const Offset(0, -2),
+                ),
+              ]
+            : null,
       ),
       child: TabBar(
         controller: _tabController,
-        labelColor: Colors.blue,
-        unselectedLabelColor: Colors.grey,
+        labelColor: isPlatinumFrameActive ? const Color(0xFFFFD700) : Colors.blue,
+        unselectedLabelColor: isPlatinumFrameActive ? Colors.grey.shade400 : Colors.grey,
         indicatorWeight: 3,
-        indicatorColor: Colors.blue,
+        indicatorColor: isPlatinumFrameActive ? const Color(0xFFFFD700) : Colors.blue,
+        indicatorPadding: isPlatinumFrameActive ? const EdgeInsets.symmetric(horizontal: 10) : EdgeInsets.zero,
         isScrollable: false,
         labelPadding: EdgeInsets.zero,
-        indicatorPadding: EdgeInsets.zero,
-        labelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+        labelStyle: TextStyle(
+          fontSize: 12, 
+          fontWeight: FontWeight.bold,
+          shadows: isPlatinumFrameActive
+              ? [
+                  Shadow(
+                    color: const Color(0xFFFFD700).withOpacity(0.5),
+                    blurRadius: 2,
+                    offset: const Offset(0, 1),
+                  ),
+                ]
+              : null,
+        ),
         unselectedLabelStyle: const TextStyle(fontSize: 12),
         tabs: const [
           Tab(icon: Icon(Icons.touch_app), text: 'Hustle'),
@@ -337,134 +380,619 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
   Widget _buildTopPanel(GameState gameState) {
     // Get screen width to make panel full width
     final screenWidth = MediaQuery.of(context).size.width;
+    final mediaQuery = MediaQuery.of(context);
     
     // Determine if boost is currently active based on GameState
     final bool isBoostCurrentlyActive = gameState.clickMultiplier > 1.0 && 
                                        gameState.clickBoostEndTime != null && 
                                        gameState.clickBoostEndTime!.isAfter(DateTime.now());
 
+    // Check if platinum frame is active
+    final bool isPlatinumFrameActive = gameState.isPlatinumFrameUnlocked && gameState.isPlatinumFrameActive;
+
     return Container(
       width: screenWidth,
-      padding: const EdgeInsets.fromLTRB(20, 35, 20, 20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(
-          bottom: BorderSide(
-            color: Colors.grey.shade300,
-            width: 1.0,
-          ),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 3,
-            offset: const Offset(0, 2),
-          ),
-        ],
+      // Reduce overall padding, especially top padding to account for status bar
+      padding: EdgeInsets.fromLTRB(
+        12, 
+        // Add mediaQuery.padding.top to ensure we account for status bar in both modes
+        mediaQuery.padding.top + (isPlatinumFrameActive ? 8 : 12), 
+        12, 
+        isPlatinumFrameActive ? 10 : 12
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      decoration: isPlatinumFrameActive
+          ? BoxDecoration(
+              // Rich luxury platinum gradient with depth and dimension
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFF2A1D47),  // Deeper royal purple for contrast
+                  Color(0xFF2E2A5A),  // Rich royal blue, slightly darker
+                  Color(0xFF34305E),  // Indigo with purple hints
+                ],
+                stops: [0.0, 0.5, 1.0],
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFFFFD700).withOpacity(0.7), // More intense golden glow
+                  blurRadius: 16,
+                  spreadRadius: -2,
+                  offset: const Offset(0, 3),
+                ),
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.45),
+                  blurRadius: 10,
+                  spreadRadius: -1,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+              border: Border(
+                bottom: const BorderSide(
+                  color: Color(0xFFFFD700), // Pure gold color
+                  width: 2.0,
+                ),
+                top: const BorderSide(
+                  color: Color(0xFFFFD700), // Pure gold color
+                  width: 0.75,
+                ),
+                left: BorderSide(
+                  color: const Color(0xFFFFD700).withOpacity(0.6), // Gold side accents
+                  width: 0.75,
+                ),
+                right: BorderSide(
+                  color: const Color(0xFFFFD700).withOpacity(0.6), // Gold side accents
+                  width: 0.75,
+                ),
+              ),
+            )
+          : BoxDecoration(
+              color: Colors.white,
+              border: Border(
+                bottom: BorderSide(
+                  color: Colors.grey.shade300,
+                  width: 1.0,
+                ),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 3,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+      child: Stack(
         children: [
-          // Top Row: Account Label and PP Display
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          // Enhanced luxury background pattern for platinum frame (only if active)
+          if (isPlatinumFrameActive)
+            Positioned.fill(
+              child: CustomPaint(
+                painter: LuxuryPatternPainter(),
+              ),
+            ),
+          
+          // Main content with enhanced visual design
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Account label
-              Text(
-                'INVESTMENT ACCOUNT',
-                style: TextStyle(
-                  color: Colors.grey.shade700,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  letterSpacing: 1.2,
-                ),
-              ),
-
-              // Use the new PP display component
-              _buildPPDisplay(gameState),
-            ],
-          ),
-          
-          const SizedBox(height: 10),
-          
-          // Money display with improved styling
-          Row(
-            children: [
-              Text(
-                'Cash:',
-                style: TextStyle(
-                  color: Colors.grey.shade800,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const Spacer(),
-              MoneyDisplay(
-                money: gameState.money,
-                fontColor: Colors.black,
-                fontSize: 22,
-                fontWeight: FontWeight.w600,
-              ),
-            ],
-          ),
-          
-          const SizedBox(height: 8),
-          
-          // Income per second with improved styling
-          Row(
-            children: [
-              Text(
-                'Income Rate:',
-                style: TextStyle(
-                  color: Colors.grey.shade800,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const Spacer(),
-              Text(
-                '${NumberFormatter.formatCurrency(_calculateIncomePerSecond(gameState))}/sec',
-                style: TextStyle(
-                  color: Colors.green.shade700,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-          
-          // Active boost timer - uses local state _boostTimeRemaining now
-          if (isBoostCurrentlyActive)
-            Padding(
-              padding: const EdgeInsets.only(top: 12),
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(color: Colors.blue.shade200),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.bolt, color: Colors.blue.shade700, size: 20),
-                    const SizedBox(width: 8),
-                    Text(
-                      '10x Boost Active! Expires in ${_formatBoostTimeRemaining(_boostTimeRemaining)}', // Use local state
-                      style: TextStyle(
-                        color: Colors.blue.shade800,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
+              // Top Row: Account Label and PP Display - More compact for Platinum
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Elevated account label with premium styling
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: isPlatinumFrameActive ? BoxDecoration(
+                      gradient: const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [Color(0xFFFFD700), Color(0xFFFDB833)], // Richer gold gradient
                       ),
+                      borderRadius: BorderRadius.circular(8),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.35),
+                          blurRadius: 4,
+                          offset: const Offset(0, 1),
+                        ),
+                        BoxShadow(
+                          color: const Color(0xFFFFD700).withOpacity(0.3),
+                          blurRadius: 6,
+                          spreadRadius: 0,
+                          offset: const Offset(0, -1),
+                        ),
+                      ],
+                    ) : null,
+                    child: Row(
+                      children: [
+                        if (isPlatinumFrameActive)
+                          const Icon(
+                            Icons.account_balance,
+                            color: Color(0xFF241B38),
+                            size: 16,
+                          ),
+                        if (isPlatinumFrameActive)
+                          const SizedBox(width: 4),
+                        Text(
+                          'INVESTMENT ACCOUNT',
+                          style: TextStyle(
+                            color: isPlatinumFrameActive ? const Color(0xFF241B38) : Colors.grey.shade700,
+                            fontSize: 15, // Reduced from 14
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.8,
+                            shadows: isPlatinumFrameActive 
+                                ? [
+                                    Shadow(
+                                      color: Colors.white.withOpacity(0.6),
+                                      blurRadius: 2,
+                                      offset: const Offset(0, 0.5),
+                                    ),
+                                  ] 
+                                : null,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // PP display with enhanced glow
+                  _buildPPDisplay(gameState),
+                ],
+              ),
+              
+              // Tighter spacing for both modes
+              SizedBox(height: isPlatinumFrameActive ? 8 : 10),
+              
+              // Enhanced money container with platinum theme - more depth and dimension
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: isPlatinumFrameActive ? BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      const Color(0xFF1B1E36).withOpacity(0.9),  // Dark base
+                      const Color(0xFF262A4F).withOpacity(0.9),  // Rich indigo
+                      const Color(0xFF1F2142).withOpacity(0.9),  // Deeper indigo-purple
+                    ],
+                    stops: [0.0, 0.5, 1.0],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: const Color(0xFFFFD700).withOpacity(0.8),
+                    width: 1.75,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFFFD700).withOpacity(0.4),
+                      blurRadius: 12,
+                      spreadRadius: -2,
+                      offset: const Offset(0, 2),
+                    ),
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.4),
+                      blurRadius: 8,
+                      spreadRadius: -2,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ) : null,
+                child: Column(
+                  children: [
+                    // Money display with improved styling, reduced size, and better overflow handling
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center, // Vertically align items
+                      children: [
+                        // Label with iconic platinum money sign - Wrap in Expanded
+                        Expanded(
+                          flex: 2, // Give label reasonable space
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min, // Don't expand horizontally
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: isPlatinumFrameActive
+                                    ? BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        gradient: const LinearGradient(
+                                          colors: [Color(0xFFFFD700), Color(0xFFFFC107)],
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                        ),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: const Color(0xFFFFD700).withOpacity(0.6),
+                                            blurRadius: 8,
+                                            spreadRadius: 0,
+                                            offset: const Offset(0, 1),
+                                          ),
+                                          BoxShadow(
+                                            color: Colors.black.withOpacity(0.4),
+                                            blurRadius: 4,
+                                            spreadRadius: -1,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ],
+                                      )
+                                    : null,
+                                child: Icon(
+                                  Icons.attach_money,
+                                  color: isPlatinumFrameActive ? Colors.white : Colors.grey.shade800,
+                                  size: 18, // Reduced from 20
+                                ),
+                              ),
+                              const SizedBox(width: 8), // Reduced from 10
+                              Text(
+                                'Cash:',
+                                style: TextStyle(
+                                  color: isPlatinumFrameActive ? Colors.white : Colors.grey.shade800,
+                                  fontSize: 16, // Reduced from 18
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: isPlatinumFrameActive ? 0.5 : 0,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        // Value - Wrap in Expanded
+                        Expanded(
+                          flex: 3, // Give value more space
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerRight,
+                            child: MoneyDisplay(
+                              money: gameState.money,
+                              fontColor: isPlatinumFrameActive ? Colors.white : Colors.black,
+                              fontSize: 18, // Match the income rate size
+                              fontWeight: FontWeight.bold,
+                              isPlatinumStyle: isPlatinumFrameActive,
+                              textAlign: TextAlign.right,
+                              shadows: isPlatinumFrameActive
+                                  ? [
+                                      Shadow(
+                                        color: const Color(0xFFFFD700).withOpacity(0.6),
+                                        blurRadius: 4,
+                                        offset: const Offset(0, 1),
+                                      ),
+                                      Shadow(
+                                        color: Colors.black.withOpacity(0.4),
+                                        blurRadius: 2,
+                                        offset: const Offset(0, 1),
+                                      ),
+                                    ]
+                                  : null,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    
+                    if (isPlatinumFrameActive) 
+                      Container(
+                        margin: const EdgeInsets.symmetric(vertical: 6), // Reduced from 10
+                        height: 1,
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0x00FFD700), Color(0xFFFFD700), Color(0x00FFD700)],
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFFFFD700).withOpacity(0.3),
+                              blurRadius: 3,
+                              spreadRadius: 0,
+                            ),
+                          ],
+                        ),
+                      )
+                    else 
+                      const SizedBox(height: 8), // Reduced from 12
+                    
+                    // Income per second with improved styling - more clear and vibrant, smaller size
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center, // Vertically align items
+                      children: [
+                        // Label with glowing icon - Wrap in Expanded
+                        Expanded(
+                          flex: 2, // Give label reasonable space
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min, // Don't expand horizontally
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: isPlatinumFrameActive
+                                    ? BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        gradient: const LinearGradient(
+                                          colors: [Color(0xFF4CEA5C), Color(0xFF36C745)],
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                        ),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: const Color(0xFF4CEA5C).withOpacity(0.5),
+                                            blurRadius: 8,
+                                            spreadRadius: 0,
+                                            offset: const Offset(0, 1),
+                                          ),
+                                          BoxShadow(
+                                            color: Colors.black.withOpacity(0.3),
+                                            blurRadius: 4,
+                                            spreadRadius: -1,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ],
+                                      )
+                                    : null,
+                                child: Icon(
+                                  Icons.trending_up,
+                                  color: isPlatinumFrameActive ? Colors.white : Colors.grey.shade800,
+                                  size: 18, // Reduced from 20
+                                ),
+                              ),
+                              const SizedBox(width: 8), // Reduced from 10
+                              Text(
+                                'Income Rate:',
+                                style: TextStyle(
+                                  color: isPlatinumFrameActive ? Colors.white : Colors.grey.shade800,
+                                  fontSize: 16, // Reduced from 18
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: isPlatinumFrameActive ? 0.5 : 0,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        // Value - Wrap in Expanded
+                        Expanded(
+                          flex: 3, // Give value more space
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerRight,
+                            child: Text(
+                              '${NumberFormatter.formatCurrency(_calculateIncomePerSecond(gameState))}/sec',
+                              style: TextStyle(
+                                color: isPlatinumFrameActive
+                                    ? const Color(0xFF4CEA5C)  // Brighter green for platinum theme
+                                    : Colors.green.shade700,
+                                fontSize: 18, // Reduced from 24
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.5,
+                                shadows: isPlatinumFrameActive
+                                    ? [
+                                        Shadow(
+                                          color: const Color(0xFF4CEA5C).withOpacity(0.6),
+                                          blurRadius: 4,
+                                          offset: const Offset(0, 1),
+                                        ),
+                                        Shadow(
+                                          color: Colors.black.withOpacity(0.5),
+                                          blurRadius: 2,
+                                          offset: const Offset(0, 1),
+                                        ),
+                                      ]
+                                    : null,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
+              
+              // Active boost timer with premium styling
+              if (isBoostCurrentlyActive)
+                Container(
+                  margin: const EdgeInsets.only(top: 8),
+                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                  decoration: BoxDecoration(
+                    gradient: isPlatinumFrameActive
+                        ? const LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              Color(0xFF1F2769),  // Deep blue
+                              Color(0xFF1A3480),  // Rich blue
+                            ],
+                          )
+                        : null,
+                    color: isPlatinumFrameActive ? null : Colors.blue.shade50,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: isPlatinumFrameActive
+                          ? const Color(0xFF70C4FF).withOpacity(0.8)
+                          : Colors.blue.shade200,
+                      width: isPlatinumFrameActive ? 1.5 : 1.0,
+                    ),
+                    boxShadow: isPlatinumFrameActive
+                        ? [
+                            BoxShadow(
+                              color: const Color(0xFF70C4FF).withOpacity(0.4),
+                              blurRadius: 8,
+                              spreadRadius: -2,
+                              offset: const Offset(0, 2),
+                            ),
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.3),
+                              blurRadius: 6,
+                              spreadRadius: -2,
+                              offset: const Offset(0, 2),
+                            ),
+                          ]
+                        : null,
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: isPlatinumFrameActive
+                              ? const LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    Color(0xFF70A4FF),
+                                    Color(0xFF2D78FF),
+                                  ],
+                                )
+                              : null,
+                          color: isPlatinumFrameActive ? null : Colors.blue.shade100,
+                          boxShadow: isPlatinumFrameActive
+                              ? [
+                                  BoxShadow(
+                                    color: const Color(0xFF70C4FF).withOpacity(0.6),
+                                    blurRadius: 8,
+                                    spreadRadius: 0,
+                                  ),
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.3),
+                                    blurRadius: 4,
+                                    spreadRadius: -1,
+                                  ),
+                                ]
+                              : null,
+                        ),
+                        child: Icon(
+                          Icons.grid_view,
+                          color: isPlatinumFrameActive
+                              ? Colors.white
+                              : Colors.blue.shade700,
+                          size: 18,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Text(
+                                  'Platinum UI Frame',
+                                  style: TextStyle(
+                                    color: isPlatinumFrameActive
+                                        ? Colors.white
+                                        : Colors.blue.shade900,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 14,
+                                    letterSpacing: 0.3,
+                                    shadows: isPlatinumFrameActive
+                                        ? [
+                                            Shadow(
+                                              color: Colors.black.withOpacity(0.5),
+                                              blurRadius: 2,
+                                              offset: const Offset(0, 1),
+                                            ),
+                                          ]
+                                        : null,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFFFD700),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: const Text(
+                                    'PREMIUM',
+                                    style: TextStyle(
+                                      color: Color(0xFF1F2769),
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'Luxury UI active',
+                              style: TextStyle(
+                                color: isPlatinumFrameActive
+                                    ? Colors.blue.shade100
+                                    : Colors.blue.shade700,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                      Switch(
+                        value: gameState.isPlatinumFrameActive,
+                        onChanged: (bool value) {
+                          gameState.togglePlatinumFrame(value);
+                        },
+                        activeColor: const Color(0xFFFFD700),
+                        activeTrackColor: const Color(0xFF70C4FF).withOpacity(0.5),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+          
+          // Enhanced corner accents (only if platinum frame active)
+          if (isPlatinumFrameActive) ...[
+            // Top left corner accent
+            Positioned(
+              top: 0,
+              left: 0,
+              child: _buildCornerAccent(),
             ),
+            // Top right corner accent
+            Positioned(
+              top: 0,
+              right: 0,
+              child: Transform.flip(
+                flipX: true,
+                child: _buildCornerAccent(),
+              ),
+            ),
+            // Bottom left corner accent
+            Positioned(
+              bottom: 0,
+              left: 0,
+              child: Transform.flip(
+                flipY: true,
+                child: _buildCornerAccent(),
+              ),
+            ),
+            // Bottom right corner accent
+            Positioned(
+              bottom: 0,
+              right: 0,
+              child: Transform.flip(
+                flipX: true,
+                flipY: true,
+                child: _buildCornerAccent(),
+              ),
+            ),
+          ],
         ],
       ),
     );
   }
   
+  // Helper method to build luxury corner accents
+  Widget _buildCornerAccent() {
+    return SizedBox(
+      width: 24,
+      height: 24,
+      child: CustomPaint(
+        painter: CornerAccentPainter(),
+      ),
+    );
+  }
+
   // Helper to calculate total income per second FOR DISPLAY, mirroring _updateGameState logic
   double _calculateIncomePerSecond(GameState gameState) {
     // --- DEBUG START ---
@@ -656,6 +1184,377 @@ class AnimatedPPIcon extends StatefulWidget {
   
   @override
   _AnimatedPPIconState createState() => _AnimatedPPIconState();
+}
+
+// Custom painter for luxury background pattern in Platinum UI
+class LuxuryPatternPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    // Create richer luxury patterns with depth and dimension
+    final Paint goldStrokePaint = Paint()
+      ..color = const Color(0xFFFFD700).withOpacity(0.12)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2
+      ..strokeCap = StrokeCap.round;
+    
+    final Paint subtlePatternPaint = Paint()
+      ..color = const Color(0xFFFFD700).withOpacity(0.05)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 0.8;
+    
+    // Create a gradient shader for luxury glow effects
+    final Rect rect = Rect.fromLTWH(0, 0, size.width, size.height);
+    final goldGradient = LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [
+        const Color(0xFFFFD700).withOpacity(0.15),
+        const Color(0xFFFFF4B8).withOpacity(0.08),
+      ],
+    );
+    
+    final Paint sparkleGradientPaint = Paint()
+      ..shader = goldGradient.createShader(rect)
+      ..style = PaintingStyle.fill;
+    
+    // Draw high-end subtle diamond pattern background
+    final double diamondSize = 32;
+    
+    // Draw luxury diamond grid pattern
+    final Path primaryDiamondPath = Path();
+    for (double x = -diamondSize; x < size.width + diamondSize; x += diamondSize * 2) {
+      for (double y = -diamondSize; y < size.height + diamondSize; y += diamondSize * 2) {
+        primaryDiamondPath.moveTo(x + diamondSize / 2, y);
+        primaryDiamondPath.lineTo(x + diamondSize, y + diamondSize / 2);
+        primaryDiamondPath.lineTo(x + diamondSize / 2, y + diamondSize);
+        primaryDiamondPath.lineTo(x, y + diamondSize / 2);
+        primaryDiamondPath.close();
+      }
+    }
+    
+    // Draw subtle secondary diamond grid (offset for layered effect)
+    final Path secondaryDiamondPath = Path();
+    for (double x = -diamondSize + diamondSize; x < size.width + diamondSize; x += diamondSize * 2) {
+      for (double y = -diamondSize + diamondSize; y < size.height + diamondSize; y += diamondSize * 2) {
+        secondaryDiamondPath.moveTo(x + diamondSize / 2, y);
+        secondaryDiamondPath.lineTo(x + diamondSize, y + diamondSize / 2);
+        secondaryDiamondPath.lineTo(x + diamondSize / 2, y + diamondSize);
+        secondaryDiamondPath.lineTo(x, y + diamondSize / 2);
+        secondaryDiamondPath.close();
+      }
+    }
+    
+    // Apply base pattern with subtle fill
+    canvas.drawPath(
+      primaryDiamondPath, 
+      Paint()
+        ..color = const Color(0xFFFFD700).withOpacity(0.03)
+        ..style = PaintingStyle.fill,
+    );
+    
+    // Apply strokes for primary grid with more opacity
+    canvas.drawPath(
+      primaryDiamondPath, 
+      Paint()
+        ..color = const Color(0xFFFFD700).withOpacity(0.08)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 0.8,
+    );
+    
+    // Apply strokes for secondary grid with different opacity
+    canvas.drawPath(
+      secondaryDiamondPath, 
+      Paint()
+        ..color = const Color(0xFFFFD700).withOpacity(0.06)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 0.6,
+    );
+    
+    // Add diagonal pinstripes for texture and depth
+    for (double i = -size.height; i < size.width + size.height; i += 40) {
+      canvas.drawLine(
+        Offset(i, 0),
+        Offset(i + size.height, size.height),
+        goldStrokePaint,
+      );
+    }
+    
+    // Add subtle crosshatch for visual richness
+    for (double i = -size.height; i < size.width + size.height; i += 120) {
+      canvas.drawLine(
+        Offset(i, 0),
+        Offset(i + size.height, size.height),
+        subtlePatternPaint,
+      );
+    }
+    
+    // Add reverse diagonal lines for a woven effect
+    for (double i = -size.height; i < size.width + size.height; i += 120) {
+      canvas.drawLine(
+        Offset(i + size.width, 0),
+        Offset(i, size.height),
+        subtlePatternPaint..strokeWidth = 0.7,
+      );
+    }
+    
+    // Create premium corner highlights
+    _drawCornerHighlight(canvas, size, Offset(0, 0), false, false);
+    _drawCornerHighlight(canvas, size, Offset(size.width, 0), true, false);
+    _drawCornerHighlight(canvas, size, Offset(0, size.height), false, true);
+    _drawCornerHighlight(canvas, size, Offset(size.width, size.height), true, true);
+    
+    // Add premium sparkles with varying sizes for luxury effect
+    final Random random = Random(42); // Fixed seed for consistent pattern
+    for (int i = 0; i < 80; i++) {
+      final double x = random.nextDouble() * size.width;
+      final double y = random.nextDouble() * size.height;
+      
+      // Create varying sized sparkles with emphasis on corners and edges
+      double radius;
+      
+      // Create some larger sparkles at key positions for emphasis
+      if (i < 10) {
+        // Key positions get larger sparkles
+        radius = 1.5 + random.nextDouble() * 2.5;
+      } else {
+        // Standard sparkles
+        radius = 0.8 + random.nextDouble() * 1.2;
+      }
+      
+      // Apply sparkle with glow effect
+      final Paint sparklePaint = Paint()
+        ..color = const Color(0xFFFFD700).withOpacity(0.2 + random.nextDouble() * 0.2)
+        ..style = PaintingStyle.fill
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 0.8); // Soft glow
+      
+      canvas.drawCircle(
+        Offset(x, y),
+        radius,
+        sparklePaint,
+      );
+      
+      // Add tiny center highlight for selected sparkles
+      if (random.nextDouble() > 0.7) {
+        canvas.drawCircle(
+          Offset(x, y),
+          radius * 0.3,
+          Paint()..color = Colors.white.withOpacity(0.4),
+        );
+      }
+    }
+  }
+  
+  // Helper method to draw elegant corner highlight accents
+  void _drawCornerHighlight(Canvas canvas, Size size, Offset position, bool flipX, bool flipY) {
+    final cornerSize = size.width * 0.15;
+    
+    final Paint cornerGlowPaint = Paint()
+      ..shader = RadialGradient(
+        colors: [
+          const Color(0xFFFFD700).withOpacity(0.15),
+          const Color(0xFFFFD700).withOpacity(0),
+        ],
+      ).createShader(Rect.fromCircle(center: position, radius: cornerSize));
+    
+    canvas.drawCircle(position, cornerSize, cornerGlowPaint);
+    
+    // Draw subtle corner rays
+    final Paint rayPaint = Paint()
+      ..color = const Color(0xFFFFD700).withOpacity(0.12)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 0.7;
+    
+    final double rayLength = cornerSize * 0.7;
+    final int rayCount = 5;
+    
+    for (int i = 0; i < rayCount; i++) {
+      double angle = (i * (pi / (rayCount * 2)));
+      
+      if (flipX && !flipY) angle = pi - angle;
+      if (!flipX && flipY) angle = 2 * pi - angle;
+      if (flipX && flipY) angle = pi + angle;
+      
+      final double x2 = position.dx + cos(angle) * rayLength;
+      final double y2 = position.dy + sin(angle) * rayLength;
+      
+      canvas.drawLine(
+        position,
+        Offset(x2, y2),
+        rayPaint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => false;
+}
+
+// Custom painter for luxury corner accents
+class CornerAccentPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    // Main gold color for elegant accents
+    final Paint goldPaint = Paint()
+      ..color = const Color(0xFFFFD700)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.0
+      ..strokeCap = StrokeCap.round;
+    
+    // Secondary accent colors with varying opacities for layered effect
+    final Paint accentPaint1 = Paint()
+      ..color = const Color(0xFFFFD700).withOpacity(0.8)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2
+      ..strokeCap = StrokeCap.round;
+    
+    final Paint accentPaint2 = Paint()
+      ..color = const Color(0xFFFFD700).withOpacity(0.5)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 0.8;
+    
+    // Premium gold fill with subtle gradient
+    final Paint goldFillPaint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          const Color(0xFFFFD700).withOpacity(0.15),
+          const Color(0xFFFFE866).withOpacity(0.03),
+        ],
+      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height))
+      ..style = PaintingStyle.fill;
+    
+    // Draw primary elegant corner accent - sweeping curve
+    final Path primaryPath = Path()
+      ..moveTo(0, size.height * 0.8)
+      ..cubicTo(
+        size.width * 0.1, size.height * 0.25, 
+        size.width * 0.25, size.width * 0.1, 
+        size.width * 0.8, 0
+      );
+    
+    // Draw a parallel accent line for depth
+    final Path secondaryPath = Path()
+      ..moveTo(0, size.height * 0.65)
+      ..cubicTo(
+        size.width * 0.15, size.height * 0.2, 
+        size.width * 0.2, size.width * 0.15, 
+        size.width * 0.65, 0
+      );
+    
+    canvas.drawPath(primaryPath, goldPaint);
+    canvas.drawPath(secondaryPath, accentPaint1);
+    
+    // Draw decorative luxury motif
+    final Path decorativePath = Path();
+    
+    // Create diamond-shaped accent in corner area
+    decorativePath.moveTo(size.width * 0.25, size.height * 0.25);
+    decorativePath.lineTo(size.width * 0.4, size.height * 0.1);
+    decorativePath.lineTo(size.width * 0.55, size.height * 0.25);
+    decorativePath.lineTo(size.width * 0.4, size.height * 0.4);
+    decorativePath.close();
+    
+    // Add inner accent for layered effect
+    final Path innerAccentPath = Path();
+    innerAccentPath.moveTo(size.width * 0.32, size.height * 0.25);
+    innerAccentPath.lineTo(size.width * 0.4, size.height * 0.17);
+    innerAccentPath.lineTo(size.width * 0.48, size.height * 0.25);
+    innerAccentPath.lineTo(size.width * 0.4, size.height * 0.33);
+    innerAccentPath.close();
+    
+    // Apply gold gradient fill to main motif
+    canvas.drawPath(
+      decorativePath,
+      goldFillPaint,
+    );
+    
+    // Apply gold stroke with higher opacity
+    canvas.drawPath(
+      decorativePath,
+      Paint()
+        ..color = const Color(0xFFFFD700).withOpacity(0.9)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.0,
+    );
+    
+    // Apply fill to inner accent
+    canvas.drawPath(
+      innerAccentPath,
+      Paint()
+        ..color = const Color(0xFFFFD700).withOpacity(0.3)
+        ..style = PaintingStyle.fill,
+    );
+    
+    // Apply stroke to inner accent
+    canvas.drawPath(
+      innerAccentPath,
+      Paint()
+        ..color = const Color(0xFFFFD700).withOpacity(0.7)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 0.7,
+    );
+    
+    // Draw central gold dot with glow effect
+    final Paint centerDotPaint = Paint()
+      ..color = const Color(0xFFFFD700)
+      ..style = PaintingStyle.fill
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 0.5);
+    
+    canvas.drawCircle(
+      Offset(size.width * 0.4, size.height * 0.25),
+      2.0,
+      centerDotPaint,
+    );
+    
+    // Add tiny bright center for sparkle effect
+    canvas.drawCircle(
+      Offset(size.width * 0.4, size.height * 0.25),
+      0.8,
+      Paint()..color = Colors.white.withOpacity(0.9),
+    );
+    
+    // Draw additional accent lines for framing effect
+    // Top edge accent
+    canvas.drawLine(
+      Offset(size.width * 0.75, 0),
+      Offset(size.width, 0),
+      accentPaint2..strokeWidth = 1.2,
+    );
+    
+    // Left edge accent
+    canvas.drawLine(
+      Offset(0, size.height * 0.75),
+      Offset(0, size.height),
+      accentPaint2..strokeWidth = 1.2,
+    );
+    
+    // Draw subtle corner rays for light effect
+    final Paint rayPaint = Paint()
+      ..color = const Color(0xFFFFD700).withOpacity(0.3)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 0.5
+      ..strokeCap = StrokeCap.round;
+    
+    // Draw subtle gold rays from center
+    for (int i = 0; i < 4; i++) {
+      double angle = i * pi / 8;
+      double length = size.width * 0.12;
+      double startX = size.width * 0.4;
+      double startY = size.height * 0.25;
+      double endX = startX + cos(angle) * length;
+      double endY = startY + sin(angle) * length;
+      
+      canvas.drawLine(
+        Offset(startX, startY),
+        Offset(endX, endY),
+        rayPaint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => false;
 }
 
 class _AnimatedPPIconState extends State<AnimatedPPIcon> with SingleTickerProviderStateMixin {

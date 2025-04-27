@@ -336,6 +336,12 @@ class _PlatinumVaultScreenState extends State<PlatinumVaultScreen> with SingleTi
               maxPurchases = 5; // Assign value here
               // This item doesn't have a simple active/cooldown state at the item level
               break;
+            case 'cosmetic_platinum_frame':
+              print("DEBUG VAULT CARD: Item 'cosmetic_platinum_frame' - isPlatinumFrameUnlocked=${gameState.isPlatinumFrameUnlocked}, isPlatinumFrameActive=${gameState.isPlatinumFrameActive}");
+              // Consider the item "active" if it's unlocked, even if not currently displayed
+              isActive = gameState.isPlatinumFrameUnlocked;
+              activeEndTime = null; // Frame is permanent, no end time
+              break;
             case 'unlock_stats_theme_1':
               print("DEBUG VAULT CARD: Item 'unlock_stats_theme_1' - isExecutiveStatsThemeUnlocked=${gameState.isExecutiveStatsThemeUnlocked}, selectedStatsTheme=${gameState.selectedStatsTheme}");
               // Consider the item "active" if it's unlocked, even if not currently selected
@@ -439,6 +445,14 @@ class _PlatinumVaultScreenState extends State<PlatinumVaultScreen> with SingleTi
         bool success = gameState.spendPlatinumPoints(item.id, item.cost);
         if (success) {
           _showStatsThemeUnlockDialog(context, gameState);
+        } else {
+          _showPurchaseFeedback(context, success, item, gameState);
+        }
+      } else if (item.id == 'cosmetic_platinum_frame') {
+        // --- Special handling for Platinum UI Frame ---
+        bool success = gameState.spendPlatinumPoints(item.id, item.cost);
+        if (success) {
+          _showPlatinumFrameUnlockDialog(context, gameState);
         } else {
           _showPurchaseFeedback(context, success, item, gameState);
         }
@@ -678,6 +692,79 @@ class _PlatinumVaultScreenState extends State<PlatinumVaultScreen> with SingleTi
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFE5C100),
+              foregroundColor: Colors.black,
+            ),
+            child: const Text('Apply Now'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showPlatinumFrameUnlockDialog(BuildContext context, GameState gameState) {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) => AlertDialog(
+        title: const Text('Platinum UI Frame Unlocked!', 
+          style: TextStyle(color: Color(0xFFFFD700)),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'You\'ve unlocked the premium Platinum UI Frame!',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            const Text('This exclusive frame gives your game a luxurious, premium look with golden accents and rich styling.'),
+            const SizedBox(height: 16),
+            const Text('Would you like to apply this frame now?'),
+          ],
+        ),
+        backgroundColor: const Color(0xFF2D2D3A),
+        contentTextStyle: const TextStyle(color: Colors.white),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: Color(0xFFFFD700), width: 1.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              // Don't activate theme yet
+              Navigator.of(dialogContext).pop();
+              _showPurchaseFeedback(context, true, VaultItem(
+                id: 'cosmetic_platinum_frame',
+                name: 'Platinum UI Frame',
+                description: 'Apply a shiny platinum border to your main game UI.',
+                category: VaultItemCategory.cosmetics,
+                type: VaultItemType.oneTime,
+                cost: 300,
+                iconData: Icons.image_aspect_ratio,
+              ), gameState);
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.white70,
+            ),
+            child: const Text('Maybe Later'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              // Activate the platinum frame
+              gameState.togglePlatinumFrame(true);
+              Navigator.of(dialogContext).pop();
+              _showPurchaseFeedback(context, true, VaultItem(
+                id: 'cosmetic_platinum_frame',
+                name: 'Platinum UI Frame',
+                description: 'Apply a shiny platinum border to your main game UI.',
+                category: VaultItemCategory.cosmetics,
+                type: VaultItemType.oneTime,
+                cost: 300,
+                iconData: Icons.image_aspect_ratio,
+              ), gameState, extraMessage: 'Frame activated!');
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFFFD700),
               foregroundColor: Colors.black,
             ),
             child: const Text('Apply Now'),

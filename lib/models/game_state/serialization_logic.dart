@@ -51,6 +51,7 @@ extension SerializationLogic on GameState {
       'isGoldenCursorUnlocked': isGoldenCursorUnlocked,
       'isExecutiveThemeUnlocked': isExecutiveThemeUnlocked,
       'isPlatinumFrameUnlocked': isPlatinumFrameUnlocked,
+      'isPlatinumFrameActive': isPlatinumFrameActive,
 
       // --- Added: Serialize offline income notification state ---
       'offlineEarningsAwarded': offlineEarningsAwarded,
@@ -479,6 +480,7 @@ extension SerializationLogic on GameState {
     isGoldenCursorUnlocked = json['isGoldenCursorUnlocked'] ?? false;
     isExecutiveThemeUnlocked = json['isExecutiveThemeUnlocked'] ?? false;
     isPlatinumFrameUnlocked = json['isPlatinumFrameUnlocked'] ?? false;
+    isPlatinumFrameActive = json['isPlatinumFrameActive'] ?? false;
 
     // Load persistent upgrade flags
     isPlatinumEfficiencyActive = json['isPlatinumEfficiencyActive'] ?? false;

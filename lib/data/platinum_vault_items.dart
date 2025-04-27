@@ -136,7 +136,7 @@ List<VaultItem> getVaultItems() {
       id: 'unlock_stats_theme_1',
       name: 'Executive Stats Theme',
       description: 'Unlock a sleek executive theme for the Stats screen with premium dark styling and gold accents.',
-      category: VaultItemCategory.unlockables,
+      category: VaultItemCategory.cosmetics,
       type: VaultItemType.oneTime,
       cost: 100,
       iconData: Icons.style,

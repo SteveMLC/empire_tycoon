@@ -123,6 +123,7 @@ class GameState with ChangeNotifier {
   bool isGoldenCursorUnlocked = false;
   bool isExecutiveThemeUnlocked = false;
   bool isPlatinumFrameUnlocked = false;
+  bool isPlatinumFrameActive = false; // Track if frame is currently displayed
 
   // Boost Timer State
   int boostRemainingSeconds = 0;
@@ -1336,6 +1337,12 @@ class GameState with ChangeNotifier {
             print("DEBUG: After unlock: isExecutiveStatsThemeUnlocked=$isExecutiveStatsThemeUnlocked");
             print("Unlocked Executive Stats Theme. User can now select it as an option.");
             break;
+        case 'cosmetic_platinum_frame':
+            print("DEBUG: Before unlock: isPlatinumFrameUnlocked=$isPlatinumFrameUnlocked");
+            isPlatinumFrameUnlocked = true;
+            print("DEBUG: After unlock: isPlatinumFrameUnlocked=$isPlatinumFrameUnlocked");
+            print("Unlocked Platinum UI Frame. User can now enable it in Settings.");
+            break;
         default:
             print("WARNING: Unknown Platinum Vault item ID: $itemId");
     }
@@ -1570,6 +1577,18 @@ class GameState with ChangeNotifier {
       print("Stats theme changed to: ${theme ?? 'default'}");
     } else {
       print("Cannot select theme '$theme': Not unlocked or invalid theme.");
+    }
+  }
+  
+  // Method to toggle platinum frame display
+  void togglePlatinumFrame(bool active) {
+    print("DEBUG: Toggling platinum frame: $active, Current unlock status: isPlatinumFrameUnlocked=$isPlatinumFrameUnlocked");
+    if (isPlatinumFrameUnlocked) {
+      isPlatinumFrameActive = active;
+      notifyListeners();
+      print("Platinum frame ${active ? 'enabled' : 'disabled'}");
+    } else {
+      print("Cannot toggle platinum frame: Not unlocked.");
     }
   }
 }

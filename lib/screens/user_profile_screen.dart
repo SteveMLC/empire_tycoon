@@ -1,9 +1,51 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'dart:math';
 
 import '../models/game_state.dart';
 import '../services/game_service.dart';
 import '../utils/number_formatter.dart';
+
+// Custom painter for the toggle switch track (moved to top-level)
+class ToggleTrackPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    // Draw subtle sparkle pattern in the background of the toggle track
+    final Paint sparkPaint = Paint()
+      ..color = const Color(0xFFFFD700).withOpacity(0.15)
+      ..style = PaintingStyle.fill;
+    
+    final Random random = Random(12); // Fixed seed for consistency
+    for (int i = 0; i < 15; i++) {
+      double x = random.nextDouble() * size.width;
+      double y = random.nextDouble() * size.height;
+      double radius = 0.5 + random.nextDouble() * 1.0;
+      
+      canvas.drawCircle(
+        Offset(x, y),
+        radius,
+        sparkPaint,
+      );
+    }
+    
+    // Draw diagonal lines for a premium pattern
+    final Paint linePaint = Paint()
+      ..color = const Color(0xFFFFD700).withOpacity(0.1)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 0.7;
+    
+    for (double i = -size.height * 2; i < size.width * 2; i += 4) {
+      canvas.drawLine(
+        Offset(i, 0),
+        Offset(i + size.height, size.height),
+        linePaint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => false;
+}
 
 class UserProfileScreen extends StatefulWidget {
   const UserProfileScreen({Key? key}) : super(key: key);
@@ -24,7 +66,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   
   // Add username controller as a class variable
   late TextEditingController _usernameController;
-  
+
   @override
   void initState() {
     super.initState();
@@ -465,6 +507,251 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             ),
 
             const SizedBox(height: 16),
+
+            // Platinum Frame Toggle - only show if unlocked
+            if (gameState.isPlatinumFrameUnlocked)
+              Column(
+                children: [
+                  Container(
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(10),
+                      boxShadow: [
+                        BoxShadow(
+                          color: gameState.isPlatinumFrameActive 
+                              ? const Color(0xFFFFD700).withOpacity(0.3)
+                              : Colors.transparent,
+                          blurRadius: 8,
+                          spreadRadius: -2,
+                        ),
+                      ],
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(10),
+                        onTap: () {
+                          // Toggle platinum frame state
+                          gameState.togglePlatinumFrame(!gameState.isPlatinumFrameActive);
+                        },
+                        child: Ink(
+                          decoration: BoxDecoration(
+                            gradient: gameState.isPlatinumFrameActive
+                                ? const LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: [
+                                      Color(0xFF3D2B5B),  // Deep royal purple
+                                      Color(0xFF2E3470),  // Rich royal blue
+                                    ],
+                                  )
+                                : null,
+                            color: gameState.isPlatinumFrameActive ? null : Colors.grey.shade50,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: gameState.isPlatinumFrameActive
+                                  ? const Color(0xFFFFD700)
+                                  : Colors.grey.shade300,
+                              width: gameState.isPlatinumFrameActive ? 1.5 : 1.0,
+                            ),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                            child: Row(
+                              children: [
+                                // Platinum icon with container
+                                Container(
+                                  width: 42,
+                                  height: 42,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    gradient: gameState.isPlatinumFrameActive
+                                        ? const LinearGradient(
+                                            begin: Alignment.topLeft,
+                                            end: Alignment.bottomRight,
+                                            colors: [Color(0xFFFFD700), Color(0xFFFDCD3A)],
+                                          )
+                                        : null,
+                                    color: gameState.isPlatinumFrameActive ? null : Colors.grey.shade200,
+                                    boxShadow: gameState.isPlatinumFrameActive
+                                        ? [
+                                            BoxShadow(
+                                              color: const Color(0xFFFFD700).withOpacity(0.5),
+                                              blurRadius: 8,
+                                              spreadRadius: -2,
+                                            ),
+                                          ]
+                                        : null,
+                                  ),
+                                  child: Center(
+                                    child: gameState.isPlatinumFrameActive
+                                        ? Stack(
+                                            alignment: Alignment.center,
+                                            children: [
+                                              // Shimmering effect
+                                              Icon(
+                                                Icons.dashboard_customize,
+                                                color: Colors.white.withOpacity(0.7),
+                                                size: 24,
+                                              ),
+                                              // Main icon
+                                              const Icon(
+                                                Icons.dashboard_customize,
+                                                color: Colors.white,
+                                                size: 22,
+                                              ),
+                                            ],
+                                          )
+                                        : Icon(
+                                            Icons.dashboard_customize,
+                                            color: Colors.grey.shade500,
+                                            size: 22,
+                                          ),
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                // Text section
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Text(
+                                            'Platinum UI Frame',
+                                            style: TextStyle(
+                                              color: gameState.isPlatinumFrameActive
+                                                  ? Colors.white
+                                                  : Colors.black87,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 16,
+                                            ),
+                                          ),
+                                          if (gameState.isPlatinumFrameActive)
+                                            Container(
+                                              margin: const EdgeInsets.only(left: 8),
+                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xFFFFD700),
+                                                borderRadius: BorderRadius.circular(10),
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                    color: const Color(0xFFFFD700).withOpacity(0.4),
+                                                    blurRadius: 4,
+                                                    spreadRadius: -1,
+                                                  ),
+                                                ],
+                                              ),
+                                              child: const Text(
+                                                'PREMIUM',
+                                                style: TextStyle(
+                                                  color: Color(0xFF3D2B5B),
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        gameState.isPlatinumFrameActive
+                                            ? 'Active: Luxury UI enabled'
+                                            : 'Inactive: Click to enable premium UI',
+                                        style: TextStyle(
+                                          color: gameState.isPlatinumFrameActive
+                                              ? Colors.grey.shade300
+                                              : Colors.grey.shade600,
+                                          fontSize: 13,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                // Status toggle
+                                Container(
+                                  width: 56,
+                                  height: 28,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(14),
+                                    color: gameState.isPlatinumFrameActive
+                                        ? const Color(0xFFFFD700).withOpacity(0.2)
+                                        : Colors.grey.shade200,
+                                    border: Border.all(
+                                      color: gameState.isPlatinumFrameActive
+                                          ? const Color(0xFFFFD700)
+                                          : Colors.grey.shade400,
+                                      width: 1.5,
+                                    ),
+                                  ),
+                                  child: Stack(
+                                    children: [
+                                      // Track overlay
+                                      if (gameState.isPlatinumFrameActive)
+                                        Positioned(
+                                          top: 0,
+                                          bottom: 0,
+                                          left: 0,
+                                          right: 0,
+                                          child: CustomPaint(
+                                            painter: ToggleTrackPainter(),
+                                          ),
+                                        ),
+                                      // Sliding knob
+                                      AnimatedPositioned(
+                                        duration: const Duration(milliseconds: 200),
+                                        curve: Curves.easeInOut,
+                                        left: gameState.isPlatinumFrameActive ? 28 : 0,
+                                        right: gameState.isPlatinumFrameActive ? 0 : 28,
+                                        top: 0,
+                                        bottom: 0,
+                                        child: Container(
+                                          width: 28,
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            gradient: gameState.isPlatinumFrameActive
+                                                ? const LinearGradient(
+                                                    begin: Alignment.topLeft,
+                                                    end: Alignment.bottomRight,
+                                                    colors: [Color(0xFFFFD700), Color(0xFFFDCD3A)],
+                                                  )
+                                                : null,
+                                            color: gameState.isPlatinumFrameActive ? null : Colors.white,
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: Colors.black.withOpacity(0.2),
+                                                blurRadius: 2,
+                                                spreadRadius: 0,
+                                                offset: const Offset(0, 1),
+                                              ),
+                                            ],
+                                          ),
+                                          child: Center(
+                                            child: Icon(
+                                              gameState.isPlatinumFrameActive
+                                                  ? Icons.check
+                                                  : Icons.close,
+                                              size: 16,
+                                              color: gameState.isPlatinumFrameActive
+                                                  ? const Color(0xFF3D2B5B)
+                                                  : Colors.grey.shade400,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+              ),
 
             Consumer<GameService>(
               builder: (context, gameService, child) {

@@ -48,10 +48,6 @@ class _StatsScreenState extends State<StatsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Show the theme toggle button when executive theme is unlocked
-                if (gameState.isExecutiveStatsThemeUnlocked)
-                  _buildThemeToggle(context, gameState, theme),
-                
                 Expanded(
                   child: SingleChildScrollView(
                     child: Column(
@@ -95,74 +91,70 @@ class _StatsScreenState extends State<StatsScreen> {
   Widget _buildThemeToggle(BuildContext context, GameState gameState, StatsTheme currentTheme) {
     final bool isExecutive = currentTheme.id == 'executive';
     
-    return Align(
-      alignment: Alignment.topRight,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-        padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-        margin: const EdgeInsets.only(bottom: 12.0),
-        decoration: BoxDecoration(
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+      decoration: BoxDecoration(
+        color: isExecutive 
+            ? const Color(0xFF1E2430).withOpacity(0.8) 
+            : Colors.white.withOpacity(0.9),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
           color: isExecutive 
-              ? const Color(0xFF1E2430).withOpacity(0.8) 
-              : Colors.white.withOpacity(0.9),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isExecutive 
-                ? const Color(0xFFE5B100).withOpacity(0.6) 
-                : Colors.blue.shade300,
-            width: 1.5,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: isExecutive 
-                  ? Colors.black.withOpacity(0.2)
-                  : Colors.black.withOpacity(0.05),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
+              ? const Color(0xFFE5B100).withOpacity(0.6) 
+              : Colors.blue.shade300,
+          width: 1.5,
         ),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            borderRadius: BorderRadius.circular(20),
-            onTap: () {
-              _showThemeSelectionDialog(context, gameState, currentTheme);
-            },
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    isExecutive ? Icons.workspace_premium : Icons.format_paint,
+        boxShadow: [
+          BoxShadow(
+            color: isExecutive 
+                ? Colors.black.withOpacity(0.2)
+                : Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: () {
+            _showThemeSelectionDialog(context, gameState, currentTheme);
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  isExecutive ? Icons.workspace_premium : Icons.format_paint,
+                  color: isExecutive 
+                      ? const Color(0xFFE5B100)
+                      : Colors.blue,
+                  size: 18,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  isExecutive ? 'Executive' : 'Default',
+                  style: TextStyle(
                     color: isExecutive 
-                        ? const Color(0xFFE5B100)
-                        : Colors.blue,
-                    size: 18,
+                        ? Colors.white
+                        : Colors.black87,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
                   ),
-                  const SizedBox(width: 6),
-                  Text(
-                    isExecutive ? 'Executive' : 'Default',
-                    style: TextStyle(
-                      color: isExecutive 
-                          ? Colors.white
-                          : Colors.black87,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
-                  ),
-                  const SizedBox(width: 2),
-                  Icon(
-                    Icons.arrow_drop_down,
-                    color: isExecutive 
-                        ? Colors.white.withOpacity(0.7)
-                        : Colors.black54,
-                    size: 16,
-                  ),
-                ],
-              ),
+                ),
+                const SizedBox(width: 2),
+                Icon(
+                  Icons.arrow_drop_down,
+                  color: isExecutive 
+                      ? Colors.white.withOpacity(0.7)
+                      : Colors.black54,
+                  size: 16,
+                ),
+              ],
             ),
           ),
         ),
@@ -374,17 +366,32 @@ class _StatsScreenState extends State<StatsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Icon(
-                  Icons.analytics,
-                  color: theme.titleColor,
-                  size: 22,
+                Row(
+                  children: [
+                    Icon(
+                      Icons.analytics,
+                      color: isExecutive ? theme.titleColor : Colors.blue.shade700,
+                      size: 22,
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      'Overview',
+                      style: isExecutive 
+                          ? theme.cardTitleStyle
+                          : TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.blue.shade800,
+                            ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 10),
-                Text(
-                  'Overview',
-                  style: theme.cardTitleStyle,
-                ),
+                
+                // Move theme toggle button inline with Overview header
+                if (gameState.isExecutiveStatsThemeUnlocked)
+                  _buildThemeToggle(context, gameState, theme),
               ],
             ),
 
@@ -393,10 +400,17 @@ class _StatsScreenState extends State<StatsScreen> {
               thickness: 1,
               color: isExecutive
                   ? const Color(0xFF2A3142)
-                  : Colors.grey.withOpacity(0.2),
+                  : Colors.blue.withOpacity(0.2),
             ),
 
-            _buildStatRow('Net Worth', NumberFormatter.formatCurrency(netWorth), theme),
+            // Enhanced stat rows with icons
+            _buildStatRowWithIcon(
+              'Net Worth', 
+              NumberFormatter.formatCurrency(netWorth),
+              Icons.account_balance_wallet,
+              isExecutive ? theme.primaryChartColor : Colors.blue.shade500,
+              theme
+            ),
 
             if (gameState.incomeMultiplier > 1.0)
               Builder(builder: (context) {
@@ -405,15 +419,47 @@ class _StatsScreenState extends State<StatsScreen> {
                 if (gameState.networkWorth > 0) {
                   currentPrestigeLevel = (log(gameState.networkWorth * 100 + 1) / log(10)).floor();
                 }
-                return _buildStatRow('Prestige Multiplier', '${gameState.incomeMultiplier.toStringAsFixed(2)}x (1.2 compounded ${currentPrestigeLevel}x)', theme);
+                return _buildStatRowWithIcon(
+                  'Prestige Multiplier', 
+                  '${gameState.incomeMultiplier.toStringAsFixed(2)}x (1.2 compounded ${currentPrestigeLevel}x)',
+                  Icons.star,
+                  isExecutive ? theme.secondaryChartColor : Colors.amber.shade600,
+                  theme
+                );
               }),
 
-            // Show network worth as lifetime stat (doesn't reset with reincorporation)
-            _buildStatRow('Lifetime Network Worth', NumberFormatter.formatCurrency(gameState.networkWorth * 100000000 + gameState.calculateNetWorth()), theme),
+            // Show network worth as lifetime stat with icon
+            _buildStatRowWithIcon(
+              'Lifetime Network Worth', 
+              NumberFormatter.formatCurrency(gameState.networkWorth * 100000000 + gameState.calculateNetWorth()),
+              Icons.show_chart,
+              isExecutive ? theme.tertiaryChartColor : Colors.green.shade600,
+              theme
+            ),
 
-            _buildStatRow('Total Money Earned', NumberFormatter.formatCurrency(gameState.totalEarned), theme),
-            _buildStatRow('Lifetime Taps', gameState.lifetimeTaps.toString(), theme),
-            _buildStatRow('Time Playing', _calculateTimePlayed(gameState), theme),
+            _buildStatRowWithIcon(
+              'Total Money Earned', 
+              NumberFormatter.formatCurrency(gameState.totalEarned),
+              Icons.monetization_on,
+              isExecutive ? theme.primaryChartColor : Colors.orange.shade600,
+              theme
+            ),
+            
+            _buildStatRowWithIcon(
+              'Lifetime Taps', 
+              gameState.lifetimeTaps.toString(),
+              Icons.touch_app,
+              isExecutive ? theme.secondaryChartColor : Colors.purple.shade500,
+              theme
+            ),
+            
+            _buildStatRowWithIcon(
+              'Time Playing', 
+              _calculateTimePlayed(gameState),
+              Icons.timer,
+              isExecutive ? theme.quaternaryChartColor : Colors.indigo.shade500,
+              theme
+            ),
 
             const SizedBox(height: 20),
 
@@ -497,6 +543,77 @@ class _StatsScreenState extends State<StatsScreen> {
     );
   }
 
+  Widget _buildStatRowWithIcon(String label, String value, IconData icon, Color iconColor, StatsTheme theme) {
+    final bool isExecutive = theme.id == 'executive';
+    
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: Row(
+        children: [
+          Container(
+            width: 30,
+            height: 30,
+            decoration: BoxDecoration(
+              color: isExecutive 
+                  ? iconColor.withOpacity(0.1)
+                  : iconColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Center(
+              child: Icon(
+                icon,
+                color: iconColor,
+                size: 16,
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              label,
+              style: isExecutive
+                  ? theme.statLabelStyle
+                  : TextStyle(
+                      fontSize: 14,
+                      color: Colors.black87,
+                      fontWeight: FontWeight.w500,
+                    ),
+            ),
+          ),
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            decoration: BoxDecoration(
+              color: isExecutive 
+                  ? const Color(0xFF242C3B) 
+                  : Colors.blue.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: isExecutive 
+                    ? theme.cardBorderColor 
+                    : Colors.transparent,
+                width: 1,
+              ),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            child: Text(
+              value,
+              style: isExecutive
+                  ? theme.statValueStyle.copyWith(
+                      letterSpacing: 0.3,
+                    )
+                  : TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blue.shade800,
+                      letterSpacing: 0.3,
+                    ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildEarningsBreakdown(GameState gameState, StatsTheme theme) {
     final bool isExecutive = theme.id == 'executive';
     double totalEarned = gameState.manualEarnings +
@@ -532,13 +649,19 @@ class _StatsScreenState extends State<StatsScreen> {
               children: [
                 Icon(
                   Icons.bar_chart,
-                  color: theme.titleColor,
+                  color: isExecutive ? theme.titleColor : Colors.blue.shade700,
                   size: 22,
                 ),
                 const SizedBox(width: 10),
                 Text(
                   'Earnings Breakdown',
-                  style: theme.cardTitleStyle,
+                  style: isExecutive 
+                      ? theme.cardTitleStyle
+                      : TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue.shade800,
+                        ),
                 ),
               ],
             ),
@@ -548,7 +671,7 @@ class _StatsScreenState extends State<StatsScreen> {
               thickness: 1,
               color: isExecutive
                   ? const Color(0xFF2A3142)
-                  : Colors.grey.withOpacity(0.2),
+                  : Colors.blue.withOpacity(0.2),
             ),
 
             // Enhanced earnings breakdown with icons
@@ -556,32 +679,32 @@ class _StatsScreenState extends State<StatsScreen> {
               'Hustle Earnings',
               '${NumberFormatter.formatCurrency(gameState.manualEarnings)} (${manualPercent.toStringAsFixed(1)}%)', 
               Icons.touch_app,
-              theme.primaryChartColor,
-              theme,
+              isExecutive ? theme.primaryChartColor : Colors.blue.shade500,
+              theme
             ),
             
             _buildStatRowWithIcon(
               'Business Earnings',
               '${NumberFormatter.formatCurrency(gameState.passiveEarnings)} (${passivePercent.toStringAsFixed(1)}%)', 
               Icons.business,
-              theme.secondaryChartColor,
-              theme,
+              isExecutive ? theme.secondaryChartColor : Colors.amber.shade600,
+              theme
             ),
             
             _buildStatRowWithIcon(
               'Investment Earnings',
               '${NumberFormatter.formatCurrency(gameState.investmentEarnings + gameState.investmentDividendEarnings)} (${investmentPercent.toStringAsFixed(1)}%)', 
               Icons.trending_up,
-              theme.tertiaryChartColor,
-              theme,
+              isExecutive ? theme.tertiaryChartColor : Colors.green.shade600,
+              theme
             ),
             
             _buildStatRowWithIcon(
               'Real Estate Earnings',
               '${NumberFormatter.formatCurrency(gameState.realEstateEarnings)} (${realEstatePercent.toStringAsFixed(1)}%)', 
               Icons.home,
-              theme.quaternaryChartColor,
-              theme,
+              isExecutive ? theme.quaternaryChartColor : Colors.indigo.shade500,
+              theme
             ),
 
             const SizedBox(height: 16),
@@ -644,64 +767,6 @@ class _StatsScreenState extends State<StatsScreen> {
             ),
           ] : null,
         ),
-      ),
-    );
-  }
-  
-  Widget _buildStatRowWithIcon(String label, String value, IconData icon, Color iconColor, StatsTheme theme) {
-    final bool isExecutive = theme.id == 'executive';
-    
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12.0),
-      child: Row(
-        children: [
-          Container(
-            width: 30,
-            height: 30,
-            decoration: BoxDecoration(
-              color: isExecutive 
-                  ? iconColor.withOpacity(0.1)
-                  : theme.backgroundColor.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Center(
-              child: Icon(
-                icon,
-                color: iconColor,
-                size: 16,
-              ),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              label,
-              style: theme.statLabelStyle,
-            ),
-          ),
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            decoration: BoxDecoration(
-              color: isExecutive 
-                  ? const Color(0xFF242C3B) 
-                  : Colors.blue.withOpacity(0.05),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: isExecutive 
-                    ? theme.cardBorderColor 
-                    : Colors.transparent,
-                width: 1,
-              ),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            child: Text(
-              value,
-              style: theme.statValueStyle.copyWith(
-                letterSpacing: 0.3,
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -781,13 +846,19 @@ class _StatsScreenState extends State<StatsScreen> {
               children: [
                 Icon(
                   Icons.account_balance_wallet,
-                  color: theme.titleColor,
+                  color: isExecutive ? theme.titleColor : Colors.blue.shade700,
                   size: 22,
                 ),
                 const SizedBox(width: 10),
                 Text(
                   'Assets Breakdown',
-                  style: theme.cardTitleStyle,
+                  style: isExecutive 
+                      ? theme.cardTitleStyle
+                      : TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue.shade800,
+                        ),
                 ),
               ],
             ),
@@ -797,7 +868,7 @@ class _StatsScreenState extends State<StatsScreen> {
               thickness: 1,
               color: isExecutive
                   ? const Color(0xFF2A3142)
-                  : Colors.grey.withOpacity(0.2),
+                  : Colors.blue.withOpacity(0.2),
             ),
 
             // Enhanced assets breakdown with icons
@@ -805,32 +876,32 @@ class _StatsScreenState extends State<StatsScreen> {
               'Cash',
               '${NumberFormatter.formatCurrency(cash)} (${cashPercent.toStringAsFixed(1)}%)', 
               Icons.attach_money,
-              theme.primaryChartColor,
-              theme,
+              isExecutive ? theme.primaryChartColor : Colors.blue.shade500,
+              theme
             ),
             
             _buildStatRowWithIcon(
               'Business Value',
               '${NumberFormatter.formatCurrency(businessValue)} (${businessPercent.toStringAsFixed(1)}%)', 
               Icons.store,
-              theme.secondaryChartColor,
-              theme,
+              isExecutive ? theme.secondaryChartColor : Colors.amber.shade600,
+              theme
             ),
             
             _buildStatRowWithIcon(
               'Investment Value',
               '${NumberFormatter.formatCurrency(investmentValue)} (${investmentPercent.toStringAsFixed(1)}%)', 
               Icons.insert_chart,
-              theme.tertiaryChartColor,
-              theme,
+              isExecutive ? theme.tertiaryChartColor : Colors.green.shade600,
+              theme
             ),
             
             _buildStatRowWithIcon(
               'Real Estate Value',
               '${NumberFormatter.formatCurrency(realEstateValue)} (${realEstatePercent.toStringAsFixed(1)}%)', 
               Icons.apartment,
-              theme.quaternaryChartColor,
-              theme,
+              isExecutive ? theme.quaternaryChartColor : Colors.indigo.shade500,
+              theme
             ),
 
             const SizedBox(height: 16),
@@ -916,13 +987,19 @@ class _StatsScreenState extends State<StatsScreen> {
               children: [
                 Icon(
                   Icons.timeline,
-                  color: theme.titleColor,
+                  color: isExecutive ? theme.titleColor : Colors.blue.shade700,
                   size: 22,
                 ),
                 const SizedBox(width: 10),
                 Text(
                   'Hourly Earnings (Last 24h)',
-                  style: theme.cardTitleStyle,
+                  style: isExecutive 
+                      ? theme.cardTitleStyle
+                      : TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue.shade800,
+                        ),
                 ),
               ],
             ),
@@ -931,8 +1008,8 @@ class _StatsScreenState extends State<StatsScreen> {
               height: 30,
               thickness: 1,
               color: isExecutive
-                  ? const Color(0xFF2A3142) 
-                  : Colors.grey.withOpacity(0.2),
+                  ? const Color(0xFF2A3142)
+                  : Colors.blue.withOpacity(0.2),
             ),
 
             SizedBox(
@@ -1010,13 +1087,19 @@ class _StatsScreenState extends State<StatsScreen> {
                   children: [
                     Icon(
                       Icons.area_chart,
-                      color: theme.titleColor,
+                      color: isExecutive ? theme.titleColor : Colors.blue.shade700,
                       size: 22,
                     ),
                     const SizedBox(width: 10),
                     Text(
                       timeframeText,
-                      style: theme.cardTitleStyle,
+                      style: isExecutive 
+                          ? theme.cardTitleStyle
+                          : TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.blue.shade800,
+                            ),
                     ),
                   ],
                 ),
@@ -1054,7 +1137,7 @@ class _StatsScreenState extends State<StatsScreen> {
               thickness: 1,
               color: isExecutive
                   ? const Color(0xFF2A3142)
-                  : Colors.grey.withOpacity(0.2),
+                  : Colors.blue.withOpacity(0.2),
             ),
 
             SizedBox(
@@ -1230,65 +1313,6 @@ class _StatsScreenState extends State<StatsScreen> {
         maxValue: maxValue,
         theme: theme,
       ),
-    );
-  }
-
-  Widget _buildStatRow(String label, String value, StatsTheme theme) {
-    final bool isExecutive = theme.id == 'executive';
-    
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: theme.statLabelStyle,
-          ),
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            decoration: BoxDecoration(
-              color: isExecutive 
-                  ? const Color(0xFF242C3B) 
-                  : Colors.blue.withOpacity(0.05),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: isExecutive 
-                    ? theme.cardBorderColor 
-                    : Colors.transparent,
-                width: 1,
-              ),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            child: Text(
-              value,
-              style: theme.statValueStyle.copyWith(
-                letterSpacing: 0.3,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLegendItem(Color color, String label, StatsTheme theme) {
-    return Row(
-      children: [
-        Container(
-          width: 12,
-          height: 12,
-          color: color,
-        ),
-        const SizedBox(width: 4),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: theme.textColor.withOpacity(0.7),
-          ),
-        ),
-      ],
     );
   }
 

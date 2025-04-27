@@ -317,9 +317,11 @@ extension RealEstateLogic on GameState {
         for (var property in locale.properties) {
           if (property.owned > 0) {
             ownedProperties.add({
-              'name': property.name,
-              'locale': locale.name,
-              'ownedCount': property.owned,
+              'localeId': locale.id,
+              'propertyId': property.id,
+              'propertyName': property.name,
+              'localeName': locale.name,
+              'owned': property.owned,
               'currentIncomePerSecond': property.getTotalIncomePerSecond(),
             });
           }
