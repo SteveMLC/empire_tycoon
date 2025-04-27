@@ -62,24 +62,6 @@ class _BusinessScreenState extends State<BusinessScreen> {
 
                           return BusinessItem(
                             business: business,
-                            onBuy: () {
-                              bool purchased = gameState.buyBusiness(business.id);
-                              if (purchased) {
-                                // Play appropriate sound based on current level
-                                final gameService = Provider.of<GameService>(context, listen: false);
-                                if (business.level <= 1) {
-                                  // If it was just purchased (level went from 0 to 1)
-                                  gameService.soundManager.playBusinessPurchaseSound();
-                                } else {
-                                  // If it was upgraded (level > 1)
-                                  gameService.soundManager.playBusinessUpgradeSound();
-                                }
-                              } else {
-                                // Play error sound if not enough money
-                                final gameService = Provider.of<GameService>(context, listen: false);
-                                gameService.soundManager.playErrorSound();
-                              }
-                            },
                           );
                         },
                       ),

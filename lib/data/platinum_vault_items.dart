@@ -107,12 +107,12 @@ List<VaultItem> getVaultItems() {
     ),
     VaultItem(
       id: 'platinum_venture',
-      name: 'Platinum Venture',
-      description: 'Unlock a rare Private Space Agency business with high income potential.',
+      name: 'Platinum Company',
+      description: 'Unlock a rare Private Space Venture with high income potential.',
       category: VaultItemCategory.unlockables,
       type: VaultItemType.oneTime,
       cost: 250,
-      iconData: Icons.rocket, // Rocket icon
+      iconData: Icons.rocket, // CHANGED: Use Icons.rocket to match business definition
     ),
     VaultItem(
       id: 'platinum_stock',

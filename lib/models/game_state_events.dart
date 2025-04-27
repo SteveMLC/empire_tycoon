@@ -216,6 +216,7 @@ extension GameStateEvents on GameState {
             cost: 0,
             incomePerSecond: 0,
             description: 'Default',
+            timerSeconds: 0,
           )
         ],
         maxLevel: 10,

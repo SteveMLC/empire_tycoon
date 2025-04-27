@@ -69,6 +69,16 @@ extension UpdateLogic on GameState {
       // --- [1] Event System --- 
       checkAndTriggerEvents(); // From game_state_events.dart extension
 
+      // --- ADDED [1.5]: Check for Completed Business Upgrades ---
+      for (var business in List.from(businesses)) { // Iterate over a copy in case list changes
+          if (business.isUpgrading && business.upgradeEndTime != null && now.isAfter(business.upgradeEndTime!)) {
+              print("⏲️ Detected completed upgrade for ${business.name} in update loop.");
+              completeBusinessUpgrade(business.id); // This will handle logic and notifyListeners
+              stateChanged = true; // Ensure notifyListeners is called if not already handled
+          }
+      }
+      // --- END ADDED [1.5] ---
+
       // --- [2] Boosters --- 
       if (clickBoostEndTime != null && now.isAfter(clickBoostEndTime!)) {
         clickMultiplier = 1.0;

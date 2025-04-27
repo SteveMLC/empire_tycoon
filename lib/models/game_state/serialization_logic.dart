@@ -115,6 +115,9 @@ extension SerializationLogic on GameState {
       'level': business.level,
       'unlocked': business.unlocked,
       'secondsSinceLastIncome': business.secondsSinceLastIncome,
+      'isUpgrading': business.isUpgrading,
+      'upgradeEndTime': business.upgradeEndTime?.toIso8601String(),
+      'initialUpgradeDurationSeconds': business.initialUpgradeDurationSeconds,
     }).toList();
 
     // Save investments state
@@ -248,10 +251,11 @@ extension SerializationLogic on GameState {
     // Calculate offline time
     DateTime now = DateTime.now();
     int secondsElapsed = 0;
-    if (now.isAfter(previousOpen)) { // Only calculate if time has passed
+    if (now.isAfter(previousOpen)) {
         secondsElapsed = now.difference(previousOpen).inSeconds;
+    } else {
+        print("⚠️ Current time is not after previous open time. No offline progress possible.");
     }
-    print("⏱️ Time since last opened: ${secondsElapsed} seconds");
 
     // Always update lastOpened to current time *before* processing offline progress
     lastOpened = now;
@@ -301,6 +305,18 @@ extension SerializationLogic on GameState {
             businesses[index].level = businessJson['level'] ?? 0;
             businesses[index].unlocked = businessJson['unlocked'] ?? (businesses[index].level > 0);
             businesses[index].secondsSinceLastIncome = businessJson['secondsSinceLastIncome'] ?? 0;
+            businesses[index].isUpgrading = businessJson['isUpgrading'] ?? false;
+            businesses[index].upgradeEndTime = businessJson['upgradeEndTime'] != null
+                ? DateTime.tryParse(businessJson['upgradeEndTime'])
+                : null;
+            businesses[index].initialUpgradeDurationSeconds = businessJson['initialUpgradeDurationSeconds'];
+
+            // CRITICAL FIX: If loading reveals an upgrade ended while offline, complete it immediately
+            if (businesses[index].isUpgrading && businesses[index].upgradeEndTime != null && businesses[index].upgradeEndTime!.isBefore(now)) {
+               print("🔧 Completing offline upgrade for ${businesses[index].name}...");
+               businesses[index].completeUpgrade(); // Use the model's method
+               // Note: Unlocks based on the new level will be handled later by _updateBusinessUnlocks
+            }
           }
         }
       }

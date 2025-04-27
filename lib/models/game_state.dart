@@ -436,6 +436,14 @@ class GameState with ChangeNotifier {
       DateTime now = DateTime.now();
       String hourKey = TimeUtils.getHourKey(now);
 
+      // --- ADDED: Check for Business Upgrades --- 
+      for (var business in businesses) {
+        if (business.isUpgrading && business.upgradeEndTime != null && now.isAfter(business.upgradeEndTime!)) {
+          completeBusinessUpgrade(business);
+        }
+      }
+      // --- END: Check for Business Upgrades --- 
+
       // --- ADDED: Challenge Check --- 
       if (activeChallenge != null) {
         if (!activeChallenge!.isActive(now)) {
@@ -795,15 +803,33 @@ class GameState with ChangeNotifier {
     if (business.isMaxLevel()) return false;
 
     double cost = business.getNextUpgradeCost();
+    int timerSeconds = business.getNextUpgradeTimerSeconds();
+    
     if (money >= cost) {
       money -= cost;
-      business.level++;
+      
+      // Check if this upgrade requires a timer
+      if (timerSeconds <= 0) {
+        // No timer needed, increment level immediately
+        business.level++;
+      } else {
+        // Start the upgrade timer instead of incrementing level immediately
+        business.startUpgrade(timerSeconds);
+      }
+      
       business.unlocked = true;
       _updateBusinessUnlocks();
       notifyListeners();
       return true;
     }
     return false;
+  }
+
+  // Add method to complete a business upgrade when its timer finishes
+  void completeBusinessUpgrade(Business business) {
+    business.completeUpgrade(); // This will increment the level
+    _updateBusinessUnlocks();
+    notifyListeners();
   }
 
   void _updateBusinessUnlocks() {
