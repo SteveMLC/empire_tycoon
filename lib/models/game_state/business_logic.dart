@@ -83,7 +83,7 @@ extension BusinessLogic on GameState {
     Business business = businesses[index];
 
     if (business.isUpgrading) {
-      Duration reduction = const Duration(minutes: 30);
+      Duration reduction = const Duration(minutes: 15);
       print("⏩ Speeding up upgrade for ${business.name} by ${reduction.inMinutes} minutes.");
 
       // --- TODO: Placeholder for actual Ad logic ---

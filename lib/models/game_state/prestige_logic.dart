@@ -63,7 +63,6 @@ extension PrestigeLogic on GameState {
     // Example: 1.2x compounding per level
     incomeMultiplier = pow(1.2, totalPrestigeLevels).toDouble();
 
-
     // Consume a reincorporation use if one was available
     if (reincorporationUsesAvailable > 0) {
       reincorporationUsesAvailable--;
@@ -71,6 +70,33 @@ extension PrestigeLogic on GameState {
 
     // Increment total reincorporations counter
     totalReincorporations++;
+
+    // --- Store Platinum and Premium Items to preserve --- 
+    // Save any state that should persist through reincorporation
+    Map<String, dynamic> preservedState = {
+      'platinumPoints': platinumPoints,
+      'ppPurchases': ppPurchases,
+      'ppOwnedItems': ppOwnedItems.toList(),
+      'isExecutiveStatsThemeUnlocked': isExecutiveStatsThemeUnlocked,
+      'selectedStatsTheme': selectedStatsTheme,
+      'isPlatinumEfficiencyActive': isPlatinumEfficiencyActive,
+      'isPlatinumPortfolioActive': isPlatinumPortfolioActive,
+      'isPlatinumResilienceActive': isPlatinumResilienceActive,
+      'isPermanentIncomeBoostActive': isPermanentIncomeBoostActive,
+      'isPermanentClickBoostActive': isPermanentClickBoostActive,
+      'isPlatinumTowerUnlocked': isPlatinumTowerUnlocked,
+      'isPlatinumVentureUnlocked': isPlatinumVentureUnlocked,
+      'isPlatinumIslandsUnlocked': isPlatinumIslandsUnlocked,
+      'isPlatinumYachtUnlocked': isPlatinumYachtUnlocked,
+      'isPlatinumIslandUnlocked': isPlatinumIslandUnlocked,
+      'isPlatinumStockUnlocked': isPlatinumStockUnlocked,
+      'isPlatinumCrestUnlocked': isPlatinumCrestUnlocked,
+      'isPlatinumFrameUnlocked': isPlatinumFrameUnlocked,
+      'isPlatinumFrameActive': isPlatinumFrameActive,
+      'isGoldenCursorUnlocked': isGoldenCursorUnlocked,
+      'isPremium': isPremium,
+      'retroactivePPAwarded': _retroactivePPAwarded,
+    };
 
     // --- Reset Game State --- 
     double startingMoney = 500.0; // Base starting money
@@ -97,9 +123,25 @@ extension PrestigeLogic on GameState {
     lastOpened = DateTime.now();
     currentDay = DateTime.now().weekday;
 
-    // Reset temporary click boost
+    // Reset all temporary boosts
     clickMultiplier = 1.0;
     clickBoostEndTime = null;
+    boostRemainingSeconds = 0;
+    adBoostRemainingSeconds = 0;
+    platinumClickFrenzyRemainingSeconds = 0;
+    platinumSteadyBoostRemainingSeconds = 0;
+    platinumClickFrenzyEndTime = null;
+    platinumSteadyBoostEndTime = null;
+    isIncomeSurgeActive = false;
+    incomeSurgeEndTime = null;
+    
+    // Reset yacht docking (but keep ownership)
+    platinumYachtDockedLocaleId = null;
+
+    // Cancel any active timers
+    cancelBoostTimer();
+    cancelAdBoostTimer();
+    _cancelPlatinumTimers();
 
     // Reset stats tracking (keep persistent net worth)
     hourlyEarnings = {};
@@ -107,15 +149,28 @@ extension PrestigeLogic on GameState {
     // Reset market events
     activeMarketEvents = [];
 
-    // Re-initialize businesses and investments to default state
+    // Reset businesses
+    for (var business in businesses) {
+      business.level = 0; // Reset business to starting level
+      business.unlocked = false; // Default to locked
+    }
+    // Re-unlock initial businesses
+    businesses[0].unlocked = true; // Mobile Car Wash
+    businesses[1].unlocked = true; // Pop-Up Food Stall
+    businesses[2].unlocked = true; // Boutique Coffee Roaster
+    
+    // Reset investments to zero ownership
+    for (var investment in investments) {
+      investment.owned = 0; // Reset to no owned investments
+    }
+    
+    // Reset real estate
+    _resetRealEstateForReincorporation();
+    
+    // Re-initialize businesses and investments
     _initializeDefaultBusinesses(); // From initialization_logic.dart
     _initializeDefaultInvestments(); // From initialization_logic.dart
-    _resetRealEstateForReincorporation(); // From real_estate_logic.dart
-
-    // Update unlocks based on new starting money
-    _updateBusinessUnlocks(); // From business_logic.dart
-    _updateRealEstateUnlocks(); // From real_estate_logic.dart
-
+    
     // Reset event system state
     activeEvents = [];
     lastEventTime = null;
@@ -123,6 +178,7 @@ extension PrestigeLogic on GameState {
     recentEventTimes = [];
     businessesOwnedCount = 0;
     localesWithPropertiesCount = 0;
+    
     // Reset event achievement tracking fields
     totalEventsResolved = 0;
     eventsResolvedByTapping = 0;
@@ -134,13 +190,39 @@ extension PrestigeLogic on GameState {
     resolvedEvents = [];
 
     // Reset achievement tracking (keep completed status)
-    // Achievement manager is already initialized, just re-evaluate
-    // achievementManager.resetProgress(); // Assuming a method exists if needed
-    // Reset notification queue
     _pendingAchievementNotifications.clear();
     _currentAchievementNotification = null;
     _isAchievementNotificationVisible = false;
-
+    
+    // --- Restore Platinum and Premium Items ---
+    // Restore persisted state
+    platinumPoints = preservedState['platinumPoints'];
+    ppPurchases = Map<String, int>.from(preservedState['ppPurchases']);
+    ppOwnedItems = Set<String>.from(preservedState['ppOwnedItems']);
+    isExecutiveStatsThemeUnlocked = preservedState['isExecutiveStatsThemeUnlocked'];
+    selectedStatsTheme = preservedState['selectedStatsTheme'];
+    isPlatinumEfficiencyActive = preservedState['isPlatinumEfficiencyActive'];
+    isPlatinumPortfolioActive = preservedState['isPlatinumPortfolioActive'];
+    isPlatinumResilienceActive = preservedState['isPlatinumResilienceActive'];
+    isPermanentIncomeBoostActive = preservedState['isPermanentIncomeBoostActive'];
+    isPermanentClickBoostActive = preservedState['isPermanentClickBoostActive'];
+    isPlatinumTowerUnlocked = preservedState['isPlatinumTowerUnlocked']; 
+    isPlatinumVentureUnlocked = preservedState['isPlatinumVentureUnlocked'];
+    isPlatinumIslandsUnlocked = preservedState['isPlatinumIslandsUnlocked'];
+    isPlatinumYachtUnlocked = preservedState['isPlatinumYachtUnlocked'];
+    isPlatinumIslandUnlocked = preservedState['isPlatinumIslandUnlocked'];
+    isPlatinumStockUnlocked = preservedState['isPlatinumStockUnlocked'];
+    isPlatinumCrestUnlocked = preservedState['isPlatinumCrestUnlocked'];
+    isPlatinumFrameUnlocked = preservedState['isPlatinumFrameUnlocked'];
+    isPlatinumFrameActive = preservedState['isPlatinumFrameActive'];
+    isGoldenCursorUnlocked = preservedState['isGoldenCursorUnlocked'];
+    isPremium = preservedState['isPremium'];
+    _retroactivePPAwarded = preservedState['retroactivePPAwarded'];
+    
+    // Update unlocks based on new starting money and preserved state
+    _updateBusinessUnlocks(); // From business_logic.dart
+    _updateRealEstateUnlocks(); // From real_estate_logic.dart
+    _updateInvestmentUnlocks(); // From investment_logic.dart
 
     // Notify listeners that state has changed
     notifyListeners();

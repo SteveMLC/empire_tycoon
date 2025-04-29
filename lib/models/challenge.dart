@@ -38,8 +38,31 @@ class Challenge {
      return earnedDuringChallenge >= goalEarnedAmount;
   }
 
+  /// Converts the challenge to a JSON map for persistence.
+  Map<String, dynamic> toJson() {
+    return {
+      'itemId': itemId,
+      'startTime': startTime.toIso8601String(),
+      'duration': duration.inSeconds,
+      'goalEarnedAmount': goalEarnedAmount,
+      'startTotalEarned': startTotalEarned,
+      'rewardPP': rewardPP,
+    };
+  }
+  
+  /// Creates a Challenge from a JSON map.
+  factory Challenge.fromJson(Map<String, dynamic> json) {
+    return Challenge(
+      itemId: json['itemId'],
+      startTime: DateTime.parse(json['startTime']),
+      duration: Duration(seconds: json['duration']),
+      goalEarnedAmount: json['goalEarnedAmount'],
+      startTotalEarned: json['startTotalEarned'],
+      rewardPP: json['rewardPP'],
+    );
+  }
+
   // Potential future additions:
   // - Visual progress tracking (e.g., currentEarned / goalEarnedAmount)
   // - Specific challenge type enum if more challenges are added
-  // - Serialization methods (toJson/fromJson) if needed for persistence
 } 

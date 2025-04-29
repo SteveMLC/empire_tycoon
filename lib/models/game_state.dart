@@ -22,6 +22,7 @@ import '../data/business_definitions.dart'; // ADDED: Import for business data
 import '../data/investment_definitions.dart'; // ADDED: Import for investment data
 import '../data/platinum_vault_items.dart'; // ADDED: Import for vault items
 import '../utils/number_formatter.dart'; // ADDED: Import for formatting
+import 'mogul_avatar.dart'; // ADDED: Import for mogul avatars
 
 part 'game_state/initialization_logic.dart';
 part 'game_state/business_logic.dart';
@@ -53,12 +54,27 @@ class GameState with ChangeNotifier {
   // User profile properties
   String? username;
   String? userAvatar;
-
-  // ADDED: Variable to track offline earnings for notification
+  
+  // ADDED: Mogul avatar tracking
+  bool isMogulAvatarsUnlocked = false;
+  String? selectedMogulAvatarId;
+  
+  // --- OFFLINE INCOME NOTIFICATION STATE ---
   double offlineEarningsAwarded = 0.0;
-  Duration? offlineDurationForNotification; // ADDED: Track duration for notification
-  // ADDED: Flag to indicate whether to show offline earnings notification
-  bool shouldShowOfflineEarnings = false;
+  Duration? offlineDurationForNotification;
+  bool _shouldShowOfflineEarnings = false; // Changed to private for proper getter/setter
+  
+  // Getter for shouldShowOfflineEarnings
+  bool get shouldShowOfflineEarnings => _shouldShowOfflineEarnings;
+  
+  // Setter for shouldShowOfflineEarnings
+  set shouldShowOfflineEarnings(bool value) {
+    if (_shouldShowOfflineEarnings != value) {
+      _shouldShowOfflineEarnings = value;
+      print("📣 shouldShowOfflineEarnings changed to: $value");
+      notifyListeners();
+    }
+  }
 
   // >> START: Platinum Points System Fields <<
   int platinumPoints = 0;
@@ -605,6 +621,9 @@ class GameState with ChangeNotifier {
         notifyListeners();
       }
 
+      // ADDED: Check active challenge
+      _checkActiveChallenge(now);
+
     } catch (e, stackTrace) {
       print("❌❌❌ CRITICAL ERROR in _updateGameState: $e");
       print(stackTrace);
@@ -775,8 +794,8 @@ class GameState with ChangeNotifier {
         platinumBoostMultiplier = 2.0;
     }
 
-    // Combine all multipliers: Base * Ad * Platinum
-    double finalEarnings = baseEarnings * adBoostMultiplier * platinumBoostMultiplier;
+    // Combine all multipliers: Base * Prestige * Ad * Platinum
+    double finalEarnings = baseEarnings * clickMultiplier * adBoostMultiplier * platinumBoostMultiplier;
 
     // --- REMOVED potentially conflicting old boost logic (isBoostActive, clickMultiplier) ---
     // double boostMultiplier = 1.0;
@@ -784,7 +803,7 @@ class GameState with ChangeNotifier {
     // baseEarnings = clickValue * clickMultiplier * permanentClickMultiplier; 
     // finalEarnings = baseEarnings * boostMultiplier * platinumBoostMultiplier; 
 
-    print("~~~ GameState.tap() called. BaseClick: $clickValue, PermVaultMult: ${permanentClickMultiplier.toStringAsFixed(1)}x, AdBoostMult: ${adBoostMultiplier.toStringAsFixed(1)}x, PlatinumBoostMult: ${platinumBoostMultiplier.toStringAsFixed(1)}x, Final: $finalEarnings ~~~ "); // Updated DEBUG LOG
+    print("~~~ GameState.tap() called. BaseClick: $clickValue, PermVaultMult: ${permanentClickMultiplier.toStringAsFixed(1)}x, PrestigeMult: ${clickMultiplier.toStringAsFixed(1)}x, AdBoostMult: ${adBoostMultiplier.toStringAsFixed(1)}x, PlatinumBoostMult: ${platinumBoostMultiplier.toStringAsFixed(1)}x, Final: $finalEarnings ~~~ "); // Updated DEBUG LOG
 
     money += finalEarnings;
     totalEarned += finalEarnings;
@@ -1172,6 +1191,18 @@ class GameState with ChangeNotifier {
             isPlatinumResilienceActive = true;
             print("Activated Platinum Resilience (Event Impact -10%). Effect applied in event processing.");
             break;
+        case 'platinum_facade':
+            // Use the selected business ID from the context
+            String? targetBusinessId = purchaseContext?['selectedBusinessId'] as String?;
+            
+            if (targetBusinessId != null) {
+                // Apply the platinum facade to the selected business
+                applyPlatinumFacade(targetBusinessId);
+                print("Applied Platinum Facade to business $targetBusinessId");
+            } else {
+                print("ERROR: Could not apply Platinum Facade - missing selectedBusinessId in context.");
+            }
+            break;
         case 'platinum_tower':
             isPlatinumTowerUnlocked = true;
             _updateRealEstateUnlocks(); // Trigger unlock check
@@ -1217,26 +1248,32 @@ class GameState with ChangeNotifier {
             break;
         // --- Events & Challenges ---
         case 'platinum_challenge':
-            if (activeChallenge != null) {
-              print("WARNING: Cannot start Platinum Challenge, another challenge is already active.");
-              // Optionally: refund points or prevent purchase in spendPlatinumPoints?
-              // For now, just don't start a new one.
-            } else {
-              // FIX: Use the getter 'totalIncomePerSecond', not method call
-              final currentIncomePerHour = totalIncomePerSecond * 3600;
-              final goalAmount = currentIncomePerHour * 2;
-              activeChallenge = Challenge(
-                itemId: itemId,
-                startTime: DateTime.now(),
-                duration: const Duration(hours: 1),
-                goalEarnedAmount: goalAmount,
-                startTotalEarned: totalEarned,
-                rewardPP: 30, // Hardcoded based on item definition
-              );
-              print("INFO: Platinum Challenge Started! Goal: Earn ${goalAmount.toStringAsFixed(2)} in 1 hour.");
-              // TODO: Add a user-facing notification for challenge start.
-              notifyListeners(); // Ensure UI can react to the challenge starting
+            // Check if the user can start a new challenge based on current income
+            double currentIncomePerSecond = _calculateIncomePerSecond();
+            double challengeGoal = currentIncomePerSecond * 2 * 3600; // Double hourly income = 2 * current/sec * 3600
+            
+            // If current income is 0, set a minimum challenge goal
+            if (challengeGoal <= 0) {
+              challengeGoal = 1000; // Minimum challenge goal of $1,000
             }
+            
+            // Create and assign the active challenge
+            activeChallenge = Challenge(
+              itemId: itemId,
+              startTime: purchaseTime,
+              duration: const Duration(hours: 1),  // 1 hour challenge
+              goalEarnedAmount: challengeGoal,
+              startTotalEarned: totalEarned,  // Current total earned
+              rewardPP: 30,  // PP reward for completing the challenge
+            );
+            
+            // Track usage
+            platinumChallengeLastUsedTime = purchaseTime;
+            platinumChallengeUsesToday++; // Increment daily usage counter
+            lastPlatinumChallengeDayTracked = DateTime(purchaseTime.year, purchaseTime.month, purchaseTime.day);
+            
+            print("INFO: Started Platinum Challenge to earn $challengeGoal within 1 hour (${platinumChallengeUsesToday}/2 today)");
+            notifyListeners(); // Explicitly notify listeners for challenge activation
             break;
         case 'platinum_shield':
             // Pre-check in spendPlatinumPoints ensures it's not already active
@@ -1257,7 +1294,9 @@ class GameState with ChangeNotifier {
         // --- Cosmetics ---
         case 'platinum_mogul':
             isExecutiveThemeUnlocked = true;
-            print("Unlocked Executive Theme (via Platinum Mogul).");
+            // ADDED: Unlock mogul avatars
+            isMogulAvatarsUnlocked = true;
+            print("Unlocked Executive Theme and Mogul Avatars (via Platinum Mogul).");
             break;
         case 'platinum_facade': 
             // TODO: Implement UI to select which owned business gets the facade.
@@ -1380,7 +1419,7 @@ class GameState with ChangeNotifier {
     // Example scaling: 15 minutes of current passive income?
     // Or based on total earned, net worth, etc.
     // Let's use 15 minutes of total passive income per second for now.
-    double passiveIncomePerSecond = calculatePassiveIncomePerSecond(); // Use the detailed calculation
+    double passiveIncomePerSecond = calculateTotalIncomePerSecond(); // Use the detailed calculation
     double cashAmount = passiveIncomePerSecond * 60 * 15; // 15 minutes worth
 
     // Add a small floor value and potentially cap it?
@@ -1417,78 +1456,74 @@ class GameState with ChangeNotifier {
 
   // ADDED: Helper to calculate potential offline income for a given duration
   double calculateOfflineIncome(Duration offlineDuration) {
-    // Cap maximum offline time to avoid exploits (e.g., max 8 hours)
-    final maxOfflineDuration = const Duration(hours: 8);
-    final cappedDuration = offlineDuration > maxOfflineDuration ? maxOfflineDuration : offlineDuration;
-
-    if (cappedDuration <= Duration.zero) return 0.0;
-
-    // Simple calculation: current total income/sec * duration in seconds
-    // Note: This doesn't account for potential unlocks/upgrades during offline time.
-    // More complex logic could simulate ticks, but this is simpler for a booster.
-    double incomePerSecond = totalIncomePerSecond; // Use the getter
-    double offlineIncome = incomePerSecond * cappedDuration.inSeconds;
+    // Cap to max 8 hours of offline income to prevent massive numbers
+    final int maxSeconds = 8 * 60 * 60; // 8 hours in seconds
+    final int actualSeconds = min(offlineDuration.inSeconds, maxSeconds);
     
-    // Apply a potential reduction factor for offline income (e.g., 50%)?
-    // offlineIncome *= 0.5; // Example: only earn 50% while offline
-
-    print("Calculated offline income for ${cappedDuration.inHours}h: ${offlineIncome.toStringAsFixed(2)}");
-    return offlineIncome;
+    // Calculate based on total income per second
+    return calculateTotalIncomePerSecond() * actualSeconds;
   }
-
-  // ADDED: Calculate passive income per second for achievements
-  double calculatePassiveIncomePerSecond() {
-    double total = 0.0;
-    double businessTotal = 0.0;
-    double realEstateTotal = 0.0;
-    double dividendTotal = 0.0;
-
-    // --- Calculate Component Multipliers from Vault Upgrades ---
-    double businessEfficiencyMultiplier = isPlatinumEfficiencyActive ? 1.05 : 1.0;
-    double portfolioMultiplier = isPlatinumPortfolioActive ? 1.25 : 1.0;
-    double permanentIncomeMultiplier = isPermanentIncomeBoostActive ? 1.05 : 1.0;
-
-    // Business income
+  
+  // Calculate total income per second (including all sources)
+  double calculateTotalIncomePerSecond() {
+    // Business income per second
+    double businessIncome = 0.0;
     for (var business in businesses) {
       if (business.level > 0) {
-        bool hasEvent = hasActiveEventForBusiness(business.id);
-        // Apply Platinum Efficiency boost to the *base* income calculated by getCurrentIncome
-        double businessBaseIncome = business.getCurrentIncome();
-        businessTotal += businessBaseIncome * businessEfficiencyMultiplier;
+        double cyclesPerSecond = 1 / business.incomeInterval;
+        double baseIncomePerSecond = business.getCurrentIncome(isResilienceActive: isPlatinumResilienceActive) * cyclesPerSecond;
+        // Apply efficiency multiplier
+        double modifiedIncomePerSecond = baseIncomePerSecond * (isPlatinumEfficiencyActive ? 1.05 : 1.0);
+        businessIncome += modifiedIncomePerSecond;
       }
     }
-
-    // Real estate income
-    // Note: getRealEstateIncomePerSecond already includes platinum foundation boost internally
-    realEstateTotal += getRealEstateIncomePerSecond();
-
-    // Dividend income from investments
+    
+    // Real estate income per second
+    double realEstateIncome = 0.0;
+    for (var locale in realEstateLocales) {
+      if (locale.unlocked) {
+        bool isFoundationApplied = platinumFoundationsApplied.containsKey(locale.id);
+        bool isYachtDocked = platinumYachtDockedLocaleId == locale.id;
+        double foundationMultiplier = isFoundationApplied ? 1.05 : 1.0;
+        double yachtMultiplier = isYachtDocked ? 1.05 : 1.0;
+        
+        for (var property in locale.properties) {
+          if (property.owned > 0) {
+            double basePerSecond = property.getTotalIncomePerSecond(isResilienceActive: isPlatinumResilienceActive);
+            realEstateIncome += basePerSecond * foundationMultiplier * yachtMultiplier;
+          }
+        }
+      }
+    }
+    
+    // Dividend income per second
+    double dividendIncome = 0.0;
     double diversificationBonus = calculateDiversificationBonus();
+    double portfolioMultiplier = isPlatinumPortfolioActive ? 1.25 : 1.0;
+    
     for (var investment in investments) {
       if (investment.owned > 0 && investment.hasDividends()) {
-        // Apply Platinum Portfolio boost here
-        dividendTotal += investment.getDividendIncomePerSecond() * portfolioMultiplier *
-                         (1 + diversificationBonus); // Apply diversification bonus
+        double baseDividendPerSecond = investment.getDividendIncomePerSecond();
+        double effectiveDividendPerShare = baseDividendPerSecond * portfolioMultiplier * (1 + diversificationBonus);
+        dividendIncome += effectiveDividendPerShare * investment.owned;
       }
     }
-
-    // --- Combine Totals and Apply Global Multipliers ---
-    // Apply gameState multipliers (incomeMultiplier, prestigeMultiplier) to each component first
-    // The Platinum Efficiency boost is applied *before* these multipliers
-    businessTotal *= incomeMultiplier * prestigeMultiplier;
-    realEstateTotal *= incomeMultiplier * prestigeMultiplier;
-    dividendTotal *= incomeMultiplier * prestigeMultiplier;
-
-    // Combine the boosted component totals
-    total = businessTotal + realEstateTotal + dividendTotal;
-
-    // Apply the Permanent Income Boost (5%) to the combined total
-    total *= permanentIncomeMultiplier;
-
-    // Apply global income boosts (e.g., Income Surge)
-    if (isIncomeSurgeActive) total *= 2.0;
-
-    return total;
+    
+    // Apply global multipliers
+    double baseTotal = businessIncome + realEstateIncome + dividendIncome;
+    double withGlobalMultipliers = baseTotal * incomeMultiplier * prestigeMultiplier;
+    
+    // Apply permanent income boost
+    if (isPermanentIncomeBoostActive) {
+      withGlobalMultipliers *= 1.05;
+    }
+    
+    // Apply income surge if active
+    if (isIncomeSurgeActive) {
+      withGlobalMultipliers *= 2.0;
+    }
+    
+    return withGlobalMultipliers;
   }
 
   // Helper method to start the boost timer
@@ -1560,15 +1595,35 @@ class GameState with ChangeNotifier {
   }
   // --- END: Helper methods for Platinum Booster Timers ---
 
-  // ADDED: Check and trigger notification display
+  // IMPROVED: Check and trigger notification display
   bool checkAndClearOfflineEarnings() {
-    if (shouldShowOfflineEarnings && offlineEarningsAwarded > 0 && offlineDurationForNotification != null) {
-      bool hasEarnings = true;
+    print("🔍 Checking offline earnings: amount=$offlineEarningsAwarded, duration=${offlineDurationForNotification?.inSeconds ?? 0}s, shouldShow=$_shouldShowOfflineEarnings");
+    
+    // ENHANCED VALIDATION: Check for sane values
+    bool hasValidAmount = offlineEarningsAwarded > 0 && offlineEarningsAwarded.isFinite;
+    bool hasValidDuration = offlineDurationForNotification != null && 
+                            offlineDurationForNotification!.inSeconds > 0 &&
+                            offlineDurationForNotification!.inSeconds <= 86400; // Max 1 day
+    
+    // Check if we have valid offline income to show
+    if (_shouldShowOfflineEarnings && hasValidAmount && hasValidDuration) {
+      print("✅ Valid offline income found! Amount: $offlineEarningsAwarded for ${offlineDurationForNotification!.inSeconds}s");
+      
       // Clear flag after checking (caller will show notification)
-      shouldShowOfflineEarnings = false;
+      _shouldShowOfflineEarnings = false;
       notifyListeners();
-      return hasEarnings;
+      return true;
     }
+    
+    // Log why we're not showing offline income
+    if (!_shouldShowOfflineEarnings) {
+      print("❌ Not showing offline income: shouldShowOfflineEarnings is false");
+    } else if (!hasValidAmount) {
+      print("❌ Not showing offline income: Invalid amount $offlineEarningsAwarded");
+    } else if (!hasValidDuration) {
+      print("❌ Not showing offline income: Invalid duration ${offlineDurationForNotification?.inSeconds}s");
+    }
+    
     return false;
   }
 
@@ -1582,7 +1637,7 @@ class GameState with ChangeNotifier {
   
   // ADDED: Clear offline notification state
   void clearOfflineNotification() {
-    shouldShowOfflineEarnings = false;
+    _shouldShowOfflineEarnings = false;
     offlineEarningsAwarded = 0.0;
     offlineDurationForNotification = null;
     notifyListeners();
@@ -1617,4 +1672,130 @@ class GameState with ChangeNotifier {
       print("Cannot toggle platinum frame: Not unlocked.");
     }
   }
+
+  // Public method to cancel the standard boost timer
+  void cancelBoostTimer() {
+    _boostTimer?.cancel();
+    _boostTimer = null;
+  }
+
+  // Public method to cancel the ad boost timer
+  void cancelAdBoostTimer() {
+    _adBoostTimer?.cancel();
+    _adBoostTimer = null;
+  }
+
+  // Apply platinum facade to a business
+  void applyPlatinumFacade(String businessId) {
+    // Find the business by ID
+    final businessIndex = businesses.indexWhere((b) => b.id == businessId);
+    if (businessIndex >= 0) {
+      businesses[businessIndex].hasPlatinumFacade = true;
+      
+      // Also track this in the set for persistence
+      platinumFacadeAppliedBusinessIds.add(businessId);
+      
+      // Notify listeners of the change
+      notifyListeners();
+    }
+  }
+  
+  // Check if a business has platinum facade
+  bool hasBusinessPlatinumFacade(String businessId) {
+    return platinumFacadeAppliedBusinessIds.contains(businessId);
+  }
+  
+  // Get list of businesses that can have platinum facade applied
+  List<Business> getBusinessesForPlatinumFacade() {
+    // Only return businesses that are owned (level > 0) and don't already have the facade
+    return businesses.where((b) => b.level > 0 && !b.hasPlatinumFacade && b.unlocked).toList();
+  }
+
+  // Calculate the current income per second
+  double _calculateIncomePerSecond() {
+    return calculateTotalIncomePerSecond();
+  }
+
+  // ADDED: Method to manage platinum challenge daily limits
+  void checkAndResetPlatinumChallengeLimit(DateTime now) {
+    // If never used before, initialize
+    if (lastPlatinumChallengeDayTracked == null) {
+      lastPlatinumChallengeDayTracked = DateTime(now.year, now.month, now.day);
+      platinumChallengeUsesToday = 0;
+      return;
+    }
+    
+    // Check if it's a new day
+    DateTime currentDay = DateTime(now.year, now.month, now.day);
+    if (currentDay.isAfter(lastPlatinumChallengeDayTracked!)) {
+      // Reset the limit for the new day
+      lastPlatinumChallengeDayTracked = currentDay;
+      platinumChallengeUsesToday = 0;
+      print("INFO: Platinum Challenge daily limit reset (0/2)");
+    }
+  }
+  
+  // ADDED: Method to check platinum challenge eligibility
+  bool canStartPlatinumChallenge(DateTime now) {
+    checkAndResetPlatinumChallengeLimit(now); // UPDATED call to public method
+    
+    // Check if there's already an active challenge
+    if (activeChallenge != null && activeChallenge!.isActive(now)) {
+      print("DEBUG: Cannot start Platinum Challenge: Already active.");
+      return false;
+    }
+    
+    // Check if we've reached the daily limit (2x per day)
+    if (platinumChallengeUsesToday >= 2) {
+      print("DEBUG: Cannot start Platinum Challenge: Daily limit (2) reached.");
+      return false;
+    }
+    
+    return true;
+  }
+  
+  // UPDATED: Method to check and complete challenges in the update loop
+  void _checkActiveChallenge(DateTime now) {
+    if (activeChallenge == null) return;
+
+    // Check for success FIRST, even if time hasn't expired
+    if (activeChallenge!.wasSuccessful(totalEarned)) {
+      // Award PP for successful challenge
+      platinumPoints += activeChallenge!.rewardPP;
+      showPPAnimation = true; // Trigger UI animation
+      print("SUCCESS: Platinum Challenge completed! Awarded ${activeChallenge!.rewardPP} PP");
+      
+      // Create a temporary achievement-like notification for display
+      Achievement challengeComplete = Achievement(
+        id: 'temp_challenge_complete_${DateTime.now().millisecondsSinceEpoch}',
+        name: 'Challenge Completed!', 
+        description: 'Successfully doubled your hourly income rate within the time limit!',
+        icon: Icons.emoji_events,
+        rarity: AchievementRarity.rare, // Use rare style for fancy display
+        ppReward: activeChallenge!.rewardPP,
+        category: AchievementCategory.progress, // Added category
+      );
+      
+      // Queue the notification - sound will play through the achievement notification system
+      queueAchievementsForDisplay([challengeComplete]);
+      
+      // Clear the completed challenge
+      activeChallenge = null;
+      notifyListeners();
+      return; // Exit early since it's completed
+    }
+
+    // If not successful yet, check if the time has expired
+    if (!activeChallenge!.isActive(now)) {
+      print("FAILED: Platinum Challenge expired without reaching the goal.");
+      // Clear the expired challenge
+      activeChallenge = null;
+      notifyListeners();
+    }
+  }
+
+  // Platinum Challenge tracking
+  DateTime? platinumChallengeLastUsedTime; // Tracks last usage for limit
+  int platinumChallengeUsesToday = 0; // Tracks uses today (max 2)
+  DateTime? lastPlatinumChallengeDayTracked; // For daily reset
 }

@@ -8,6 +8,7 @@ import '../utils/number_formatter.dart'; // For formatting PP display
 import '../data/platinum_vault_items.dart'; // Import actual item data
 import '../widgets/vault_item_card.dart'; // Import the new card widget
 import '../services/game_service.dart'; // Added import for GameService
+import '../widgets/platinum_facade_selector.dart'; // Import the PlatinumFacadeSelector
 
 class PlatinumVaultScreen extends StatefulWidget {
   const PlatinumVaultScreen({Key? key}) : super(key: key);
@@ -348,6 +349,17 @@ class _PlatinumVaultScreenState extends State<PlatinumVaultScreen> with SingleTi
               isActive = gameState.isExecutiveStatsThemeUnlocked;
               activeEndTime = null; // Stats theme is permanent, no end time
               break;
+            case 'platinum_challenge':
+              // Check daily usage limits
+              DateTime now = DateTime.now();
+              gameState.checkAndResetPlatinumChallengeLimit(now);
+              maxUses = 2;
+              usesLeft = max(0, maxUses - gameState.platinumChallengeUsesToday);
+              isActive = gameState.activeChallenge != null && 
+                        gameState.activeChallenge!.itemId == 'platinum_challenge' && 
+                        gameState.activeChallenge!.isActive(now);
+              // No cooldown for challenge, just daily limits
+              break;
             // Add other items if they gain timed states later
           }
 
@@ -427,40 +439,51 @@ class _PlatinumVaultScreenState extends State<PlatinumVaultScreen> with SingleTi
 
   // Handle purchase logic, including showing dialog for specific items
   void _handlePurchase(BuildContext context, GameState gameState, VaultItem item) {
-      if (item.id == 'platinum_foundation') {
-        // --- Special handling for Platinum Foundation ---
-        _showLocaleSelectionDialog(context, gameState, item);
-      } else if (item.id == 'platinum_yacht') {
-        // --- Special handling for Platinum Yacht ---
-        // Check if yacht is already unlocked (it's a one-time purchase effect)
-        if (gameState.isPlatinumYachtUnlocked) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text("Platinum Yacht already unlocked."), backgroundColor: Colors.orange),
-            );
-            return;
-        }
-        _showYachtDockingDialog(context, gameState, item);
-      } else if (item.id == 'unlock_stats_theme_1') {
-        // --- Special handling for Stats Theme ---
-        bool success = gameState.spendPlatinumPoints(item.id, item.cost);
-        if (success) {
-          _showStatsThemeUnlockDialog(context, gameState);
-        } else {
-          _showPurchaseFeedback(context, success, item, gameState);
-        }
-      } else if (item.id == 'cosmetic_platinum_frame') {
-        // --- Special handling for Platinum UI Frame ---
-        bool success = gameState.spendPlatinumPoints(item.id, item.cost);
-        if (success) {
-          _showPlatinumFrameUnlockDialog(context, gameState);
-        } else {
-          _showPurchaseFeedback(context, success, item, gameState);
-        }
+    if (item.id == 'platinum_foundation') {
+      // --- Special handling for Platinum Foundation ---
+      _showLocaleSelectionDialog(context, gameState, item);
+    } else if (item.id == 'platinum_facade') {
+      // --- Special handling for Platinum Facade ---
+      _showBusinessSelectionDialog(context, gameState, item);
+    } else if (item.id == 'platinum_yacht') {
+      // --- Special handling for Platinum Yacht ---
+      // Check if yacht is already unlocked (it's a one-time purchase effect)
+      if (gameState.isPlatinumYachtUnlocked) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Platinum Yacht already unlocked."), backgroundColor: Colors.orange),
+        );
+        return;
+      }
+      _showYachtDockingDialog(context, gameState, item);
+    } else if (item.id == 'unlock_stats_theme_1') {
+      // --- Special handling for Stats Theme ---
+      bool success = gameState.spendPlatinumPoints(item.id, item.cost);
+      if (success) {
+        _showStatsThemeUnlockDialog(context, gameState);
       } else {
-        // --- Default purchase logic for other items ---
-        bool success = gameState.spendPlatinumPoints(item.id, item.cost);
         _showPurchaseFeedback(context, success, item, gameState);
       }
+    } else if (item.id == 'cosmetic_platinum_frame') {
+      // --- Special handling for Platinum UI Frame ---
+      bool success = gameState.spendPlatinumPoints(item.id, item.cost);
+      if (success) {
+        _showPlatinumFrameUnlockDialog(context, gameState);
+      } else {
+        _showPurchaseFeedback(context, success, item, gameState);
+      }
+    } else if (item.id == 'platinum_mogul') {
+      // --- Special handling for Platinum Mogul ---
+      bool success = gameState.spendPlatinumPoints(item.id, item.cost);
+      if (success) {
+        _showMogulAvatarsUnlockDialog(context, gameState);
+      } else {
+        _showPurchaseFeedback(context, success, item, gameState);
+      }
+    } else {
+      // --- Default purchase logic for other items ---
+      bool success = gameState.spendPlatinumPoints(item.id, item.cost);
+      _showPurchaseFeedback(context, success, item, gameState);
+    }
   }
 
   // Show dialog for selecting locale for Platinum Foundation
@@ -555,6 +578,193 @@ class _PlatinumVaultScreenState extends State<PlatinumVaultScreen> with SingleTi
           },
         );
       },
+    );
+  }
+
+  // Show dialog for Mogul Avatars unlock
+  void _showMogulAvatarsUnlockDialog(BuildContext context, GameState gameState) {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          elevation: 0,
+          backgroundColor: Colors.transparent,
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  const Color(0xFF4A1259),
+                  const Color(0xFF2D0C3E),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: const Color(0xFFFFD700).withOpacity(0.6),
+                width: 2,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.5),
+                  blurRadius: 20,
+                  spreadRadius: 5,
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Title with gold shimmer
+                ShaderMask(
+                  shaderCallback: (bounds) => LinearGradient(
+                    colors: [
+                      Colors.amber.shade200,
+                      const Color(0xFFFFD700),
+                      Colors.amber.shade200,
+                    ],
+                    stops: const [0.0, 0.5, 1.0],
+                  ).createShader(bounds),
+                  child: const Text(
+                    "Premium Mogul Look Unlocked!",
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                
+                const SizedBox(height: 20),
+                
+                // Avatar preview section
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.amber.withOpacity(0.3),
+                      width: 1,
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      const Text(
+                        "You've unlocked exclusive mogul avatars!",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      
+                      const SizedBox(height: 12),
+                      
+                      // Avatar preview row
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          // Show 4 sample avatars
+                          _buildSampleAvatarPreview('👑👨'),
+                          _buildSampleAvatarPreview('👑👸'),
+                          _buildSampleAvatarPreview('🧔‍♂️💼'),
+                          _buildSampleAvatarPreview('📈👩'),
+                        ],
+                      ),
+                      
+                      const SizedBox(height: 12),
+                      
+                      const Text(
+                        "Access them in your user profile!",
+                        style: TextStyle(
+                          color: Colors.amber,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+                
+                const SizedBox(height: 20),
+                
+                // Close button
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(dialogContext).pop();
+                    // Show success feedback after closing dialog
+                    _showPurchaseFeedback(
+                      context, 
+                      true, 
+                      getVaultItems().firstWhere((i) => i.id == 'platinum_mogul'), 
+                      gameState
+                    );
+                  },
+                  style: TextButton.styleFrom(
+                    backgroundColor: Colors.amber.withOpacity(0.2),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                      side: const BorderSide(color: Colors.amber, width: 1),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
+                  ),
+                  child: const Text(
+                    "Got it!",
+                    style: TextStyle(
+                      color: Colors.amber,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  // Helper for avatar preview in unlock dialog
+  Widget _buildSampleAvatarPreview(String emoji) {
+    return Container(
+      width: 50,
+      height: 50,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Colors.amber.shade700.withOpacity(0.3),
+            Colors.amber.shade300.withOpacity(0.3),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: Colors.amber.withOpacity(0.7),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.amber.withOpacity(0.2),
+            blurRadius: 5,
+            spreadRadius: 1,
+          ),
+        ],
+      ),
+      child: Center(
+        child: Text(
+          emoji,
+          style: const TextStyle(fontSize: 20),
+        ),
+      ),
     );
   }
 
@@ -802,6 +1012,38 @@ class _PlatinumVaultScreenState extends State<PlatinumVaultScreen> with SingleTi
         ],
       ),
     );
+  }
+
+  // Show dialog to select a business to apply the Platinum Facade to
+  void _showBusinessSelectionDialog(BuildContext context, GameState gameState, VaultItem item) async {
+    // Show the business selection dialog
+    final selectedBusinessId = await PlatinumFacadeSelector.show(context);
+    
+    // Handle the selection
+    if (selectedBusinessId != null) {
+      // Get the business name for feedback
+      final selectedBusiness = gameState.businesses.firstWhere(
+        (b) => b.id == selectedBusinessId,
+        orElse: () => gameState.businesses.first // Provide a default value
+      );
+      final selectedBusinessName = selectedBusiness.name;
+      
+      // Create context for the purchase
+      final purchaseContext = {'selectedBusinessId': selectedBusinessId};
+      
+      // Attempt to purchase and apply the Platinum Facade
+      bool success = gameState.spendPlatinumPoints(item.id, item.cost, purchaseContext: purchaseContext);
+      
+      // Show feedback to the user
+      _showPurchaseFeedback(
+        context, 
+        success, 
+        item, 
+        gameState, 
+        selectedLocaleName: selectedBusinessName,
+        extraMessage: 'Your business now has a stunning platinum appearance!'
+      );
+    }
   }
 }
 

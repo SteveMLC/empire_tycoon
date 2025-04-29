@@ -585,7 +585,7 @@ class _StatsScreenState extends State<StatsScreen> {
             decoration: BoxDecoration(
               color: isExecutive 
                   ? const Color(0xFF242C3B) 
-                  : Colors.blue.withOpacity(0.05),
+                  : Colors.transparent,
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
                 color: isExecutive 
@@ -604,7 +604,7 @@ class _StatsScreenState extends State<StatsScreen> {
                   : TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
-                      color: Colors.blue.shade800,
+                      color: Colors.black87,
                       letterSpacing: 0.3,
                     ),
             ),

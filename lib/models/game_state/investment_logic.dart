@@ -447,4 +447,80 @@ extension InvestmentLogic on GameState {
     // Multipliers and bonus are applied in the main update loop (_updateGameState)
     return total;
   }
+
+  // Method to update investment unlocks based on money, prestige level, and platinum unlocks
+  void _updateInvestmentUnlocks() {
+    // First, make sure all investments are initially locked
+    for (var investment in investments) {
+      investment.unlocked = false;
+    }
+
+    // Stocks unlock progressively with money
+    if (money >= 250) {
+      // Unlock first stock - NexTech
+      final nxtIndex = investments.indexWhere((i) => i.id == 'nxt');
+      if (nxtIndex >= 0) investments[nxtIndex].unlocked = true;
+    }
+    
+    if (money >= 1000) {
+      // Unlock second stock - GreenVolt
+      final grvIndex = investments.indexWhere((i) => i.id == 'grv');
+      if (grvIndex >= 0) investments[grvIndex].unlocked = true;
+    }
+    
+    if (money >= 2500) {
+      // Unlock third stock - MegaFreight
+      final mftIndex = investments.indexWhere((i) => i.id == 'mft');
+      if (mftIndex >= 0) investments[mftIndex].unlocked = true;
+    }
+    
+    if (money >= 10000) {
+      // Unlock fourth stock - LuxWear
+      final lxwIndex = investments.indexWhere((i) => i.id == 'lxw');
+      if (lxwIndex >= 0) investments[lxwIndex].unlocked = true;
+    }
+    
+    if (money >= 25000) {
+      // Unlock fifth stock - StarForge
+      final stfIndex = investments.indexWhere((i) => i.id == 'stf');
+      if (stfIndex >= 0) investments[stfIndex].unlocked = true;
+    }
+    
+    // Cryptocurrencies unlock based on higher money thresholds
+    if (money >= 50000) {
+      // Unlock first crypto - BitCoinLite
+      final bclIndex = investments.indexWhere((i) => i.id == 'bcl');
+      if (bclIndex >= 0) investments[bclIndex].unlocked = true;
+    }
+    
+    if (money >= 100000) {
+      // Unlock second crypto - EtherCore
+      final etcIndex = investments.indexWhere((i) => i.id == 'etc');
+      if (etcIndex >= 0) investments[etcIndex].unlocked = true;
+    }
+    
+    if (money >= 250000) {
+      // Unlock third crypto - MoonToken
+      final mtkIndex = investments.indexWhere((i) => i.id == 'mtk');
+      if (mtkIndex >= 0) investments[mtkIndex].unlocked = true;
+    }
+    
+    if (money >= 500000) {
+      // Unlock fourth crypto - StableX
+      final sbxIndex = investments.indexWhere((i) => i.id == 'sbx');
+      if (sbxIndex >= 0) investments[sbxIndex].unlocked = true;
+    }
+    
+    if (money >= 1000000) {
+      // Unlock fifth crypto - QuantumBit
+      final qbtIndex = investments.indexWhere((i) => i.id == 'qbt');
+      if (qbtIndex >= 0) investments[qbtIndex].unlocked = true;
+    }
+    
+    // If platinum stock is unlocked, ensure it's available
+    if (isPlatinumStockUnlocked) {
+      final platIndex = investments.indexWhere((i) => i.id == 'plt');
+      if (platIndex >= 0) investments[platIndex].unlocked = true;
+    }
+  }
 } 

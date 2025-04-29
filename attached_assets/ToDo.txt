@@ -1,0 +1,1 @@
+Edit the available moguls in C:\App\EmpireTycoon\empire_tycoon\lib\models\mogul_avatar.dart

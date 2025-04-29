@@ -5,6 +5,7 @@ import 'dart:math';
 import '../models/game_state.dart';
 import '../services/game_service.dart';
 import '../utils/number_formatter.dart';
+import '../models/mogul_avatar.dart';
 
 // Custom painter for the toggle switch track (moved to top-level)
 class ToggleTrackPainter extends CustomPainter {
@@ -63,6 +64,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   
   // Add state to track if avatar selection is expanded
   bool _isAvatarSelectionExpanded = false;
+  bool _isMogulAvatarSectionExpanded = false;
   
   // Add username controller as a class variable
   late TextEditingController _usernameController;
@@ -364,6 +366,170 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                         child: const Text('Done'),
                       ),
                     ),
+                    
+                    // Add mogul avatars section if unlocked
+                    if (gameState.isMogulAvatarsUnlocked) ...[
+                      const SizedBox(height: 20),
+                      
+                      // Mogul Avatars Section Header with Gold accent
+                      Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.amber.shade700.withOpacity(0.8),
+                              Colors.amber.shade300.withOpacity(0.8),
+                            ],
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight,
+                          ),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(Icons.stars, color: Colors.white),
+                                const SizedBox(width: 8),
+                                const Text(
+                                  'Premium Mogul Avatars',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                    shadows: [
+                                      Shadow(
+                                        offset: Offset(1, 1),
+                                        blurRadius: 2,
+                                        color: Color(0x80000000),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            IconButton(
+                              icon: Icon(
+                                _isMogulAvatarSectionExpanded 
+                                  ? Icons.expand_less 
+                                  : Icons.expand_more,
+                                color: Colors.white,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _isMogulAvatarSectionExpanded = !_isMogulAvatarSectionExpanded;
+                                });
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                      
+                      // Mogul Avatars Section Content (collapsible)
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 300),
+                        height: _isMogulAvatarSectionExpanded ? null : 0,
+                        clipBehavior: Clip.antiAlias,
+                        decoration: const BoxDecoration(),
+                        child: AnimatedOpacity(
+                          duration: const Duration(milliseconds: 200),
+                          opacity: _isMogulAvatarSectionExpanded ? 1.0 : 0.0,
+                          child: _isMogulAvatarSectionExpanded ? Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const SizedBox(height: 12),
+                              
+                              // Display mogul avatars in a grid
+                              GridView.builder(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 4,
+                                  childAspectRatio: 1,
+                                  crossAxisSpacing: 8,
+                                  mainAxisSpacing: 8,
+                                ),
+                                itemCount: getMogulAvatars().length,
+                                itemBuilder: (context, index) {
+                                  final mogulAvatar = getMogulAvatars()[index];
+                                  final isSelected = gameState.selectedMogulAvatarId == mogulAvatar.id;
+                                  
+                                  return GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        gameState.selectedMogulAvatarId = mogulAvatar.id;
+                                        gameState.userAvatar = mogulAvatar.emoji;
+                                      });
+                                      
+                                      // Save the game to persist the avatar choice
+                                      Provider.of<GameService>(context, listen: false).saveGame();
+                                    },
+                                    child: Tooltip(
+                                      message: mogulAvatar.description,
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          gradient: isSelected ? 
+                                            LinearGradient(
+                                              colors: [
+                                                Colors.amber.shade200,
+                                                Colors.amber.shade100,
+                                              ],
+                                              begin: Alignment.topLeft,
+                                              end: Alignment.bottomRight,
+                                            ) : 
+                                            LinearGradient(
+                                              colors: [
+                                                Colors.grey.shade100,
+                                                Colors.white,
+                                              ],
+                                              begin: Alignment.topLeft,
+                                              end: Alignment.bottomRight,
+                                            ),
+                                          borderRadius: BorderRadius.circular(8),
+                                          border: Border.all(
+                                            color: isSelected ? Colors.amber.shade600 : Colors.grey.shade300,
+                                            width: 2,
+                                          ),
+                                          boxShadow: isSelected ? [
+                                            BoxShadow(
+                                              color: Colors.amber.withOpacity(0.3),
+                                              blurRadius: 5,
+                                              spreadRadius: 1,
+                                            ),
+                                          ] : null,
+                                        ),
+                                        child: Column(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Text(
+                                              mogulAvatar.emoji,
+                                              style: const TextStyle(fontSize: 24),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              mogulAvatar.name,
+                                              textAlign: TextAlign.center,
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                                color: isSelected ? Colors.amber.shade800 : Colors.grey.shade700,
+                                              ),
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ],
+                          ) : const SizedBox.shrink(),
+                        ),
+                      ),
+                    ],
                   ],
                 ) : const SizedBox.shrink(),
               ),

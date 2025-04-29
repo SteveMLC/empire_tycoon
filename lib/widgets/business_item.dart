@@ -69,43 +69,128 @@ class _BusinessItemState extends State<BusinessItem> {
   Widget build(BuildContext context) {
     final gameState = Provider.of<GameState>(context);
     final business = widget.business;
-
-    bool canAfford = gameState.money >= business.getNextUpgradeCost();
-    bool isUpgrading = business.isUpgrading;
-    Duration remainingUpgradeTime = business.getRemainingUpgradeTime();
-
+    final bool isUpgrading = business.isUpgrading;
+    final Duration remainingUpgradeTime = business.getRemainingUpgradeTime();
+    
+    // Determine if business can be afforded
+    double cost = business.getNextUpgradeCost();
+    bool canAfford = gameState.money >= cost && !business.isMaxLevel();
+    
+    // ADDED: Check if business has platinum facade
+    final bool hasPlatinumFacade = business.hasPlatinumFacade;
+    
     return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
+      elevation: 3,
+      // ADDED: Add platinum styling to card when facade is applied
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: hasPlatinumFacade 
+            ? BorderSide(color: const Color(0xFFE5E4E2), width: 2.0) 
+            : BorderSide.none,
+      ),
+      // ADDED: Apply platinum gradient background when facade is applied
+      color: hasPlatinumFacade 
+          ? null
+          : Colors.white,
+      // ADDED: Add gradient decoration for platinum facade
+      clipBehavior: Clip.antiAlias,
+      child: Container(
+        decoration: hasPlatinumFacade
+            ? BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Colors.white,
+                    const Color(0xFFE5E4E2),
+                    Colors.white,
+                  ],
+                ),
+              )
+            : null,
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                Icon(business.icon, size: 32, color: Colors.blue),
-                const SizedBox(width: 10),
+                // ADDED: Add platinum tint to the icon when facade is applied
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: hasPlatinumFacade 
+                        ? const Color(0xFFE5E4E2).withOpacity(0.3)
+                        : Colors.blue.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    business.icon,
+                    color: hasPlatinumFacade
+                        ? const Color(0xFF8E8E8E)
+                        : Colors.blue,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // ADDED: Enhance text style for platinum facade
                       Text(
                         business.name,
-                        style: const TextStyle(
-                          fontSize: 18,
+                        style: TextStyle(
+                          fontSize: 16,
                           fontWeight: FontWeight.bold,
+                          // Add platinum styling to title when facade is applied
+                          color: hasPlatinumFacade ? const Color(0xFF505050) : Colors.black87,
+                          // Add subtle text shadow for platinum businesses
+                          shadows: hasPlatinumFacade
+                              ? [
+                                  Shadow(
+                                    color: Colors.white.withOpacity(0.7),
+                                    blurRadius: 1,
+                                    offset: const Offset(0, 1),
+                                  ),
+                                ]
+                              : null,
                         ),
                       ),
-                      Text(
-                        isUpgrading
-                            ? 'Level: ${business.level} (Upgrading to ${business.level + 1})'
-                            : 'Level: ${business.level}${business.isMaxLevel() ? " (MAX)" : ""}',
-                        style: TextStyle(
-                          color: isUpgrading ? Colors.orange[800] : Colors.grey[600],
-                          fontSize: 14,
-                          fontWeight: isUpgrading ? FontWeight.bold : FontWeight.normal,
-                        ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Text(
+                            'Level ${business.level}',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          if (business.isMaxLevel())
+                            Container(
+                              margin: const EdgeInsets.only(left: 8),
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                // ADDED: Change max level badge color for platinum facade
+                                color: hasPlatinumFacade 
+                                    ? const Color(0xFFE5E4E2) 
+                                    : Colors.green.shade100,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                'MAX',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  // ADDED: Change text color for platinum facade
+                                  color: hasPlatinumFacade
+                                      ? const Color(0xFF505050)
+                                      : Colors.green.shade700,
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                     ],
                   ),
@@ -113,7 +198,7 @@ class _BusinessItemState extends State<BusinessItem> {
               ],
             ),
             
-            const SizedBox(height: 10),
+            const SizedBox(height: 16),
             
             Text(
               business.description,

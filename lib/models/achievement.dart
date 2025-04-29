@@ -249,7 +249,7 @@ class AchievementManager {
         return gameState.totalEarned / 1000000000.0 > 1.0 ? 1.0 : gameState.totalEarned / 1000000000.0;
 
       case 'passive_income_master':
-        double passiveIncome = gameState.calculatePassiveIncomePerSecond();
+        double passiveIncome = gameState.calculateTotalIncomePerSecond();
         return passiveIncome / 10000.0 > 1.0 ? 1.0 : passiveIncome / 10000.0;
 
       case 'investment_genius':
@@ -563,7 +563,7 @@ class AchievementManager {
     }
 
     // Use the new method for passive income calculation
-    double passiveIncome = gameState.calculatePassiveIncomePerSecond();
+    double passiveIncome = gameState.calculateTotalIncomePerSecond();
     if (!_isCompleted('passive_income_master') && passiveIncome >= 10000.0) {
       completeAchievement('passive_income_master');
       newlyCompleted.add(achievements.firstWhere((a) => a.id == 'passive_income_master'));

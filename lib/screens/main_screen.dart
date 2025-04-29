@@ -20,6 +20,7 @@ import '../widgets/achievement_notification.dart';
 import '../widgets/event_notification.dart';
 import '../widgets/offline_income_notification.dart';
 import '../widgets/premium_purchase_notification.dart';
+import '../widgets/challenge_notification.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({Key? key}) : super(key: key);
@@ -57,28 +58,18 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
         print("🔔 Initial achievement check triggered.");
 
         // Check for offline income notification
-        if (_gameState.checkAndClearOfflineEarnings()) {
-          print("💰 Displaying offline income notification");
-          final earningsData = _gameState.getOfflineEarningsData();
-          
-          // Create and insert the notification overlay
-          _offlineIncomeOverlay = OverlayEntry(
-            builder: (context) => OfflineIncomeNotification(
-              amount: earningsData['amount'],
-              offlineDuration: earningsData['duration'],
-              onDismiss: () {
-                if (_offlineIncomeOverlay != null) {
-                  _offlineIncomeOverlay!.remove();
-                  _offlineIncomeOverlay = null;
-                }
-              },
-            ),
-          );
-          
-          Overlay.of(context)?.insert(_offlineIncomeOverlay!);
-        } else {
-          print("ℹ️ No offline income to display");
-        }
+        _checkAndDisplayOfflineIncome();
+        
+        // Add a safety check after a short delay in case initial check fails
+        Future.delayed(Duration(seconds: 2), () {
+          if (mounted) {
+            // Try again if it wasn't shown the first time
+            if (_offlineIncomeOverlay == null) {
+              print("⚠️ Running secondary offline income check after delay...");
+              _checkAndDisplayOfflineIncome();
+            }
+          }
+        });
       }
     });
     // >> END NEW <<
@@ -198,11 +189,18 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
               // Top panel with money display
               _buildTopPanel(gameState),
               
-              // Achievement notifications
-              AnimatedSize(
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeInOut,
-                child: _buildAchievementNotifications(gameState),
+              // Display achievement/event notifications
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                child: Column(
+                  children: [
+                    _buildAchievementNotifications(gameState),
+                    _buildEventNotifications(gameState),
+                    _buildChallengeNotification(gameState),
+                  ],
+                ),
               ),
               
               // ADDED: Premium Purchase Notification (Removed AnimatedSize temporarily)
@@ -211,13 +209,6 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
               //  curve: Curves.easeInOut,
                 _buildPremiumNotification(gameState), // Directly build
               // ),
-              
-              // Event notifications
-              AnimatedSize(
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeInOut,
-                child: _buildEventNotifications(gameState),
-              ),
               
               // Tab bar for navigation
               _buildTabBar(),
@@ -300,6 +291,18 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     
     return Column(
       children: eventNotifications,
+    );
+  }
+  
+  Widget _buildChallengeNotification(GameState gameState) {
+    // If no active challenge, return empty widget
+    if (gameState.activeChallenge == null) {
+      return const SizedBox();
+    }
+    
+    return ChallengeNotification(
+      challenge: gameState.activeChallenge!,
+      gameState: gameState,
     );
   }
   
@@ -1170,6 +1173,87 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     return PremiumPurchaseNotification(
       onDismiss: gameState.dismissPremiumPurchaseNotification, // Pass dismiss callback
     );
+  }
+
+  // Extract offline income notification to a dedicated method for better maintainability
+  void _checkAndDisplayOfflineIncome() {
+    print("🔍 MainScreen checking for offline income...");
+    
+    // Explicitly check for non-zero values before even testing flags
+    final earningsData = _gameState.getOfflineEarningsData();
+    final double amount = (earningsData['amount'] as num?)?.toDouble() ?? 0.0;
+    final Duration duration = earningsData['duration'] as Duration? ?? Duration.zero;
+    
+    print("📊 PRE-CHECK: amount=$amount, duration=${duration.inSeconds}s, shouldShow=${_gameState.shouldShowOfflineEarnings}");
+    
+    // If we have valid data, we might want to show it even if flag is not set
+    bool hasValidEarnings = amount > 0 && amount.isFinite && duration.inSeconds > 0;
+    
+    if (hasValidEarnings && !_gameState.shouldShowOfflineEarnings) {
+      print("⚠️ Found valid earnings ($amount) but flag is not set! Forcing display...");
+      // Force the flag to be set
+      _gameState.shouldShowOfflineEarnings = true;
+    }
+    
+    if (_gameState.checkAndClearOfflineEarnings()) {
+      print("💰 Displaying offline income notification");
+      try {
+        // Remove any existing overlay first
+        _offlineIncomeOverlay?.remove();
+        _offlineIncomeOverlay = null;
+        
+        // IMPROVED ERROR HANDLING: Validate data before creating notification
+        final double verifiedAmount = (earningsData['amount'] as num?)?.toDouble() ?? 0.0;
+        final Duration verifiedDuration = earningsData['duration'] as Duration? ?? Duration.zero;
+        
+        print("🎯 VERIFIED VALUES: amount=$verifiedAmount, duration=${verifiedDuration.inSeconds}s");
+        
+        // Only show notification if we have meaningful values
+        if (verifiedAmount > 0 && verifiedDuration.inSeconds > 0) {
+          // Create and insert the notification overlay
+          _offlineIncomeOverlay = OverlayEntry(
+            builder: (context) => OfflineIncomeNotification(
+              amount: verifiedAmount,
+              offlineDuration: verifiedDuration,
+              onDismiss: () {
+                print("💰 Dismissing offline income notification");
+                if (_offlineIncomeOverlay != null) {
+                  _offlineIncomeOverlay!.remove();
+                  _offlineIncomeOverlay = null;
+                }
+                // Clear the notification state
+                _gameState.clearOfflineNotification();
+              },
+            ),
+          );
+          
+          // Safely insert the overlay
+          final overlay = Overlay.of(context);
+          if (overlay != null) {
+            overlay.insert(_offlineIncomeOverlay!);
+            print("✅ Offline income notification displayed successfully");
+          } else {
+            print("❌ Error: Overlay context is null");
+          }
+        } else {
+          print("❌ Not showing notification: Invalid amount ($verifiedAmount) or duration (${verifiedDuration.inSeconds}s)");
+          // Clean up if we're not showing the notification
+          _gameState.clearOfflineNotification();
+        }
+      } catch (e) {
+        print("❌ Error displaying offline income notification: $e");
+        // Clean up in case of error
+        _offlineIncomeOverlay?.remove();
+        _offlineIncomeOverlay = null;
+        _gameState.clearOfflineNotification();
+      }
+    } else {
+      if (hasValidEarnings) {
+        print("⚠️ CheckAndClearOfflineEarnings returned false despite valid data: $amount for ${duration.inSeconds}s");
+      } else {
+        print("ℹ️ No offline income to display");
+      }
+    }
   }
 }
 

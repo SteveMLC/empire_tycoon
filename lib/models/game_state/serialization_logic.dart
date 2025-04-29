@@ -39,6 +39,7 @@ extension SerializationLogic on GameState {
       'reincorporationUsesAvailable': reincorporationUsesAvailable,
       'totalReincorporations': totalReincorporations, // Save total reincorporations performed
       'lastOpened': lastOpened.toIso8601String(),
+      'lastSaved': DateTime.now().toIso8601String(), // Save timestamp when game is saved
       'isInitialized': isInitialized,
       'activeMarketEvents': activeMarketEvents.map((e) => e.toJson()).toList(),
       'lastEventResolvedTime': lastEventResolvedTime?.toIso8601String(),
@@ -99,11 +100,24 @@ extension SerializationLogic on GameState {
 
       'username': username,
       'userAvatar': userAvatar,
+      
+      // ADDED: Mogul avatars fields
+      'isMogulAvatarsUnlocked': isMogulAvatarsUnlocked,
+      'selectedMogulAvatarId': selectedMogulAvatarId,
 
       // New Executive Stats Theme properties
       'isExecutiveStatsThemeUnlocked': isExecutiveStatsThemeUnlocked,
       'selectedStatsTheme': selectedStatsTheme,
+
+      // Challenge system data
+      'activeChallenge': activeChallenge?.toJson(),
+      'platinumChallengeLastUsedTime': platinumChallengeLastUsedTime?.toIso8601String(),
+      'platinumChallengeUsesToday': platinumChallengeUsesToday,
+      'lastPlatinumChallengeDayTracked': lastPlatinumChallengeDayTracked?.toIso8601String(),
     };
+
+    // Log offline income state being saved (Moved outside the map definition)
+    print("📊 SAVING OFFLINE INCOME STATE: Amount=$offlineEarningsAwarded, Duration=${offlineDurationForNotification?.inSeconds ?? 0}s, ShouldShow=$shouldShowOfflineEarnings");
 
     if (clickBoostEndTime != null) {
       json['clickBoostEndTime'] = clickBoostEndTime!.toIso8601String();
@@ -184,6 +198,10 @@ extension SerializationLogic on GameState {
     totalRealEstateUpgradesPurchased = json['totalRealEstateUpgradesPurchased'] ?? 0;
     username = json['username'];
     userAvatar = json['userAvatar'];
+    
+    // ADDED: Load mogul avatars fields
+    isMogulAvatarsUnlocked = json['isMogulAvatarsUnlocked'] ?? false;
+    selectedMogulAvatarId = json['selectedMogulAvatarId'];
 
     // Load achievement tracking fields
     totalUpgradeSpending = (json['totalUpgradeSpending'] as num?)?.toDouble() ?? 0.0;
@@ -214,6 +232,23 @@ extension SerializationLogic on GameState {
     reincorporationUsesAvailable = json['reincorporationUsesAvailable'] ?? 0;
     totalReincorporations = json['totalReincorporations'] ?? 0;
     isInitialized = json['isInitialized'] ?? false;
+
+    // --- LOAD OFFLINE INCOME STATE BEFORE PROCESSING OFFLINE PROGRESS ---
+    // So it doesn't get overwritten by newly calculated values later
+    double previousOfflineEarnings = (json['offlineEarningsAwarded'] as num?)?.toDouble() ?? 0.0;
+    Duration? previousOfflineDuration;
+    int? durationSeconds = json['offlineDurationForNotification'] as int?;
+    if (durationSeconds != null) {
+      previousOfflineDuration = Duration(seconds: durationSeconds);
+    }
+    bool previousShouldShow = json['shouldShowOfflineEarnings'] ?? false;
+    
+    // Only set these values if we're NOT going to calculate new offline progress
+    offlineEarningsAwarded = previousOfflineEarnings;
+    offlineDurationForNotification = previousOfflineDuration;
+    _shouldShowOfflineEarnings = previousShouldShow;
+    print("📊 LOADED PREVIOUS OFFLINE INCOME STATE: Amount=$offlineEarningsAwarded, Duration=${offlineDurationForNotification?.inSeconds ?? 0}s, Should=$_shouldShowOfflineEarnings");
+    // --- END LOAD OFFLINE INCOME STATE ---
 
     // Load lastSaved timestamp (use for offline calc baseline if lastOpened is missing/invalid)
     DateTime loadedLastSaved = DateTime.now(); // Fallback
@@ -261,18 +296,25 @@ extension SerializationLogic on GameState {
     lastOpened = now;
     print("🔄 Updated lastOpened to: ${lastOpened.toIso8601String()}");
 
-    // Process offline progress if significant time elapsed
-    if (secondsElapsed > 10) { // Threshold to avoid processing for brief closes
+    // Process offline progress regardless of elapsed time (removed 10s threshold)
+    if (secondsElapsed > 0) {
       print("💰 --- Calling _processOfflineProgress --- 💰");
       print("  Pre-Offline Money: $money");
       print("  Pre-Offline incomeMultiplier: $incomeMultiplier");
       print("  Pre-Offline prestigeMultiplier: $prestigeMultiplier");
       print("  Pre-Offline isPermanentIncomeBoostActive: $isPermanentIncomeBoostActive");
+      
+      // Clear previous offline values before calculating new ones
+      offlineEarningsAwarded = 0.0;
+      offlineDurationForNotification = null;
+      _shouldShowOfflineEarnings = false;
+      
       _processOfflineProgress(secondsElapsed);
       print("✅ --- Returned from _processOfflineProgress --- ✅");
       print("  Post-Offline Money: $money"); // Verify if money was updated
     } else {
-       print("ℹ️ Skipping offline progress calculation (elapsed time <= 10s).");
+      print("ℹ️ Skipping offline progress calculation (elapsed time <= 0s).");
+      // Keep the previously loaded offline notification values
     }
 
     // Load click boost state
@@ -553,16 +595,33 @@ extension SerializationLogic on GameState {
     // Ensure timers are set up after loading
     _setupTimers();
 
-    // --- ADDED: Load offline income notification state ---
-    offlineEarningsAwarded = (json['offlineEarningsAwarded'] as num?)?.toDouble() ?? 0.0;
-    int? durationSeconds = json['offlineDurationForNotification'] as int?;
-    offlineDurationForNotification = durationSeconds != null ? Duration(seconds: durationSeconds) : null;
-    shouldShowOfflineEarnings = json['shouldShowOfflineEarnings'] ?? false;
-    // --- End ADDED ---
-
     // New Executive Stats Theme properties
     isExecutiveStatsThemeUnlocked = json['isExecutiveStatsThemeUnlocked'] ?? false;
     selectedStatsTheme = json['selectedStatsTheme']; // Can be null
+
+    // Load platinum facade data
+    if (json['platinumFacadeAppliedBusinessIds'] != null) {
+      platinumFacadeAppliedBusinessIds = (json['platinumFacadeAppliedBusinessIds'] as List)
+          .map((e) => e as String)
+          .toSet();
+      
+      // Also make sure to apply to the actual business objects
+      for (final businessId in platinumFacadeAppliedBusinessIds) {
+        final businessIndex = businesses.indexWhere((b) => b.id == businessId);
+        if (businessIndex >= 0) {
+          businesses[businessIndex].hasPlatinumFacade = true;
+        }
+      }
+    }
+
+    // --- Added: Load challenge system data ---
+    if (json['activeChallenge'] != null) {
+      activeChallenge = Challenge.fromJson(json['activeChallenge']);
+    }
+    platinumChallengeLastUsedTime = _parseDateTimeSafe(json['platinumChallengeLastUsedTime']);
+    platinumChallengeUsesToday = json['platinumChallengeUsesToday'] ?? 0;
+    lastPlatinumChallengeDayTracked = _parseDateTimeSafe(json['lastPlatinumChallengeDayTracked']);
+    // --- End Added ---
 
     notifyListeners(); // Notify UI after loading is complete
     print("✅ GameState.fromJson complete.");
@@ -583,6 +642,12 @@ extension SerializationLogic on GameState {
     final int maxOfflineSeconds = 86400; // 24 hours
     int cappedSeconds = min(secondsElapsed, maxOfflineSeconds);
     print("Capped offline seconds: $cappedSeconds");
+
+    // CRITICAL: Ensure we process even short offline durations (minimum 5 seconds)
+    if (cappedSeconds < 5) {
+      print("⚠️ Offline duration too short (${cappedSeconds}s < 5s), but continuing with minimum 5s...");
+      cappedSeconds = 5; // Use minimum 5 seconds for earning calculation
+    }
 
     // Declare income variables locally
     double offlineBusinessIncome = 0;
@@ -624,7 +689,7 @@ extension SerializationLogic on GameState {
           totalBusinessBaseIncomePerCycle += baseIncomePerCycleWithEfficiency; // Sum base * efficiency for logging
           
           // Apply standard game multipliers
-          double finalIncomeForBusiness = baseIncomePerCycleWithEfficiency * cycles * incomeMultiplier * prestigeMultiplier;
+          double finalIncomeForBusiness = baseIncomePerCycleWithEfficiency * cycles * incomeMultiplier;
           
           // Apply permanent boost
           finalIncomeForBusiness *= permanentIncomeMultiplier; // Apply permanent boost BEFORE event check for consistency with live update
@@ -667,7 +732,7 @@ extension SerializationLogic on GameState {
             double incomeWithLocaleBoosts = basePropertyIncomePerSecond * foundationMultiplier * yachtMultiplier;
 
             // Apply standard global multipliers and duration
-            double finalPropertyIncome = incomeWithLocaleBoosts * cappedSeconds * incomeMultiplier * prestigeMultiplier;
+            double finalPropertyIncome = incomeWithLocaleBoosts * cappedSeconds * incomeMultiplier;
 
             // Apply the overall permanent boost
             finalPropertyIncome *= permanentIncomeMultiplier;
@@ -705,8 +770,7 @@ extension SerializationLogic on GameState {
           totalDividendBasePerSecond += effectiveDividendPerShare * investment.owned; // Sum base * bonuses * owned for logging
           
           // Apply standard game multipliers, duration, and owned count
-          double finalIncomeForInvestment = effectiveDividendPerShare * investment.owned * cappedSeconds *
-                                             incomeMultiplier * prestigeMultiplier;
+          double finalIncomeForInvestment = effectiveDividendPerShare * investment.owned * cappedSeconds;
           
           // Apply permanent income boost
           finalIncomeForInvestment *= permanentIncomeMultiplier;
@@ -725,17 +789,43 @@ extension SerializationLogic on GameState {
     double totalOfflineEarnings = offlineBusinessIncome + offlineRealEstateIncome + offlineDividendIncome;
     print("Calculated Total Offline Earnings: \$${totalOfflineEarnings.toStringAsFixed(2)}");
 
+    // ENHANCED: Special forced notification for very small earnings (testing/debugging)
+    bool forceMinimumOfflineIncome = false; // For debugging/testing
+    if (totalOfflineEarnings <= 0.01 && secondsElapsed >= 5) {
+      // Force some minimum income for short offline durations
+      print("⚠️ FORCING MINIMUM OFFLINE INCOME: Original income=$totalOfflineEarnings for ${secondsElapsed}s was negligible");
+      
+      // Calculate a reasonable minimum income based on total income per second
+      double totalPerSecond = calculateTotalIncomePerSecond();
+      double minimumIncome = totalPerSecond * cappedSeconds;
+      
+      if (minimumIncome > 0) {
+        totalOfflineEarnings = minimumIncome;
+        offlineBusinessIncome = minimumIncome * 0.8; // Attribute most to businesses
+        offlineRealEstateIncome = minimumIncome * 0.15; // Some to real estate
+        offlineDividendIncome = minimumIncome * 0.05; // Small amount to dividends
+        forceMinimumOfflineIncome = true;
+        print("✅ MINIMUM INCOME APPLIED: $totalOfflineEarnings based on income/sec of $totalPerSecond");
+      } else {
+        print("❌ MINIMUM INCOME CALCULATION FAILED: totalPerSecond=$totalPerSecond");
+      }
+    }
+
+    // Always store income and set flag if we have any earnings at all
     if (totalOfflineEarnings > 0) {
         offlineEarningsAwarded = totalOfflineEarnings;
         // Duration is already set above
-        shouldShowOfflineEarnings = true; // ADDED: Set flag to trigger notification
-        print("📬 Stored \$${offlineEarningsAwarded.toStringAsFixed(2)} and duration ${offlineDurationForNotification?.inSeconds}s in GameState for notification. Notification flag set: $shouldShowOfflineEarnings");
+        _shouldShowOfflineEarnings = true; // ADDED: Set flag to trigger notification
+        print("📬 Stored \$${offlineEarningsAwarded.toStringAsFixed(2)} and duration ${offlineDurationForNotification?.inSeconds}s in GameState for notification. Notification flag set: $_shouldShowOfflineEarnings");
+        
+        if (forceMinimumOfflineIncome) {
+          print("🛠️ USING FORCED MINIMUM INCOME FOR NOTIFICATION");
+        }
     } else {
-        offlineEarningsAwarded = 0.0; // Ensure it's zero if no earnings
-        shouldShowOfflineEarnings = false; // ADDED: Ensure flag is off if no earnings
         print("📬 No positive offline earnings, setting offlineEarningsAwarded to 0 and notification flag to false.");
+        offlineEarningsAwarded = 0.0; // Ensure it's zero if no earnings
+        _shouldShowOfflineEarnings = false; // ADDED: Ensure flag is off if no earnings
     }
-
 
     // Add calculated offline income to game state totals
     print("Applying offline earnings to GameState:");

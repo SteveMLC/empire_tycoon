@@ -47,7 +47,7 @@ extension UtilityLogic on GameState {
   // Manual click to earn money
   void tap() {
     // Calculate earnings for this tap, applying relevant multipliers
-    double earned = clickValue * clickMultiplier * prestigeMultiplier;
+    double earned = clickValue * clickMultiplier;
     
     money += earned;
     totalEarned += earned;
@@ -98,22 +98,37 @@ extension UtilityLogic on GameState {
 
   // Calculate the total income from all sources per second, applying all multipliers
   double calculateTotalIncomePerSecond() {
-    double businessInc = getBusinessIncomePerSecond(); // Already includes multipliers
-    double realEstateInc = getRealEstateIncomePerSecond() * incomeMultiplier * prestigeMultiplier;
-    double dividendInc = getTotalDividendIncomePerSecond(); // Base dividend income
+    // Assume getBusinessIncomePerSecond returns base+level+upgrade income
+    double businessInc = getBusinessIncomePerSecond() * incomeMultiplier; // Apply prestige
+    // Assume getRealEstateIncomePerSecond returns base+owned+upgrade income
+    double realEstateInc = getRealEstateIncomePerSecond() * incomeMultiplier; // Apply prestige
+    // Assume getTotalDividendIncomePerSecond returns base+owned dividend income
+    double dividendInc = getTotalDividendIncomePerSecond();
     double diversificationBonus = calculateDiversificationBonus();
-    double adjustedDividendInc = dividendInc * incomeMultiplier * prestigeMultiplier * (1 + diversificationBonus);
+    // REMOVED: Apply prestige (* incomeMultiplier * prestigeMultiplier)
+    double adjustedDividendInc = dividendInc * (1 + diversificationBonus);
 
-    return businessInc + realEstateInc + adjustedDividendInc;
+    // Apply permanent boost globally AFTER summing
+    double baseTotal = businessInc + realEstateInc + adjustedDividendInc;
+    if (isPermanentIncomeBoostActive) {
+       baseTotal *= 1.05;
+    }
+    
+    // Apply income surge globally AFTER summing
+    if (isIncomeSurgeActive) {
+      baseTotal *= 2.0;
+    }
+
+    return baseTotal;
   }
 
   // Get combined income per second from all sources with their respective multipliers applied
   Map<String, double> getCombinedIncomeBreakdown() {
-    double businessIncome = getBusinessIncomePerSecond(); // Includes multipliers
-    double realEstateIncome = getRealEstateIncomePerSecond() * incomeMultiplier * prestigeMultiplier;
+    double businessIncome = getBusinessIncomePerSecond() * incomeMultiplier; // Apply prestige
+    double realEstateIncome = getRealEstateIncomePerSecond() * incomeMultiplier; // Apply prestige
     double dividendIncomeBase = getTotalDividendIncomePerSecond();
     double diversificationBonus = calculateDiversificationBonus();
-    double investmentIncome = dividendIncomeBase * incomeMultiplier * prestigeMultiplier * (1 + diversificationBonus);
+    double investmentIncome = dividendIncomeBase * (1 + diversificationBonus);
 
     return {
       'business': businessIncome,
@@ -275,14 +290,5 @@ extension UtilityLogic on GameState {
     _investmentUpdateTimer?.cancel();
     // No super.dispose() call here
     print("✅ Timers cancelled.");
-  }
-
-  // ADDED: Method to clear offline notification state
-  void clearOfflineNotification() {
-    offlineEarningsAwarded = 0.0;
-    offlineDurationForNotification = null;
-    // No notifyListeners here, typically called from UI dismiss action
-    // which will handle its own state update/rebuild.
-    print("Cleared offline notification state.");
   }
 } 

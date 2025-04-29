@@ -67,7 +67,10 @@ extension UpdateLogic on GameState {
       _checkAndResetTimeWarpLimit(now); // Check/handle weekly reset (may update state internally)
 
       // --- [1] Event System --- 
+      // DEBUG: Log event system entry
+      print("DEBUG: Entering event system at ${DateTime.now().millisecondsSinceEpoch}");
       checkAndTriggerEvents(); // From game_state_events.dart extension
+      print("DEBUG: Exiting event system at ${DateTime.now().millisecondsSinceEpoch}");
 
       // --- ADDED [1.5]: Check for Completed Business Upgrades ---
       for (var business in List.from(businesses)) { // Iterate over a copy in case list changes
@@ -80,6 +83,8 @@ extension UpdateLogic on GameState {
       // --- END ADDED [1.5] ---
 
       // --- [2] Boosters --- 
+      // DEBUG: Log booster check
+      print("DEBUG: Checking boosters at ${DateTime.now().millisecondsSinceEpoch}");
       if (clickBoostEndTime != null && now.isAfter(clickBoostEndTime!)) {
         clickMultiplier = 1.0;
         clickBoostEndTime = null;
@@ -106,37 +111,66 @@ extension UpdateLogic on GameState {
       double businessEfficiencyMultiplier = isPlatinumEfficiencyActive ? 1.05 : 1.0;
       double permanentIncomeBoostMultiplier = isPermanentIncomeBoostActive ? 1.05 : 1.0;
       
+      // DEBUG: Track income calculation frequency
+      int incomeCalculationsThisTick = 0;
+      DateTime incomeCalculationStartTime = DateTime.now();
+      
+      print("DEBUG: Starting business income calculation at ${DateTime.now().millisecondsSinceEpoch}");
+      print("DEBUG: Current multipliers - Efficiency: $businessEfficiencyMultiplier, Permanent: $permanentIncomeBoostMultiplier");
+      
       for (var business in businesses) {
         if (business.level > 0) {
+          print("DEBUG: Processing business ${business.name} - Level: ${business.level}, Interval: ${business.incomeInterval}, SecondsSinceLast: ${business.secondsSinceLastIncome}");
+          
           business.secondsSinceLastIncome++;
           if (business.secondsSinceLastIncome >= business.incomeInterval) {
-            // Get base income (already includes interval factor)
-            // Note: isResilienceActive might be needed if other effects use it
-            double baseIncome = business.getCurrentIncome(isResilienceActive: isPlatinumResilienceActive); 
+            incomeCalculationsThisTick++; // DEBUG: Increment counter
+            
+            // DEBUG: Log raw base income
+            double baseIncome = business.getCurrentIncome(isResilienceActive: isPlatinumResilienceActive);
+            print("DEBUG: Business '${business.name}' baseIncome: $baseIncome at ${DateTime.now().millisecondsSinceEpoch}");
+            print("DEBUG: Business '${business.name}' state - Level: ${business.level}, Resilience: $isPlatinumResilienceActive");
             
             // Apply Platinum Efficiency first
             double incomeWithEfficiency = baseIncome * businessEfficiencyMultiplier;
+            print("DEBUG: Business '${business.name}' after efficiency: $incomeWithEfficiency");
 
             // Apply standard multipliers
-            double finalIncome = incomeWithEfficiency * incomeMultiplier * prestigeMultiplier;
+            double finalIncome = incomeWithEfficiency * incomeMultiplier;
+            print("DEBUG: Business '${business.name}' after income multiplier: $finalIncome");
             
             // Apply the overall permanent boost
             finalIncome *= permanentIncomeBoostMultiplier;
+            print("DEBUG: Business '${business.name}' after permanent boost: $finalIncome");
 
             // Apply Income Surge (if applicable)
-            if (isIncomeSurgeActive) finalIncome *= 2.0;
+            if (isIncomeSurgeActive) {
+              finalIncome *= 2.0;
+              print("DEBUG: Business '${business.name}' after income surge: $finalIncome");
+            }
 
             // Check for negative event and apply multiplier AFTER all bonuses
             bool hasEvent = hasActiveEventForBusiness(business.id);
             if (hasEvent) {
-              finalIncome *= GameStateEvents.NEGATIVE_EVENT_MULTIPLIER; // Apply -0.25
+              finalIncome *= GameStateEvents.NEGATIVE_EVENT_MULTIPLIER;
+              print("DEBUG: Business '${business.name}' after event penalty: $finalIncome");
             }
+            
+            // DEBUG: Log final income and calculation count
+            print("DEBUG: Business '${business.name}' finalIncome: $finalIncome (Calculation #$incomeCalculationsThisTick)");
             
             businessIncomeThisTick += finalIncome;
             business.secondsSinceLastIncome = 0;
+            print("DEBUG: Business '${business.name}' secondsSinceLastIncome reset to 0");
           }
         }
       }
+      
+      // DEBUG: Log total calculations and time elapsed
+      Duration incomeCalculationDuration = DateTime.now().difference(incomeCalculationStartTime);
+      print("DEBUG: Total business income calculations this tick: $incomeCalculationsThisTick (Duration: ${incomeCalculationDuration.inMilliseconds}ms)");
+      print("DEBUG: Total business income this tick: $businessIncomeThisTick");
+      
       // Add business income to total (can be negative now)
       totalIncomeThisTick += businessIncomeThisTick;
       passiveEarnings += businessIncomeThisTick; // Track net passive earnings
@@ -161,7 +195,7 @@ extension UpdateLogic on GameState {
               double incomeWithLocaleBoosts = basePropertyIncome * foundationMultiplier * yachtMultiplier;
 
               // Apply standard global multipliers
-              double finalPropertyIncome = incomeWithLocaleBoosts * incomeMultiplier * prestigeMultiplier;
+              double finalPropertyIncome = incomeWithLocaleBoosts * incomeMultiplier;
 
               // Apply the overall permanent boost
               finalPropertyIncome *= permanentIncomeBoostMultiplier;
@@ -196,10 +230,8 @@ extension UpdateLogic on GameState {
           double effectiveDividendPerShare = baseDividend * portfolioMultiplier * (1 + diversificationBonus);
           
           // Apply global multipliers and owned count
-          double finalInvestmentDividend = effectiveDividendPerShare * investment.owned *
-                                             incomeMultiplier *
-                                             prestigeMultiplier;
-                                             
+          double finalInvestmentDividend = effectiveDividendPerShare * investment.owned;
+          
            // Apply the overall permanent boost
            finalInvestmentDividend *= permanentIncomeBoostMultiplier;
 
@@ -243,6 +275,8 @@ extension UpdateLogic on GameState {
       }
 
       // --- [8] Final Notification --- 
+      // DEBUG: Log final money state
+      print("DEBUG: Final money state - Previous: $previousMoney, Current: $money, Change: ${money - previousMoney}");
       if (money != previousMoney) {
          stateChanged = true; // Money changed, need notification
       }

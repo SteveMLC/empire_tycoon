@@ -51,6 +51,9 @@ class Business {
   final List<BusinessLevel> levels;
   final int maxLevel;
   
+  // ADDED: Platinum Facade
+  bool hasPlatinumFacade;
+  
   // ADDED: Upgrade Timer State
   bool isUpgrading;
   DateTime? upgradeEndTime;
@@ -69,6 +72,8 @@ class Business {
     required this.levels,
     this.maxLevel = 10,
     this.secondsSinceLastIncome = 0,
+    // ADDED: Initialize platinum facade
+    this.hasPlatinumFacade = false,
     // ADDED: Initialize upgrade state
     this.isUpgrading = false,
     this.upgradeEndTime,
@@ -266,6 +271,8 @@ class Business {
       levels: parsedLevels, // Use parsed levels
       maxLevel: json['maxLevel'] as int? ?? 10,
       secondsSinceLastIncome: json['secondsSinceLastIncome'] as int? ?? 0,
+      // ADDED: Deserialize platinum facade
+      hasPlatinumFacade: json['hasPlatinumFacade'] as bool? ?? false,
       // Deserialize upgrade state
       isUpgrading: json['isUpgrading'] as bool? ?? false,
       upgradeEndTime: json['upgradeEndTime'] != null
@@ -292,6 +299,8 @@ class Business {
       'levels': levels.map((level) => level.toJson()).toList(), // Serialize levels
       'maxLevel': maxLevel,
       'secondsSinceLastIncome': secondsSinceLastIncome,
+      // ADDED: Serialize platinum facade
+      'hasPlatinumFacade': hasPlatinumFacade,
       // Serialize upgrade state
       'isUpgrading': isUpgrading,
       'upgradeEndTime': upgradeEndTime?.toIso8601String(),

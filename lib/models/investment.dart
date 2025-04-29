@@ -18,12 +18,11 @@ class Investment {
   final String category; // Investment category (e.g., 'Technology', 'Energy', etc.)
   bool autoInvestEnabled = false; // For auto-invest feature
   double autoInvestAmount = 0; // Amount to auto-invest
-  
-  // Additional fields needed for the investment detail screen
   final String riskLevel; // Risk level for display ("Low", "Medium", "High", etc.)
   final double marketCap; // Market capitalization of the investment
   final double dailyVolume; // Daily trading volume
   final int maxShares; // Maximum number of shares available based on initial market cap/price
+  bool unlocked; // Track if the investment is visible/purchasable
   
   // Get price change percentage - this is now a getter to simplify access
   double get priceChangePercent => getPriceChangePercent();
@@ -51,6 +50,7 @@ class Investment {
     this.riskLevel = 'Medium', // Default risk level
     this.marketCap = 0.0, // Default market cap (in billions)
     this.dailyVolume = 0.0, // Default daily volume
+    this.unlocked = false, // Default to locked
   }) : // Calculate maxShares based on initial marketCap and basePrice
        maxShares = (basePrice > 0 && marketCap > 0)
            ? ((marketCap * 1e9) / basePrice).floor() // Convert marketCap from billions
