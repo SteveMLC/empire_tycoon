@@ -51,7 +51,6 @@ class GameService {
 
       try {
         await _soundManager.init();
-        await GameSounds.init();
         print("🔊 Sound systems initialized successfully");
       } catch (e) {
         print("⚠️ Non-critical error initializing sound: $e");
@@ -324,5 +323,37 @@ class GameService {
     print("🛑 Disposing GameService...");
     _autoSaveTimer?.cancel();
     print("✅ GameService disposed.");
+  }
+
+  void playBusinessSound() {
+    _soundManager.playBusinessUpgradeSound();
+  }
+
+  void playInvestmentSound() {
+    _soundManager.playInvestmentMarketEventSound();
+  }
+
+  void playRealEstateSound() {
+    _soundManager.playRealEstatePurchaseSound();
+  }
+
+  void playTapSound() {
+    _soundManager.playTapSound();
+  }
+
+  void playBoostedTapSound() {
+    _soundManager.playUiTapBoostedSound();
+  }
+
+  void playAchievementSound() {
+    _soundManager.playAchievementBasicSound();
+  }
+
+  void playEventSound() {
+    _soundManager.playEventSpecialSound();
+  }
+
+  void playFeedbackSound() {
+    _soundManager.playFeedbackNotificationSound();
   }
 }

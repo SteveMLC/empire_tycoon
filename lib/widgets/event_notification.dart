@@ -29,7 +29,7 @@ class _EventNotificationState extends State<EventNotification> {
   Widget build(BuildContext context) {
     return Card(
       color: _getBackgroundColor(),
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      margin: const EdgeInsets.fromLTRB(16, 4, 16, 4),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8),
       ),
@@ -77,7 +77,10 @@ class _EventNotificationState extends State<EventNotification> {
                     ),
                   ),
                   IconButton(
-                    icon: Icon(_isMinimized ? Icons.expand_more : Icons.expand_less, color: Colors.white),
+                      icon: Icon(_isMinimized ? Icons.expand_more : Icons.expand_less, 
+                        color: Colors.white,
+                        size: 20,
+                      ),
                     padding: EdgeInsets.zero,
                     constraints: const BoxConstraints(),
                     onPressed: () {
@@ -111,10 +114,10 @@ class _EventNotificationState extends State<EventNotification> {
                 ),
               ),
             ],
+            ),
           ),
         ),
-      ),
-    );
+      );
   }
   
   // Build minimized view with just the essential info
@@ -144,7 +147,10 @@ class _EventNotificationState extends State<EventNotification> {
         
         // Expand/collapse button
         IconButton(
-          icon: Icon(_isMinimized ? Icons.expand_more : Icons.expand_less, color: Colors.white),
+          icon: Icon(_isMinimized ? Icons.expand_more : Icons.expand_less, 
+            color: Colors.white,
+            size: 20,
+          ),
           padding: EdgeInsets.zero,
           constraints: const BoxConstraints(),
           onPressed: () {

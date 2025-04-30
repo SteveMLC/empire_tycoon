@@ -164,10 +164,37 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                     ),
                   ),
                   child: Center(
-                    child: Text(
-                      currentAvatar,
-                      style: const TextStyle(fontSize: 40),
-                    ),
+                    child: gameState.selectedMogulAvatarId != null
+                      ? Container(
+                          width: 64,
+                          height: 64,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.grey.shade200,
+                          ),
+                          child: ClipOval(
+                            child: Image.asset(
+                              getMogulAvatars()
+                                  .firstWhere((avatar) => avatar.id == gameState.selectedMogulAvatarId)
+                                  .imagePath,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Center(
+                                  child: Text(
+                                    getMogulAvatars()
+                                        .firstWhere((avatar) => avatar.id == gameState.selectedMogulAvatarId)
+                                        .emoji,
+                                    style: const TextStyle(fontSize: 32),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        )
+                      : Text(
+                          currentAvatar,
+                          style: const TextStyle(fontSize: 40),
+                        ),
                   ),
                 ),
                 
@@ -445,7 +472,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                                 shrinkWrap: true,
                                 physics: const NeverScrollableScrollPhysics(),
                                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 4,
+                                  crossAxisCount: 3,
                                   childAspectRatio: 1,
                                   crossAxisSpacing: 8,
                                   mainAxisSpacing: 8,
@@ -502,11 +529,31 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                                         child: Column(
                                           mainAxisAlignment: MainAxisAlignment.center,
                                           children: [
-                                            Text(
-                                              mogulAvatar.emoji,
-                                              style: const TextStyle(fontSize: 24),
+                                            // Image container with fixed size
+                                            Container(
+                                              width: 64,
+                                              height: 64,
+                                              margin: const EdgeInsets.only(bottom: 4),
+                                              decoration: BoxDecoration(
+                                                borderRadius: BorderRadius.circular(8),
+                                                color: Colors.grey.shade200,
+                                              ),
+                                              child: ClipRRect(
+                                                borderRadius: BorderRadius.circular(8),
+                                                child: Image.asset(
+                                                  mogulAvatar.imagePath,
+                                                  fit: BoxFit.cover,
+                                                  errorBuilder: (context, error, stackTrace) {
+                                                    return Center(
+                                                      child: Text(
+                                                        mogulAvatar.emoji,
+                                                        style: const TextStyle(fontSize: 24),
+                                                      ),
+                                                    );
+                                                  },
+                                                ),
+                                              ),
                                             ),
-                                            const SizedBox(height: 4),
                                             Text(
                                               mogulAvatar.name,
                                               textAlign: TextAlign.center,
@@ -642,7 +689,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
             Consumer<GameService>(
               builder: (context, gameService, child) {
-                bool soundEnabled = gameService.soundManager.isSoundEnabled();
+                bool soundEnabled = gameService.soundManager.isSoundEnabled;
                 return SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(
@@ -1240,7 +1287,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               // Play the sound effect AFTER enabling premium
               Provider.of<GameService>(context, listen: false)
                   .soundManager
-                  .playPremiumPurchaseSound();
+                  .playAchievementMilestoneSound();
 
               // Snackbar is less important now with the dedicated notification, but keep for backup
               ScaffoldMessenger.of(context).showSnackBar(

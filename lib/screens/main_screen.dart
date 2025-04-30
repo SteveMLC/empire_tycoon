@@ -39,10 +39,18 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
   // Add overlayEntry as a class field
   OverlayEntry? _offlineIncomeOverlay;
   
+  // Track income calculation for the current build cycle
+  double _lastCalculatedIncome = 0.0;
+  bool _isCalculatingIncome = false;
+  
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 6, vsync: this);
+    
+    // Reset calculation state
+    _lastCalculatedIncome = 0.0;
+    _isCalculatingIncome = false;
     
     // Load dependencies
     _gameState = Provider.of<GameState>(context, listen: false);
@@ -73,6 +81,20 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
       }
     });
     // >> END NEW <<
+
+    // Check for offline income after a short delay to allow UI to initialize properly
+    // WidgetsBinding.instance.addPostFrameCallback((_) {
+    //   _checkForOfflineIncome();
+    // });
+    
+    // Listen for tab changes
+    // _tabController.addListener(() {
+    //   if (_tabController.indexIsChanging) {
+    //     // Only play the sound when tabs are actually changing
+    //     // (not when just rebuilding with the same tab)
+    //     Sounds.playTab();
+    //   }
+    // });
   }
   
   @override
@@ -83,6 +105,10 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     _offlineIncomeOverlay?.remove();
     // Remove listener to avoid memory leaks
     Provider.of<GameState>(context, listen: false).removeListener(_handleGameStateChange);
+    
+    // Clean up calculation flags
+    _isCalculatingIncome = false;
+    
     super.dispose();
   }
 
@@ -186,34 +212,77 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
         return Scaffold(
           body: Column(
             children: [
-              // Top panel with money display
+              // Top Panel always at the top
               _buildTopPanel(gameState),
-              
-              // Display achievement/event notifications
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
+
+              // Notification section - pushes down the menu
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+                height: _hasActiveNotifications(gameState) ? null : 0,
+                // Only set clipBehavior when there are notifications
+                clipBehavior: _hasActiveNotifications(gameState) ? Clip.antiAlias : Clip.none,
+                decoration: _hasActiveNotifications(gameState) ? BoxDecoration(
+                  gradient: gameState.isPlatinumFrameActive 
+                    ? LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          const Color(0xFF2E2A5A).withOpacity(0.95),  // Rich royal blue
+                          const Color(0xFF2E2A5A).withOpacity(0.85),
+                        ],
+                      )
+                    : LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.white.withOpacity(0.95),
+                          Colors.white.withOpacity(0.85),
+                        ],
+                      ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: gameState.isPlatinumFrameActive
+                        ? const Color(0xFFFFD700).withOpacity(0.2)
+                        : Colors.black.withOpacity(0.05),
+                      blurRadius: 4,
+                      spreadRadius: 0,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                  border: Border(
+                    bottom: BorderSide(
+                      color: gameState.isPlatinumFrameActive
+                        ? const Color(0xFFFFD700).withOpacity(0.3)
+                        : Colors.grey.shade300,
+                      width: gameState.isPlatinumFrameActive ? 1.0 : 0.5,
+                    ),
+                  ),
+                ) : null,
+                // Add padding when there are notifications to display
+                padding: EdgeInsets.only(
+                  top: _hasActiveNotifications(gameState) ? 8.0 : 0,
+                  bottom: _hasActiveNotifications(gameState) ? 8.0 : 0,
+                ),
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     _buildAchievementNotifications(gameState),
                     _buildEventNotifications(gameState),
                     _buildChallengeNotification(gameState),
+                    AnimatedSize(
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                      child: _buildPremiumNotification(gameState),
+                    ),
                   ],
                 ),
               ),
-              
-              // ADDED: Premium Purchase Notification (Removed AnimatedSize temporarily)
-              // AnimatedSize(
-              //  duration: const Duration(milliseconds: 300),
-              //  curve: Curves.easeInOut,
-                _buildPremiumNotification(gameState), // Directly build
-              // ),
-              
-              // Tab bar for navigation
+
+              // TabBar below notifications
               _buildTabBar(),
-              
-              // Main content area with tab views
+
+              // TabView for main content
               Expanded(
                 child: TabBarView(
                   controller: _tabController,
@@ -755,7 +824,9 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
                             fit: BoxFit.scaleDown,
                             alignment: Alignment.centerRight,
                             child: Text(
-                              '${NumberFormatter.formatCurrency(_calculateIncomePerSecond(gameState))}/sec',
+                              // Use cached income from GameState as fallback if calculation in progress
+                              '${NumberFormatter.formatCurrency(_isCalculatingIncome ? gameState.lastCalculatedIncomePerSecond : _calculateIncomePerSecond(gameState))}/sec',
+                              key: const Key('incomeDisplay'), // Add a unique key to ensure single instance
                               style: TextStyle(
                                 color: isPlatinumFrameActive
                                     ? const Color(0xFF4CEA5C)  // Brighter green for platinum theme
@@ -998,116 +1069,141 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
 
   // Helper to calculate total income per second FOR DISPLAY, mirroring _updateGameState logic
   double _calculateIncomePerSecond(GameState gameState) {
-    // --- DEBUG START ---
-    print("--- Calculating Display Income --- ");
-    print("  Global Multipliers: income=${gameState.incomeMultiplier.toStringAsFixed(2)}, prestige=${gameState.prestigeMultiplier.toStringAsFixed(2)}");
-    print("  Permanent Boosts: income=${gameState.isPermanentIncomeBoostActive}, efficiency=${gameState.isPlatinumEfficiencyActive}, portfolio=${gameState.isPlatinumPortfolioActive}");
-    double totalBusinessIncome = 0;
-    double totalRealEstateIncome = 0;
-    double totalDividendIncome = 0;
-    // --- DEBUG END ---
-    
-    double total = 0.0;
-    
-    // Define multipliers (matching _updateGameState)
-    double businessEfficiencyMultiplier = gameState.isPlatinumEfficiencyActive ? 1.05 : 1.0;
-    double permanentIncomeBoostMultiplier = gameState.isPermanentIncomeBoostActive ? 1.05 : 1.0;
-    double portfolioMultiplier = gameState.isPlatinumPortfolioActive ? 1.25 : 1.0;
-    double diversificationBonus = gameState.calculateDiversificationBonus();
-
-    // Business Income (with event check)
-    for (var business in gameState.businesses) {
-      if (business.level > 0) {
-        double baseIncome = business.getCurrentIncome(isResilienceActive: gameState.isPlatinumResilienceActive); // Use getCurrentIncome
-        double incomeWithEfficiency = baseIncome * businessEfficiencyMultiplier;
-        double finalIncome = incomeWithEfficiency * gameState.incomeMultiplier * gameState.prestigeMultiplier;
-        finalIncome *= permanentIncomeBoostMultiplier;
-        if (gameState.isIncomeSurgeActive) finalIncome *= 2.0;
-
-        bool hasEvent = gameState.hasActiveEventForBusiness(business.id);
-        if (hasEvent) {
-          finalIncome *= GameStateEvents.NEGATIVE_EVENT_MULTIPLIER;
-        }
-        // --- DEBUG START ---
-        // print("    Business '${business.name}': Base=$baseIncome, Final=$finalIncome (Event: $hasEvent)");
-        totalBusinessIncome += finalIncome;
-        // --- DEBUG END ---
-        total += finalIncome;
-      }
+    // Safeguard against duplicate or re-entrant calculations within same build cycle
+    if (_isCalculatingIncome) {
+      print("Income calculation already in progress, returning cached value: $_lastCalculatedIncome");
+      return _lastCalculatedIncome;
     }
-    // --- DEBUG START ---
-    print("  Subtotal Business: ${totalBusinessIncome.toStringAsFixed(2)}");
-    // --- DEBUG END ---
     
-    // Real Estate Income (with event check per locale/property)
-    for (var locale in gameState.realEstateLocales) {
+    _isCalculatingIncome = true;
+    try {
+      // --- DEBUG START ---
+      print("--- Calculating Display Income --- ");
+      print("  Global Multipliers: income=${gameState.incomeMultiplier.toStringAsFixed(2)}, prestige=${gameState.prestigeMultiplier.toStringAsFixed(2)}");
+      print("  Permanent Boosts: income=${gameState.isPermanentIncomeBoostActive}, efficiency=${gameState.isPlatinumEfficiencyActive}, portfolio=${gameState.isPlatinumPortfolioActive}");
+      double totalBusinessIncome = 0;
+      double totalRealEstateIncome = 0;
+      double totalDividendIncome = 0;
+      // --- DEBUG END ---
+      
+      double total = 0.0;
+      
+      // Define multipliers (matching _updateGameState)
+      double businessEfficiencyMultiplier = gameState.isPlatinumEfficiencyActive ? 1.05 : 1.0;
+      double permanentIncomeBoostMultiplier = gameState.isPermanentIncomeBoostActive ? 1.05 : 1.0;
+      double portfolioMultiplier = gameState.isPlatinumPortfolioActive ? 1.25 : 1.0;
+      double diversificationBonus = gameState.calculateDiversificationBonus();
+
+      // Business Income (with event check)
+      for (var business in gameState.businesses) {
+        if (business.level > 0) {
+          double baseIncome = business.getCurrentIncome(isResilienceActive: gameState.isPlatinumResilienceActive); // Use getCurrentIncome
+          double incomeWithEfficiency = baseIncome * businessEfficiencyMultiplier;
+          double finalIncome = incomeWithEfficiency * gameState.incomeMultiplier * gameState.prestigeMultiplier;
+          finalIncome *= permanentIncomeBoostMultiplier;
+          if (gameState.isIncomeSurgeActive) finalIncome *= 2.0;
+
+          bool hasEvent = gameState.hasActiveEventForBusiness(business.id);
+          if (hasEvent) {
+            finalIncome *= GameStateEvents.NEGATIVE_EVENT_MULTIPLIER;
+          }
+          // --- DEBUG START ---
+          // print("    Business '${business.name}': Base=$baseIncome, Final=$finalIncome (Event: $hasEvent)");
+          totalBusinessIncome += finalIncome;
+          // --- DEBUG END ---
+          total += finalIncome;
+        }
+      }
+      // --- DEBUG START ---
+      print("  Subtotal Business: ${totalBusinessIncome.toStringAsFixed(2)}");
+      // --- DEBUG END ---
+      
+      // Real Estate Income (with event check per locale/property)
+      for (var locale in gameState.realEstateLocales) {
         if (locale.unlocked) {
           bool isLocaleAffectedByEvent = gameState.hasActiveEventForLocale(locale.id);
           bool isFoundationApplied = gameState.platinumFoundationsApplied.containsKey(locale.id);
           bool isYachtDocked = gameState.platinumYachtDockedLocaleId == locale.id;
           double foundationMultiplier = isFoundationApplied ? 1.05 : 1.0;
           double yachtMultiplier = isYachtDocked ? 1.05 : 1.0;
-
+          
           for (var property in locale.properties) {
             if (property.owned > 0) {
-              double basePropertyIncome = property.getTotalIncomePerSecond(isResilienceActive: gameState.isPlatinumResilienceActive);
+              // Get base income (already includes owned count)
+              double basePropertyIncome = property.getTotalIncomePerSecond(
+                isResilienceActive: gameState.isPlatinumResilienceActive);
+              
+              // Apply locale-specific boosts
               double incomeWithLocaleBoosts = basePropertyIncome * foundationMultiplier * yachtMultiplier;
-              double finalPropertyIncome = incomeWithLocaleBoosts * gameState.incomeMultiplier * gameState.prestigeMultiplier;
-              finalPropertyIncome *= permanentIncomeBoostMultiplier;
-              if (gameState.isIncomeSurgeActive) finalPropertyIncome *= 2.0;
-
+              
+              // Apply global multipliers
+              double finalIncome = incomeWithLocaleBoosts * gameState.incomeMultiplier * gameState.prestigeMultiplier;
+              
+              // Apply permanent income boost
+              finalIncome *= permanentIncomeBoostMultiplier;
+              
+              // Apply Income Surge (if applicable)
+              if (gameState.isIncomeSurgeActive) finalIncome *= 2.0;
+              
+              // Apply event penalty if locale is affected
               if (isLocaleAffectedByEvent) {
-                finalPropertyIncome *= GameStateEvents.NEGATIVE_EVENT_MULTIPLIER;
+                finalIncome *= GameStateEvents.NEGATIVE_EVENT_MULTIPLIER;
               }
+              
               // --- DEBUG START ---
-              // print("    Locale '${locale.name}' Property '${property.name}': Base=$basePropertyIncome, Final=$finalPropertyIncome (Event: $isLocaleAffectedByEvent)");
-              totalRealEstateIncome += finalPropertyIncome;
+              // print("    RE Property '${property.name}': Base=${basePropertyIncome}, Final=$finalIncome (Event: $isLocaleAffectedByEvent)");
+              totalRealEstateIncome += finalIncome;
               // --- DEBUG END ---
-              total += finalPropertyIncome;
+              total += finalIncome;
             }
           }
         }
       }
-    // --- DEBUG START ---
-    print("  Subtotal Real Estate: ${totalRealEstateIncome.toStringAsFixed(2)}");
-    // --- DEBUG END ---
-    
-    // Dividend Income (Events don't affect dividends)
-    for (var investment in gameState.investments) {
-      if (investment.owned > 0 && investment.hasDividends()) {
-        // Get total dividend income for this investment (already includes owned shares)
-        double baseTotalDividend = investment.getDividendIncomePerSecond();
-        
-        // Apply portfolio and diversification bonus
-        // Note: Diversification bonus conceptually applies to the portfolio, 
-        // but applying it per investment like this is simpler and achieves a similar effect.
-        double dividendWithBonuses = baseTotalDividend * portfolioMultiplier * (1 + diversificationBonus);
-        
-        // Apply standard global multipliers 
-        double finalInvestmentDividend = dividendWithBonuses *
+      // --- DEBUG START ---
+      print("  Subtotal Real Estate: ${totalRealEstateIncome.toStringAsFixed(2)}");
+      // --- DEBUG END ---
+      
+      // Dividend Income from Investments
+      for (var investment in gameState.investments) {
+        if (investment.owned > 0 && investment.hasDividends()) {
+          // Get total dividend income for this investment (already includes owned shares)
+          double baseTotalDividend = investment.getDividendIncomePerSecond();
+          
+          // Apply portfolio and diversification bonus
+          // Note: Diversification bonus conceptually applies to the portfolio, 
+          // but applying it per investment like this is simpler and achieves a similar effect.
+          double dividendWithBonuses = baseTotalDividend * portfolioMultiplier * (1 + diversificationBonus);
+          
+          // Apply standard global multipliers 
+          double finalInvestmentDividend = dividendWithBonuses *
                                            gameState.incomeMultiplier *
                                            gameState.prestigeMultiplier;
                                            
-        // Apply permanent income boost
-        finalInvestmentDividend *= permanentIncomeBoostMultiplier;
-        
-        // Apply Income Surge (if applicable)
-        if (gameState.isIncomeSurgeActive) finalInvestmentDividend *= 2.0;
-        
-        // --- DEBUG START ---
-        // print("    Investment '${investment.name}': BaseTotal=$baseTotalDividend, Final=$finalInvestmentDividend");
-        totalDividendIncome += finalInvestmentDividend;
-        // --- DEBUG END ---
-        total += finalInvestmentDividend;
+          // Apply permanent income boost
+          finalInvestmentDividend *= permanentIncomeBoostMultiplier;
+          
+          // Apply Income Surge (if applicable)
+          if (gameState.isIncomeSurgeActive) finalInvestmentDividend *= 2.0;
+          
+          // --- DEBUG START ---
+          // print("    Investment '${investment.name}': BaseTotal=$baseTotalDividend, Final=$finalInvestmentDividend");
+          totalDividendIncome += finalInvestmentDividend;
+          // --- DEBUG END ---
+          total += finalInvestmentDividend;
+        }
       }
+      // --- DEBUG START ---
+      print("  Subtotal Dividends: ${totalDividendIncome.toStringAsFixed(2)}");
+      print("  TOTAL Display Income: ${total.toStringAsFixed(2)}");
+      print("--- End Calculating Display Income --- ");
+      // --- DEBUG END ---
+      
+      // Cache the result for this build cycle
+      _lastCalculatedIncome = total;
+      return total;
+    } finally {
+      _isCalculatingIncome = false;
     }
-    // --- DEBUG START ---
-    print("  Subtotal Dividends: ${totalDividendIncome.toStringAsFixed(2)}");
-    print("  TOTAL Display Income: ${total.toStringAsFixed(2)}");
-    print("--- End Calculating Display Income --- ");
-    // --- DEBUG END ---
-    
-    return total;
   }
   
   // Format remaining boost time - now takes a Duration
@@ -1254,6 +1350,14 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
         print("ℹ️ No offline income to display");
       }
     }
+  }
+
+  // Helper method to check if there are any active notifications
+  bool _hasActiveNotifications(GameState gameState) {
+    return gameState.currentAchievementNotification != null || 
+           !gameState.activeEvents.where((e) => !e.isResolved).isEmpty ||
+           gameState.activeChallenge != null ||
+           gameState.showPremiumPurchaseNotification;
   }
 }
 

@@ -7,6 +7,10 @@ import '../widgets/money_display.dart';
 import '../widgets/property_gallery_dialog.dart';
 import '../utils/number_formatter.dart';
 import '../services/game_service.dart';
+import '../utils/asset_loader.dart';
+import '../utils/sound_assets.dart';
+import '../utils/sounds.dart';
+import 'dart:async';
 
 class RealEstateScreen extends StatefulWidget {
   const RealEstateScreen({Key? key}) : super(key: key);
@@ -917,7 +921,15 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
                               // Use the passed locale's ID here too for consistency
                               if (gameState.buyRealEstateProperty(locale.id, property.id)) {
                                 final gameService = Provider.of<GameService>(context, listen: false);
-                                gameService.soundManager.playRealEstatePurchaseSound();
+                                try {
+                                  // Preload sound first
+                                  final assetLoader = AssetLoader();
+                                  unawaited(assetLoader.preloadSound(SoundAssets.realEstatePurchase));
+                                  gameService.soundManager.playRealEstatePurchaseSound();
+                                } catch (e) {
+                                  print("Error playing real estate purchase sound: $e");
+                                  // Continue with the purchase process even if sound fails
+                                }
 
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
@@ -927,7 +939,8 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
                                 );
                               } else {
                                 final gameService = Provider.of<GameService>(context, listen: false);
-                                gameService.soundManager.playErrorSound();
+                                // Use generic playSound for error
+                                gameService.soundManager.playSound(SoundAssets.feedbackError, priority: SoundPriority.normal);
 
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
@@ -978,7 +991,15 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
 
             // Attempt to purchase the upgrade - use the PASSED locale.id
             if (gameState.purchasePropertyUpgrade(locale.id, property.id, upgrade.id)) {
-              gameService.soundManager.playRealEstateUpgradeSound();
+              try {
+                // Preload sound first
+                final assetLoader = AssetLoader();
+                unawaited(assetLoader.preloadSound(SoundAssets.businessUpgrade));
+                gameService.soundManager.playRealEstateUpgradeSound();
+              } catch (e) {
+                print("Error playing real estate upgrade sound: $e");
+                // Continue with the upgrade process even if sound fails
+              }
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text('Upgrade purchased: ${upgrade.description}'),
@@ -987,7 +1008,7 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
                 ),
               );
             } else {
-              gameService.soundManager.playErrorSound();
+              gameService.soundManager.playSound(SoundAssets.feedbackError, priority: SoundPriority.normal);
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text('Upgrade failed. Please try again.'),

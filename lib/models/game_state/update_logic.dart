@@ -36,10 +36,23 @@ extension UpdateLogic on GameState {
   void _updateGameState() {
     if (!isInitialized) return; // Don't update if not fully initialized
 
+    DateTime now = DateTime.now();
+
+    // --- ADDED: Debounce Check ---
+    // Only proceed if enough time has passed since the last update (~950ms threshold)
+    if (_lastUpdateTime != null && now.difference(_lastUpdateTime!).inMilliseconds < 950) {
+      // print("DEBUG: _updateGameState skipped due to debounce check.");
+      return; // Skip this update call
+    }
+    // --- End Debounce Check ---
+
     try {
-      DateTime now = DateTime.now();
+      // Record the time of this update attempt *before* potential errors
+      _lastUpdateTime = now; 
+
       String hourKey = TimeUtils.getHourKey(now);
       bool stateChanged = false; // Track if notifyListeners is needed
+      double previousMoney = money; // Track money at the start of the tick
 
       // --- [0] Check/Reset Timed Effects & Limits First --- 
       // Income Surge
@@ -102,7 +115,6 @@ extension UpdateLogic on GameState {
       _updateRealEstateUnlocks(); // Update based on current money
 
       // --- [4] Live Income Calculation & Application --- 
-      double previousMoney = money;
       double totalIncomeThisTick = 0;
 
       // Business Income
@@ -253,6 +265,10 @@ extension UpdateLogic on GameState {
           _updateHourlyEarnings(hourKey, totalIncomeThisTick);
       }
 
+      // Update lastCalculatedIncomePerSecond for consistent UI display
+      // This should match what _calculateIncomePerSecond in main_screen would compute
+      lastCalculatedIncomePerSecond = calculateTotalIncomePerSecond();
+      
       // --- [5] Investment Micro-Updates --- 
       _updateInvestmentPricesMicro(); // More frequent small price changes for charts
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:math'; // ADDED: Import for max()
+import 'dart:async'; // Added import for unawaited
 
 import '../models/game_state.dart';
 import '../models/real_estate.dart'; // Import RealEstateLocale
@@ -9,6 +10,7 @@ import '../data/platinum_vault_items.dart'; // Import actual item data
 import '../widgets/vault_item_card.dart'; // Import the new card widget
 import '../services/game_service.dart'; // Added import for GameService
 import '../widgets/platinum_facade_selector.dart'; // Import the PlatinumFacadeSelector
+import '../utils/asset_loader.dart'; // Added import for AssetLoader
 
 class PlatinumVaultScreen extends StatefulWidget {
   const PlatinumVaultScreen({Key? key}) : super(key: key);
@@ -773,9 +775,14 @@ class _PlatinumVaultScreenState extends State<PlatinumVaultScreen> with SingleTi
       if (success) {
           try {
             final gameService = Provider.of<GameService>(context, listen: false);
+            // Preload the sound first, then play it with a retry mechanism
+            final assetLoader = AssetLoader();
+            unawaited(assetLoader.preloadSound('assets/sounds/platinum/platinum_purchase.mp3'));
+            // Use the playSound method directly which has better error handling
             gameService.soundManager.playPlatinumPurchaseSound();
           } catch (e) {
             print("Error playing platinum purchase sound: $e");
+            // Continue with the purchase process even if sound fails
           }
           String message = 'Successfully purchased ${item.name}!';
           if (item.id == 'platinum_foundation' && selectedLocaleName != null) {

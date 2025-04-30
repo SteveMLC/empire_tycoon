@@ -75,7 +75,7 @@ class _ChallengeNotificationState extends State<ChallengeNotification> {
   Widget build(BuildContext context) {
     return Card(
       color: const Color(0xFFFFF8E1), // Light gold background
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      margin: const EdgeInsets.fromLTRB(16, 4, 16, 4),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: const BorderSide(color: Color(0xFFD4AF37), width: 1.5),
@@ -92,6 +92,7 @@ class _ChallengeNotificationState extends State<ChallengeNotification> {
           padding: const EdgeInsets.all(12.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -132,7 +133,7 @@ class _ChallengeNotificationState extends State<ChallengeNotification> {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'Double Your Hourly Income!',
+                            widget.challenge.name,
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
@@ -173,6 +174,7 @@ class _ChallengeNotificationState extends State<ChallengeNotification> {
                       Icon(
                         _isMinimized ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_up,
                         color: Colors.grey.shade600,
+                        size: 20,
                       ),
                     ],
                   ),
@@ -181,116 +183,14 @@ class _ChallengeNotificationState extends State<ChallengeNotification> {
               if (!_isMinimized) ...[
                 const SizedBox(height: 16),
                 Text(
-                  'Earn ${NumberFormatter.formatCompact(widget.challenge.goalEarnedAmount)} before time runs out!',
+                  widget.challenge.description,
                   style: TextStyle(
                     fontSize: 14,
                     color: Colors.grey.shade700,
                   ),
                 ),
                 const SizedBox(height: 8),
-                Row(
-                  children: [
-                    const Text(
-                      'Your progress:',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '${(_progress * 100).toInt()}%',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: _getProgressColor(_progress),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                // Progress bar
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(
-                    value: _progress,
-                    backgroundColor: Colors.grey.shade200,
-                    valueColor: AlwaysStoppedAnimation<Color>(_getProgressColor(_progress)),
-                    minHeight: 10,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    // PP reward indicator
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.amber.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: const Color(0xFFD4AF37),
-                          width: 1,
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 16,
-                            height: 16,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFFFFD700),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Center(
-                              child: Text(
-                                '✦',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  height: 1.0,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            '+${widget.challenge.rewardPP} PP',
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFFD4AF37),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const Spacer(),
-                    // Tip
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.shade50,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.lightbulb_outline, size: 14, color: Colors.blue.shade700),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Tap more to earn faster!',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.blue.shade700,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
+                _buildProgressBar(),
               ],
             ],
           ),
@@ -314,5 +214,115 @@ class _ChallengeNotificationState extends State<ChallengeNotification> {
     } else {
       return '${twoDigits(duration.inMinutes.remainder(60))}:${twoDigits(duration.inSeconds.remainder(60))}';
     }
+  }
+
+  Widget _buildProgressBar() {
+    return Column(
+      children: [
+        Row(
+          children: [
+            const Text(
+              'Your progress:',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              '${(_progress * 100).toInt()}%',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: _getProgressColor(_progress),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        // Progress bar
+        ClipRRect(
+          borderRadius: BorderRadius.circular(4),
+          child: LinearProgressIndicator(
+            value: _progress,
+            backgroundColor: Colors.grey.shade200,
+            valueColor: AlwaysStoppedAnimation<Color>(_getProgressColor(_progress)),
+            minHeight: 10,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            // PP reward indicator
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.amber.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: const Color(0xFFD4AF37),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 16,
+                    height: 16,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFFFD700),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Center(
+                      child: Text(
+                        '✦',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          height: 1.0,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    '+${widget.challenge.rewardPP} PP',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFFD4AF37),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Spacer(),
+            // Tip
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.lightbulb_outline, size: 14, color: Colors.blue.shade700),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Tap more to earn faster!',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.blue.shade700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
   }
 } 

@@ -85,6 +85,7 @@ flutter:
     - assets/images/hong_kong/
     - assets/images/dubai_uae/
     - assets/images/platinum_islands/
+    - assets/images/mogul_avatars/
     
   fonts:
     - family: Roboto

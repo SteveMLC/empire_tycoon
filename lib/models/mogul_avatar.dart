@@ -1,17 +1,19 @@
 // Models premium mogul avatars unlocked via the Platinum Vault
 class MogulAvatar {
   final String id;
-  final String emoji;
+  final String imagePath;
   final String name;
   final String description;
   final MogulAvatarCategory category;
+  final String emoji;
 
   MogulAvatar({
     required this.id,
-    required this.emoji,
+    required this.imagePath,
     required this.name, 
     required this.description,
     required this.category,
+    required this.emoji,
   });
 }
 
@@ -20,90 +22,118 @@ enum MogulAvatarCategory {
   business,
   royalty,
   corporate,
-  tycoon
+  tycoon,
+  elite,
+  futuristic,
+  luxury,
+  mystic,
+  mythic,
+  lifestyle,
+  visionary,
+  science
 }
 
 // List of available mogul avatars
 List<MogulAvatar> getMogulAvatars() {
   return [
-    // Business Moguls
+    // Elite Moguls
     MogulAvatar(
-      id: 'business_man',
-      emoji: '🧔‍♂️💼',
-      name: 'Business Tycoon',
-      description: 'A self-made businessman with global influence.',
-      category: MogulAvatarCategory.business,
+      id: 'apex_mogul',
+      imagePath: 'assets/images/mogul_avatars/apex_mogul.jpg',
+      name: 'The Apex Mogul',
+      description: 'Commands empires. Feared by rivals. Worshipped by markets.',
+      category: MogulAvatarCategory.elite,
+      emoji: '👑',
     ),
+    
+    // Futuristic Moguls
     MogulAvatar(
-      id: 'business_woman',
-      emoji: '👩‍💼💎',
-      name: 'Business Magnate',
-      description: 'A powerful executive who commands respect.',
-      category: MogulAvatarCategory.business,
+      id: 'galactic_tycoon',
+      imagePath: 'assets/images/mogul_avatars/galactic_tycoon.jpg',
+      name: 'Galactic Tycoon',
+      description: 'Owns companies on Earth, moon resorts, and Martian mines.',
+      category: MogulAvatarCategory.futuristic,
+      emoji: '🚀',
+    ),
+    
+    // Luxury Moguls
+    MogulAvatar(
+      id: 'ice_boss',
+      imagePath: 'assets/images/mogul_avatars/ice_boss.jpg',
+      name: 'The Ice Boss',
+      description: 'Cold, calculated, and cash-loaded. Turns markets to ice.',
+      category: MogulAvatarCategory.luxury,
+      emoji: '❄️',
+    ),
+    
+    // Mystic Moguls
+    MogulAvatar(
+      id: 'oracle_empire',
+      imagePath: 'assets/images/mogul_avatars/oracle_empire.jpg',
+      name: 'Oracle of Empire',
+      description: 'Sees the future. Controls the present. Never misses a move.',
+      category: MogulAvatarCategory.mystic,
+      emoji: '🔮',
     ),
     
     // Royalty
     MogulAvatar(
-      id: 'king',
-      emoji: '👑👨',
-      name: 'King of Industry',
-      description: 'Rules an economic empire with authority.',
+      id: 'chateau_magnate',
+      imagePath: 'assets/images/mogul_avatars/chateau_magnate.jpg',
+      name: 'Chateau Magnate',
+      description: 'Lives in castles, parties in yachts. Luxury is the baseline.',
       category: MogulAvatarCategory.royalty,
-    ),
-    MogulAvatar(
-      id: 'queen',
-      emoji: '👑👸',
-      name: 'Queen of Enterprise',
-      description: 'Built her fortune through strategic brilliance.',
-      category: MogulAvatarCategory.royalty,
+      emoji: '🏰',
     ),
     
-    // Corporate Executives
+    // Mythic Moguls
     MogulAvatar(
-      id: 'ceo_man',
-      emoji: '👨‍💻📊',
-      name: 'Tech Visionary',
-      description: 'Pioneering CEO of multiple tech ventures.',
-      category: MogulAvatarCategory.corporate,
-    ),
-    MogulAvatar(
-      id: 'ceo_woman',
-      emoji: '👩‍💻💰',
-      name: 'Innovation Leader',
-      description: 'Leading the future of business innovation.',
-      category: MogulAvatarCategory.corporate,
+      id: 'dragon_investor',
+      imagePath: 'assets/images/mogul_avatars/dragon_investor.jpg',
+      name: 'Dragon Investor',
+      description: 'Wherever he goes, fortunes fly.',
+      category: MogulAvatarCategory.mythic,
+      emoji: '🐉',
     ),
     
-    // Tycoons
+    // Lifestyle Moguls
     MogulAvatar(
-      id: 'real_estate_mogul_man',
-      emoji: '🏢👨',
-      name: 'Property Titan',
-      description: 'Owner of landmark properties worldwide.',
-      category: MogulAvatarCategory.tycoon,
-    ),
-    MogulAvatar(
-      id: 'real_estate_mogul_woman',
-      emoji: '🏢👩',
-      name: 'Real Estate Maven',
-      description: 'Built a global real estate empire from scratch.',
-      category: MogulAvatarCategory.tycoon,
+      id: 'billionaire_on_break',
+      imagePath: 'assets/images/mogul_avatars/billionaire_on_break.jpg',
+      name: 'Billionaire on Break',
+      description: 'Still makes millions while sipping piña coladas.',
+      category: MogulAvatarCategory.lifestyle,
+      emoji: '🏖️',
     ),
     
-    // Financial Moguls
+    // Visionary Moguls
     MogulAvatar(
-      id: 'finance_mogul_man',
-      emoji: '📈👨',
-      name: 'Wall Street Legend',
-      description: 'Financial genius with unparalleled market intuition.',
-      category: MogulAvatarCategory.tycoon,
+      id: 'empire_architect',
+      imagePath: 'assets/images/mogul_avatars/empire_architect.jpg',
+      name: 'The Empire Architect',
+      description: 'He builds dynasties. Brick by brick. Billion by billion.',
+      category: MogulAvatarCategory.visionary,
+      emoji: '🏗️',
     ),
+    
+    // Science Moguls
     MogulAvatar(
-      id: 'finance_mogul_woman',
-      emoji: '📈👩',
-      name: 'Investment Oracle',
-      description: 'Her investments consistently outperform the market.',
-      category: MogulAvatarCategory.tycoon,
+      id: 'bio_capitalist',
+      imagePath: 'assets/images/mogul_avatars/bio_capitalist.jpg',
+      name: 'BioCapitalist',
+      description: 'Patents genes, disrupts medicine, profits from the future of life.',
+      category: MogulAvatarCategory.science,
+      emoji: '🧬',
+    ),
+    
+    // More Mythic Moguls
+    MogulAvatar(
+      id: 'tycoon_of_atlantis',
+      imagePath: 'assets/images/mogul_avatars/tycoon_of_atlantis.jpg',
+      name: 'Tycoon of Atlantis',
+      description: 'Owns what others can\'t find. Richer than Neptune.',
+      category: MogulAvatarCategory.mythic,
+      emoji: '🌊',
     ),
   ];
-} 
+}

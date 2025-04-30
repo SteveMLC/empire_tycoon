@@ -39,6 +39,12 @@ part 'game_state/utility_logic.dart';
 const int _maxDailyEarningsHistory = 30; // Memory Optimization: Limit history size
 
 class GameState with ChangeNotifier {
+  // ADDED: Track last game loop update time for debouncing
+  DateTime? _lastUpdateTime;
+
+  // ADDED: Track last calculated income per second for consistent UI display
+  double lastCalculatedIncomePerSecond = 0.0;
+
   double money = 500.0;
   double totalEarned = 500.0;
   double manualEarnings = 0.0;
@@ -1260,6 +1266,8 @@ class GameState with ChangeNotifier {
             // Create and assign the active challenge
             activeChallenge = Challenge(
               itemId: itemId,
+              name: "Platinum Income Challenge", // Added missing name
+              description: "Earn double your hourly income within 1 hour!", // Added missing description
               startTime: purchaseTime,
               duration: const Duration(hours: 1),  // 1 hour challenge
               goalEarnedAmount: challengeGoal,

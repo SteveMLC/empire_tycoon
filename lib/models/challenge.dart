@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 /// Represents an active gameplay challenge.
 class Challenge {
   final String itemId; // ID of the vault item that triggered the challenge
+  final String name; // Display name of the challenge
+  final String description; // Description of what needs to be done
   final DateTime startTime;
   final Duration duration;
   final double goalEarnedAmount; // Amount of money that needs to be earned during the challenge
@@ -11,6 +13,8 @@ class Challenge {
 
   Challenge({
     required this.itemId,
+    required this.name,
+    required this.description,
     required this.startTime,
     required this.duration,
     required this.goalEarnedAmount,
@@ -42,6 +46,8 @@ class Challenge {
   Map<String, dynamic> toJson() {
     return {
       'itemId': itemId,
+      'name': name,
+      'description': description,
       'startTime': startTime.toIso8601String(),
       'duration': duration.inSeconds,
       'goalEarnedAmount': goalEarnedAmount,
@@ -54,6 +60,8 @@ class Challenge {
   factory Challenge.fromJson(Map<String, dynamic> json) {
     return Challenge(
       itemId: json['itemId'],
+      name: json['name'],
+      description: json['description'],
       startTime: DateTime.parse(json['startTime']),
       duration: Duration(seconds: json['duration']),
       goalEarnedAmount: json['goalEarnedAmount'],

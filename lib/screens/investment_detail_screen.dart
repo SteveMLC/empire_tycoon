@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/services.dart';
 import 'dart:math'; // Import math for min function
+import 'dart:async';
 
 import '../models/game_state.dart';
 import '../models/investment.dart';
@@ -10,6 +11,8 @@ import '../services/game_service.dart';
 import '../utils/number_formatter.dart';
 import '../utils/sounds.dart';
 import '../widgets/investment_chart.dart';
+import '../utils/asset_loader.dart';
+import '../utils/sound_assets.dart';
 
 String formatCurrency(double value) {
   return NumberFormatter.formatCurrency(value);
@@ -584,9 +587,27 @@ class _InvestmentDetailScreenState extends State<InvestmentDetailScreen> {
                                   
                                   if (success) {
                                     if (_isBuying) {
-                                      gameService.playSound(GameSounds.investmentBuyStock);
+                                      try {
+                                        // Preload sound first
+                                        final assetLoader = AssetLoader();
+                                        unawaited(assetLoader.preloadSound(SoundAssets.investmentBuyStock));
+                                        // Play sound directly through sound manager for better error handling
+                                        gameService.soundManager.playInvestmentBuyStockSound();
+                                      } catch (e) {
+                                        print("Error playing investment buy sound: $e");
+                                        // Continue with the purchase process even if sound fails
+                                      }
                                     } else {
-                                      gameService.playSound(GameSounds.investmentSellStock);
+                                      try {
+                                        // Preload sound first
+                                        final assetLoader = AssetLoader();
+                                        unawaited(assetLoader.preloadSound(SoundAssets.investmentSellStock));
+                                        // Play sound directly through sound manager for better error handling
+                                        gameService.soundManager.playInvestmentSellStockSound();
+                                      } catch (e) {
+                                        print("Error playing investment sell sound: $e");
+                                        // Continue with the sell process even if sound fails
+                                      }
                                     }
                                     
                                     if (!mounted) return; 
@@ -608,9 +629,19 @@ class _InvestmentDetailScreenState extends State<InvestmentDetailScreen> {
                                       _updateQuantityController();
                                     });
                                   } else {
-                                    gameService.playSound(GameSounds.error);
+                                    try {
+                                      // Preload sound first
+                                      final assetLoader = AssetLoader();
+                                      unawaited(assetLoader.preloadSound(SoundAssets.feedbackError));
+                                      // Play sound directly through sound manager for better error handling
+                                      // Use generic playSound for error
+                                      gameService.soundManager.playSound(SoundAssets.feedbackError, priority: SoundPriority.normal);
+                                    } catch (e) {
+                                      print("Error playing error sound: $e");
+                                      // Continue with the error handling even if sound fails
+                                    }
                                     
-                                    if (!mounted) return; 
+                                    if (!mounted) return;
 
                                     scaffoldMessenger.showSnackBar(
                                       SnackBar(

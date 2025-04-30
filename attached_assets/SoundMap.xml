@@ -1,0 +1,29 @@
+├── ui/               # User interface sounds
+│   ├── tap.mp3           # Basic UI interaction
+│   ├── tap_boosted.mp3   # Boosted tap sound
+├── achievements/     # Achievement notification sounds
+│   ├── achievement_basic.mp3     # Common achievements
+│   ├── achievement_rare.mp3      # Uncommon achievements
+│   └── achievement_milestone.mp3 # Major milestone achievements
+├── business/         # Business-related sounds
+│   ├── purchase.mp3       # Business purchase
+│   ├── upgrade.mp3        # Business upgrade + real_estate Upgrade
+│   └── max_level.mp3      # Maximum level reached
+├── investment/       # Investment system sounds
+│   ├── buy_stock.mp3      # Stock purchase
+│   ├── sell_stock.mp3     # Stock sale
+│   └── market_event.mp3   # Market events
+├── real_estate/      # Property management sounds
+│   ├── purchase.mp3       # Property purchase
+│   ├── locale_unlock.mp3  # New region unlocked
+│   └── locale_complete.mp3# All properties in a region acquired
+├── events/           # Game event sounds
+│   ├── reincorporation.mp3# Reincorporation event
+│   ├── offline_income.mp3 # Returning player income
+│   └── special.mp3        # Special events
+└── feedback/         # General feedback sounds
+    ├── error.mp3          # Error notification
+    ├── success.mp3        # Success notification
+    └── notification.mp3   # General notification
+└── platinum/         # Platinum Shop Sounds
+    ├── platinum_purchase.mp3          #Platinum Purchase
