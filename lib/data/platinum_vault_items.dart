@@ -22,6 +22,8 @@ class VaultItem {
   final int cost; // Cost in Platinum
   final String iconAsset; // Path to an icon asset (e.g., 'assets/icons/placeholder_item.png')
   final IconData? iconData; // Alternative: Use Material Icon
+  final String? effectText;
+  final IconData? icon;
 
   VaultItem({
     required this.id,
@@ -32,6 +34,8 @@ class VaultItem {
     required this.cost,
     this.iconAsset = 'assets/icons/item_placeholder.png',
     this.iconData,
+    this.effectText,
+    this.icon,
   });
 }
 
@@ -247,11 +251,12 @@ List<VaultItem> getVaultItems() {
     VaultItem(
       id: 'platinum_spire',
       name: 'Platinum Spire Trophy',
-      description: 'Place a cosmetic platinum statue in one chosen unlocked locale.',
+      description: 'A prestigious cosmetic addition to your empire, the Platinum Spire Trophy can be placed in any locale as a symbol of your real estate dominance.',
       category: VaultItemCategory.cosmetics,
       type: VaultItemType.oneTime,
-      cost: 100,
-      iconData: Icons.emoji_events, // Example icon (reuse?)
+      cost: 500,
+      effectText: 'Adds a unique spire trophy to a chosen locale. Purely cosmetic with beautiful animations.',
+      icon: const IconData(0xe3ec, fontFamily: 'MaterialIcons'),
     ),
     // ADDED: Platinum Surge
     VaultItem(
@@ -266,8 +271,8 @@ List<VaultItem> getVaultItems() {
     // ADDED: Platinum Time Warp
     VaultItem(
       id: 'platinum_warp',
-      name: 'Time Warp (4h)',
-      description: 'Instantly receive 4 hours worth of passive income.',
+      name: 'Income Warp (4h)',
+      description: 'Instantly receive 4 hours worth of current income.',
       category: VaultItemCategory.boosters,
       type: VaultItemType.repeatable, // TODO: Implement 2x per week limit
       cost: 50,

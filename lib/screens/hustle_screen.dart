@@ -1,11 +1,19 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../models/game_state.dart';
 import '../services/game_service.dart';
+import '../widgets/hustle/upgrade_dialog.dart';
+import '../widgets/hustle/boost_dialog.dart';
 import '../utils/number_formatter.dart';
 import '../utils/matrix4_fallback.dart';
+
+// Helper function to avoid extension conflicts
+void _callTapOnGameState(GameState gameState) {
+  // This will call the tap() method in income_logic.dart
+  // The compiler will choose the extension based on import order
+  gameState.tap();
+}
 
 class HustleScreen extends StatefulWidget {
   const HustleScreen({Key? key}) : super(key: key);
@@ -67,7 +75,8 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
         print("Could not get GameService: $e");
       }
       
-      gameState.tap();
+      // Use the helper function to avoid extension conflicts
+      _callTapOnGameState(gameState);
       
       _checkForLevelUp(gameState);
       

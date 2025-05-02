@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:math';
+import 'package:flutter/foundation.dart';
 
 import '../models/game_state.dart';
 import '../services/game_service.dart';
 import '../utils/number_formatter.dart';
 import '../models/mogul_avatar.dart';
+import '../widgets/platinum_crest_avatar.dart';
 
 // Custom painter for the toggle switch track (moved to top-level)
 class ToggleTrackPainter extends CustomPainter {
@@ -134,454 +136,532 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     String currentAvatar = gameState.userAvatar ?? '👨‍💼';
 
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'My Profile',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            
-            const SizedBox(height: 20),
-            
-            Row(
-              children: [
-                // Avatar display
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    color: Colors.blue.shade50,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: Colors.blue.shade300,
-                      width: 2,
-                    ),
+      elevation: gameState.isPlatinumCrestUnlocked ? 6 : 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: gameState.isPlatinumCrestUnlocked 
+            ? BorderSide(
+                color: const Color(0xFFE5E4E2),
+                width: 2.0,
+              )
+            : BorderSide.none,
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          gradient: gameState.isPlatinumCrestUnlocked
+              ? LinearGradient(
+                  colors: [
+                    Colors.grey.shade100,
+                    Colors.white,
+                    Colors.grey.shade50,
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                )
+              : null,
+          boxShadow: gameState.isPlatinumCrestUnlocked
+              ? [
+                  BoxShadow(
+                    color: const Color(0xFFE5E4E2).withOpacity(0.3),
+                    blurRadius: 10,
+                    spreadRadius: -5,
+                    offset: const Offset(0, 3),
                   ),
-                  child: Center(
-                    child: gameState.selectedMogulAvatarId != null
-                      ? Container(
-                          width: 64,
-                          height: 64,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.grey.shade200,
-                          ),
-                          child: ClipOval(
-                            child: Image.asset(
-                              getMogulAvatars()
-                                  .firstWhere((avatar) => avatar.id == gameState.selectedMogulAvatarId)
-                                  .imagePath,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Center(
-                                  child: Text(
-                                    getMogulAvatars()
-                                        .firstWhere((avatar) => avatar.id == gameState.selectedMogulAvatarId)
-                                        .emoji,
-                                    style: const TextStyle(fontSize: 32),
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
-                        )
-                      : Text(
-                          currentAvatar,
-                          style: const TextStyle(fontSize: 40),
+                ]
+              : null,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header with premium styling if crest is active
+              Container(
+                decoration: gameState.isPlatinumCrestUnlocked
+                    ? BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            const Color(0xFFE5E4E2).withOpacity(0.7),
+                            Colors.white,
+                          ],
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
                         ),
-                  ),
-                ),
-                
-                const SizedBox(width: 20),
-                
-                // User info
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextFormField(
-                              controller: _usernameController,
-                              decoration: InputDecoration(
-                                labelText: 'Username',
-                                hintText: 'Enter your name',
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              onChanged: (value) {
-                                gameState.username = value;
-                              },
-                              onEditingComplete: () {
-                                // Save game when editing is done
-                                Provider.of<GameService>(context, listen: false).saveGame();
-                              },
-                              onFieldSubmitted: (_) {
-                                // Save game when field is submitted
-                                Provider.of<GameService>(context, listen: false).saveGame();
-                              },
-                            ),
-                          ),
-                        ],
-                      ),
-                      
-                      const SizedBox(height: 8),
-                      
-                      Text(
-                        'Empire Level: ${gameState.totalReincorporations}',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey,
-                        ),
-                      ),
-                      
-                      Text(
-                        'Net Worth: ${NumberFormatter.formatCurrency(gameState.calculateNetWorth())}',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            
-            const SizedBox(height: 20),
-            
-            // Avatar selection toggle
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
+                        borderRadius: BorderRadius.circular(8),
+                      )
+                    : null,
+                padding: gameState.isPlatinumCrestUnlocked
+                    ? const EdgeInsets.symmetric(horizontal: 12, vertical: 8)
+                    : EdgeInsets.zero,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text(
-                      'Avatar',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    Row(
+                      children: [
+                        if (gameState.isPlatinumCrestUnlocked)
+                          Container(
+                            margin: const EdgeInsets.only(right: 8),
+                            child: Icon(
+                              Icons.verified,
+                              size: 22,
+                              color: Colors.grey.shade700,
+                            ),
+                          ),
+                        Text(
+                          'My Profile',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: gameState.isPlatinumCrestUnlocked ? 0.5 : 0,
+                            color: gameState.isPlatinumCrestUnlocked
+                                ? Colors.grey.shade800
+                                : Colors.black,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 8),
-                    // Small indicator of current avatar
-                    Container(
-                      width: 24,
-                      height: 24,
-                      decoration: BoxDecoration(
-                        color: Colors.blue.shade50,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: Colors.blue.shade200,
-                          width: 1,
+                    
+                    // Add the crest toggle button here but only in debug mode
+                    if (kDebugMode)
+                      GestureDetector(
+                        onTap: () {
+                          // Toggle the platinum crest for testing
+                          gameState.isPlatinumCrestUnlocked = !gameState.isPlatinumCrestUnlocked;
+                          // Save the game to persist the change
+                          Provider.of<GameService>(context, listen: false).saveGame();
+                          // Show a message
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                gameState.isPlatinumCrestUnlocked 
+                                  ? 'Platinum Crest: ENABLED' 
+                                  : 'Platinum Crest: DISABLED'
+                              ),
+                              duration: const Duration(seconds: 1),
+                            ),
+                          );
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: gameState.isPlatinumCrestUnlocked 
+                              ? const Color(0xFFE5E4E2)
+                              : Colors.grey.shade200,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Icon(
+                            Icons.shield_moon,
+                            size: 16,
+                            color: gameState.isPlatinumCrestUnlocked 
+                              ? Colors.grey.shade900
+                              : Colors.grey.shade500,
+                          ),
                         ),
                       ),
-                      child: Center(
-                        child: Text(
-                          currentAvatar,
-                          style: const TextStyle(fontSize: 12),
-                        ),
-                      ),
-                    ),
                   ],
                 ),
-                TextButton.icon(
-                  onPressed: () {
-                    setState(() {
-                      _isAvatarSelectionExpanded = !_isAvatarSelectionExpanded;
-                    });
-                  },
-                  icon: Icon(
-                    _isAvatarSelectionExpanded ? Icons.arrow_drop_up : Icons.arrow_drop_down,
-                    color: Colors.blue,
+              ),
+              
+              const SizedBox(height: 20),
+              
+              Row(
+                children: [
+                  // Replace the avatar container with PlatinumCrestAvatar
+                  PlatinumCrestAvatar(
+                    showCrest: gameState.isPlatinumCrestUnlocked,
+                    userAvatar: currentAvatar,
+                    mogulAvatarId: gameState.selectedMogulAvatarId,
+                    size: 80.0,
                   ),
-                  label: Text(
-                    _isAvatarSelectionExpanded ? 'Collapse' : 'Change Avatar',
-                    style: const TextStyle(
-                      color: Colors.blue,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            
-            // Collapsible avatar selection grid
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              height: _isAvatarSelectionExpanded ? null : 0,
-              clipBehavior: Clip.antiAlias,
-              decoration: const BoxDecoration(),
-              child: AnimatedOpacity(
-                duration: const Duration(milliseconds: 200),
-                opacity: _isAvatarSelectionExpanded ? 1.0 : 0.0,
-                child: _isAvatarSelectionExpanded ? Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 12),
-                    
-                    // Avatar selection grid
-                    GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 8,
-                        childAspectRatio: 1,
-                        crossAxisSpacing: 8,
-                        mainAxisSpacing: 8,
-                      ),
-                      itemCount: _avatarOptions.length,
-                      itemBuilder: (context, index) {
-                        final avatar = _avatarOptions[index];
-                        final isSelected = avatar == currentAvatar;
-                        
-                        return GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              gameState.userAvatar = avatar;
-                              // Auto collapse after selection
-                              _isAvatarSelectionExpanded = false;
-                            });
-                            
-                            // Save the game to persist the avatar choice
-                            Provider.of<GameService>(context, listen: false).saveGame();
-                          },
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: isSelected ? Colors.blue.shade100 : Colors.grey.shade100,
-                              borderRadius: BorderRadius.circular(8),
-                              border: Border.all(
-                                color: isSelected ? Colors.blue : Colors.grey.shade300,
-                                width: 2,
-                              ),
-                            ),
-                            child: Center(
-                              child: Text(
-                                avatar,
-                                style: const TextStyle(fontSize: 24),
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                    
-                    const SizedBox(height: 16),
-                    
-                    // Done button to collapse
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          setState(() {
-                            _isAvatarSelectionExpanded = false;
-                          });
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                        ),
-                        child: const Text('Done'),
-                      ),
-                    ),
-                    
-                    // Add mogul avatars section if unlocked
-                    if (gameState.isMogulAvatarsUnlocked) ...[
-                      const SizedBox(height: 20),
-                      
-                      // Mogul Avatars Section Header with Gold accent
-                      Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              Colors.amber.shade700.withOpacity(0.8),
-                              Colors.amber.shade300.withOpacity(0.8),
-                            ],
-                            begin: Alignment.centerLeft,
-                            end: Alignment.centerRight,
-                          ),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  
+                  const SizedBox(width: 20),
+                  
+                  // User info
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
                           children: [
-                            Row(
-                              children: [
-                                const Icon(Icons.stars, color: Colors.white),
-                                const SizedBox(width: 8),
-                                const Text(
-                                  'Premium Mogul Avatars',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                    shadows: [
-                                      Shadow(
-                                        offset: Offset(1, 1),
-                                        blurRadius: 2,
-                                        color: Color(0x80000000),
-                                      ),
-                                    ],
+                            Expanded(
+                              child: TextFormField(
+                                controller: _usernameController,
+                                decoration: InputDecoration(
+                                  labelText: 'Username',
+                                  hintText: 'Enter your name',
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                  border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(8),
                                   ),
                                 ),
-                              ],
-                            ),
-                            IconButton(
-                              icon: Icon(
-                                _isMogulAvatarSectionExpanded 
-                                  ? Icons.expand_less 
-                                  : Icons.expand_more,
-                                color: Colors.white,
+                                onChanged: (value) {
+                                  gameState.username = value;
+                                },
+                                onEditingComplete: () {
+                                  // Save game when editing is done
+                                  Provider.of<GameService>(context, listen: false).saveGame();
+                                },
+                                onFieldSubmitted: (_) {
+                                  // Save game when field is submitted
+                                  Provider.of<GameService>(context, listen: false).saveGame();
+                                },
                               ),
-                              onPressed: () {
-                                setState(() {
-                                  _isMogulAvatarSectionExpanded = !_isMogulAvatarSectionExpanded;
-                                });
-                              },
                             ),
                           ],
                         ),
+                        
+                        const SizedBox(height: 8),
+                        
+                        Text(
+                          'Empire Level: ${gameState.totalReincorporations}',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey,
+                          ),
+                        ),
+                        
+                        Text(
+                          'Net Worth: ${NumberFormatter.formatCurrency(gameState.calculateNetWorth())}',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              
+              const SizedBox(height: 20),
+              
+              // Avatar selection toggle
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      const Text(
+                        'Avatar',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                      
-                      // Mogul Avatars Section Content (collapsible)
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 300),
-                        height: _isMogulAvatarSectionExpanded ? null : 0,
-                        clipBehavior: Clip.antiAlias,
-                        decoration: const BoxDecoration(),
-                        child: AnimatedOpacity(
-                          duration: const Duration(milliseconds: 200),
-                          opacity: _isMogulAvatarSectionExpanded ? 1.0 : 0.0,
-                          child: _isMogulAvatarSectionExpanded ? Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const SizedBox(height: 12),
-                              
-                              // Display mogul avatars in a grid
-                              GridView.builder(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 3,
-                                  childAspectRatio: 1,
-                                  crossAxisSpacing: 8,
-                                  mainAxisSpacing: 8,
-                                ),
-                                itemCount: getMogulAvatars().length,
-                                itemBuilder: (context, index) {
-                                  final mogulAvatar = getMogulAvatars()[index];
-                                  final isSelected = gameState.selectedMogulAvatarId == mogulAvatar.id;
-                                  
-                                  return GestureDetector(
-                                    onTap: () {
-                                      setState(() {
-                                        gameState.selectedMogulAvatarId = mogulAvatar.id;
-                                        gameState.userAvatar = mogulAvatar.emoji;
-                                      });
-                                      
-                                      // Save the game to persist the avatar choice
-                                      Provider.of<GameService>(context, listen: false).saveGame();
-                                    },
-                                    child: Tooltip(
-                                      message: mogulAvatar.description,
-                                      child: Container(
-                                        decoration: BoxDecoration(
-                                          gradient: isSelected ? 
-                                            LinearGradient(
-                                              colors: [
-                                                Colors.amber.shade200,
-                                                Colors.amber.shade100,
-                                              ],
-                                              begin: Alignment.topLeft,
-                                              end: Alignment.bottomRight,
-                                            ) : 
-                                            LinearGradient(
-                                              colors: [
-                                                Colors.grey.shade100,
-                                                Colors.white,
-                                              ],
-                                              begin: Alignment.topLeft,
-                                              end: Alignment.bottomRight,
-                                            ),
-                                          borderRadius: BorderRadius.circular(8),
-                                          border: Border.all(
-                                            color: isSelected ? Colors.amber.shade600 : Colors.grey.shade300,
-                                            width: 2,
-                                          ),
-                                          boxShadow: isSelected ? [
-                                            BoxShadow(
-                                              color: Colors.amber.withOpacity(0.3),
-                                              blurRadius: 5,
-                                              spreadRadius: 1,
-                                            ),
-                                          ] : null,
-                                        ),
-                                        child: Column(
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          children: [
-                                            // Image container with fixed size
-                                            Container(
-                                              width: 64,
-                                              height: 64,
-                                              margin: const EdgeInsets.only(bottom: 4),
-                                              decoration: BoxDecoration(
-                                                borderRadius: BorderRadius.circular(8),
-                                                color: Colors.grey.shade200,
-                                              ),
-                                              child: ClipRRect(
-                                                borderRadius: BorderRadius.circular(8),
-                                                child: Image.asset(
-                                                  mogulAvatar.imagePath,
-                                                  fit: BoxFit.cover,
-                                                  errorBuilder: (context, error, stackTrace) {
-                                                    return Center(
-                                                      child: Text(
-                                                        mogulAvatar.emoji,
-                                                        style: const TextStyle(fontSize: 24),
-                                                      ),
-                                                    );
-                                                  },
-                                                ),
-                                              ),
-                                            ),
-                                            Text(
-                                              mogulAvatar.name,
-                                              textAlign: TextAlign.center,
-                                              style: TextStyle(
-                                                fontSize: 10,
-                                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                                                color: isSelected ? Colors.amber.shade800 : Colors.grey.shade700,
-                                              ),
-                                              maxLines: 2,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ],
-                          ) : const SizedBox.shrink(),
+                      const SizedBox(width: 8),
+                      // Small indicator of current avatar
+                      Container(
+                        width: 24,
+                        height: 24,
+                        decoration: BoxDecoration(
+                          color: Colors.blue.shade50,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: gameState.isPlatinumCrestUnlocked
+                                ? const Color(0xFFE5E4E2)
+                                : Colors.blue.shade200,
+                            width: 1,
+                          ),
+                        ),
+                        child: Center(
+                          child: Text(
+                            currentAvatar,
+                            style: const TextStyle(fontSize: 12),
+                          ),
                         ),
                       ),
                     ],
-                  ],
-                ) : const SizedBox.shrink(),
+                  ),
+                  TextButton.icon(
+                    onPressed: () {
+                      setState(() {
+                        _isAvatarSelectionExpanded = !_isAvatarSelectionExpanded;
+                      });
+                    },
+                    icon: Icon(
+                      _isAvatarSelectionExpanded ? Icons.arrow_drop_up : Icons.arrow_drop_down,
+                      color: Colors.blue,
+                    ),
+                    label: Text(
+                      _isAvatarSelectionExpanded ? 'Collapse' : 'Change Avatar',
+                      style: const TextStyle(
+                        color: Colors.blue,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
+              
+              // Collapsible avatar selection grid
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                height: _isAvatarSelectionExpanded ? null : 0,
+                clipBehavior: Clip.antiAlias,
+                decoration: const BoxDecoration(),
+                child: AnimatedOpacity(
+                  duration: const Duration(milliseconds: 200),
+                  opacity: _isAvatarSelectionExpanded ? 1.0 : 0.0,
+                  child: _isAvatarSelectionExpanded ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 12),
+                      
+                      // Avatar selection grid
+                      GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 8,
+                          childAspectRatio: 1,
+                          crossAxisSpacing: 8,
+                          mainAxisSpacing: 8,
+                        ),
+                        itemCount: _avatarOptions.length,
+                        itemBuilder: (context, index) {
+                          final avatar = _avatarOptions[index];
+                          final isSelected = avatar == currentAvatar;
+                          
+                          return GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                gameState.userAvatar = avatar;
+                                // Auto collapse after selection
+                                _isAvatarSelectionExpanded = false;
+                              });
+                              
+                              // Save the game to persist the avatar choice
+                              Provider.of<GameService>(context, listen: false).saveGame();
+                            },
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: isSelected ? Colors.blue.shade100 : Colors.grey.shade100,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: isSelected ? Colors.blue : Colors.grey.shade300,
+                                  width: 2,
+                                ),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  avatar,
+                                  style: const TextStyle(fontSize: 24),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      
+                      const SizedBox(height: 16),
+                      
+                      // Done button to collapse
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            setState(() {
+                              _isAvatarSelectionExpanded = false;
+                            });
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                          ),
+                          child: const Text('Done'),
+                        ),
+                      ),
+                      
+                      // Add mogul avatars section if unlocked
+                      if (gameState.isMogulAvatarsUnlocked) ...[
+                        const SizedBox(height: 20),
+                        
+                        // Mogul Avatars Section Header with Gold accent
+                        Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                Colors.amber.shade700.withOpacity(0.8),
+                                Colors.amber.shade300.withOpacity(0.8),
+                              ],
+                              begin: Alignment.centerLeft,
+                              end: Alignment.centerRight,
+                            ),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                children: [
+                                  const Icon(Icons.stars, color: Colors.white),
+                                  const SizedBox(width: 8),
+                                  const Text(
+                                    'Premium Mogul Avatars',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                      shadows: [
+                                        Shadow(
+                                          offset: Offset(1, 1),
+                                          blurRadius: 2,
+                                          color: Color(0x80000000),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              IconButton(
+                                icon: Icon(
+                                  _isMogulAvatarSectionExpanded 
+                                    ? Icons.expand_less 
+                                    : Icons.expand_more,
+                                  color: Colors.white,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _isMogulAvatarSectionExpanded = !_isMogulAvatarSectionExpanded;
+                                  });
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                        
+                        // Mogul Avatars Section Content (collapsible)
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 300),
+                          height: _isMogulAvatarSectionExpanded ? null : 0,
+                          clipBehavior: Clip.antiAlias,
+                          decoration: const BoxDecoration(),
+                          child: AnimatedOpacity(
+                            duration: const Duration(milliseconds: 200),
+                            opacity: _isMogulAvatarSectionExpanded ? 1.0 : 0.0,
+                            child: _isMogulAvatarSectionExpanded ? Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const SizedBox(height: 12),
+                                
+                                // Display mogul avatars in a grid
+                                GridView.builder(
+                                  shrinkWrap: true,
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: 3,
+                                    childAspectRatio: 1,
+                                    crossAxisSpacing: 8,
+                                    mainAxisSpacing: 8,
+                                  ),
+                                  itemCount: getMogulAvatars().length,
+                                  itemBuilder: (context, index) {
+                                    final mogulAvatar = getMogulAvatars()[index];
+                                    final isSelected = gameState.selectedMogulAvatarId == mogulAvatar.id;
+                                    
+                                    return GestureDetector(
+                                      onTap: () {
+                                        setState(() {
+                                          gameState.selectedMogulAvatarId = mogulAvatar.id;
+                                          gameState.userAvatar = mogulAvatar.emoji;
+                                        });
+                                        
+                                        // Save the game to persist the avatar choice
+                                        Provider.of<GameService>(context, listen: false).saveGame();
+                                      },
+                                      child: Tooltip(
+                                        message: mogulAvatar.description,
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            gradient: isSelected ? 
+                                              LinearGradient(
+                                                colors: [
+                                                  Colors.amber.shade200,
+                                                  Colors.amber.shade100,
+                                                ],
+                                                begin: Alignment.topLeft,
+                                                end: Alignment.bottomRight,
+                                              ) : 
+                                              LinearGradient(
+                                                colors: [
+                                                  Colors.grey.shade100,
+                                                  Colors.white,
+                                                ],
+                                                begin: Alignment.topLeft,
+                                                end: Alignment.bottomRight,
+                                              ),
+                                            borderRadius: BorderRadius.circular(8),
+                                            border: Border.all(
+                                              color: isSelected ? Colors.amber.shade600 : Colors.grey.shade300,
+                                              width: 2,
+                                            ),
+                                            boxShadow: isSelected ? [
+                                              BoxShadow(
+                                                color: Colors.amber.withOpacity(0.3),
+                                                blurRadius: 5,
+                                                spreadRadius: 1,
+                                              ),
+                                            ] : null,
+                                          ),
+                                          child: Column(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              // Image container with fixed size
+                                              Container(
+                                                width: 64,
+                                                height: 64,
+                                                margin: const EdgeInsets.only(bottom: 4),
+                                                decoration: BoxDecoration(
+                                                  borderRadius: BorderRadius.circular(8),
+                                                  color: Colors.grey.shade200,
+                                                ),
+                                                child: ClipRRect(
+                                                  borderRadius: BorderRadius.circular(8),
+                                                  child: Image.asset(
+                                                    mogulAvatar.imagePath,
+                                                    fit: BoxFit.cover,
+                                                    errorBuilder: (context, error, stackTrace) {
+                                                      return Center(
+                                                        child: Text(
+                                                          mogulAvatar.emoji,
+                                                          style: const TextStyle(fontSize: 24),
+                                                        ),
+                                                      );
+                                                    },
+                                                  ),
+                                                ),
+                                              ),
+                                              Text(
+                                                mogulAvatar.name,
+                                                textAlign: TextAlign.center,
+                                                style: TextStyle(
+                                                  fontSize: 10,
+                                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                                  color: isSelected ? Colors.amber.shade800 : Colors.grey.shade700,
+                                                ),
+                                                maxLines: 2,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ],
+                            ) : const SizedBox.shrink(),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ) : const SizedBox.shrink(),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -1120,9 +1200,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                   ),
                 ],
               ),
-
+              
               const SizedBox(height: 16),
-
+              
               if (!gameState.isPremium)
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

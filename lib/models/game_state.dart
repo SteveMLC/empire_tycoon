@@ -34,6 +34,11 @@ part 'game_state/event_logic.dart';
 part 'game_state/serialization_logic.dart';
 part 'game_state/update_logic.dart';
 part 'game_state/utility_logic.dart';
+part 'game_state/platinum_logic.dart';  // ADDED: New part file
+part 'game_state/challenge_logic.dart'; // ADDED: New part file  
+part 'game_state/booster_logic.dart';   // ADDED: New part file
+part 'game_state/notification_logic.dart'; // ADDED: New part file
+part 'game_state/income_logic.dart';    // ADDED: New part file
 
 // Define a limit for how many days of earnings history to keep
 const int _maxDailyEarningsHistory = 30; // Memory Optimization: Limit history size
@@ -65,23 +70,6 @@ class GameState with ChangeNotifier {
   bool isMogulAvatarsUnlocked = false;
   String? selectedMogulAvatarId;
   
-  // --- OFFLINE INCOME NOTIFICATION STATE ---
-  double offlineEarningsAwarded = 0.0;
-  Duration? offlineDurationForNotification;
-  bool _shouldShowOfflineEarnings = false; // Changed to private for proper getter/setter
-  
-  // Getter for shouldShowOfflineEarnings
-  bool get shouldShowOfflineEarnings => _shouldShowOfflineEarnings;
-  
-  // Setter for shouldShowOfflineEarnings
-  set shouldShowOfflineEarnings(bool value) {
-    if (_shouldShowOfflineEarnings != value) {
-      _shouldShowOfflineEarnings = value;
-      print("📣 shouldShowOfflineEarnings changed to: $value");
-      notifyListeners();
-    }
-  }
-
   // >> START: Platinum Points System Fields <<
   int platinumPoints = 0;
   bool _retroactivePPAwarded = false; // Flag for retroactive PP grant
@@ -784,42 +772,6 @@ class GameState with ChangeNotifier {
     }
   }
 
-  void tap() {
-    // Calculate base earnings including permanent boost
-    double permanentClickMultiplier = isPermanentClickBoostActive ? 1.1 : 1.0;
-    double baseEarnings = clickValue * permanentClickMultiplier; // Base * Permanent Vault Boost
-
-    // Apply Ad boost multiplier
-    double adBoostMultiplier = isAdBoostActive ? 10.0 : 1.0;
-
-    // Apply Platinum Boosters multiplier
-    double platinumBoostMultiplier = 1.0;
-    if (platinumClickFrenzyRemainingSeconds > 0) {
-        platinumBoostMultiplier = 10.0;
-    } else if (platinumSteadyBoostRemainingSeconds > 0) {
-        platinumBoostMultiplier = 2.0;
-    }
-
-    // Combine all multipliers: Base * Prestige * Ad * Platinum
-    double finalEarnings = baseEarnings * clickMultiplier * adBoostMultiplier * platinumBoostMultiplier;
-
-    // --- REMOVED potentially conflicting old boost logic (isBoostActive, clickMultiplier) ---
-    // double boostMultiplier = 1.0;
-    // if (isBoostActive) boostMultiplier *= 2.0; 
-    // baseEarnings = clickValue * clickMultiplier * permanentClickMultiplier; 
-    // finalEarnings = baseEarnings * boostMultiplier * platinumBoostMultiplier; 
-
-    print("~~~ GameState.tap() called. BaseClick: $clickValue, PermVaultMult: ${permanentClickMultiplier.toStringAsFixed(1)}x, PrestigeMult: ${clickMultiplier.toStringAsFixed(1)}x, AdBoostMult: ${adBoostMultiplier.toStringAsFixed(1)}x, PlatinumBoostMult: ${platinumBoostMultiplier.toStringAsFixed(1)}x, Final: $finalEarnings ~~~ "); // Updated DEBUG LOG
-
-    money += finalEarnings;
-    totalEarned += finalEarnings;
-    manualEarnings += finalEarnings;
-    taps++;
-    lifetimeTaps++;
-
-    notifyListeners();
-  }
-
   bool buyBusiness(String businessId) {
     int index = businesses.indexWhere((b) => b.id == businessId);
     if (index == -1) return false;
@@ -870,6 +822,7 @@ class GameState with ChangeNotifier {
         else if (business.id == 'film_studio' && money >= 5000000.0) business.unlocked = true;
         else if (business.id == 'logistics_company' && money >= 25000000.0) business.unlocked = true;
         else if (business.id == 'real_estate_developer' && money >= 100000000.0) business.unlocked = true;
+        else if (business.id == 'platinum_venture' && isPlatinumVentureUnlocked && money >= 500000000.0) business.unlocked = true;
       }
     }
   }
@@ -972,35 +925,6 @@ class GameState with ChangeNotifier {
     _achievementNotificationTimer?.cancel();
     _cancelPlatinumTimers(); // ADDED: Cancel platinum booster timers
     super.dispose();
-  }
-
-  // ADDED: Method to start the temporary platinum boost 
-  void startBoost() {
-    if (!isBoostActive) {
-      boostRemainingSeconds = 300; // 5 minutes
-      _startBoostTimer();
-      notifyListeners();
-    }
-  }
-
-  // ADDED: Method to start the ad boost (10x for 60 seconds)
-  void startAdBoost() {
-    adBoostRemainingSeconds = 60; // 60 seconds
-    _startAdBoostTimer();
-    notifyListeners();
-  }
-
-  // ADDED: Method to award Platinum Points
-  void awardPlatinumPoints(int amount) {
-    if (amount <= 0) return;
-    platinumPoints += amount;
-    showPPAnimation = true; // Trigger animation
-    notifyListeners();
-    // Optional: Set a timer to turn off the animation flag after a short duration
-    Timer(const Duration(seconds: 3), () {
-      showPPAnimation = false;
-      notifyListeners();
-    });
   }
 
   // Method to enable premium features
@@ -1325,17 +1249,17 @@ class GameState with ChangeNotifier {
             print("Unlocked Platinum Crest.");
             break;
         case 'platinum_spire': 
-            // TODO: Implement UI to select which unlocked locale gets the spire.
-            print("TODO: Implement locale selection UI for Platinum Spire. Effect not applied yet.");
-            // Example future logic:
-            // String? targetLocaleId = // ... get from purchase context ...;
-            // if (targetLocaleId != null && realEstateLocales.any((l) => l.id == targetLocaleId && l.unlocked) && platinumSpireLocaleId == null) {
-            //     platinumSpireLocaleId = targetLocaleId;
-            //     print("Placed Platinum Spire in $targetLocaleId");
-            // } else {
-            //     print("Failed to place Platinum Spire: Invalid target or spire already placed.");
-            //     // Optionally refund points
-            // }
+            // Use the selected locale ID from the context
+            String? targetLocaleId = purchaseContext?['selectedLocaleId'] as String?;
+
+            if (targetLocaleId != null && realEstateLocales.any((l) => l.id == targetLocaleId && l.unlocked) && platinumSpireLocaleId == null) {
+                platinumSpireLocaleId = targetLocaleId;
+                print("Placed Platinum Spire Trophy in locale $targetLocaleId");
+            } else if (targetLocaleId == null) {
+                print("ERROR: Could not place Platinum Spire Trophy - missing selectedLocaleId in context.");
+            } else {
+                print("Failed to place Platinum Spire Trophy: Invalid target or spire already placed.");
+            }
             break;
         // --- Boosters ---
         case 'platinum_surge':
@@ -1349,20 +1273,21 @@ class GameState with ChangeNotifier {
             break;
         case 'platinum_warp':
             // Pre-check in spendPlatinumPoints ensures limit not reached
-            double offlineHours = 4.0; // Defined by the item
-            // Use the existing calculateOfflineIncome which respects multipliers etc.
-            double offlineIncome = calculateOfflineIncome(Duration(hours: offlineHours.toInt()));
-            if (offlineIncome > 0) {
-                money += offlineIncome;
-                totalEarned += offlineIncome;
-                passiveEarnings += offlineIncome; // Attribute to passive
-                print("INFO: Awarded ${NumberFormatter.formatCompact(offlineIncome)} offline income via Platinum Warp (${offlineHours}h).");
+            double incomePerSecond = calculateTotalIncomePerSecond();
+            double fourHoursInSeconds = 4.0 * 60 * 60; // 4 hours in seconds
+            double incomeAward = incomePerSecond * fourHoursInSeconds;
+            
+            if (incomeAward > 0) {
+                money += incomeAward;
+                totalEarned += incomeAward;
+                passiveEarnings += incomeAward; // Attribute to passive
+                print("INFO: Awarded ${NumberFormatter.formatCompact(incomeAward)} via Income Warp (4 hours of income).");
                 // TODO: Add user-facing notification.
             } else {
-                 print("INFO: Platinum Warp: No offline income calculated (income/sec might be zero).");
+                print("INFO: Income Warp: No income calculated (income/sec might be zero).");
             }
             timeWarpUsesThisPeriod++; // Increment usage count
-            print("INFO: Time Warp uses this period: $timeWarpUsesThisPeriod/2");
+            print("INFO: Income Warp uses this period: $timeWarpUsesThisPeriod/2");
             // notifyListeners(); // Called at the end of the method
             break;
         case 'platinum_cache':
@@ -1603,54 +1528,6 @@ class GameState with ChangeNotifier {
   }
   // --- END: Helper methods for Platinum Booster Timers ---
 
-  // IMPROVED: Check and trigger notification display
-  bool checkAndClearOfflineEarnings() {
-    print("🔍 Checking offline earnings: amount=$offlineEarningsAwarded, duration=${offlineDurationForNotification?.inSeconds ?? 0}s, shouldShow=$_shouldShowOfflineEarnings");
-    
-    // ENHANCED VALIDATION: Check for sane values
-    bool hasValidAmount = offlineEarningsAwarded > 0 && offlineEarningsAwarded.isFinite;
-    bool hasValidDuration = offlineDurationForNotification != null && 
-                            offlineDurationForNotification!.inSeconds > 0 &&
-                            offlineDurationForNotification!.inSeconds <= 86400; // Max 1 day
-    
-    // Check if we have valid offline income to show
-    if (_shouldShowOfflineEarnings && hasValidAmount && hasValidDuration) {
-      print("✅ Valid offline income found! Amount: $offlineEarningsAwarded for ${offlineDurationForNotification!.inSeconds}s");
-      
-      // Clear flag after checking (caller will show notification)
-      _shouldShowOfflineEarnings = false;
-      notifyListeners();
-      return true;
-    }
-    
-    // Log why we're not showing offline income
-    if (!_shouldShowOfflineEarnings) {
-      print("❌ Not showing offline income: shouldShowOfflineEarnings is false");
-    } else if (!hasValidAmount) {
-      print("❌ Not showing offline income: Invalid amount $offlineEarningsAwarded");
-    } else if (!hasValidDuration) {
-      print("❌ Not showing offline income: Invalid duration ${offlineDurationForNotification?.inSeconds}s");
-    }
-    
-    return false;
-  }
-
-  // ADDED: Get offline earnings data for notification
-  Map<String, dynamic> getOfflineEarningsData() {
-    return {
-      'amount': offlineEarningsAwarded,
-      'duration': offlineDurationForNotification ?? Duration.zero
-    };
-  }
-  
-  // ADDED: Clear offline notification state
-  void clearOfflineNotification() {
-    _shouldShowOfflineEarnings = false;
-    offlineEarningsAwarded = 0.0;
-    offlineDurationForNotification = null;
-    notifyListeners();
-  }
-  
   // ADDED: Method to dismiss premium purchase notification
   void dismissPremiumPurchaseNotification() {
     showPremiumPurchaseNotification = false;
@@ -1806,4 +1683,10 @@ class GameState with ChangeNotifier {
   DateTime? platinumChallengeLastUsedTime; // Tracks last usage for limit
   int platinumChallengeUsesToday = 0; // Tracks uses today (max 2)
   DateTime? lastPlatinumChallengeDayTracked; // For daily reset
+
+  // Utility method to update hourly earnings (used by multiple extensions to avoid conflicts)
+  void updateHourlyEarnings(String hourKey, double amount) {
+    hourlyEarnings[hourKey] = (hourlyEarnings[hourKey] ?? 0) + amount;
+    // Pruning is now done periodically or on load, not every update
+  }
 }

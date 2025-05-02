@@ -153,6 +153,10 @@ extension PrestigeLogic on GameState {
     for (var business in businesses) {
       business.level = 0; // Reset business to starting level
       business.unlocked = false; // Default to locked
+      // Reset upgrade timer state
+      business.isUpgrading = false;
+      business.upgradeEndTime = null;
+      business.initialUpgradeDurationSeconds = null;
     }
     // Re-unlock initial businesses
     businesses[0].unlocked = true; // Mobile Car Wash

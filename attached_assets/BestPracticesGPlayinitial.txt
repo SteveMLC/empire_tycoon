@@ -1,0 +1,42 @@
+Release name
+– This is just for you and your team to identify the build in the console (users won’t see it).
+– Best practice: tie it to your version-numbering scheme. e.g.
+• “1.0.0-Internal-Test”
+• “v1.0.0 (100) – IT1”
+– Keep it under 50 characters and consistent across all your tracks (internal, closed, open, production).
+Release notes
+– This is what your testers will see as “What’s new in this internal build.”
+– Always include at least:
+• Major new features or screens they should exercise
+• Bug-fixes or known issues you want them to verify or watch out for
+• Any special steps for them to follow (e.g. “Log in with test@test.com / password123”)
+– Format as bullet-points, and wrap them in the appropriate language tags:
+Apply to key.properti...
+– If you support other languages, repeat your notes under each locale tag.
+Once you complete this page, hitting “Next” will let you select the AAB you just built and choose your tester list.
+—
+Beyond this internal-testing release page, when you come to your very first Production release, here are some additional things you’ll want to have ready (and follow these best practices):
+• App bundle & versioning
+– Make sure your versionCode and versionName in pubspec.yaml match what you’re uploading.
+– Stick to semantic versioning (e.g. 1.0.0+100).
+• Store listing
+– App title (up to 30 chars), short description (80 chars), long description (4,000 chars).
+– High-quality screenshots for all target form-factors (phone, 7″ tablet, 10″ tablet).
+– A feature graphic (1024×500), optional promo video, app icon (512×512), and hi-res icon (1024×1024).
+– Localize store text for each market you support (English, Spanish, etc.).
+• Categorization & details
+– Choose the correct application category and type (Game → Simulation / Casual / Strategy).
+– Provide a privacy-policy URL (required if you handle user data).
+– Fill in the contact email, website, and phone (optional).
+• Content rating & compliance
+– Complete the rating questionnaire so Google can assign the correct age rating.
+– Declare if you have ads, in-app purchases, sensitive permissions, or target child-directed audiences.
+• Pricing & distribution
+– Set your app to Free or Paid and pick the countries/regions where you want it available.
+– Enable devices and form-factors (phone, tablet, Android TV, Wear OS, etc.).
+• Release management
+– Roll out incrementally (e.g. 5% of users) to catch any last-minute crashes.
+– Monitor crash reports & user feedback; follow up with patch releases.
+• Release notes (for users)
+– When you get to the Production “What’s new” section, mirror your internal-test notes in plain text, focusing on new features and fixes.
+By following those steps—and keeping your metadata, assets, and release notes well-organized—you’ll breeze through your very first Google Play release. Good luck, and congratulations on shipping Empire Tycoon!

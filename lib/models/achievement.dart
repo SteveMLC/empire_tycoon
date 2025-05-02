@@ -208,8 +208,9 @@ class AchievementManager {
         return count / 5.0 > 1.0 ? 1.0 : count / 5.0;
 
       case 'all_businesses':
-        int count = gameState.businesses.where((b) => b.level > 0).length;
-        return count / gameState.businesses.length;
+        // Count only standard businesses (excluding premium platinum_venture)
+        int count = gameState.businesses.where((b) => b.id != 'platinum_venture' && b.level > 0).length;
+        return count / 10.0 > 1.0 ? 1.0 : count / 10.0;
 
       case 'max_level_business':
         bool anyMaxLevel = gameState.businesses.any((b) => b.isMaxLevel());
@@ -458,8 +459,9 @@ class AchievementManager {
       newlyCompleted.add(achievements.firstWhere((a) => a.id == 'five_businesses'));
     }
 
+    // Check if all standard businesses (excluding premium Platinum Venture) are owned
     if (!_isCompleted('all_businesses') &&
-        gameState.businesses.every((b) => b.level > 0)) {
+        gameState.businesses.where((b) => b.id != 'platinum_venture' && b.level > 0).length >= 10) {
       completeAchievement('all_businesses');
       newlyCompleted.add(achievements.firstWhere((a) => a.id == 'all_businesses'));
     }

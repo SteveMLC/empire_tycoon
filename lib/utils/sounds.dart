@@ -42,7 +42,6 @@ class LegacySoundAssets {
   
   static const String eventStartup = SoundAssets.eventStartup;
   static const String eventReincorporation = SoundAssets.eventReincorporation;
-  static const String eventOfflineIncome = SoundAssets.eventOfflineIncome;
   static const String eventSpecial = SoundAssets.eventSpecial;
   
   static const String feedbackError = SoundAssets.feedbackError;

@@ -10,6 +10,7 @@ import '../services/game_service.dart';
 import '../utils/asset_loader.dart';
 import '../utils/sound_assets.dart';
 import '../utils/sounds.dart';
+import '../widgets/platinum_spire_trophy.dart';
 import 'dart:async';
 
 class RealEstateScreen extends StatefulWidget {
@@ -504,6 +505,12 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
                   ),
                 ),
               ),
+
+              // Check if this locale has the Platinum Spire Trophy
+              if (gameState.platinumSpireLocaleId == locale.id)
+                _buildPlatinumSpireTrophyDisplay(locale, gameState),
+
+              const SizedBox(height: 16),
 
               Padding(
                 padding: const EdgeInsets.only(left: 16, right: 16, top: 8),
@@ -1117,5 +1124,74 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
         ],
       ),
     );
+  }
+
+  Widget _buildPlatinumSpireTrophyDisplay(RealEstateLocale locale, GameState gameState) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+          border: Border.all(
+            color: const Color(0xFFE5E4E2), // Platinum color
+            width: 1.5,
+          ),
+        ),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Platinum Spire Trophy',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey.shade800,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            PlatinumSpireTrophy(
+              size: 120,
+              username: gameState.username, // Pass user's name to the trophy
+              showEmergenceAnimation: false, // Emergence animation only on first view
+              onTap: () {
+                // Show property gallery dialog when trophy is tapped
+                final ownedProperties = _getOwnedProperties();
+                showDialog(
+                  context: context,
+                  builder: (context) => PropertyGalleryDialog(
+                    ownedProperties: ownedProperties,
+                    showSpireTrophy: true,
+                    spireTrophyLocaleId: locale.id,
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  // Helper method to get owned properties for the PropertyGalleryDialog
+  List<Map<String, dynamic>> _getOwnedProperties() {
+    // Get the game state from the context
+    final gameState = Provider.of<GameState>(context, listen: false);
+    // Use the existing method in gameState to get all owned properties with details
+    return gameState.getAllOwnedPropertiesWithDetails();
   }
 }

@@ -54,12 +54,6 @@ extension SerializationLogic on GameState {
       'isPlatinumFrameUnlocked': isPlatinumFrameUnlocked,
       'isPlatinumFrameActive': isPlatinumFrameActive,
 
-      // --- Added: Serialize offline income notification state ---
-      'offlineEarningsAwarded': offlineEarningsAwarded,
-      'offlineDurationForNotification': offlineDurationForNotification?.inSeconds,
-      'shouldShowOfflineEarnings': shouldShowOfflineEarnings,
-      // --- End Added ---
-
       // --- Added: Serialize persistent upgrade flags ---
       'isPlatinumEfficiencyActive': isPlatinumEfficiencyActive,
       'isPlatinumPortfolioActive': isPlatinumPortfolioActive,
@@ -115,9 +109,6 @@ extension SerializationLogic on GameState {
       'platinumChallengeUsesToday': platinumChallengeUsesToday,
       'lastPlatinumChallengeDayTracked': lastPlatinumChallengeDayTracked?.toIso8601String(),
     };
-
-    // Log offline income state being saved (Moved outside the map definition)
-    print("📊 SAVING OFFLINE INCOME STATE: Amount=$offlineEarningsAwarded, Duration=${offlineDurationForNotification?.inSeconds ?? 0}s, ShouldShow=$shouldShowOfflineEarnings");
 
     if (clickBoostEndTime != null) {
       json['clickBoostEndTime'] = clickBoostEndTime!.toIso8601String();
@@ -233,111 +224,42 @@ extension SerializationLogic on GameState {
     totalReincorporations = json['totalReincorporations'] ?? 0;
     isInitialized = json['isInitialized'] ?? false;
 
-    // --- LOAD OFFLINE INCOME STATE BEFORE PROCESSING OFFLINE PROGRESS ---
-    // So it doesn't get overwritten by newly calculated values later
-    double previousOfflineEarnings = (json['offlineEarningsAwarded'] as num?)?.toDouble() ?? 0.0;
-    Duration? previousOfflineDuration;
-    int? durationSeconds = json['offlineDurationForNotification'] as int?;
-    if (durationSeconds != null) {
-      previousOfflineDuration = Duration(seconds: durationSeconds);
-    }
-    bool previousShouldShow = json['shouldShowOfflineEarnings'] ?? false;
-    
-    // Only set these values if we're NOT going to calculate new offline progress
-    offlineEarningsAwarded = previousOfflineEarnings;
-    offlineDurationForNotification = previousOfflineDuration;
-    _shouldShowOfflineEarnings = previousShouldShow;
-    print("📊 LOADED PREVIOUS OFFLINE INCOME STATE: Amount=$offlineEarningsAwarded, Duration=${offlineDurationForNotification?.inSeconds ?? 0}s, Should=$_shouldShowOfflineEarnings");
-    // --- END LOAD OFFLINE INCOME STATE ---
-
     // Load lastSaved timestamp (use for offline calc baseline if lastOpened is missing/invalid)
-    DateTime loadedLastSaved = DateTime.now(); // Fallback
     if (json['lastSaved'] != null) {
-        try {
-            loadedLastSaved = DateTime.parse(json['lastSaved']);
-            print("📅 Loaded lastSaved timestamp: ${loadedLastSaved.toIso8601String()}");
-        } catch (e) {
-            print("❌ Error parsing lastSaved timestamp: $e. Using current time as fallback.");
-        }
-    } else {
-        print("⚠️ No lastSaved timestamp found, using current time as fallback.");
-    }
-    lastSaved = loadedLastSaved; // Assign after parsing
-
-    // CRITICAL FIX: Handle lastOpened robustly for offline progress calculation
-    DateTime previousOpen = loadedLastSaved; // Default to lastSaved if lastOpened is missing/invalid
-    if (json['lastOpened'] != null) {
-        try {
-            previousOpen = DateTime.parse(json['lastOpened']);
-            print("📆 Loaded lastOpened timestamp: ${previousOpen.toIso8601String()}");
-            // Ensure lastOpened is not before lastSaved (can happen with clock issues)
-            if (previousOpen.isBefore(loadedLastSaved)) {
-                print("⚠️ lastOpened is before lastSaved. Using lastSaved for offline calculation.");
-                previousOpen = loadedLastSaved;
-            }
-        } catch (e) {
-            print("❌ Error parsing lastOpened timestamp: $e. Using lastSaved for offline calculation.");
-            previousOpen = loadedLastSaved;
-        }
-    } else {
-        print("⚠️ No lastOpened timestamp found, using lastSaved for offline calculation.");
-    }
-
-    // Calculate offline time
-    DateTime now = DateTime.now();
-    int secondsElapsed = 0;
-    if (now.isAfter(previousOpen)) {
-        secondsElapsed = now.difference(previousOpen).inSeconds;
-    } else {
-        print("⚠️ Current time is not after previous open time. No offline progress possible.");
-    }
-
-    // Always update lastOpened to current time *before* processing offline progress
-    lastOpened = now;
-    print("🔄 Updated lastOpened to: ${lastOpened.toIso8601String()}");
-
-    // Process offline progress regardless of elapsed time (removed 10s threshold)
-    if (secondsElapsed > 0) {
-      print("💰 --- Calling _processOfflineProgress --- 💰");
-      print("  Pre-Offline Money: $money");
-      print("  Pre-Offline incomeMultiplier: $incomeMultiplier");
-      print("  Pre-Offline prestigeMultiplier: $prestigeMultiplier");
-      print("  Pre-Offline isPermanentIncomeBoostActive: $isPermanentIncomeBoostActive");
-      
-      // Clear previous offline values before calculating new ones
-      offlineEarningsAwarded = 0.0;
-      offlineDurationForNotification = null;
-      _shouldShowOfflineEarnings = false;
-      
-      _processOfflineProgress(secondsElapsed);
-      print("✅ --- Returned from _processOfflineProgress --- ✅");
-      print("  Post-Offline Money: $money"); // Verify if money was updated
-    } else {
-      print("ℹ️ Skipping offline progress calculation (elapsed time <= 0s).");
-      // Keep the previously loaded offline notification values
-    }
-
-    // Load click boost state
-    if (json['clickBoostEndTime'] != null) {
       try {
-          clickBoostEndTime = DateTime.parse(json['clickBoostEndTime']);
-          // Check if the boost is already expired
-          if (now.isAfter(clickBoostEndTime!)) {
-            clickMultiplier = 1.0; // Reset multiplier if expired
-            clickBoostEndTime = null;
-          }
-      } catch(e) {
-          print("❌ Error parsing clickBoostEndTime: $e");
-          clickMultiplier = 1.0;
-          clickBoostEndTime = null;
+        lastSaved = DateTime.parse(json['lastSaved']);
+      } catch (_) {
+        lastSaved = DateTime.now();
       }
     } else {
-        clickMultiplier = 1.0; // Ensure reset if no end time saved
-        clickBoostEndTime = null;
+      lastSaved = DateTime.now();
     }
+    
+    // Load lastOpened timestamp (required for offline calculation)
+    if (json['lastOpened'] != null) {
+      try {
+        lastOpened = DateTime.parse(json['lastOpened']);
+      } catch (_) {
+        lastOpened = DateTime.now();
+      }
+    } else {
+      lastOpened = DateTime.now();
+    }
+    
+    // Calculate offline time
+    DateTime now = DateTime.now();
+    
+    // Make sure current time is valid (after last opened - handles clock tampering or anomalies)
+    if (!now.isAfter(lastOpened)) {
+      print("⚠️ Current time is not after previous open time. No offline progress possible.");
+      lastOpened = now; // Reset to current time to be safe
+    }
+    
+    // Always update lastOpened to current time
+    lastOpened = now;
 
-    // Load businesses
-    if (json['businesses'] != null && json['businesses'] is List) {
+    // Read business data
+    if (json['businesses'] != null) {
       List<dynamic> businessesJson = json['businesses'];
       for (var businessJson in businessesJson) {
         if (businessJson is Map && businessJson['id'] != null) {
@@ -625,229 +547,6 @@ extension SerializationLogic on GameState {
 
     notifyListeners(); // Notify UI after loading is complete
     print("✅ GameState.fromJson complete.");
-  }
-
-  // Process progress while game was closed
-  void _processOfflineProgress(int secondsElapsed) {
-    print("--- START Offline Progress Calculation ---"); // START Logging Block
-    print("Input secondsElapsed: $secondsElapsed");
-
-    if (secondsElapsed <= 0) {
-      print("Offline time <= 0 seconds. Skipping calculation.");
-      print("--- END Offline Progress Calculation (Skipped) ---");
-      return;
-    }
-
-    // Cap offline progress to a reasonable limit (e.g., 1 day) to prevent exploits/overload
-    final int maxOfflineSeconds = 86400; // 24 hours
-    int cappedSeconds = min(secondsElapsed, maxOfflineSeconds);
-    print("Capped offline seconds: $cappedSeconds");
-
-    // CRITICAL: Ensure we process even short offline durations (minimum 5 seconds)
-    if (cappedSeconds < 5) {
-      print("⚠️ Offline duration too short (${cappedSeconds}s < 5s), but continuing with minimum 5s...");
-      cappedSeconds = 5; // Use minimum 5 seconds for earning calculation
-    }
-
-    // Declare income variables locally
-    double offlineBusinessIncome = 0;
-    double offlineRealEstateIncome = 0;
-    double offlineDividendIncome = 0;
-
-    // ADDED: Store the duration used for calculation
-    offlineDurationForNotification = Duration(seconds: cappedSeconds);
-    print("Stored offlineDurationForNotification: ${offlineDurationForNotification?.inSeconds}s");
-
-    print("💵 Processing offline income for $cappedSeconds seconds (capped from $secondsElapsed)");
-    // Removed duplicate logs from previous attempt
-
-    // --- Get relevant persistent boost multipliers ---
-    print("Multiplier Check:");
-    double businessEfficiencyMultiplier = isPlatinumEfficiencyActive ? 1.05 : 1.0;
-    print("  businessEfficiencyMultiplier: $businessEfficiencyMultiplier (isPlatinumEfficiencyActive: $isPlatinumEfficiencyActive)");
-    double portfolioMultiplier = isPlatinumPortfolioActive ? 1.25 : 1.0;
-    print("  portfolioMultiplier: $portfolioMultiplier (isPlatinumPortfolioActive: $isPlatinumPortfolioActive)");
-    double permanentIncomeMultiplier = isPermanentIncomeBoostActive ? 1.05 : 1.0;
-    print("  permanentIncomeMultiplier: $permanentIncomeMultiplier (isPermanentIncomeBoostActive: $isPermanentIncomeBoostActive)");
-    print("  incomeMultiplier (global): $incomeMultiplier");
-    print("  prestigeMultiplier (global): $prestigeMultiplier");
-    // --- End Get relevant boost multipliers ---
-
-    // Calculate offline income from businesses
-    print("Business Income Calculation:");
-    double totalBusinessBaseIncomePerCycle = 0;
-    for (var business in businesses) {
-      if (business.level > 0) {
-        int cycles = cappedSeconds ~/ business.incomeInterval;
-        if (cycles > 0) {
-          // Get base income (includes interval factor)
-          // Note: Pass isResilienceActive if needed
-          double baseIncomePerCycleRaw = business.getCurrentIncome(isResilienceActive: isPlatinumResilienceActive);
-          
-          // Apply efficiency multiplier
-          double baseIncomePerCycleWithEfficiency = baseIncomePerCycleRaw * businessEfficiencyMultiplier;
-          totalBusinessBaseIncomePerCycle += baseIncomePerCycleWithEfficiency; // Sum base * efficiency for logging
-          
-          // Apply standard game multipliers
-          double finalIncomeForBusiness = baseIncomePerCycleWithEfficiency * cycles * incomeMultiplier;
-          
-          // Apply permanent boost
-          finalIncomeForBusiness *= permanentIncomeMultiplier; // Apply permanent boost BEFORE event check for consistency with live update
-
-          // Apply Income Surge (if applicable)
-          if (isIncomeSurgeActive) finalIncomeForBusiness *= 2.0;
-
-          // Check for event AFTER all other multipliers
-          bool hasEvent = hasActiveEventForBusiness(business.id); 
-          if (hasEvent) {
-              finalIncomeForBusiness *= GameStateEvents.NEGATIVE_EVENT_MULTIPLIER; // Apply -0.25
-          }
-          
-          offlineBusinessIncome += finalIncomeForBusiness;
-          // Update print log to show final income added
-          print("  Business '${business.name}' (Lvl ${business.level}): Cycles=$cycles, RawBaseIncome=$baseIncomePerCycleRaw, BaseWithEff=$baseIncomePerCycleWithEfficiency, Event=$hasEvent -> Added $finalIncomeForBusiness");
-        }
-      }
-    }
-    print("  Total Business Base*Efficiency (sum): $totalBusinessBaseIncomePerCycle");
-    print("  Subtotal Business Offline Income (after ALL boosts/penalties): $offlineBusinessIncome");
-
-    // Calculate offline income from real estate (Process per property)
-    print("Real Estate Income Calculation:");
-    offlineRealEstateIncome = 0.0; // Reset before calculation
-    for (var locale in realEstateLocales) {
-      if (locale.unlocked) {
-        bool isLocaleAffectedByEvent = hasActiveEventForLocale(locale.id);
-        bool isFoundationApplied = platinumFoundationsApplied.containsKey(locale.id);
-        bool isYachtDocked = platinumYachtDockedLocaleId == locale.id;
-        double foundationMultiplier = isFoundationApplied ? 1.05 : 1.0;
-        double yachtMultiplier = isYachtDocked ? 1.05 : 1.0;
-
-        for (var property in locale.properties) {
-          if (property.owned > 0) {
-            // Get base income per property (includes owned count)
-            double basePropertyIncomePerSecond = property.getTotalIncomePerSecond(isResilienceActive: isPlatinumResilienceActive);
-            
-            // Apply locale-specific multipliers (Foundation, Yacht)
-            double incomeWithLocaleBoosts = basePropertyIncomePerSecond * foundationMultiplier * yachtMultiplier;
-
-            // Apply standard global multipliers and duration
-            double finalPropertyIncome = incomeWithLocaleBoosts * cappedSeconds * incomeMultiplier;
-
-            // Apply the overall permanent boost
-            finalPropertyIncome *= permanentIncomeMultiplier;
-            
-            // Apply Income Surge (if applicable)
-            if (isIncomeSurgeActive) finalPropertyIncome *= 2.0;
-
-            // Check for negative event affecting the LOCALE and apply multiplier AFTER all bonuses
-            if (isLocaleAffectedByEvent) {
-              finalPropertyIncome *= GameStateEvents.NEGATIVE_EVENT_MULTIPLIER; // Apply -0.25
-            }
-            
-            offlineRealEstateIncome += finalPropertyIncome;
-            // Optional: Add print log per property if needed for debugging
-            // print("    Property '${property.name}' in '${locale.name}': Base/s=$basePropertyIncomePerSecond, Event=$isLocaleAffectedByEvent -> Added $finalPropertyIncome");
-          }
-        }
-      }
-    }
-    print("  Subtotal RE Offline Income (after ALL boosts/penalties): $offlineRealEstateIncome");
-
-
-    // Calculate offline income from dividends (Reverted to simpler calculation structure)
-    print("Dividend Income Calculation:");
-    offlineDividendIncome = 0.0; // Reset before calculation
-    double diversificationBonus = calculateDiversificationBonus();
-    print("  Diversification Bonus: ${diversificationBonus.toStringAsFixed(4)}");
-    double totalDividendBasePerSecond = 0;
-    for (var investment in investments) {
-      if (investment.owned > 0 && investment.hasDividends()) {
-          double baseDividendPerSecondRaw = investment.getDividendIncomePerSecond();
-          
-          // Apply Portfolio and Diversification bonus first
-          double effectiveDividendPerShare = baseDividendPerSecondRaw * portfolioMultiplier * (1 + diversificationBonus);
-          totalDividendBasePerSecond += effectiveDividendPerShare * investment.owned; // Sum base * bonuses * owned for logging
-          
-          // Apply standard game multipliers, duration, and owned count
-          double finalIncomeForInvestment = effectiveDividendPerShare * investment.owned * cappedSeconds;
-          
-          // Apply permanent income boost
-          finalIncomeForInvestment *= permanentIncomeMultiplier;
-
-          // Apply Income Surge (if applicable)
-          if (isIncomeSurgeActive) finalIncomeForInvestment *= 2.0;
-
-          offlineDividendIncome += finalIncomeForInvestment;
-          print("  Investment '${investment.name}' (Owned ${investment.owned}): RawDiv/s=$baseDividendPerSecondRaw, EffDiv/s=$effectiveDividendPerShare -> Added $finalIncomeForInvestment");
-      }
-    }
-     print("  Total Dividend Effective Base/s*Owned (sum): $totalDividendBasePerSecond");
-     print("  Subtotal Dividend Offline Income (after ALL boosts): $offlineDividendIncome");
-
-    // Calculate total and store for notification *before* adding to main money
-    double totalOfflineEarnings = offlineBusinessIncome + offlineRealEstateIncome + offlineDividendIncome;
-    print("Calculated Total Offline Earnings: \$${totalOfflineEarnings.toStringAsFixed(2)}");
-
-    // ENHANCED: Special forced notification for very small earnings (testing/debugging)
-    bool forceMinimumOfflineIncome = false; // For debugging/testing
-    if (totalOfflineEarnings <= 0.01 && secondsElapsed >= 5) {
-      // Force some minimum income for short offline durations
-      print("⚠️ FORCING MINIMUM OFFLINE INCOME: Original income=$totalOfflineEarnings for ${secondsElapsed}s was negligible");
-      
-      // Calculate a reasonable minimum income based on total income per second
-      double totalPerSecond = calculateTotalIncomePerSecond();
-      double minimumIncome = totalPerSecond * cappedSeconds;
-      
-      if (minimumIncome > 0) {
-        totalOfflineEarnings = minimumIncome;
-        offlineBusinessIncome = minimumIncome * 0.8; // Attribute most to businesses
-        offlineRealEstateIncome = minimumIncome * 0.15; // Some to real estate
-        offlineDividendIncome = minimumIncome * 0.05; // Small amount to dividends
-        forceMinimumOfflineIncome = true;
-        print("✅ MINIMUM INCOME APPLIED: $totalOfflineEarnings based on income/sec of $totalPerSecond");
-      } else {
-        print("❌ MINIMUM INCOME CALCULATION FAILED: totalPerSecond=$totalPerSecond");
-      }
-    }
-
-    // Always store income and set flag if we have any earnings at all
-    if (totalOfflineEarnings > 0) {
-        offlineEarningsAwarded = totalOfflineEarnings;
-        // Duration is already set above
-        _shouldShowOfflineEarnings = true; // ADDED: Set flag to trigger notification
-        print("📬 Stored \$${offlineEarningsAwarded.toStringAsFixed(2)} and duration ${offlineDurationForNotification?.inSeconds}s in GameState for notification. Notification flag set: $_shouldShowOfflineEarnings");
-        
-        if (forceMinimumOfflineIncome) {
-          print("🛠️ USING FORCED MINIMUM INCOME FOR NOTIFICATION");
-        }
-    } else {
-        print("📬 No positive offline earnings, setting offlineEarningsAwarded to 0 and notification flag to false.");
-        offlineEarningsAwarded = 0.0; // Ensure it's zero if no earnings
-        _shouldShowOfflineEarnings = false; // ADDED: Ensure flag is off if no earnings
-    }
-
-    // Add calculated offline income to game state totals
-    print("Applying offline earnings to GameState:");
-    print("  Money BEFORE: $money");
-    money += totalOfflineEarnings;
-    print("  Money AFTER: $money");
-    print("  TotalEarned BEFORE: $totalEarned");
-    totalEarned += totalOfflineEarnings;
-    print("  TotalEarned AFTER: $totalEarned");
-    print("  PassiveEarnings (Business) BEFORE: $passiveEarnings");
-    passiveEarnings += offlineBusinessIncome; // Attribute business to passive
-    print("  PassiveEarnings AFTER: $passiveEarnings");
-    print("  RealEstateEarnings BEFORE: $realEstateEarnings");
-    realEstateEarnings += offlineRealEstateIncome;
-    print("  RealEstateEarnings AFTER: $realEstateEarnings");
-    print("  InvestmentDividendEarnings BEFORE: $investmentDividendEarnings");
-    investmentDividendEarnings += offlineDividendIncome;
-    print("  InvestmentDividendEarnings AFTER: $investmentDividendEarnings");
-
-    // Removed duplicate summary logs
-
-    print("--- END Offline Progress Calculation ---"); // END Logging Block
   }
 
   // Helper to prune old hourly earnings (e.g., older than 7 days)

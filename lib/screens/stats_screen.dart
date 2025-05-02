@@ -9,6 +9,13 @@ import '../utils/time_utils.dart';
 import '../utils/sounds.dart';
 import '../widgets/achievements_section.dart';
 import '../themes/stats_themes.dart';
+import '../widgets/stats/overview_card.dart';
+import '../widgets/stats/earnings_breakdown_card.dart';
+import '../widgets/stats/assets_breakdown_card.dart';
+import '../widgets/stats/hourly_earnings_chart.dart';
+import '../widgets/stats/net_worth_chart.dart';
+import '../widgets/stats/theme_dialog.dart';
+import '../widgets/stats/reincorporation_utils.dart';
 
 class StatsScreen extends StatefulWidget {
   const StatsScreen({Key? key}) : super(key: key);
@@ -53,26 +60,52 @@ class _StatsScreenState extends State<StatsScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildOverviewCard(gameState, theme),
+                        // Overview Card
+                        OverviewCard(
+                          gameState: gameState,
+                          theme: theme,
+                          showReincorporateConfirmation: (context) => 
+                              ReincorporationUtils.showReincorporateConfirmation(context, gameState),
+                          showReincorporateInfo: (context) => 
+                              ReincorporationUtils.showReincorporateInfo(context),
+                          buildThemeToggle: ThemeDialogUtils.buildThemeToggle,
+                        ),
 
                         const SizedBox(height: 20),
 
-                        _buildEarningsBreakdown(gameState, theme),
+                        // Earnings Breakdown Card
+                        EarningsBreakdownCard(
+                          gameState: gameState,
+                          theme: theme,
+                        ),
 
                         const SizedBox(height: 20),
 
-                        _buildAssetsBreakdown(gameState, theme),
+                        // Assets Breakdown Card
+                        AssetsBreakdownCard(
+                          gameState: gameState,
+                          theme: theme,
+                        ),
 
                         const SizedBox(height: 20),
 
-                        _buildHourlyEarningsChart(gameState, theme),
+                        // Hourly Earnings Chart
+                        HourlyEarningsChart(
+                          gameState: gameState,
+                          theme: theme,
+                        ),
 
                         const SizedBox(height: 20),
 
-                        _buildNetWorthChart(gameState, theme),
+                        // Net Worth Chart
+                        NetWorthChart(
+                          gameState: gameState,
+                          theme: theme,
+                        ),
 
                         const SizedBox(height: 20),
 
+                        // Achievements Section (already a separate widget)
                         AchievementsSection(theme: theme),
 
                         const SizedBox(height: 50),

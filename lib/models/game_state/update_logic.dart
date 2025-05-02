@@ -262,7 +262,7 @@ extension UpdateLogic on GameState {
           money += totalIncomeThisTick;
           totalEarned += totalIncomeThisTick; // totalEarned can now decrease if income is negative
           // Update hourly earnings (aggregate for the hour)
-          _updateHourlyEarnings(hourKey, totalIncomeThisTick);
+          updateHourlyEarnings(hourKey, totalIncomeThisTick);
       }
 
       // Update lastCalculatedIncomePerSecond for consistent UI display
@@ -318,10 +318,5 @@ extension UpdateLogic on GameState {
      // _pruneHourlyEarnings(); // Use the hourly pruning logic
   }
 
-  // Helper function to update hourly earnings and prune old entries
-  void _updateHourlyEarnings(String hourKey, double earnings) {
-    hourlyEarnings[hourKey] = (hourlyEarnings[hourKey] ?? 0) + earnings;
-    // Pruning is now done periodically or on load, not every update
-    // _pruneHourlyEarnings(); 
-  }
+  // _updateHourlyEarnings has been moved to income_logic.dart
 } 

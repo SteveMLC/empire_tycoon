@@ -80,14 +80,6 @@ class GameService {
       print("⏱️ TIMESTAMP ANALYSIS: Last saved at ${TimeUtils.formatTime(lastSavedTime)}");
       print("⏱️ TIMESTAMP ANALYSIS: App started at ${TimeUtils.formatTime(appStartTime)}");
 
-      // Check if the last saved time is potentially old (informational)
-      if (lastSavedTime.isBefore(appStartTime)) {
-          final Duration offlineDurationCheck = appStartTime.difference(lastSavedTime);
-          print("⏰ Informational: Time since last save vs app start: ${offlineDurationCheck.inSeconds} seconds. Actual offline calculation occurs during GameState.fromJson based on loaded lastOpened time.");
-      } else {
-          print("⏰ Informational: lastSaved time is not before app start time. Likely first run or clock issue. Actual offline calculation occurs during GameState.fromJson.");
-      }
-
       _gameState.isInitialized = true;
 
       // CRITICAL FIX: Auto-save system setup

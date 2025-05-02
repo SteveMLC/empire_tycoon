@@ -537,70 +537,79 @@ class AchievementsSection extends StatelessWidget {
     }
   }
 
-  Widget _buildTabBar(BuildContext context, AchievementManager achievementManager, GameState gameState) {
-    final bool isExecutive = theme?.id == 'executive' ?? false;
-    final defaultTheme = defaultStatsTheme; // Fallback theme
-    
-    return DefaultTabController(
-      length: AchievementCategory.values.length,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Enhanced tab bar with better styling and colors
-          Container(
-            decoration: BoxDecoration(
+  // Modified _buildTabBar method to fix text wrapping issues on mobile
+Widget _buildTabBar(BuildContext context, AchievementManager achievementManager, GameState gameState) {
+  final bool isExecutive = theme?.id == 'executive' ?? false;
+  final defaultTheme = defaultStatsTheme; // Fallback theme
+  
+  return DefaultTabController(
+    length: AchievementCategory.values.length,
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Enhanced tab bar with better styling and colors
+        Container(
+          decoration: BoxDecoration(
+            color: isExecutive 
+                ? const Color(0xFF1E2430) 
+                : Colors.blue.shade50,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
               color: isExecutive 
-                  ? const Color(0xFF1E2430) 
-                  : Colors.blue.shade50,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: isExecutive 
-                    ? const Color(0xFF2A3142) 
-                    : Colors.blue.shade200,
-                width: 1,
-              ),
-              boxShadow: isExecutive ? null : [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 2,
-                  spreadRadius: 1,
-                  offset: const Offset(0, 1),
-                ),
-              ],
+                  ? const Color(0xFF2A3142) 
+                  : Colors.blue.shade200,
+              width: 1,
             ),
-            child: TabBar(
-              labelColor: isExecutive 
-                  ? (theme?.titleColor ?? defaultTheme.titleColor)
-                  : Colors.blue.shade800,
-              unselectedLabelColor: isExecutive
-                  ? ((theme?.textColor ?? defaultTheme.textColor).withOpacity(0.5))
-                  : Colors.blue.shade300,
-              indicatorColor: isExecutive
-                  ? (theme?.titleColor ?? defaultTheme.titleColor)
-                  : Colors.blue.shade700,
-              indicatorSize: TabBarIndicatorSize.label,
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              labelStyle: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-                letterSpacing: 0.3,
+            boxShadow: isExecutive ? null : [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 2,
+                spreadRadius: 1,
+                offset: const Offset(0, 1),
               ),
-              unselectedLabelStyle: const TextStyle(
-                fontWeight: FontWeight.normal,
-                fontSize: 14,
-              ),
-              tabs: [
-                for (final category in AchievementCategory.values)
-                  Tab(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(20),
-                        border: isExecutive ? null : Border.all(
-                          color: Colors.transparent,
-                          width: 1,
-                        ),
+            ],
+          ),
+          child: TabBar(
+            labelColor: isExecutive 
+                ? (theme?.titleColor ?? defaultTheme.titleColor)
+                : Colors.blue.shade800,
+            unselectedLabelColor: isExecutive
+                ? ((theme?.textColor ?? defaultTheme.textColor).withOpacity(0.5))
+                : Colors.blue.shade300,
+            indicatorColor: isExecutive
+                ? (theme?.titleColor ?? defaultTheme.titleColor)
+                : Colors.blue.shade700,
+            indicatorSize: TabBarIndicatorSize.label,
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            labelStyle: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+              letterSpacing: 0.3,
+            ),
+            unselectedLabelStyle: const TextStyle(
+              fontWeight: FontWeight.normal,
+              fontSize: 14,
+            ),
+            // NEW: Make tabs use all available width
+            isScrollable: false,
+            // NEW: Added tab bar indicator weight
+            indicatorWeight: 3,
+            tabs: [
+              for (final category in AchievementCategory.values)
+                Tab(
+                  child: Container(
+                    // MODIFIED: Reduced horizontal padding to prevent text wrapping
+                    padding: const EdgeInsets.symmetric(horizontal: 6.0, vertical: 8.0),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20),
+                      border: isExecutive ? null : Border.all(
+                        color: Colors.transparent,
+                        width: 1,
                       ),
+                    ),
+                    // MODIFIED: Added constraints to prevent text wrapping
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
                       child: Text(
                         _getCategoryName(category),
                         style: TextStyle(
@@ -611,24 +620,25 @@ class AchievementsSection extends StatelessWidget {
                       ),
                     ),
                   ),
-              ],
-            ),
+                ),
+            ],
           ),
-          
-          const SizedBox(height: 20),
-          
-          // Achievement list with fixed height
-          SizedBox(
-            height: 370,
-            child: TabBarView(
-              children: [
-                for (final category in AchievementCategory.values)
-                  _buildAchievementList(context, category, achievementManager, gameState, theme ?? defaultTheme),
-              ],
-            ),
+        ),
+        
+        const SizedBox(height: 20),
+        
+        // Achievement list with fixed height
+        SizedBox(
+          height: 370,
+          child: TabBarView(
+            children: [
+              for (final category in AchievementCategory.values)
+                _buildAchievementList(context, category, achievementManager, gameState, theme ?? defaultTheme),
+            ],
           ),
-        ],
-      ),
-    );
-  }
+        ),
+      ],
+    ),
+  );
+}
 }

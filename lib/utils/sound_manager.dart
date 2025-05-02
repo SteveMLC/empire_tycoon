@@ -578,10 +578,6 @@ class SoundManager {
       if (!isEventSoundsEnabled) return;
       await playSound(SoundAssets.eventReincorporation, priority: SoundPriority.high);
    }
-   Future<void> playEventOfflineIncomeSound() async {
-      if (!isEventSoundsEnabled) return;
-      await playSound(SoundAssets.eventOfflineIncome, priority: SoundPriority.normal);
-   }
    Future<void> playEventSpecialSound() async {
       if (!isEventSoundsEnabled) return;
       await playSound(SoundAssets.eventSpecial, priority: SoundPriority.high);
@@ -607,6 +603,10 @@ class SoundManager {
       if (!isFeedbackSoundsEnabled) return;
       // Use the constant from SoundAssets 
       await playSound(SoundAssets.platinumPurchase, priority: SoundPriority.high);
+   }
+
+   Future<void> playEventTriggeredSound() async {
+     await playSound(SoundAssets.eventTriggered, priority: SoundPriority.high);
    }
 
 } 

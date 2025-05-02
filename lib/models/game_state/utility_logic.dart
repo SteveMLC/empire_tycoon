@@ -44,22 +44,7 @@ extension UtilityLogic on GameState {
     }
   }
 
-  // Manual click to earn money
-  void tap() {
-    // Calculate earnings for this tap, applying relevant multipliers
-    double earned = clickValue * clickMultiplier;
-    
-    money += earned;
-    totalEarned += earned;
-    manualEarnings += earned;
-    taps++;
-    lifetimeTaps++; // Increment lifetime taps count for persistent tracking
-
-    String hourKey = TimeUtils.getHourKey(DateTime.now());
-    _updateHourlyEarnings(hourKey, earned); // Track manual earnings hourly
-
-    notifyListeners();
-  }
+  // tap() method has been moved to income_logic.dart
 
   // Buy a click boost (e.g., 2x for 5 minutes)
   bool buyClickBoost() {
@@ -96,31 +81,7 @@ extension UtilityLogic on GameState {
     return money + businessesValue + investmentsValue + realEstateValue;
   }
 
-  // Calculate the total income from all sources per second, applying all multipliers
-  double calculateTotalIncomePerSecond() {
-    // Assume getBusinessIncomePerSecond returns base+level+upgrade income
-    double businessInc = getBusinessIncomePerSecond() * incomeMultiplier; // Apply prestige
-    // Assume getRealEstateIncomePerSecond returns base+owned+upgrade income
-    double realEstateInc = getRealEstateIncomePerSecond() * incomeMultiplier; // Apply prestige
-    // Assume getTotalDividendIncomePerSecond returns base+owned dividend income
-    double dividendInc = getTotalDividendIncomePerSecond();
-    double diversificationBonus = calculateDiversificationBonus();
-    // REMOVED: Apply prestige (* incomeMultiplier * prestigeMultiplier)
-    double adjustedDividendInc = dividendInc * (1 + diversificationBonus);
-
-    // Apply permanent boost globally AFTER summing
-    double baseTotal = businessInc + realEstateInc + adjustedDividendInc;
-    if (isPermanentIncomeBoostActive) {
-       baseTotal *= 1.05;
-    }
-    
-    // Apply income surge globally AFTER summing
-    if (isIncomeSurgeActive) {
-      baseTotal *= 2.0;
-    }
-
-    return baseTotal;
-  }
+  // calculateTotalIncomePerSecond has been moved to income_logic.dart
 
   // Get combined income per second from all sources with their respective multipliers applied
   Map<String, double> getCombinedIncomeBreakdown() {
