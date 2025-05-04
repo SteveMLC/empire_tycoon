@@ -11,7 +11,7 @@ import 'real_estate.dart';
 import 'event.dart';
 import 'game_state_events.dart';
 import 'achievement.dart';
-import '../utils/time_utils.dart';
+import '../utils/time_utils.dart'; // MOVED from offline_income_logic.dart
 import 'investment_holding.dart';
 import '../data/real_estate_data_loader.dart';
 import 'market_event.dart';
@@ -39,6 +39,7 @@ part 'game_state/challenge_logic.dart'; // ADDED: New part file
 part 'game_state/booster_logic.dart';   // ADDED: New part file
 part 'game_state/notification_logic.dart'; // ADDED: New part file
 part 'game_state/income_logic.dart';    // ADDED: New part file
+part 'game_state/offline_income_logic.dart';    // ADDED: New part file for offline income
 
 // Define a limit for how many days of earnings history to keep
 const int _maxDailyEarningsHistory = 30; // Memory Optimization: Limit history size
@@ -47,6 +48,9 @@ class GameState with ChangeNotifier {
   // ADDED: Track last game loop update time for debouncing
   DateTime? _lastUpdateTime;
 
+  // Timer state tracking
+  bool timersActive = false;
+  
   // ADDED: Track last calculated income per second for consistent UI display
   double lastCalculatedIncomePerSecond = 0.0;
 
@@ -916,14 +920,18 @@ class GameState with ChangeNotifier {
   // Dispose timers when GameState is disposed
   @override
   void dispose() {
-    print("🗑️ Disposing GameState and canceling timers...");
-    _saveTimer?.cancel();
-    _updateTimer?.cancel();
-    _investmentUpdateTimer?.cancel();
+    print("🗑️ Disposing GameState resources");
+    // Call the extension method to properly clean up timers
+    if (timersActive) {
+      cancelAllTimers();
+    }
+    
     _boostTimer?.cancel();
-    _adBoostTimer?.cancel(); // ADDED: Cancel ad boost timer
+    _adBoostTimer?.cancel();
+    _platinumClickFrenzyTimer?.cancel();
+    _platinumSteadyBoostTimer?.cancel();
     _achievementNotificationTimer?.cancel();
-    _cancelPlatinumTimers(); // ADDED: Cancel platinum booster timers
+    
     super.dispose();
   }
 
@@ -1273,7 +1281,7 @@ class GameState with ChangeNotifier {
             break;
         case 'platinum_warp':
             // Pre-check in spendPlatinumPoints ensures limit not reached
-            double incomePerSecond = calculateTotalIncomePerSecond();
+            double incomePerSecond = calculateTotalIncomePerSecond(); // FIX: Use correct method for current income rate
             double fourHoursInSeconds = 4.0 * 60 * 60; // 4 hours in seconds
             double incomeAward = incomePerSecond * fourHoursInSeconds;
             
@@ -1689,4 +1697,25 @@ class GameState with ChangeNotifier {
     hourlyEarnings[hourKey] = (hourlyEarnings[hourKey] ?? 0) + amount;
     // Pruning is now done periodically or on load, not every update
   }
+
+  // Public method to cancel all timers (for game_service.dart to use)
+  void cancelAllTimers() {
+    if (timersActive) {
+      print("🛑 External call to cancel all game timers");
+      _cancelAllTimers(); // Call the extension method
+    }
+  }
+  
+  // Public method to set up timers (for game_service.dart to use)
+  void setupTimers() {
+    print("⏱️ External call to set up game timers");
+    _setupTimers(); // Call the extension method
+  }
+
+  // >> START: Offline Income Fields <<
+  double offlineIncome = 0.0;
+  DateTime? offlineIncomeStartTime;
+  DateTime? offlineIncomeEndTime;
+  bool showOfflineIncomeNotification = false;
+  // >> END: Offline Income Fields <<
 }

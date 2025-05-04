@@ -8,6 +8,7 @@ import '../achievement_notification.dart';
 import '../event_notification.dart';
 import '../challenge_notification.dart';
 import '../premium_purchase_notification.dart';
+import '../offline_income_notification.dart';
 
 /// Notification section for displaying achievements, events, and challenges
 class NotificationSection extends StatelessWidget {
@@ -71,6 +72,7 @@ class NotificationSection extends StatelessWidget {
           _buildAchievementNotifications(gameState, context),
           _buildEventNotifications(gameState),
           _buildChallengeNotification(gameState),
+          _buildOfflineIncomeNotification(gameState),
           AnimatedSize(
             duration: const Duration(milliseconds: 300),
             curve: Curves.easeInOut,
@@ -151,6 +153,15 @@ class NotificationSection extends StatelessWidget {
       gameState: gameState,
     );
   }
+
+  Widget _buildOfflineIncomeNotification(GameState gameState) {
+    // If no offline income to show, return empty widget
+    if (!gameState.showOfflineIncomeNotification) {
+      return const SizedBox();
+    }
+    
+    return const OfflineIncomeNotification();
+  }
   
   Widget _buildPremiumNotification(GameState gameState) {
     if (!gameState.showPremiumPurchaseNotification) {
@@ -168,6 +179,7 @@ class NotificationSection extends StatelessWidget {
     return gameState.currentAchievementNotification != null || 
            !gameState.activeEvents.where((e) => !e.isResolved).isEmpty ||
            gameState.activeChallenge != null ||
-           gameState.showPremiumPurchaseNotification;
+           gameState.showPremiumPurchaseNotification ||
+           gameState.showOfflineIncomeNotification;
   }
 } 

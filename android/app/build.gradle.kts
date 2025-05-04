@@ -16,7 +16,7 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace = "com.empire_tycoon"
+    namespace = "com.go7studio.empire_tycoon"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = "27.0.12077973"
 

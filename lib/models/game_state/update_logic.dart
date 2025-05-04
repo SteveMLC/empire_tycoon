@@ -6,9 +6,12 @@ extension UpdateLogic on GameState {
   // Setup game timers
   void _setupTimers() {
     // Cancel existing timers before creating new ones to prevent duplicates
-    _saveTimer?.cancel();
-    _updateTimer?.cancel();
-    _investmentUpdateTimer?.cancel();
+    if (timersActive) {
+      print("⚠️ Timers already active, ensuring proper cleanup before setup");
+      _cancelAllTimers();
+    }
+
+    print("⏱️ Setting up game timers...");
 
     // Setup timer for auto-saving every minute
     // Note: Saving is typically triggered by GameService listening to changes
@@ -29,22 +32,48 @@ extension UpdateLogic on GameState {
         // _updateInvestmentPrices(); // Now called within _updateGameState for micro-updates
       }
     });
-     print("⏱️ Timers setup complete.");
+    
+    timersActive = true;
+    print("⏱️ Timers setup complete.");
+  }
+
+  // Helper method to cancel all timers
+  void _cancelAllTimers() {
+    print("🛑 Cancelling all game timers");
+    _saveTimer?.cancel();
+    _saveTimer = null;
+    
+    _updateTimer?.cancel();
+    _updateTimer = null;
+    
+    _investmentUpdateTimer?.cancel();
+    _investmentUpdateTimer = null;
+    
+    // Reset the timer flag
+    timersActive = false;
+    print("✅ All game timers cancelled");
   }
 
   // Update game state every tick (second)
   void _updateGameState() {
     if (!isInitialized) return; // Don't update if not fully initialized
+    
+    // CRITICAL FIX: Guard against multiple update cycles
+    if (!timersActive) {
+      print("⚠️ [UPDATE] Update called with inactive timers, skipping to prevent duplicate calculation");
+      return;
+    }
 
     DateTime now = DateTime.now();
 
-    // --- ADDED: Debounce Check ---
-    // Only proceed if enough time has passed since the last update (~950ms threshold)
-    if (_lastUpdateTime != null && now.difference(_lastUpdateTime!).inMilliseconds < 950) {
-      // print("DEBUG: _updateGameState skipped due to debounce check.");
-      return; // Skip this update call
+    // ENHANCED Debounce Check: Use a higher threshold (975ms) to be even safer
+    if (_lastUpdateTime != null) {
+      final int msSinceLastUpdate = now.difference(_lastUpdateTime!).inMilliseconds;
+      if (msSinceLastUpdate < 975) {
+        print("🔄 [UPDATE] Skipping update - only ${msSinceLastUpdate}ms since last update (need 975+ms)");
+        return; // Skip this update call
+      }
     }
-    // --- End Debounce Check ---
 
     try {
       // Record the time of this update attempt *before* potential errors
@@ -263,6 +292,14 @@ extension UpdateLogic on GameState {
           totalEarned += totalIncomeThisTick; // totalEarned can now decrease if income is negative
           // Update hourly earnings (aggregate for the hour)
           updateHourlyEarnings(hourKey, totalIncomeThisTick);
+          
+          // CRITICAL FIX: Log current income rate for debugging
+          final double currentIncomeRate = calculateTotalIncomePerSecond();
+          print("💰 [INCOME] Applied ${totalIncomeThisTick.toStringAsFixed(2)} this tick");
+          print("💰 [INCOME] Current income rate: ${currentIncomeRate.toStringAsFixed(2)}/sec");
+          
+          // Track current money value to help detect issues
+          print("💰 [INCOME] Money now: ${money.toStringAsFixed(2)}");
       }
 
       // Update lastCalculatedIncomePerSecond for consistent UI display
@@ -318,5 +355,22 @@ extension UpdateLogic on GameState {
      // _pruneHourlyEarnings(); // Use the hourly pruning logic
   }
 
-  // _updateHourlyEarnings has been moved to income_logic.dart
+  // Helper to update hourly earnings (e.g., older than 7 days)
+  void updateHourlyEarnings(String hourKey, double amount) {
+    // CRITICAL FIX: Safeguard against potential rapid, duplicate income entries 
+    // by using last update time as a reference
+    if (_lastUpdateTime != null) {
+      final timeSinceLastUpdate = DateTime.now().difference(_lastUpdateTime!).inMilliseconds;
+      
+      // Only process if we haven't updated too recently
+      if (timeSinceLastUpdate < 900) {
+        print("⚠️ Skipping hourly earning update - too soon since last update (${timeSinceLastUpdate}ms)");
+        return;
+      }
+    }
+
+    print("💰 Updating hourly earnings for $hourKey with amount: $amount");
+    hourlyEarnings[hourKey] = (hourlyEarnings[hourKey] ?? 0) + amount;
+    _pruneHourlyEarnings(); // Use the hourly pruning logic
+  }
 } 

@@ -514,7 +514,17 @@ extension SerializationLogic on GameState {
     _updateRealEstateUnlocks();
     achievementManager.evaluateAchievements(this); // Evaluate achievements based on loaded state
 
+    // CRITICAL FIX: Ensure timers are properly cancelled before setting up new ones
+    if (timersActive) {
+      print("⚠️ [fromJson] Found active timers, cancelling them before setup");
+      _cancelAllTimers();
+    } else {
+      print("⚠️ [fromJson] Ensuring all timers are cancelled before setup");
+      _cancelAllTimers(); // Use our dedicated method for cleanup
+    }
+    
     // Ensure timers are set up after loading
+    print("⏱️ [fromJson] Setting up new timers after loading state");
     _setupTimers();
 
     // New Executive Stats Theme properties
@@ -544,6 +554,13 @@ extension SerializationLogic on GameState {
     platinumChallengeUsesToday = json['platinumChallengeUsesToday'] ?? 0;
     lastPlatinumChallengeDayTracked = _parseDateTimeSafe(json['lastPlatinumChallengeDayTracked']);
     // --- End Added ---
+
+    // Calculate and apply offline income since last save
+    if (lastSaved != null) { // Check if lastSaved was loaded successfully
+      processOfflineIncome(lastSaved);
+    } else {
+      print("⚠️ Skipping offline income processing: lastSaved time not available.");
+    }
 
     notifyListeners(); // Notify UI after loading is complete
     print("✅ GameState.fromJson complete.");

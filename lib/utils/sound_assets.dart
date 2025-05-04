@@ -35,6 +35,11 @@ class SoundAssets {
   static const String eventStartup = 'assets/sounds/events/startup.mp3';
   static const String eventReincorporation = 'assets/sounds/events/reincorporation.mp3';
   static const String eventSpecial = 'assets/sounds/events/special.mp3';
+  static const String eventClick = 'assets/sounds/events/click.mp3';
+  static const String eventResolve = 'assets/sounds/events/resolve.mp3';
+  static const String eventResolveBad = 'assets/sounds/events/resolve_bad.mp3';
+  static const String eventTriggered = 'assets/sounds/events/event_triggered.mp3';
+  static const String offlineIncome = 'assets/sounds/events/offline_income.mp3';
   
   // Feedback Sounds
   static const String feedback = 'assets/sounds/feedback/feedback.mp3';
@@ -53,11 +58,6 @@ class SoundAssets {
   
   // Platinum Sounds
   static const String platinumPurchase = 'assets/sounds/platinum/platinum_purchase.mp3';
-
-  static const String eventClick = 'assets/sounds/events/click.mp3';
-  static const String eventResolve = 'assets/sounds/events/resolve.mp3';
-  static const String eventResolveBad = 'assets/sounds/events/resolve_bad.mp3';
-  static const String eventTriggered = 'assets/sounds/events/event_triggered.mp3';
 
   // Challenge sounds
   static const String challengeComplete = 'assets/sounds/challenges/challenge_complete.mp3';
@@ -99,6 +99,11 @@ class SoundAssets {
     eventStartup,
     eventReincorporation,
     eventSpecial,
+    eventClick,
+    eventResolve,
+    eventResolveBad,
+    eventTriggered,
+    offlineIncome,
     
     // Feedback Sounds
     feedback,
@@ -117,11 +122,6 @@ class SoundAssets {
     
     // Platinum Sounds
     platinumPurchase,
-
-    eventClick,
-    eventResolve,
-    eventResolveBad,
-    eventTriggered,
 
     challengeComplete,
     challengeFail,

@@ -48,6 +48,21 @@ class GameService {
         _autoSaveTimer!.cancel();
         _autoSaveTimer = null;
       }
+      
+      // CRITICAL FIX: Ensure GameState timers are cancelled before initialization
+      try {
+        print("⏱️ INIT: Ensuring all GameState timers are cancelled");
+        if (_gameState.timersActive) {
+          print("⏱️ INIT: Found active timers, cancelling them");
+          _gameState.cancelAllTimers();
+        } else {
+          print("⏱️ INIT: No active timers flag, but still cleaning up timers to be safe");
+          // Now using public methods instead of accessing internal fields directly
+          _gameState.cancelAllTimers();
+        }
+      } catch (e) {
+        print("⚠️ INIT: Warning cancelling GameState timers: $e");
+      }
 
       try {
         await _soundManager.init();
@@ -107,6 +122,9 @@ class GameService {
 
       _isInitialized = true;
       print("✅ GameService initialized successfully at ${TimeUtils.formatTime(DateTime.now())}");
+
+      // After initialization, schedule a timer check to detect any potential issues
+      Future.delayed(const Duration(seconds: 5), _runTimerDiagnostics);
     } catch (e) {
       print("❌ Error initializing GameService: $e");
       _gameState.isInitialized = true; // Force initialization to allow the app to run
@@ -236,6 +254,24 @@ class GameService {
   Future<void> _loadGame() async {
     DateTime loadStartTime = DateTime.now();
     print('🔍 [${TimeUtils.formatTime(loadStartTime)}] Attempting to load saved game data for key: $_saveKey');
+    
+    // CRITICAL FIX: Ensure all GameState timers are properly cleaned up before loading
+    // This prevents duplicate income calculations after reload
+    try {
+      print('⚙️ [LOAD] Ensuring all game timers are cancelled before loading');
+      // Call cancel method if it exists (for timersActive flag)
+      if (_gameState.timersActive) {
+        print('⚙️ [LOAD] Found active timers, cancelling them');
+        _gameState.cancelAllTimers();
+      } else {
+        // Fallback: still cancel all timers manually to be sure
+        print('⚙️ [LOAD] No active timers flag, but still cleaning up timers to be safe');
+        _gameState.cancelAllTimers();
+      }
+    } catch (e) {
+      print('⚠️ [LOAD] Warning cancelling timers: $e');
+    }
+    
     final String? gameData = _prefs.getString(_saveKey);
 
     if (gameData != null && gameData.isNotEmpty) {
@@ -252,6 +288,9 @@ class GameService {
         DateTime loadEndTime = DateTime.now();
         Duration loadDuration = loadEndTime.difference(loadStartTime);
         print('✅ Game loaded successfully from save in ${loadDuration.inMilliseconds}ms');
+        
+        // CRITICAL FIX: Run diagnostic check after loading to detect any timer issues
+        Future.delayed(const Duration(seconds: 3), _runTimerDiagnostics);
       } catch (e, stackTrace) {
         print('❌ Error loading/parsing game data: $e');
         print('❌ StackTrace: $stackTrace'); // Print stack trace for load errors
@@ -345,7 +384,51 @@ class GameService {
     _soundManager.playEventSpecialSound();
   }
 
+  void playOfflineIncomeSound() {
+    _soundManager.playOfflineIncomeSound();
+  }
+
   void playFeedbackSound() {
     _soundManager.playFeedbackNotificationSound();
+  }
+
+  // Diagnostic method to detect timer issues
+  void _runTimerDiagnostics() {
+    print("🔍 [DIAGNOSTICS] Running timer diagnostics check");
+    
+    int income = 0;
+    final startMoney = _gameState.money;
+    
+    // Wait for 5 seconds and check the money change
+    Future.delayed(const Duration(seconds: 5), () {
+      final endMoney = _gameState.money;
+      final moneyChange = endMoney - startMoney;
+      
+      // Calculate expected income based on income rate
+      final expectedIncome = _gameState.calculateTotalIncomePerSecond() * 5;
+      final tolerance = expectedIncome * 0.1; // 10% tolerance
+      
+      print("🔍 [DIAGNOSTICS] Money changed by $moneyChange over 5 seconds");
+      print("🔍 [DIAGNOSTICS] Expected ~$expectedIncome based on income rate");
+      
+      if (moneyChange > expectedIncome + tolerance) {
+        print("⚠️ [DIAGNOSTICS] POTENTIAL DUPLICATE INCOME DETECTED! Money increasing faster than expected");
+        print("⚠️ [DIAGNOSTICS] This may indicate multiple timers are running simultaneously");
+        
+        // Force timer cleanup and reset as a failsafe
+        print("🔄 [DIAGNOSTICS] Performing emergency timer cleanup and reset");
+        
+        if (_gameState.timersActive) {
+          _gameState.cancelAllTimers();
+        } else {
+          _gameState.cancelAllTimers();
+        }
+        
+        // Restart timers
+        _gameState.setupTimers();
+      } else {
+        print("✅ [DIAGNOSTICS] Timer function appears to be working correctly");
+      }
+    });
   }
 }

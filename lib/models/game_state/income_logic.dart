@@ -98,8 +98,9 @@ extension IncomeLogic on GameState {
     notifyListeners();
   }
 
-  // Helper method to update hourly earnings - use the GameState method
+  // Helper method to update hourly earnings - use the updated method in update_logic.dart
   void _updateHourlyEarnings(String hourKey, double amount) {
+    // Forward to the main implementation in update_logic.dart
     updateHourlyEarnings(hourKey, amount);
   }
 } 
