@@ -39,7 +39,7 @@ class IncomeCalculator {
         if (business.level > 0) {
           double baseIncome = business.getCurrentIncome(isResilienceActive: gameState.isPlatinumResilienceActive); // Use getCurrentIncome
           double incomeWithEfficiency = baseIncome * businessEfficiencyMultiplier;
-          double finalIncome = incomeWithEfficiency * gameState.incomeMultiplier * gameState.prestigeMultiplier;
+          double finalIncome = incomeWithEfficiency * gameState.incomeMultiplier;
           finalIncome *= permanentIncomeBoostMultiplier;
           if (gameState.isIncomeSurgeActive) finalIncome *= 2.0;
 
@@ -77,7 +77,7 @@ class IncomeCalculator {
               double incomeWithLocaleBoosts = basePropertyIncome * foundationMultiplier * yachtMultiplier;
               
               // Apply global multipliers
-              double finalIncome = incomeWithLocaleBoosts * gameState.incomeMultiplier * gameState.prestigeMultiplier;
+              double finalIncome = incomeWithLocaleBoosts * gameState.incomeMultiplier;
               
               // Apply permanent income boost
               finalIncome *= permanentIncomeBoostMultiplier;
@@ -104,32 +104,26 @@ class IncomeCalculator {
       // --- DEBUG END ---
       
       // Dividend Income from Investments
+      double diversificationBonusValue = (1.0 + diversificationBonus);
       for (var investment in gameState.investments) {
         if (investment.owned > 0 && investment.hasDividends()) {
-          // Get total dividend income for this investment (already includes owned shares)
-          double baseTotalDividend = investment.getDividendIncomePerSecond();
+          double baseDividend = investment.getDividendIncomePerSecond() * investment.owned;
+          double portfolioAdjustedDividend = baseDividend * portfolioMultiplier * diversificationBonusValue;
           
-          // Apply portfolio and diversification bonus
-          // Note: Diversification bonus conceptually applies to the portfolio, 
-          // but applying it per investment like this is simpler and achieves a similar effect.
-          double dividendWithBonuses = baseTotalDividend * portfolioMultiplier * (1 + diversificationBonus);
+          // Apply global multipliers
+          double finalDividend = portfolioAdjustedDividend * gameState.incomeMultiplier;
           
-          // Apply standard global multipliers 
-          double finalInvestmentDividend = dividendWithBonuses *
-                                           gameState.incomeMultiplier *
-                                           gameState.prestigeMultiplier;
-                                           
           // Apply permanent income boost
-          finalInvestmentDividend *= permanentIncomeBoostMultiplier;
+          finalDividend *= permanentIncomeBoostMultiplier;
           
           // Apply Income Surge (if applicable)
-          if (gameState.isIncomeSurgeActive) finalInvestmentDividend *= 2.0;
+          if (gameState.isIncomeSurgeActive) finalDividend *= 2.0;
           
           // --- DEBUG START ---
-          // print("    Investment '${investment.name}': BaseTotal=$baseTotalDividend, Final=$finalInvestmentDividend");
-          totalDividendIncome += finalInvestmentDividend;
+          // print("    Investment '${investment.name}': BaseTotal=$baseDividend, Final=$finalDividend");
+          totalDividendIncome += finalDividend;
           // --- DEBUG END ---
-          total += finalInvestmentDividend;
+          total += finalDividend;
         }
       }
       // --- DEBUG START ---

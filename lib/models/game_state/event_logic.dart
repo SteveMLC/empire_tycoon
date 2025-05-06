@@ -99,7 +99,7 @@ extension EventLogic on GameState {
     total += getBusinessIncomePerSecond(); // Already includes multipliers and event effects
 
     // Add real estate income (using the dedicated method)
-    total += getRealEstateIncomePerSecond() * incomeMultiplier * prestigeMultiplier; // Apply multipliers here
+    total += getRealEstateIncomePerSecond() * incomeMultiplier; // Removed prestigeMultiplier from here
 
     // Add dividend income from investments
     double dividendIncome = 0.0;
@@ -110,7 +110,7 @@ extension EventLogic on GameState {
       }
     }
     // Apply multipliers and bonus to total dividend income
-    total += dividendIncome * incomeMultiplier * prestigeMultiplier * (1 + diversificationBonus);
+    total += dividendIncome * incomeMultiplier * (1 + diversificationBonus); // Removed prestigeMultiplier
 
     return total;
   }

@@ -21,12 +21,13 @@ extension PrestigeLogic on GameState {
     int currentPrestigeLevelUsed = 0; // The level being consumed NOW
     int achievedLevels = getAchievedReincorporationLevels(); // Total levels already achieved based on networkWorth
 
-    // Find the highest threshold met by currentNetWorth that hasn't been used yet
-    for (int level = 1; level <= 9; level++) { // Check up to 100T threshold
-      double threshold = baseRequirement * pow(10, level - 1);
-      if (currentNetWorth >= threshold && level > achievedLevels) {
-        currentPrestigeLevelUsed = level;
-        // Don't break, find the highest applicable level
+    // MODIFIED: Only use the NEXT level after the achieved levels
+    // Instead of finding the highest applicable level, we only use the next one
+    int nextLevel = achievedLevels + 1;
+    if (nextLevel <= 9) { // Make sure we don't go beyond our max levels (9 total)
+      double nextThreshold = baseRequirement * pow(10, nextLevel - 1);
+      if (currentNetWorth >= nextThreshold) {
+        currentPrestigeLevelUsed = nextLevel;
       }
     }
 
@@ -96,6 +97,9 @@ extension PrestigeLogic on GameState {
       'isGoldenCursorUnlocked': isGoldenCursorUnlocked,
       'isPremium': isPremium,
       'retroactivePPAwarded': _retroactivePPAwarded,
+      // ADDED: Store current taps to preserve hustle progress
+      'taps': taps,
+      'clickLevel': clickLevel,
     };
 
     // --- Reset Game State --- 
@@ -113,7 +117,7 @@ extension PrestigeLogic on GameState {
     double baseClickValue = 1.5;
     double levelMultiplier = 1.0 + ((clickLevel - 1) * 0.5); // Assuming 50% increase per level
     clickValue = baseClickValue * levelMultiplier * prestigeMultiplier;
-    taps = 0; // Reset taps for the current click level
+    // REMOVED: taps = 0; // No longer reset taps for the current click level
     // clickLevel = 1; // Keep click level
 
     // Note: lifetimeTaps is intentionally not reset
@@ -223,6 +227,10 @@ extension PrestigeLogic on GameState {
     isPremium = preservedState['isPremium'];
     _retroactivePPAwarded = preservedState['retroactivePPAwarded'];
     
+    // ADDED: Restore hustle taps progress
+    taps = preservedState['taps'];
+    clickLevel = preservedState['clickLevel'];
+    
     // Update unlocks based on new starting money and preserved state
     _updateBusinessUnlocks(); // From business_logic.dart
     _updateRealEstateUnlocks(); // From real_estate_logic.dart
@@ -271,17 +279,11 @@ extension PrestigeLogic on GameState {
     double baseRequirement = 1000000.0; // $1 million for first unlock
     int achievedLevels = getAchievedReincorporationLevels(); // Based on persistent networkWorth
 
-    // Calculate how many thresholds the currentNetWorth crosses IN TOTAL
-    int totalThresholdsCrossed = 0;
-    if (currentNetWorth >= baseRequirement) {
-       // Calculate how many power-of-10 thresholds ($1M, $10M, $100M...) have been crossed
-       totalThresholdsCrossed = (log(currentNetWorth / baseRequirement) / log(10)).floor() + 1;
-       // Clamp at a max reasonable number if necessary (e.g., 9 levels for 100T)
-       totalThresholdsCrossed = min(totalThresholdsCrossed, 9);
+    // MODIFIED: Only allow ONE level at a time, even if net worth crosses multiple thresholds
+    int newAvailableUses = 0;
+    if (currentNetWorth >= getMinimumNetWorthForReincorporation()) {
+      newAvailableUses = 1;
     }
-
-    // Available uses = Total thresholds crossed by current net worth - Levels already achieved/used
-    int newAvailableUses = max(0, totalThresholdsCrossed - achievedLevels);
 
     // Update the state if it changed
     if (reincorporationUsesAvailable != newAvailableUses) {

@@ -41,56 +41,40 @@ class ReincorporationUtils {
       passiveBonus = pow(1.2, currentPrestigeLevels).toDouble();
     }
 
-    // Calculate the new prestige level after this reincorporation
-    double baseRequirement = 1000000.0; // $1 million
-    int newThresholdLevel = 0;
-
-    if (currentNetWorth >= baseRequirement) {
-      newThresholdLevel = (log(currentNetWorth / baseRequirement) / log(10)).floor() + 1;
-    }
-
+    // MODIFIED: Only use the next level after currently achieved levels
+    int nextLevel = currentPrestigeLevels + 1;
+    
     // Calculate the expected new network worth after this reincorporation
-    double networkWorthIncrement = newThresholdLevel > 0 ? pow(10, newThresholdLevel - 1).toDouble() / 100 : 0;
+    // Only increment by one level, not skipping any levels
+    double networkWorthIncrement = nextLevel > 0 ? pow(10, nextLevel - 1).toDouble() / 100 : 0;
     double newNetworkWorth = gameState.networkWorth + networkWorthIncrement;
 
     // Count how many threshold levels we'll have used after this reincorporation
-    int newTotalPrestigeLevels = 0;
-    if (newNetworkWorth > 0) {
-      if (newNetworkWorth >= 0.01) newTotalPrestigeLevels++;  // $1M threshold
-      if (newNetworkWorth >= 0.1) newTotalPrestigeLevels++;   // $10M threshold
-      if (newNetworkWorth >= 1.0) newTotalPrestigeLevels++;   // $100M threshold
-      if (newNetworkWorth >= 10.0) newTotalPrestigeLevels++;  // $1B threshold
-      if (newNetworkWorth >= 100.0) newTotalPrestigeLevels++; // $10B threshold
-      if (newNetworkWorth >= 1000.0) newTotalPrestigeLevels++; // $100B threshold
-      if (newNetworkWorth >= 10000.0) newTotalPrestigeLevels++; // $1T threshold
-      if (newNetworkWorth >= 100000.0) newTotalPrestigeLevels++; // $10T threshold
-      if (newNetworkWorth >= 1000000.0) newTotalPrestigeLevels++; // $100T threshold
-    }
+    // Will be exactly one more than current level
+    int newTotalPrestigeLevels = currentPrestigeLevels + 1;
 
     // Calculate new passive bonus with 20% compounding per prestige level
     double newPassiveBonus = pow(1.2, newTotalPrestigeLevels).toDouble();
 
-    // We already calculated these values above, so we can use them for the click multiplier calculation
-    double newNetworkValue = newNetworkWorth; // Reuse value from passive calculation
-
-    // Count total prestige levels that will be used, which determines the multiplier
-    int totalPrestigeLevels = 0;
-    if (newNetworkValue > 0) {
-      if (newNetworkValue >= 0.01) totalPrestigeLevels++;  // $1M threshold
-      if (newNetworkValue >= 0.1) totalPrestigeLevels++;   // $10M threshold
-      if (newNetworkValue >= 1.0) totalPrestigeLevels++;   // $100M threshold
-      if (newNetworkValue >= 10.0) totalPrestigeLevels++;  // $1B threshold
-      if (newNetworkValue >= 100.0) totalPrestigeLevels++; // $10B threshold
-      if (newNetworkValue >= 1000.0) totalPrestigeLevels++; // $100B threshold
-      if (newNetworkValue >= 10000.0) totalPrestigeLevels++; // $1T threshold
-      if (newNetworkValue >= 100000.0) totalPrestigeLevels++; // $10T threshold
-      if (newNetworkValue >= 1000000.0) totalPrestigeLevels++; // $100T threshold
+    // Calculate the new click multiplier (1.0 + 0.1 per level)
+    double newClickMultiplier = 1.0 + (0.1 * newTotalPrestigeLevels);
+    if (newTotalPrestigeLevels > 0 && newClickMultiplier < 1.2) {
+      newClickMultiplier = 1.2; // First level should be 1.2x instead of 1.1x
     }
 
-    // Calculate the new click multiplier (1.0 + 0.1 per level)
-    double newClickMultiplier = 1.0 + (0.1 * totalPrestigeLevels);
-    if (totalPrestigeLevels > 0 && newClickMultiplier < 1.2) {
-      newClickMultiplier = 1.2; // First level should be 1.2x instead of 1.1x
+    // Determine the threshold name for next level being used
+    String thresholdName = "";
+    switch(nextLevel) {
+      case 1: thresholdName = "\$1M"; break;
+      case 2: thresholdName = "\$10M"; break;
+      case 3: thresholdName = "\$100M"; break;
+      case 4: thresholdName = "\$1B"; break;
+      case 5: thresholdName = "\$10B"; break;
+      case 6: thresholdName = "\$100B"; break;
+      case 7: thresholdName = "\$1T"; break;
+      case 8: thresholdName = "\$10T"; break;
+      case 9: thresholdName = "\$100T"; break;
+      default: thresholdName = "next level";
     }
 
     showDialog(
@@ -112,9 +96,13 @@ class ReincorporationUtils {
             Text('Current click multiplier: ${gameState.prestigeMultiplier.toStringAsFixed(2)}x'),
             Text('Current passive bonus: ${passiveBonus.toStringAsFixed(2)}x'),
             const SizedBox(height: 8),
+            Text('Next level to use: $thresholdName threshold', style: TextStyle(fontWeight: FontWeight.bold)),
             Text('New click multiplier: ${newClickMultiplier.toStringAsFixed(2)}x'),
             Text('New passive bonus: ${newPassiveBonus.toStringAsFixed(2)}x (+${(newPassiveBonus - passiveBonus).toStringAsFixed(2)}x)',
                 style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
+            const SizedBox(height: 8),
+            const Text('NOTE: Your tap progress will be preserved with this reincorporation.', 
+                style: TextStyle(fontStyle: FontStyle.italic, color: Colors.blue)),
           ],
         ),
         actions: [
@@ -170,11 +158,14 @@ class ReincorporationUtils {
             const SizedBox(height: 16),
             const Text('How it works:'),
             Text('1. Re-Incorporation uses unlock at \$1M, \$10M, \$100M, \$1B up to \$100T (9 total)'),
-            Text('2. You have ${gameState.reincorporationUsesAvailable} use(s) available now'),
-            Text('3. Next unlock at $formattedThreshold net worth'),
-            const Text('4. Each use provides permanent 20% passive income bonus'),
-            const Text('5. Tap value increases with each prestige level'),
-            const SizedBox(height: 16),
+            Text('2. You can only use ONE re-incorporation level at a time, starting from the lowest'),
+            Text('3. You have ${gameState.reincorporationUsesAvailable} use(s) available now'),
+            Text('4. Next unlock at $formattedThreshold net worth'),
+            const Text('5. Each use provides permanent 20% passive income bonus'),
+            const Text('6. Tap value increases with each prestige level'),
+            const SizedBox(height: 12),
+            const Text('NOTE: Even if your net worth meets multiple thresholds, you must re-incorporate once for each threshold level, starting with the lowest.', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orange)),
+            const SizedBox(height: 12),
             const Text('Your prestige level and multipliers are kept forever, even if you reset your game!'),
           ],
         ),

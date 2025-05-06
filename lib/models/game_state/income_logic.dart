@@ -52,7 +52,7 @@ extension IncomeLogic on GameState {
     
     // Apply global multipliers
     double baseTotal = businessIncome + realEstateIncome + dividendIncome;
-    double withGlobalMultipliers = baseTotal * incomeMultiplier * prestigeMultiplier;
+    double withGlobalMultipliers = baseTotal * incomeMultiplier;
     
     // Apply permanent income boost
     if (isPermanentIncomeBoostActive) {

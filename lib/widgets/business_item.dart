@@ -428,7 +428,7 @@ class _BusinessItemState extends State<BusinessItem> {
             children: [
               const Text('ROI:'),
               Text(
-                '${(business.getROI() * gameState.incomeMultiplier * gameState.prestigeMultiplier).toStringAsFixed(2)}%',
+                '${(business.getROI() * gameState.incomeMultiplier).toStringAsFixed(2)}%',
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   color: Colors.green,

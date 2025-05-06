@@ -153,7 +153,7 @@ class RealEstatePropertyItem extends StatelessWidget {
                       double incomeWithLocaleBoosts = basePropertyIncome * foundationMultiplier * yachtMultiplier;
 
                       // Apply standard global multipliers
-                      double finalPropertyIncome = incomeWithLocaleBoosts * gameState.incomeMultiplier * gameState.prestigeMultiplier;
+                      double finalPropertyIncome = incomeWithLocaleBoosts * gameState.incomeMultiplier;
 
                       // Apply the overall permanent boost
                       finalPropertyIncome *= permanentIncomeBoostMultiplier;

@@ -37,10 +37,17 @@ extension GameStateOfflineIncome on GameState {
     final double incomePerSecond = calculateTotalIncomePerSecond();
     
     // Cap offline time at 24 hours (86400 seconds)
-    final int cappedOfflineSeconds = offlineSeconds > 86400 ? 86400 : offlineSeconds;
+    final int cappedOfflineSeconds = min(offlineSeconds, MAX_OFFLINE_SECONDS);
     
-    // Calculate total offline income
+    // Calculate total offline income - make sure it's a simple multiplication
+    // without any additional hidden multipliers
     final double calculatedOfflineIncome = incomePerSecond * cappedOfflineSeconds;
+    
+    // Debug logs for income calculation
+    print("🔍 DEBUG: Offline income calculation:");
+    print("   - Income per second: ${NumberFormatter.formatCompact(incomePerSecond)}/sec");
+    print("   - Offline duration: $offlineSeconds seconds (capped at $cappedOfflineSeconds)");
+    print("   - Raw calculation: $incomePerSecond × $cappedOfflineSeconds = $calculatedOfflineIncome");
     
     // Store times for notification display
     this.offlineIncomeStartTime = lastSavedTime;

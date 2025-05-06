@@ -36,7 +36,6 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
     double permanentIncomeBoostMultiplier = gameState.isPermanentIncomeBoostActive ? 1.05 : 1.0;
     double displayedTotalREIncome = gameState.getRealEstateIncomePerSecond() *
                                     gameState.incomeMultiplier *
-                                    gameState.prestigeMultiplier *
                                     permanentIncomeBoostMultiplier;
 
     return Scaffold(
@@ -439,13 +438,11 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
     double permanentIncomeBoostMultiplier = gameState.isPermanentIncomeBoostActive ? 1.05 : 1.0;
     double displayedTotalREIncome = gameState.getRealEstateIncomePerSecond() *
                                     gameState.incomeMultiplier *
-                                    gameState.prestigeMultiplier *
                                     permanentIncomeBoostMultiplier;
 
     // Calculate displayed locale income
     double displayedLocaleIncome = locale.getTotalIncomePerSecond() *
                                      gameState.incomeMultiplier *
-                                     gameState.prestigeMultiplier *
                                      permanentIncomeBoostMultiplier;
 
     return ListView(
@@ -740,7 +737,6 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
     double baseIncome = isOwned ? property.getTotalIncomePerSecond() : property.cashFlowPerSecond;
     double displayedIncome = baseIncome *
                                gameState.incomeMultiplier *
-                               gameState.prestigeMultiplier *
                                permanentIncomeBoostMultiplier;
 
     return Container(

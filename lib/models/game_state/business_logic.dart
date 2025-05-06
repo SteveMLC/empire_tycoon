@@ -140,7 +140,7 @@ extension BusinessLogic on GameState {
         // Check if business is affected by an event
         bool hasEvent = hasActiveEventForBusiness(business.id);
         // Apply multipliers
-        total += business.getCurrentIncome() * incomeMultiplier * prestigeMultiplier;
+        total += business.getCurrentIncome() * incomeMultiplier;
       }
     }
     return total;

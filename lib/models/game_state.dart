@@ -540,7 +540,7 @@ class GameState with ChangeNotifier {
             // Apply Platinum Efficiency to base income first
             double income = business.getCurrentIncome() * businessEfficiencyMultiplier;
             // Then apply standard multipliers
-            income *= incomeMultiplier * prestigeMultiplier;
+            income *= incomeMultiplier; // Removed prestigeMultiplier
             // Then apply the overall permanent boost
             income *= permanentIncomeBoostMultiplier;
             // ADDED: Apply Income Surge
@@ -560,7 +560,7 @@ class GameState with ChangeNotifier {
       // Generate real estate income
       double realEstateIncomePerSecond = getRealEstateIncomePerSecond();
       // Apply standard multipliers
-      double realEstateIncomeThisTick = realEstateIncomePerSecond * incomeMultiplier * prestigeMultiplier;
+      double realEstateIncomeThisTick = realEstateIncomePerSecond * incomeMultiplier; // Removed prestigeMultiplier
       // Apply the overall permanent boost
       realEstateIncomeThisTick *= permanentIncomeBoostMultiplier;
       // Apply Income Surge (if applicable)
@@ -583,7 +583,6 @@ class GameState with ChangeNotifier {
                                      (1 + diversificationBonus);
           // Then apply standard multipliers
           investmentDividend *= incomeMultiplier *
-                               prestigeMultiplier *
                                permanentIncomeBoostMultiplier;
           // ADDED: Apply Income Surge
           if (isIncomeSurgeActive) investmentDividend *= 2.0;
@@ -1452,7 +1451,7 @@ class GameState with ChangeNotifier {
     
     // Apply global multipliers
     double baseTotal = businessIncome + realEstateIncome + dividendIncome;
-    double withGlobalMultipliers = baseTotal * incomeMultiplier * prestigeMultiplier;
+    double withGlobalMultipliers = baseTotal * incomeMultiplier;
     
     // Apply permanent income boost
     if (isPermanentIncomeBoostActive) {
