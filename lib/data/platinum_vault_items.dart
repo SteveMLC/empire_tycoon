@@ -221,7 +221,7 @@ List<VaultItem> getVaultItems() {
     VaultItem(
       id: 'platinum_mogul',
       name: 'Platinum Mogul Look',
-      description: 'Unlock the exclusive Executive Theme.',
+      description: 'Unlock exclusive premium mogul avatars for your profile.',
       category: VaultItemCategory.cosmetics,
       type: VaultItemType.oneTime,
       cost: 50,

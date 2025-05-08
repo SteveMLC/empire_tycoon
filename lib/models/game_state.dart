@@ -1717,4 +1717,12 @@ class GameState with ChangeNotifier {
   DateTime? offlineIncomeEndTime;
   bool showOfflineIncomeNotification = false;
   // >> END: Offline Income Fields <<
+
+  // --- Offline Income Ad Bonus State ---
+  bool _offlineIncomeAdWatched = false;
+  bool get offlineIncomeAdWatched => _offlineIncomeAdWatched;
+  void setOfflineIncomeAdWatched(bool value) {
+    _offlineIncomeAdWatched = value;
+    notifyListeners();
+  }
 }

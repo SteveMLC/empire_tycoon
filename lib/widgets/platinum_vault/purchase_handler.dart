@@ -138,8 +138,22 @@ class PurchaseHandler {
         showPurchaseFeedback(context, success, item, gameState);
       }
     } else if (item.id == 'platinum_mogul') {
+      // Special handling for Platinum Mogul to ensure it ONLY unlocks mogul avatars
+      if (gameState.isMogulAvatarsUnlocked) {
+        // Already unlocked
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("You already have the Mogul Avatars unlocked!"),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+      
+      // Spend platinum points and specifically only unlock mogul avatars
       bool success = gameState.spendPlatinumPoints(item.id, item.cost);
       if (success) {
+        // Ensure that ONLY mogul avatars are unlocked, not platinum crest
         _showMogulAvatarsUnlockDialog(context, gameState);
       } else {
         showPurchaseFeedback(context, success, item, gameState);
@@ -509,7 +523,7 @@ class PurchaseHandler {
               showPurchaseFeedback(context, true, VaultItem(
                 id: 'platinum_mogul',
                 name: 'Platinum Mogul',
-                description: 'Unlock premium mogul avatars and executive theme.',
+                description: 'Unlock exclusive premium mogul avatars for your profile.',
                 category: VaultItemCategory.cosmetics,
                 type: VaultItemType.oneTime,
                 cost: 250,

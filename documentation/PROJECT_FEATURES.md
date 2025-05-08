@@ -13,6 +13,17 @@ Empire Tycoon is a mobile idle business tycoon game that transforms strategic fi
 
 ## Core Game Features
 
+### Platinum Points & Vault System
+- **Platinum Points**: Premium currency earned via achievements, challenges, and select in-app purchases.
+- **Platinum Vault**: Dedicated screen for spending platinum points on exclusive upgrades, boosters, cosmetics, and unlockables.
+- **Vault Item Categories**:
+  - Upgrades (permanent boosts to business, investment, or real estate returns)
+  - Boosters (temporary multipliers or time skips)
+  - Cosmetics (avatar frames, platinum crests, business facades, profile themes)
+  - Unlockables (special features, stats themes, UI enhancements)
+  - Events & Challenges (challenge tokens, event skip tickets)
+- **Platinum-specific UI**: Gold/platinum gradients, animations, and glow effects throughout the premium experience.
+
 ### 1. Player Economy System
 - **Starting Money**: Players begin with $500
 - **Currency Display**: Dynamic money display showing current balance
@@ -85,16 +96,22 @@ Empire Tycoon is a mobile idle business tycoon game that transforms strategic fi
 - **Offline Progression**: Calculation of earnings while game is closed
 - **Time-Based Mechanics**: In-game day cycle affecting market behavior
 
-### 8. UI/UX Features
-- **Tabbed Navigation**: Easy access to different gameplay aspects
+### 8. UI/UX & Cosmetic Features
+- **Tabbed Navigation**: Easy access to all gameplay aspects
   - Hustle (tapping) screen
   - Business management
   - Investment portfolio
   - Real estate holdings
   - Statistics dashboard
-- **Visual Feedback**: Animations for player actions
+  - Platinum Vault
+- **Visual Feedback**: Advanced animations for player actions, platinum purchases, and achievements
 - **Material Design**: Modern UI with consistent theme
-- **Mobile-First**: Designed specifically for portrait orientation
+- **Platinum Effects**: Animated gold/platinum gradients, glow, and shimmer on premium elements
+- **Custom Avatars & Frames**: Unlockable platinum crest, spire, and avatar frames for profiles
+- **Theme Customization**: Unlock and apply new stats and UI themes via platinum vault
+- **Category Tabs**: Enhanced navigation for vault items (cosmetics, boosters, upgrades, etc)
+- **Premium Notifications**: Animated achievement, challenge, and purchase notifications
+- **Mobile-First**: Designed for portrait orientation, adaptive layout for all screen sizes
 - **Error Handling**: Graceful error recovery with clear messaging
 
 ### 9. Audio System
@@ -127,11 +144,3 @@ Empire Tycoon is a mobile idle business tycoon game that transforms strategic fi
 ### Responsive Design
 - **Portrait Orientation**: Optimized for one-handed mobile gameplay
 - **Adaptive Layout**: Accommodates different screen sizes
-
-## Future Enhancement Opportunities
-- Time-limited special events
-- Cloud save functionality
-- Social features (leaderboards, sharing)
-- Additional business types and investment options
-- In-game marketplace
-- Custom themes and visual customization

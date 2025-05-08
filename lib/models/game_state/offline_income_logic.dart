@@ -3,13 +3,15 @@ part of '../game_state.dart';
 // Extension for handling offline income logic
 extension GameStateOfflineIncome on GameState {
   // Constants
-  static const int MAX_OFFLINE_SECONDS = 24 * 60 * 60; // 24 hours maximum
+  static const int MAX_OFFLINE_SECONDS = 4 * 60 * 60; // 4 hours maximum
 
   // Getters for offline income state (now read from GameState)
   double get offlineIncome => this.offlineIncome;
   DateTime? get offlineIncomeStartTime => this.offlineIncomeStartTime;
   DateTime? get offlineIncomeEndTime => this.offlineIncomeEndTime;
   bool get showOfflineIncomeNotification => this.showOfflineIncomeNotification;
+
+
 
   // Process offline income based on last saved time
   void processOfflineIncome(DateTime lastSavedTime) {
@@ -71,17 +73,13 @@ extension GameStateOfflineIncome on GameState {
       this.offlineIncome = calculatedOfflineIncome;
       this.offlineIncomeStartTime = lastSavedTime;
       this.offlineIncomeEndTime = now;
-
-      // Add income to totals
-      money += calculatedOfflineIncome;
-      totalEarned += calculatedOfflineIncome;
-      passiveEarnings += calculatedOfflineIncome;
+      this.setOfflineIncomeAdWatched(false); // Reset ad-watched flag on new offline session
 
       // Set flag to show notification
       this.showOfflineIncomeNotification = true;
 
       print(
-          "💰 Applied offline income: ${NumberFormatter.formatCompact(calculatedOfflineIncome)} (from $cappedOfflineSeconds seconds offline at ${NumberFormatter.formatCompact(incomePerSecond)}/sec)");
+          "💰 Calculated offline income: ${NumberFormatter.formatCompact(calculatedOfflineIncome)} (from $cappedOfflineSeconds seconds offline at ${NumberFormatter.formatCompact(incomePerSecond)}/sec)");
     } else {
       // Ensure notification isn't shown if no income earned
       this.offlineIncome = 0.0;
@@ -96,6 +94,23 @@ extension GameStateOfflineIncome on GameState {
     notifyListeners(); // Notify after processing
   }
 
+  /// Collect offline income - applies 2x if ad was watched
+  void collectOfflineIncome() {
+    if (!showOfflineIncomeNotification) return;
+    double payout = offlineIncome;
+    if (offlineIncomeAdWatched) {
+      payout *= 2;
+    }
+    // Add to totals
+    money += payout;
+    totalEarned += payout;
+    passiveEarnings += payout;
+    // Dismiss and reset
+    dismissOfflineIncomeNotification();
+    _offlineIncomeAdWatched = false;
+    notifyListeners();
+  }
+
   // Dismiss the offline income notification
   void dismissOfflineIncomeNotification() {
     if (showOfflineIncomeNotification) {
@@ -104,6 +119,7 @@ extension GameStateOfflineIncome on GameState {
       this.offlineIncome = 0.0;
       this.offlineIncomeStartTime = null;
       this.offlineIncomeEndTime = null;
+      setOfflineIncomeAdWatched(false);
       notifyListeners();
     }
   }

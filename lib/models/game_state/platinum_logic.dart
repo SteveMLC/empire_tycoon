@@ -122,9 +122,6 @@ extension PlatinumLogic on GameState {
         
         // Special case handling for specific items
         switch (itemId) {
-            case 'platinum_crest':
-                isPlatinumCrestUnlocked = true;
-                break;
             case 'platinum_spire':
                 // This will be fully handled in the _applyVaultItemEffect method
                 // which sets the platinumSpireLocaleId based on context
@@ -293,10 +290,12 @@ extension PlatinumLogic on GameState {
             break;
         // --- Cosmetics ---
         case 'platinum_mogul':
-            isExecutiveThemeUnlocked = true;
-            // ADDED: Unlock mogul avatars
+            // ONLY unlock mogul avatars - NOT the executive theme or platinum crest
             isMogulAvatarsUnlocked = true;
-            print("Unlocked Executive Theme and Mogul Avatars (via Platinum Mogul).");
+            // Explicitly make sure Platinum Crest is NOT unlocked by this item
+            // isPlatinumCrestUnlocked remains unchanged
+            // isExecutiveThemeUnlocked remains unchanged
+            print("Unlocked Mogul Avatars (via Platinum Mogul).");
             break;
         case 'platinum_facade': 
             // TODO: Implement UI to select which owned business gets the facade.

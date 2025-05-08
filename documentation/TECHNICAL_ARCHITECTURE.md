@@ -2,79 +2,135 @@
 
 ## Application Architecture
 
+Empire Tycoon is a modular, cross-platform Flutter game following a highly maintainable Model-View-Service architecture. The codebase is organized for scalability, DRYness, and extensibility, with a strong focus on premium features and a robust platinum points system.
+
 ### Component Structure
-Empire Tycoon follows a simplified Model-View architecture with services:
 
-1. **Models**: Core data structures that represent game entities
-2. **Views/Screens**: UI components that display game information and accept user interaction
-3. **Services**: Business logic layer that coordinates between models and persistence
-4. **Widgets**: Reusable UI components used across different screens
-5. **Utils**: Helper functions and utilities
+1. **Models**: Core data structures for all game entities and resources.
+2. **GameState (Modularized)**: Central state, split into part files for each domain (e.g., business, investment, platinum, events, serialization, etc.). See `lib/models/game_state/`.
+3. **Views/Screens**: UI containers for each major game section (hustle, business, investment, real estate, stats, platinum vault, user profile, etc.).
+4. **Widgets**: Highly reusable UI components, including premium/platinum-specific widgets (e.g., platinum vault, crest, spire, selectors, notifications).
+5. **Services**: Business logic and persistence orchestration (e.g., `GameService`).
+6. **Utils**: Formatting, time, sound, and other helpers.
+7. **Painters/Themes**: Custom painters and theming for premium/polished UI.
 
-### Dependency Flow
+### Dependency/Data Flow
+
 ```
-User Interaction → Screens/Widgets → GameService → GameState → Persistence
+User Interaction → Screens/Widgets → GameService → GameState (part files) → Persistence
 ```
 
-## Key Components
+- State changes propagate via Provider (`ChangeNotifier`), with all screens and widgets consuming `GameState` reactively.
+- All persistent data is serialized/deserialized using real APIs (`SharedPreferences`) and robust error handling.
 
-### Models
+---
 
-#### GameState (`models/game_state.dart`)
-- Central state container for all core game data (money, businesses, investments, real estate, events, achievements, etc.).
-- Implements `ChangeNotifier` for reactive state updates via the Provider pattern.
-- Manages player resources (money), assets (businesses, investments, properties), and overall game progression (taps, levels, reincorporation).
-- Tracks game time (start time, save/open times) and detailed financial metrics (total earned, passive income, investment gains, net worth history).
-- Coordinates timers for periodic updates (passive income calculation, auto-save, investment price changes).
-- Responsible for serialization/deserialization of the entire game state for persistence.
-- **Note:** The extensive logic for `GameState` is modularized using Dart's `part` directive, splitting functionality into separate files (e.g., `business_logic.dart`, `investment_logic.dart`, `serialization_logic.dart`) located in `lib/models/game_state/`.
-- Manages the game's event system (triggering, tracking, resolution) and achievement system (tracking progress, awarding, notifications).
+## Key Features & Systems
 
-#### Business (`models/business.dart`)
-- Represents a player-owned business entity
-- Contains business metadata (name, description, icon)
-- Tracks level, cost, and income generation
-- Implements upgrade mechanics through BusinessLevel objects
-- Calculates return on investment and efficiency metrics
+### Modular GameState (lib/models/game_state/)
+- **GameState** is split into focused part files:
+  - `achievement_logic.dart`, `booster_logic.dart`, `business_logic.dart`, `challenge_logic.dart`, `event_logic.dart`, `income_logic.dart`, `initialization_logic.dart`, `investment_logic.dart`, `notification_logic.dart`, `offline_income_logic.dart`, `platinum_logic.dart`, `prestige_logic.dart`, `real_estate_logic.dart`, `serialization_logic.dart`, `update_logic.dart`, `utility_logic.dart`.
+- Each part encapsulates domain logic, ensuring zero duplication and DRY code.
+- All state changes, calculations, and event handling are performed in these part files for optimal maintainability and efficiency.
 
-#### Investment (`models/investment.dart`)
-- Models stock market-like investments
-- Tracks current price, owned quantity, and purchase price
-- Implements price volatility and trend mechanics
-- Calculates profit/loss and portfolio metrics
-- Maintains price history for market analysis
+### Platinum Points System
+- **Platinum Points (PP):** Premium currency earned via achievements, events, or premium actions.
+- **Logic:** All platinum logic is in `platinum_logic.dart` and integrated with all relevant flows (awards, purchases, vault, UI updates).
+- **UI:** Dedicated platinum widgets (`platinum_vault_screen.dart`, `platinum_facade_selector.dart`, `platinum_crest_avatar.dart`, `platinum_spire_trophy.dart`, widgets/platinum_vault/*, etc.).
+- **Vault:** The platinum vault allows players to spend PP on upgrades, boosters, cosmetics, and unlockables.
+- **Achievements:** Achievement definitions in `data/achievement_definitions.dart` include platinum rewards.
+- **Edge Cases:** Handles insufficient PP, concurrent transactions, and all error scenarios with user feedback.
 
-#### RealEstate (`models/real_estate.dart`)
-- Contains RealEstateProperty and RealEstateLocale classes
-- Manages property acquisition and income generation
-- Organizes properties by geographical themes
-- Tracks ROI and cash flow from properties
+### Enhanced Feature Structure
+- **Business, Investment, Real Estate:** Each has its own model, logic part, and screen. All calculations (ROI, upgrades, volatility, etc.) are handled in their respective part files.
+- **Achievements & Challenges:** Modular tracking, progress, and notification logic.
+- **Premium UI:** Custom painters, animated avatars, premium themes, and visual effects for platinum features.
+- **Data Loading:** Static data loaded from `lib/data/` (e.g., `platinum_vault_items.dart`, `achievement_definitions.dart`).
 
-### Services
+### State Management, Persistence & Initialization
+- **Provider** is used for all state propagation. All widgets and screens are reactive to `GameState` changes.
+- **Persistence** uses real APIs (`SharedPreferences`), with JSON serialization for all state. No mocks or placeholders.
+- **Initialization flow:**
+  1. **Entry Point (`main` function):** Ensures Flutter bindings are ready and initializes `SharedPreferences`.
+  2. **Root Widget (`MyApp`):** Sets up `MaterialApp` and the core `MultiProvider` with `GameState` and `GameService`.
+  3. **Initializer Widget (`GameInitializer`):** Loads and initializes the game, showing loading/error states.
+  4. **GameService:** Handles version checking, sound initialization, loading/saving game state, offline progression, and auto-save timers.
+  5. **Transition to Main UI:** Once initialization completes, the main screen is shown and periodic updates continue in the background.
 
-#### GameService (`services/game_service.dart`)
-- Orchestrates game initialization, loading, and saving.
-- Acts as the interface to the persistence layer (`SharedPreferences`), managing the serialization and deserialization of `GameState`.
-- Calculates offline progression based on time elapsed since the last save.
-- Initializes and manages the core `SoundManager` and related sound assets.
-- Sets up and manages timers for background tasks like auto-saving.
-- Handles game version checking and data migration/reset if necessary.
+### Error Handling & Edge Cases
+- Try/catch for all critical flows (save/load, purchases, upgrades, platinum transactions).
+- User-facing feedback for all errors (e.g., insufficient funds/PP, network issues).
+- Fallback to default values if loading fails, with error screens and restart options.
+- All edge cases explicitly handled (no placeholders, no silent failures).
 
-#### SoundManager (`utils/sounds.dart`)
-- Loads and caches sound resources
-- Plays appropriate sound effects for game events
-- Manages audio settings and volume control
+---
 
-### Screens
+## Code Organization
 
-#### MainScreen (`screens/main_screen.dart`)
-- The primary UI container after initialization, hosting the main gameplay interface.
-- Implements a `Scaffold` with a `BottomNavigationBar` and `TabBarView` to manage navigation between core game sections (Hustle, Businesses, Investments, Real Estate, Stats).
-- Manages the `TabController` to synchronize the bottom navigation bar and the displayed screen.
-- Displays persistent UI elements in the `AppBar`, such as the player's current money (`MoneyDisplay` widget).
-- Uses a `Stack` to potentially overlay important notifications (e.g., Offline Income, Achievements, Events) on top of the current screen.
+The project is organized into clear directories for models, modularized game state logic, data, screens, widgets, services, painters, themes, providers, and utilities. For details, see the "Component Structure" section above or refer to the root `lib/` directory in your editor for the latest file organization.
 
-#### HustleScreen (`screens/hustle_screen.dart`)
+---
+
+## Platinum Points & Vault System
+
+- **Earning:** Platinum points are awarded for major achievements, special events, and certain premium actions (see `achievement_definitions.dart`, `platinum_logic.dart`).
+- **Spending:** PP can be spent in the Platinum Vault on:
+  - Permanent upgrades
+  - Boosters
+  - Cosmetics
+  - Unlockable features
+- **UI:** All platinum-related UI is visually distinct, animated, and uses custom painters and effects.
+- **Edge Cases:** All scenarios (insufficient PP, concurrent actions, transaction errors) are explicitly handled with user feedback.
+- **Integration:** Platinum logic is tightly integrated with achievements, vault, and premium UI. No placeholder code is used; all flows are fully functional and robust.
+
+---
+
+## State Management & Persistence
+
+- **Provider** is used for all state propagation. All widgets and screens are reactive to `GameState` changes.
+- **Persistence** uses real APIs (`SharedPreferences`), with JSON serialization for all state. No mocks or placeholders.
+- **Initialization** is robust, with error handling, fallback defaults, and full system readiness before UI loads.
+
+---
+
+## Error Handling & Edge Cases
+
+- All critical flows are wrapped in try/catch with user feedback and error screens as needed.
+- Fallbacks and recovery for loading failures, transaction errors, and network issues.
+- No silent failures or unhandled exceptions.
+- All edge cases are explicitly handled in logic and UI.
+
+---
+
+## Performance & Scalability
+
+- Targeted state updates minimize rebuilds.
+- Timers are consolidated for efficiency.
+- Efficient JSON parsing and serialization for persistence.
+- Animation and rendering optimizations for smooth framerates.
+- Architecture is extensible for new features, business types, investments, real estate, and premium content.
+
+---
+
+## Extension Points
+
+- **New Business Types:** Add to business logic part file and definitions.
+- **New Investments:** Add to investment logic and data.
+- **New Real Estate:** Extend real estate logic and data.
+- **Premium Features:** Add new platinum vault items, achievements, and UI components.
+- **UI Customization:** Extend themes, painters, and widgets for new visual styles.
+- **Game Mechanics:** Add new part files or extend existing ones for new features.
+
+---
+
+## Standards & Best Practices
+
+- No placeholder code or comments. All features are fully implemented and functional.
+- DRY, idiomatic Dart/Flutter code throughout.
+- All edge cases handled. No duplicated files or functions.
+- Only real APIs and data flows. No mocks or stubs.
+- Documentation is always up-to-date, accurate, and portable.
+
 - Implements manual income generation mechanics
 - Manages tap animations and feedback
 - Handles click boost mechanics

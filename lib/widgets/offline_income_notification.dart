@@ -298,48 +298,86 @@ class _OfflineIncomeNotificationState extends State<OfflineIncomeNotification> w
                       ),
                       
                       const SizedBox(height: 20),
-                      
-                      // Collect Button
-                      ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          foregroundColor: Colors.white,
-                          backgroundColor: const Color(0xFF4CAF50),
-                          elevation: 4,
-                          minimumSize: const Size(double.infinity, 48),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          shadowColor: const Color(0xFF4CAF50).withOpacity(0.4),
-                        ),
-                        onPressed: () {
-                          gameState.dismissOfflineIncomeNotification();
-                        },
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(4),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.2),
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.monetization_on,
-                                size: 18,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            const Text(
-                              'COLLECT',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 1,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                      // Watch Ad Button (only if not already watched)
+                       if (!gameState.offlineIncomeAdWatched)
+                         Padding(
+                           padding: const EdgeInsets.only(bottom: 12.0),
+                           child: ElevatedButton.icon(
+                             style: ElevatedButton.styleFrom(
+                               foregroundColor: Colors.white,
+                               backgroundColor: Colors.orange.shade700,
+                               elevation: 2,
+                               minimumSize: const Size(double.infinity, 44),
+                               shape: RoundedRectangleBorder(
+                                 borderRadius: BorderRadius.circular(10),
+                               ),
+                             ),
+                             icon: const Icon(Icons.play_circle_filled),
+                             label: const Text(
+                               'Watch Ad for 2x Income',
+                               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                             ),
+                             onPressed: () async {
+                               // TODO: Integrate real ad logic here
+                               // Simulate ad watch for demo
+                               await showDialog(
+                                 context: context,
+                                 builder: (context) => AlertDialog(
+                                   title: const Text('Watch Ad'),
+                                   content: const Text('Simulate watching a rewarded ad.'),
+                                   actions: [
+                                     TextButton(
+                                       onPressed: () => Navigator.of(context).pop(),
+                                       child: const Text('OK'),
+                                     ),
+                                   ],
+                                 ),
+                               );
+                               gameState.setOfflineIncomeAdWatched(true);
+                             },
+                           ),
+                         ),
+                       // Collect Button
+                       ElevatedButton(
+                         style: ElevatedButton.styleFrom(
+                           foregroundColor: Colors.white,
+                           backgroundColor: gameState.offlineIncomeAdWatched ? Colors.orange.shade700 : const Color(0xFF4CAF50),
+                           elevation: 4,
+                           minimumSize: const Size(double.infinity, 48),
+                           shape: RoundedRectangleBorder(
+                             borderRadius: BorderRadius.circular(12),
+                           ),
+                           shadowColor: const Color(0xFF4CAF50).withOpacity(0.4),
+                         ),
+                         onPressed: () {
+                           gameState.collectOfflineIncome();
+                         },
+                         child: Row(
+                           mainAxisAlignment: MainAxisAlignment.center,
+                           children: [
+                             Container(
+                               padding: const EdgeInsets.all(4),
+                               decoration: BoxDecoration(
+                                 color: Colors.white.withOpacity(0.2),
+                                 shape: BoxShape.circle,
+                               ),
+                               child: const Icon(
+                                 Icons.monetization_on,
+                                 size: 18,
+                               ),
+                             ),
+                             const SizedBox(width: 8),
+                             Text(
+                               gameState.offlineIncomeAdWatched ? 'COLLECT 2x INCOME' : 'COLLECT',
+                               style: const TextStyle(
+                                 fontSize: 16,
+                                 fontWeight: FontWeight.bold,
+                                 letterSpacing: 1,
+                               ),
+                             ),
+                           ],
+                         ),
+                       ),
                     ],
                   ),
                 ),
@@ -426,7 +464,7 @@ class _OfflineIncomeNotificationState extends State<OfflineIncomeNotification> w
           ),
           SizedBox(width: 4),
           Text(
-            'Bonus Income',
+            'Bonus - 2x Income by watching an AD!',
             style: TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.bold,

@@ -43,15 +43,7 @@ Detailed mapping of system component dependencies and integration points:
 - System integration points
 - Extension and integration strategies
 
-### 6. [Server Architecture](./SERVER_ARCHITECTURE.md)
-Documentation of the server setup and deployment architecture:
-- Express.js and Flutter web server integration
-- Development vs. production modes
-- Deployment process and configuration
-- Error handling and resilience measures
-- Performance and security considerations
-
-### 7. [Testing & QA](./TESTING_QA.md)
+### 6. [Testing & QA](./TESTING_QA.md)
 Comprehensive testing strategy and quality assurance processes:
 - Testing categories and methodologies
 - Automated vs. manual testing approaches
@@ -70,7 +62,6 @@ Comprehensive testing strategy and quality assurance processes:
 ### For Development
 - Consult the **Technical Architecture** for understanding code structure
 - Reference the **Dependency Map** for system integration points
-- Study the **Server Architecture** for deployment configuration
 - Use **Project Features** for implementation details
 - Review the **Development Roadmap** to prioritize upcoming work
 
@@ -81,7 +72,6 @@ Comprehensive testing strategy and quality assurance processes:
 - Use these documents to identify opportunities for refinement
 
 ### For DevOps
-- Focus on the **Server Architecture** document for deployment details
 - Reference **Testing & QA** for release quality gates
 - Review the **Dependency Map** for system integration points
 - Check the **Technical Architecture** for performance considerations
@@ -104,7 +94,6 @@ The documentation should be read alongside the source code, particularly:
 - `lib/models/game_state.dart` - Core game state and mechanics
 - `lib/services/game_service.dart` - Game service and business logic
 - `lib/screens/` - UI implementation and player interactions
-- `server.js` - Server configuration and deployment setup
 - `README.md` - Project overview and setup instructions
 
 ## Next Steps
