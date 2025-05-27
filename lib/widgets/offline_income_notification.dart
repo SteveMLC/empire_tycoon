@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/intl.dart';
 import 'dart:math';
 import '../models/game_state.dart';
 import '../services/game_service.dart';
-import '../utils/time_utils.dart';
 import '../utils/number_formatter.dart';
 
 class OfflineIncomeNotification extends StatefulWidget {
@@ -20,10 +18,16 @@ class _OfflineIncomeNotificationState extends State<OfflineIncomeNotification> w
   late Animation<double> _scaleAnimation;
   late Animation<double> _incomeScaleAnimation;
   bool _soundPlayed = false;
+  bool _disposed = false;
 
   @override
   void initState() {
     super.initState();
+    _setupAnimations();
+    _animationController.forward();
+  }
+  
+  void _setupAnimations() {
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 800),
@@ -43,12 +47,11 @@ class _OfflineIncomeNotificationState extends State<OfflineIncomeNotification> w
         curve: const Interval(0.3, 0.7, curve: Curves.elasticOut),
       ),
     );
-    
-    _animationController.forward();
   }
 
   @override
   void dispose() {
+    _disposed = true;
     _animationController.dispose();
     super.dispose();
   }
@@ -68,18 +71,7 @@ class _OfflineIncomeNotificationState extends State<OfflineIncomeNotification> w
     final formattedIncome = NumberFormatter.formatCompact(gameState.offlineIncome);
     
     // Format the time period
-    String timePeriod = 'while you were away';
-    if (gameState.offlineIncomeStartTime != null && gameState.offlineIncomeEndTime != null) {
-      final duration = gameState.offlineIncomeEndTime!.difference(gameState.offlineIncomeStartTime!);
-      if (duration.inMinutes < 60) {
-        timePeriod = '${duration.inMinutes} minutes';
-      } else if (duration.inHours < 24) {
-        timePeriod = '${duration.inHours}h ${duration.inMinutes % 60}m';
-      } else {
-        // Cap at 24 hours as per spec
-        timePeriod = '24 hours';
-      }
-    }
+    final String timePeriod = _formatTimePeriod(gameState);
     
     return FadeTransition(
       opacity: _fadeInAnimation,
@@ -401,18 +393,18 @@ class _OfflineIncomeNotificationState extends State<OfflineIncomeNotification> w
       width: 36,
       height: 36,
       decoration: BoxDecoration(
-        gradient: LinearGradient(
+        gradient: const LinearGradient(
           colors: [
-            Colors.green.shade400,
-            Colors.green.shade600,
+            Color(0xFF66BB6A), // Predefined shade400
+            Color(0xFF43A047), // Predefined shade600
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         shape: BoxShape.circle,
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(
-            color: Colors.green.shade300.withOpacity(0.6),
+            color: Color(0x9981C784), // Predefined shade300 with opacity
             blurRadius: 8,
             spreadRadius: 1,
           ),
@@ -436,25 +428,25 @@ class _OfflineIncomeNotificationState extends State<OfflineIncomeNotification> w
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
+        gradient: const LinearGradient(
           colors: [
-            Colors.amber.shade300,
-            Colors.amber.shade500,
+            Color(0xFFFFD54F), // Predefined amber.shade300
+            Color(0xFFFFCA28), // Predefined amber.shade500
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(12),
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(
-            color: Colors.amber.shade200.withOpacity(0.5),
+            color: Color(0x80FFE082), // Predefined amber.shade200 with opacity
             blurRadius: 6,
             spreadRadius: 0,
-            offset: const Offset(0, 2),
+            offset: Offset(0, 2),
           ),
         ],
       ),
-      child: Row(
+      child: const Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
@@ -474,5 +466,22 @@ class _OfflineIncomeNotificationState extends State<OfflineIncomeNotification> w
         ],
       ),
     );
+  }
+  
+  // Helper method to format time period string
+  String _formatTimePeriod(GameState gameState) {
+    if (gameState.offlineIncomeStartTime == null || gameState.offlineIncomeEndTime == null) {
+      return 'while you were away';
+    }
+    
+    final duration = gameState.offlineIncomeEndTime!.difference(gameState.offlineIncomeStartTime!);
+    if (duration.inMinutes < 60) {
+      return '${duration.inMinutes} minutes';
+    } else if (duration.inHours < 24) {
+      return '${duration.inHours}h ${duration.inMinutes % 60}m';
+    } else {
+      // Cap at 4 hours as per spec
+      return '4 hours';
+    }
   }
 } 

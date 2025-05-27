@@ -23,6 +23,7 @@ import '../data/investment_definitions.dart'; // ADDED: Import for investment da
 import '../data/platinum_vault_items.dart'; // ADDED: Import for vault items
 import '../utils/number_formatter.dart'; // ADDED: Import for formatting
 import 'mogul_avatar.dart'; // ADDED: Import for mogul avatars
+import '../services/income_service.dart'; // ADDED: Import for IncomeService
 
 part 'game_state/initialization_logic.dart';
 part 'game_state/business_logic.dart';
@@ -45,14 +46,24 @@ part 'game_state/offline_income_logic.dart';    // ADDED: New part file for offl
 const int _maxDailyEarningsHistory = 30; // Memory Optimization: Limit history size
 
 class GameState with ChangeNotifier {
-  // ADDED: Track last game loop update time for debouncing
-  DateTime? _lastUpdateTime;
+  // Timestamps for update tracking and optimization
+  DateTime? _lastUpdateTime; // Track last game loop update time for debouncing
+  DateTime? _lastInvestmentMicroUpdateTime; // Track last investment micro-update time
+  DateTime? _lastDailyCheckTime; // Track last daily check time
+  DateTime? _lastNetWorthUpdateTime; // Track last net worth update time
 
   // Timer state tracking
   bool timersActive = false;
   
-  // ADDED: Track last calculated income per second for consistent UI display
+  // ADDED: Track calculation state
+  bool _isCalculatingIncome = false;
   double lastCalculatedIncomePerSecond = 0.0;
+  
+  // ADDED: Timestamp tracking to prevent duplicate income calculations
+  final List<String> _processedIncomeTimestamps = <String>[];
+  
+  // ADDED: Global update ID tracking to prevent duplicate updates
+  String? _lastProcessedUpdateId;
 
   double money = 500.0;
   double totalEarned = 500.0;
@@ -328,6 +339,9 @@ class GameState with ChangeNotifier {
   Timer? _updateTimer;
   Timer? _investmentUpdateTimer;
 
+  // Income tracking to prevent duplicate application
+  DateTime? _lastIncomeApplicationTime;
+
   // Future for tracking real estate initialization
   Future<void>? realEstateInitializationFuture;
 
@@ -446,8 +460,33 @@ class GameState with ChangeNotifier {
   }
 
   void _updateGameState() {
+    if (!isInitialized) return; // Skip if not initialized
+    
+    final DateTime now = DateTime.now();
+    final String hourKey = TimeUtils.getHourKey(now);
+    final String dayKey = TimeUtils.getDayKey(now);
+    
+    // CRITICAL SAFEGUARD: Prevent duplicate income application
+    // If the last income application was too recent, skip this update
+    if (_lastIncomeApplicationTime != null) {
+      final int msSinceLastIncome = now.difference(_lastIncomeApplicationTime!).inMilliseconds;
+      if (msSinceLastIncome < 950) { // Almost a full second to prevent edge cases
+        print("⚠️ INCOME SAFEGUARD: Skipping income application - too soon (${msSinceLastIncome}ms since last)");
+        return; // Skip update entirely if too soon
+      }
+    }
+    
+    // Apply all daily updates if needed
+    if (currentDay != now.weekday) {
+      currentDay = now.weekday;
+      _updateInvestments(); // Update investments on day change
+      _updateInvestmentPrices(); // Update prices on day change
+    }
+
     try {
-      DateTime now = DateTime.now();
+      // Track the last time income was applied to prevent duplicate income
+      _lastIncomeApplicationTime = now;
+
       String hourKey = TimeUtils.getHourKey(now);
 
       // --- ADDED: Check for Business Upgrades --- 
@@ -565,7 +604,7 @@ class GameState with ChangeNotifier {
       realEstateIncomeThisTick *= permanentIncomeBoostMultiplier;
       // Apply Income Surge (if applicable)
       if (isIncomeSurgeActive) realEstateIncomeThisTick *= 2.0;
-      if (realEstateIncomeThisTick > 0) {
+      if (realEstateIncomeThisTick != 0) { // Changed from > 0 to != 0 to handle negative income
         money += realEstateIncomeThisTick;
         totalEarned += realEstateIncomeThisTick;
         realEstateEarnings += realEstateIncomeThisTick;
@@ -589,7 +628,7 @@ class GameState with ChangeNotifier {
           dividendIncomeThisTick += investmentDividend;
         }
       }
-      if (dividendIncomeThisTick > 0) {
+      if (dividendIncomeThisTick != 0) { // Changed from > 0 to != 0 to handle negative income
         money += dividendIncomeThisTick;
         totalEarned += dividendIncomeThisTick;
         investmentDividendEarnings += dividendIncomeThisTick;
@@ -650,109 +689,8 @@ class GameState with ChangeNotifier {
     }
   }
 
-  void _generateMarketEvents() {
-    if (Random().nextDouble() < 0.15) { // 15% chance per day
-      MarketEvent newEvent = _createRandomMarketEvent();
-      activeMarketEvents.add(newEvent);
-    }
-
-    activeMarketEvents.removeWhere((event) {
-      event.remainingDays--;
-      return event.remainingDays <= 0;
-    });
-  }
-
-  void _applyMarketEventEffects(Investment investment) {
-    for (MarketEvent event in activeMarketEvents) {
-      if (event.categoryImpacts.containsKey(investment.category)) {
-        double impact = event.categoryImpacts[investment.category]!;
-        investment.currentPrice *= impact;
-      }
-    }
-  }
-
-  MarketEvent _createRandomMarketEvent() {
-    List<String> eventTypes = [
-      'boom', 'crash', 'volatility', 'regulation', 'innovation'
-    ];
-    String eventType = eventTypes[Random().nextInt(eventTypes.length)];
-
-    switch (eventType) {
-      case 'boom': return _createBoomEvent();
-      case 'crash': return _createCrashEvent();
-      case 'volatility': return _createVolatilityEvent();
-      case 'regulation': return _createRegulationEvent();
-      case 'innovation': return _createInnovationEvent();
-      default: return _createBoomEvent();
-    }
-  }
-
-  MarketEvent _createBoomEvent() {
-    List<String> categories = _getInvestmentCategories();
-    int numCategories = Random().nextInt(2) + 1;
-    List<String> affectedCategories = [];
-    for (int i = 0; i < numCategories && categories.isNotEmpty; i++) {
-      int index = Random().nextInt(categories.length);
-      affectedCategories.add(categories.removeAt(index));
-    }
-    Map<String, double> impacts = { for (var cat in affectedCategories) cat: 1.0 + (Random().nextDouble() * 0.06 + 0.02) }; // +2% to +8%
-    String primaryCategory = affectedCategories.isNotEmpty ? affectedCategories.first : "Market";
-    return MarketEvent(
-      name: '$primaryCategory Boom', description: 'A market boom is happening in the $primaryCategory sector!',
-      categoryImpacts: impacts, durationDays: Random().nextInt(3) + 2, // 2-4 days
-    );
-  }
-
-  MarketEvent _createCrashEvent() {
-    List<String> categories = _getInvestmentCategories();
-    int numCategories = Random().nextInt(2) + 1;
-    List<String> affectedCategories = [];
-     for (int i = 0; i < numCategories && categories.isNotEmpty; i++) {
-      int index = Random().nextInt(categories.length);
-      affectedCategories.add(categories.removeAt(index));
-    }
-    Map<String, double> impacts = { for (var cat in affectedCategories) cat: 1.0 - (Random().nextDouble() * 0.06 + 0.02) }; // -2% to -8%
-    String primaryCategory = affectedCategories.isNotEmpty ? affectedCategories.first : "Market";
-    return MarketEvent(
-      name: '$primaryCategory Crash', description: 'A market crash is affecting the $primaryCategory sector!',
-      categoryImpacts: impacts, durationDays: Random().nextInt(3) + 2, // 2-4 days
-    );
-  }
-
-  MarketEvent _createVolatilityEvent() {
-    List<String> categories = _getInvestmentCategories();
-    String category = categories.isNotEmpty ? categories[Random().nextInt(categories.length)] : "Market";
-    double impact = Random().nextBool() ? 1.1 : 0.9; // Start +10% or -10%
-    Map<String, double> impacts = { category: impact };
-    return MarketEvent(
-      name: 'Market Volatility', description: 'The $category market is experiencing high volatility!',
-      categoryImpacts: impacts, durationDays: Random().nextInt(5) + 3, // 3-7 days
-    );
-  }
-
-  MarketEvent _createRegulationEvent() {
-    List<String> categories = _getInvestmentCategories();
-    String category = categories.isNotEmpty ? categories[Random().nextInt(categories.length)] : "Market";
-    Map<String, double> impacts = { category: 0.97 }; // -3%
-    return MarketEvent(
-      name: 'New Regulations', description: 'New regulations are affecting the $category sector.',
-      categoryImpacts: impacts, durationDays: Random().nextInt(3) + 5, // 5-7 days
-    );
-  }
-
-  MarketEvent _createInnovationEvent() {
-    List<String> categories = _getInvestmentCategories();
-    String category = categories.isNotEmpty ? categories[Random().nextInt(categories.length)] : "Market";
-    Map<String, double> impacts = { category: 1.05 }; // +5%
-    return MarketEvent(
-      name: 'Technological Breakthrough', description: 'A breakthrough innovation is boosting the $category sector!',
-      categoryImpacts: impacts, durationDays: Random().nextInt(5) + 3, // 3-7 days
-    );
-  }
-
-  List<String> _getInvestmentCategories() {
-    return investments.map((i) => i.category).toSet().toList();
-  }
+  // Market event methods have been moved to investment_logic.dart
+  // This reduces code duplication and centralizes market event functionality
 
   double calculateDiversificationBonus() {
     Set<String> categories = {};
@@ -1604,87 +1542,10 @@ class GameState with ChangeNotifier {
   }
 
   // Calculate the current income per second
-  double _calculateIncomePerSecond() {
-    return calculateTotalIncomePerSecond();
-  }
+  // Income calculation methods have been moved to income_logic.dart
 
-  // ADDED: Method to manage platinum challenge daily limits
-  void checkAndResetPlatinumChallengeLimit(DateTime now) {
-    // If never used before, initialize
-    if (lastPlatinumChallengeDayTracked == null) {
-      lastPlatinumChallengeDayTracked = DateTime(now.year, now.month, now.day);
-      platinumChallengeUsesToday = 0;
-      return;
-    }
-    
-    // Check if it's a new day
-    DateTime currentDay = DateTime(now.year, now.month, now.day);
-    if (currentDay.isAfter(lastPlatinumChallengeDayTracked!)) {
-      // Reset the limit for the new day
-      lastPlatinumChallengeDayTracked = currentDay;
-      platinumChallengeUsesToday = 0;
-      print("INFO: Platinum Challenge daily limit reset (0/2)");
-    }
-  }
-  
-  // ADDED: Method to check platinum challenge eligibility
-  bool canStartPlatinumChallenge(DateTime now) {
-    checkAndResetPlatinumChallengeLimit(now); // UPDATED call to public method
-    
-    // Check if there's already an active challenge
-    if (activeChallenge != null && activeChallenge!.isActive(now)) {
-      print("DEBUG: Cannot start Platinum Challenge: Already active.");
-      return false;
-    }
-    
-    // Check if we've reached the daily limit (2x per day)
-    if (platinumChallengeUsesToday >= 2) {
-      print("DEBUG: Cannot start Platinum Challenge: Daily limit (2) reached.");
-      return false;
-    }
-    
-    return true;
-  }
-  
-  // UPDATED: Method to check and complete challenges in the update loop
-  void _checkActiveChallenge(DateTime now) {
-    if (activeChallenge == null) return;
-
-    // Check for success FIRST, even if time hasn't expired
-    if (activeChallenge!.wasSuccessful(totalEarned)) {
-      // Award PP for successful challenge
-      platinumPoints += activeChallenge!.rewardPP;
-      showPPAnimation = true; // Trigger UI animation
-      print("SUCCESS: Platinum Challenge completed! Awarded ${activeChallenge!.rewardPP} PP");
-      
-      // Create a temporary achievement-like notification for display
-      Achievement challengeComplete = Achievement(
-        id: 'temp_challenge_complete_${DateTime.now().millisecondsSinceEpoch}',
-        name: 'Challenge Completed!', 
-        description: 'Successfully doubled your hourly income rate within the time limit!',
-        icon: Icons.emoji_events,
-        rarity: AchievementRarity.rare, // Use rare style for fancy display
-        ppReward: activeChallenge!.rewardPP,
-        category: AchievementCategory.progress, // Added category
-      );
-      
-      // Queue the notification - sound will play through the achievement notification system
-      queueAchievementsForDisplay([challengeComplete]);
-      
-      // Clear the completed challenge
-      activeChallenge = null;
-      notifyListeners();
-      return; // Exit early since it's completed
-    }
-
-    // If not successful yet, check if the time has expired
-    if (!activeChallenge!.isActive(now)) {
-      print("FAILED: Platinum Challenge expired without reaching the goal.");
-      // Clear the expired challenge
-      activeChallenge = null;
-      notifyListeners();
-    }
-  }
+  // Platinum challenge methods have been moved to challenge_logic.dart
+  // This reduces code duplication and centralizes challenge functionality
 
   // Platinum Challenge tracking
   DateTime? platinumChallengeLastUsedTime; // Tracks last usage for limit
@@ -1692,23 +1553,45 @@ class GameState with ChangeNotifier {
   DateTime? lastPlatinumChallengeDayTracked; // For daily reset
 
   // Utility method to update hourly earnings (used by multiple extensions to avoid conflicts)
+  // This public method delegates to the implementation in update_logic.dart
   void updateHourlyEarnings(String hourKey, double amount) {
+    // CRITICAL FIX: Don't create a new extension instance for each call
+    // Instead, directly call the method which preserves the safeguards against duplicate updates
+    // The implementation in update_logic.dart handles duplicate prevention and periodic pruning
     hourlyEarnings[hourKey] = (hourlyEarnings[hourKey] ?? 0) + amount;
-    // Pruning is now done periodically or on load, not every update
+    
+    // Only prune periodically to reduce overhead
+    if (hourlyEarnings.length > 45) { // Using the same threshold as in update_logic.dart
+      // Pruning logic will be handled by the update loop
+    }
   }
 
   // Public method to cancel all timers (for game_service.dart to use)
   void cancelAllTimers() {
     if (timersActive) {
       print("🛑 External call to cancel all game timers");
-      _cancelAllTimers(); // Call the extension method
+      _cancelAllTimers(); // Call the extension method directly to preserve state
     }
   }
   
-  // Public method to set up timers (for game_service.dart to use)
+  // This method is kept for backward compatibility but delegates to the centralized timer system
+  // Do not call this directly - GameService manages all timers
+  @deprecated
   void setupTimers() {
-    print("⏱️ External call to set up game timers");
-    _setupTimers(); // Call the extension method
+    print("⏱️ DEPRECATED: External call to set up game timers - using centralized system instead");
+    // No longer setting up timers directly in GameState
+  }
+  
+  // Public method to update game state (called by centralized timer in GameService)
+  void updateGameState() {
+    // CRITICAL FIX: Don't create a new extension instance for each call
+    // Instead, use direct method call which preserves the extension's internal state tracking
+    _updateGameState(); // Call the extension method directly to preserve safeguards
+  }
+  
+  // Public method to update investment prices (called by centralized timer in GameService)
+  void updateInvestmentPrices() {
+    _updateInvestmentPrices(); // Call the extension method directly to preserve state
   }
 
   // >> START: Offline Income Fields <<

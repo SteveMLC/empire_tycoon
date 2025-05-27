@@ -73,21 +73,48 @@ extension RealEstateLogic on GameState {
   double getRealEstateIncomePerSecond() {
     double total = 0.0;
     for (var locale in realEstateLocales) {
-      double localeIncome = 0;
       if (locale.unlocked) {
+        // Get locale-specific multipliers
         bool isFoundationApplied = platinumFoundationsApplied.containsKey(locale.id);
         bool isYachtDocked = platinumYachtDockedLocaleId == locale.id;
         double foundationMultiplier = isFoundationApplied ? 1.05 : 1.0;
         double yachtMultiplier = isYachtDocked ? 1.05 : 1.0;
-        localeIncome = locale.getTotalIncomePerSecond() * foundationMultiplier;
-
-        // Apply Yacht boost multiplicatively AFTER foundation boost
-        localeIncome *= yachtMultiplier;
+        
+        // CRITICAL FIX: Check for active events affecting this locale
+        bool hasActiveEvent = hasActiveEventForLocale(locale.id);
+        
+        // Process each property in the locale
+        for (var property in locale.properties) {
+          if (property.owned > 0) {
+            // Get base income per property
+            double basePropertyIncome = property.getTotalIncomePerSecond(isResilienceActive: isPlatinumResilienceActive);
+            
+            // Apply locale-specific multipliers
+            double incomeWithLocaleBoosts = basePropertyIncome * foundationMultiplier * yachtMultiplier;
+            
+            // Apply global income multiplier
+            double incomeWithGlobalMultiplier = incomeWithLocaleBoosts * incomeMultiplier;
+            
+            // Apply permanent income boost if active
+            if (isPermanentIncomeBoostActive) {
+              incomeWithGlobalMultiplier *= 1.05;
+            }
+            
+            // Apply income surge if active
+            if (isIncomeSurgeActive) {
+              incomeWithGlobalMultiplier *= 2.0;
+            }
+            
+            // CRITICAL FIX: Apply event penalty if locale is affected
+            if (hasActiveEvent) {
+              incomeWithGlobalMultiplier *= GameStateEvents.NEGATIVE_EVENT_MULTIPLIER;
+            }
+            
+            total += incomeWithGlobalMultiplier;
+          }
+        }
       }
-      total += localeIncome;
     }
-    // ADDED: Apply Income Surge
-    if (isIncomeSurgeActive) total *= 2.0;
     return total;
   }
 

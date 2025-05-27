@@ -120,6 +120,16 @@ class Business {
     return baseIncome;
   }
   
+  // Get expected income after purchase (for unpurchased businesses)
+  double getExpectedIncomeAfterPurchase() {
+    // For unpurchased businesses (level 0), return the income of the first level
+    if (level == 0 && levels.isNotEmpty) {
+      return levels[0].incomePerSecond;
+    }
+    // For already owned businesses, return current income
+    return getIncomePerSecond();
+  }
+
   // Get next level's income per second
   double getNextLevelIncomePerSecond() {
     // Return income of the level currently being upgraded TO, or the next level if not upgrading

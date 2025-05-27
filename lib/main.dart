@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'models/game_state.dart';
 import 'screens/main_screen.dart';
 import 'services/game_service.dart';
+import 'services/income_service.dart';
 import 'screens/platinum_vault_screen.dart';
 
 void main() async {
@@ -31,9 +32,11 @@ class MyApp extends StatelessWidget {
           print('Created GameService with prefs: ${prefs.getKeys()}');
           return gameService;
         }),
+        // Add IncomeService to the provider tree for consistent dependency injection
+        ChangeNotifierProvider(create: (context) => IncomeService()),
       ],
       child: MaterialApp(
-        title: 'Empire Tycoon',
+        title: 'Investment Account',
         theme: ThemeData(
           primarySwatch: Colors.blue,
           scaffoldBackgroundColor: Colors.grey[100],

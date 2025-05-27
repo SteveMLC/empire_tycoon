@@ -170,7 +170,8 @@ extension SerializationLogic on GameState {
   }
 
   // Load game from JSON - NOW ASYNC
-  Future<void> fromJson(Map<String, dynamic> json) async { // <-- Mark as async
+  // UPDATED: Added optional incomeService parameter to ensure consistent income calculation
+  Future<void> fromJson(Map<String, dynamic> json, {dynamic incomeService}) async { // <-- Mark as async
      print("🔄 GameState.fromJson starting...");
     // Reset defaults before loading to ensure clean state
     // resetToDefaults(); // NO! This clears lifetime stats. Load over existing defaults.
@@ -557,7 +558,8 @@ extension SerializationLogic on GameState {
 
     // Calculate and apply offline income since last save
     if (lastSaved != null) { // Check if lastSaved was loaded successfully
-      processOfflineIncome(lastSaved);
+      // UPDATED: Pass the IncomeService to ensure consistent income calculation
+      processOfflineIncome(lastSaved, incomeService: incomeService);
     } else {
       print("⚠️ Skipping offline income processing: lastSaved time not available.");
     }
@@ -567,16 +569,34 @@ extension SerializationLogic on GameState {
   }
 
   // Helper to prune old hourly earnings (e.g., older than 7 days)
+  // Optimized pruning for hourly earnings with fixed-size limit
   void _pruneHourlyEarnings() {
+    // If we're under the limit, no need to prune
+    if (hourlyEarnings.length <= UpdateLogic._maxHistoryEntries) {
+      return;
+    }
+    
+    // Two-step approach: First remove old entries (time-based), then if still over limit, remove oldest entries
     final cutoff = DateTime.now().subtract(const Duration(days: 7));
-    List<String> keysToRemove = [];
-    for (String key in hourlyEarnings.keys) {
+    final List<String> keysToRemove = [];
+    final List<MapEntry<String, DateTime>> validEntries = [];
+    
+    // Step 1: Identify old entries and collect valid entries with their timestamps
+    for (final String key in hourlyEarnings.keys) {
       try {
-        List<String> parts = key.split('-');
+        final List<String> parts = key.split('-');
         if (parts.length == 4) {
-          DateTime entryTime = DateTime(int.parse(parts[0]), int.parse(parts[1]), int.parse(parts[2]), int.parse(parts[3]));
+          final DateTime entryTime = DateTime(
+            int.parse(parts[0]), 
+            int.parse(parts[1]), 
+            int.parse(parts[2]), 
+            int.parse(parts[3])
+          );
+          
           if (entryTime.isBefore(cutoff)) {
-            keysToRemove.add(key);
+            keysToRemove.add(key); // Old entry, mark for removal
+          } else {
+            validEntries.add(MapEntry(key, entryTime)); // Valid entry, keep track with timestamp
           }
         } else {
           keysToRemove.add(key); // Invalid key format
@@ -586,30 +606,77 @@ extension SerializationLogic on GameState {
         print("Error pruning hourly earnings key: $key, Error: $e");
       }
     }
-    if (keysToRemove.isNotEmpty) {
-       print("🧹 Pruning ${keysToRemove.length} old hourly earnings entries.");
-       for (String key in keysToRemove) {
-         hourlyEarnings.remove(key);
-       }
+    
+    // Remove old entries
+    for (final String key in keysToRemove) {
+      hourlyEarnings.remove(key);
+    }
+    
+    // Step 2: If still over limit, sort valid entries by time and remove oldest ones
+    if (hourlyEarnings.length > UpdateLogic._maxHistoryEntries) {
+      // Sort by time (oldest first)
+      validEntries.sort((a, b) => a.value.compareTo(b.value));
+      
+      // Calculate how many to remove
+      final int excessEntries = hourlyEarnings.length - UpdateLogic._maxHistoryEntries;
+      
+      // Remove oldest entries up to the limit
+      for (int i = 0; i < excessEntries && i < validEntries.length; i++) {
+        hourlyEarnings.remove(validEntries[i].key);
+      }
     }
   }
 
   // Helper to prune old persistent net worth history (e.g., older than 7 days)
-   void _prunePersistentNetWorthHistory() {
+  // Optimized pruning for net worth history with fixed-size limit
+  void _prunePersistentNetWorthHistory() {
+    // If we're under the limit, no need for aggressive pruning
+    if (persistentNetWorthHistory.length <= UpdateLogic._maxHistoryEntries) {
+      // Just do basic time-based pruning
       final cutoffMs = DateTime.now().subtract(const Duration(days: 7)).millisecondsSinceEpoch;
-      List<int> keysToRemove = [];
-      for (int key in persistentNetWorthHistory.keys) {
-        if (key < cutoffMs) {
-          keysToRemove.add(key);
+      persistentNetWorthHistory.removeWhere((key, _) => key < cutoffMs);
+      return;
+    }
+    
+    // Two-step approach: First remove old entries, then if still over limit, remove with sampling
+    final cutoffMs = DateTime.now().subtract(const Duration(days: 7)).millisecondsSinceEpoch;
+    
+    // Step 1: Remove entries older than cutoff
+    persistentNetWorthHistory.removeWhere((key, _) => key < cutoffMs);
+    
+    // Step 2: If still over limit, use intelligent sampling to keep a representative dataset
+    if (persistentNetWorthHistory.length > UpdateLogic._maxHistoryEntries) {
+      // Sort keys by timestamp (oldest first)
+      final List<int> sortedKeys = persistentNetWorthHistory.keys.toList()
+        ..sort();
+      
+      // Calculate how many entries to keep
+      final int entriesToKeep = UpdateLogic._maxHistoryEntries;
+      
+      // If we have more entries than we want to keep
+      if (sortedKeys.length > entriesToKeep) {
+        // Create a new map with sampled entries
+        final Map<int, double> sampledHistory = {};
+        
+        // Always keep newest and oldest entries
+        sampledHistory[sortedKeys.first] = persistentNetWorthHistory[sortedKeys.first]!;
+        sampledHistory[sortedKeys.last] = persistentNetWorthHistory[sortedKeys.last]!;
+        
+        // Sample the rest with even distribution
+        final int step = (sortedKeys.length - 2) ~/ (entriesToKeep - 2);
+        for (int i = 1; i < entriesToKeep - 1; i++) {
+          final int index = 1 + (i * step);
+          if (index < sortedKeys.length - 1) {
+            sampledHistory[sortedKeys[index]] = persistentNetWorthHistory[sortedKeys[index]]!;
+          }
         }
+        
+        // Replace the original map with our sampled version
+        persistentNetWorthHistory.clear();
+        persistentNetWorthHistory.addAll(sampledHistory);
       }
-       if (keysToRemove.isNotEmpty) {
-         print("🧹 Pruning ${keysToRemove.length} old persistent net worth entries.");
-         for (int key in keysToRemove) {
-            persistentNetWorthHistory.remove(key);
-         }
-       }
-   }
+    }
+  }
 
   // Helper function to safely parse DateTime strings
   DateTime? _parseDateTimeSafe(String? dateString) {

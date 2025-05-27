@@ -87,7 +87,7 @@ extension UtilityLogic on GameState {
   Map<String, double> getCombinedIncomeBreakdown() {
     double businessIncome = getBusinessIncomePerSecond() * incomeMultiplier; // Apply prestige
     double realEstateIncome = getRealEstateIncomePerSecond() * incomeMultiplier; // Apply prestige
-    double dividendIncomeBase = getTotalDividendIncomePerSecond();
+    double dividendIncomeBase = getDividendIncomePerSecond(); // FIXED: Use the renamed method
     double diversificationBonus = calculateDiversificationBonus();
     double investmentIncome = dividendIncomeBase * (1 + diversificationBonus);
 

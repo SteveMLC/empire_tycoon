@@ -137,10 +137,31 @@ extension BusinessLogic on GameState {
     double total = 0.0;
     for (var business in businesses) {
       if (business.level > 0) {
-        // Check if business is affected by an event
+        // Get base income with efficiency multiplier if active
+        double baseIncome = business.getCurrentIncome(isResilienceActive: isPlatinumResilienceActive);
+        double incomeWithEfficiency = baseIncome * (isPlatinumEfficiencyActive ? 1.05 : 1.0);
+        
+        // Apply global income multiplier
+        double incomeWithMultiplier = incomeWithEfficiency * incomeMultiplier;
+        
+        // Apply permanent income boost if active
+        if (isPermanentIncomeBoostActive) {
+          incomeWithMultiplier *= 1.05;
+        }
+        
+        // Apply income surge if active
+        if (isIncomeSurgeActive) {
+          incomeWithMultiplier *= 2.0;
+        }
+        
+        // CRITICAL FIX: Check if business is affected by an event and apply the multiplier
         bool hasEvent = hasActiveEventForBusiness(business.id);
-        // Apply multipliers
-        total += business.getCurrentIncome() * incomeMultiplier;
+        if (hasEvent) {
+          // Apply the negative event multiplier (-25%)
+          incomeWithMultiplier *= GameStateEvents.NEGATIVE_EVENT_MULTIPLIER;
+        }
+        
+        total += incomeWithMultiplier;
       }
     }
     return total;

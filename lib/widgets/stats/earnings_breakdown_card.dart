@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../models/game_state.dart';
 import '../../themes/stats_themes.dart';
 import '../../utils/number_formatter.dart';
+import 'stats_utils.dart';
 
 class EarningsBreakdownCard extends StatelessWidget {
   final GameState gameState;
@@ -77,7 +78,7 @@ class EarningsBreakdownCard extends StatelessWidget {
             ),
 
             // Enhanced earnings breakdown with icons
-            _buildStatRowWithIcon(
+            StatsUtils.buildStatRowWithIcon(
               'Hustle Earnings',
               '${NumberFormatter.formatCurrency(gameState.manualEarnings)} (${manualPercent.toStringAsFixed(1)}%)', 
               Icons.touch_app,
@@ -85,7 +86,7 @@ class EarningsBreakdownCard extends StatelessWidget {
               theme
             ),
             
-            _buildStatRowWithIcon(
+            StatsUtils.buildStatRowWithIcon(
               'Business Earnings',
               '${NumberFormatter.formatCurrency(gameState.passiveEarnings)} (${passivePercent.toStringAsFixed(1)}%)', 
               Icons.business,
@@ -93,7 +94,7 @@ class EarningsBreakdownCard extends StatelessWidget {
               theme
             ),
             
-            _buildStatRowWithIcon(
+            StatsUtils.buildStatRowWithIcon(
               'Investment Earnings',
               '${NumberFormatter.formatCurrency(gameState.investmentEarnings + gameState.investmentDividendEarnings)} (${investmentPercent.toStringAsFixed(1)}%)', 
               Icons.trending_up,
@@ -101,11 +102,11 @@ class EarningsBreakdownCard extends StatelessWidget {
               theme
             ),
             
-            _buildStatRowWithIcon(
+            StatsUtils.buildStatRowWithIcon(
               'Real Estate Earnings',
               '${NumberFormatter.formatCurrency(gameState.realEstateEarnings)} (${realEstatePercent.toStringAsFixed(1)}%)', 
               Icons.home,
-              isExecutive ? theme.quaternaryChartColor : Colors.indigo.shade500,
+              isExecutive ? theme.quaternaryChartColor : Colors.purple.shade600,
               theme
             ),
 
@@ -124,10 +125,10 @@ class EarningsBreakdownCard extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    _buildBreakdownSegment(manualPercent, theme.primaryChartColor, isExecutive),
-                    _buildBreakdownSegment(passivePercent, theme.secondaryChartColor, isExecutive),
-                    _buildBreakdownSegment(investmentPercent, theme.tertiaryChartColor, isExecutive),
-                    _buildBreakdownSegment(realEstatePercent, theme.quaternaryChartColor, isExecutive),
+                    StatsUtils.buildBreakdownSegment(manualPercent / 100, isExecutive ? theme.primaryChartColor : Colors.blue.shade500, isExecutive),
+                    StatsUtils.buildBreakdownSegment(passivePercent / 100, isExecutive ? theme.secondaryChartColor : Colors.amber.shade600, isExecutive),
+                    StatsUtils.buildBreakdownSegment(investmentPercent / 100, isExecutive ? theme.tertiaryChartColor : Colors.green.shade600, isExecutive),
+                    StatsUtils.buildBreakdownSegment(realEstatePercent / 100, isExecutive ? theme.quaternaryChartColor : Colors.purple.shade600, isExecutive),
                   ],
                 ),
               ),
@@ -140,10 +141,10 @@ class EarningsBreakdownCard extends StatelessWidget {
               spacing: 16,
               runSpacing: 8,
               children: [
-                _buildEnhancedLegendItem(theme.primaryChartColor, 'Hustle', theme),
-                _buildEnhancedLegendItem(theme.secondaryChartColor, 'Business', theme),
-                _buildEnhancedLegendItem(theme.tertiaryChartColor, 'Investment', theme),
-                _buildEnhancedLegendItem(theme.quaternaryChartColor, 'Real Estate', theme),
+                StatsUtils.buildEnhancedLegendItem(theme.primaryChartColor, 'Hustle', theme),
+                StatsUtils.buildEnhancedLegendItem(theme.secondaryChartColor, 'Business', theme),
+                StatsUtils.buildEnhancedLegendItem(theme.tertiaryChartColor, 'Investment', theme),
+                StatsUtils.buildEnhancedLegendItem(theme.quaternaryChartColor, 'Real Estate', theme),
               ],
             ),
           ],
@@ -151,130 +152,4 @@ class EarningsBreakdownCard extends StatelessWidget {
       ),
     );
   }
-  
-  Widget _buildStatRowWithIcon(String label, String value, IconData icon, Color iconColor, StatsTheme theme) {
-    final bool isExecutive = theme.id == 'executive';
-    
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12.0),
-      child: Row(
-        children: [
-          Container(
-            width: 30,
-            height: 30,
-            decoration: BoxDecoration(
-              color: isExecutive 
-                  ? iconColor.withOpacity(0.1)
-                  : iconColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Center(
-              child: Icon(
-                icon,
-                color: iconColor,
-                size: 16,
-              ),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              label,
-              style: isExecutive
-                  ? theme.statLabelStyle
-                  : TextStyle(
-                      fontSize: 14,
-                      color: Colors.black87,
-                      fontWeight: FontWeight.w500,
-                    ),
-            ),
-          ),
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            decoration: BoxDecoration(
-              color: isExecutive 
-                  ? const Color(0xFF242C3B) 
-                  : Colors.transparent,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: isExecutive 
-                    ? theme.cardBorderColor 
-                    : Colors.transparent,
-                width: 1,
-              ),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            child: Text(
-              value,
-              style: isExecutive
-                  ? theme.statValueStyle.copyWith(
-                      letterSpacing: 0.3,
-                    )
-                  : TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                      letterSpacing: 0.3,
-                    ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-  
-  Widget _buildBreakdownSegment(double percent, Color color, bool isExecutive) {
-    // Handle zero percentage gracefully
-    if (percent <= 0) return const SizedBox.shrink();
-    
-    return Flexible(
-      flex: max((percent * 100).round(), 1), // Ensure at least 1 flex for visibility
-      child: Container(
-        decoration: BoxDecoration(
-          color: color,
-          boxShadow: isExecutive ? [
-            BoxShadow(
-              color: color.withOpacity(0.3),
-              blurRadius: 1,
-              offset: const Offset(0, 1),
-            ),
-          ] : null,
-        ),
-      ),
-    );
-  }
-  
-  Widget _buildEnhancedLegendItem(Color color, String label, StatsTheme theme) {
-    final bool isExecutive = theme.id == 'executive';
-    
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 12,
-          height: 12,
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(2),
-            boxShadow: isExecutive ? [
-              BoxShadow(
-                color: color.withOpacity(0.3),
-                blurRadius: 2,
-                offset: const Offset(0, 1),
-              ),
-            ] : null,
-          ),
-        ),
-        const SizedBox(width: 6),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: isExecutive ? FontWeight.w500 : FontWeight.normal,
-            color: theme.textColor.withOpacity(isExecutive ? 0.9 : 0.7),
-          ),
-        ),
-      ],
-    );
-  }
-} 
+}

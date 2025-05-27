@@ -1,6 +1,7 @@
 part of '../game_state.dart';
 
-extension on GameState {
+// Contains methods related to platinum challenges and challenge management
+extension ChallengeLogic on GameState {
   // Check the current active challenge in the update loop
   void _checkActiveChallenge(DateTime now) {
     if (activeChallenge == null) return;

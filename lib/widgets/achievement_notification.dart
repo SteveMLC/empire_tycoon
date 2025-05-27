@@ -108,20 +108,20 @@ class _AchievementNotificationState extends State<AchievementNotification> with 
     try {
       switch (widget.achievement.rarity) {
         case AchievementRarity.milestone:
-          widget.gameService.soundManager.playAchievementMilestoneSound();
+          widget.gameService.playSound(() => widget.gameService.soundManager.playAchievementMilestoneSound());
           break;
         case AchievementRarity.rare:
-          widget.gameService.soundManager.playAchievementRareSound();
+          widget.gameService.playSound(() => widget.gameService.soundManager.playAchievementRareSound());
           break;
         case AchievementRarity.basic:
         default:
-          widget.gameService.soundManager.playAchievementBasicSound();
+          widget.gameService.playAchievementSound();
           break;
       }
     } catch (e) {
       print("Error playing achievement sound: $e");
       try {
-        widget.gameService.soundManager.playFeedbackSuccessSound();
+        widget.gameService.playSound(() => widget.gameService.soundManager.playFeedbackSuccessSound());
       } catch (e) {
         print("Error playing fallback success sound: $e");
       }

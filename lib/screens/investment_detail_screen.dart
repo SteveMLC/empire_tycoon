@@ -591,8 +591,8 @@ class _InvestmentDetailScreenState extends State<InvestmentDetailScreen> {
                                         // Preload sound first
                                         final assetLoader = AssetLoader();
                                         unawaited(assetLoader.preloadSound(SoundAssets.investmentBuyStock));
-                                        // Play sound directly through sound manager for better error handling
-                                        gameService.soundManager.playInvestmentBuyStockSound();
+                                        // Play sound through GameService for better error handling
+                                        gameService.playSound(() => gameService.soundManager.playInvestmentBuyStockSound());
                                       } catch (e) {
                                         print("Error playing investment buy sound: $e");
                                         // Continue with the purchase process even if sound fails
@@ -603,7 +603,7 @@ class _InvestmentDetailScreenState extends State<InvestmentDetailScreen> {
                                         final assetLoader = AssetLoader();
                                         unawaited(assetLoader.preloadSound(SoundAssets.investmentSellStock));
                                         // Play sound directly through sound manager for better error handling
-                                        gameService.soundManager.playInvestmentSellStockSound();
+                                        gameService.playSound(() => gameService.soundManager.playInvestmentSellStockSound());
                                       } catch (e) {
                                         print("Error playing investment sell sound: $e");
                                         // Continue with the sell process even if sound fails

@@ -1,6 +1,9 @@
 import 'package:intl/intl.dart';
 
+/// Centralized formatting utility for all number and time formatting in the app
+/// This eliminates duplication of formatting logic across the codebase
 class NumberFormatter {
+  // Static formatters for consistent formatting across the app
   static final NumberFormat _currencyFormat = NumberFormat.currency(
     symbol: '\$',
     decimalDigits: 2,
@@ -10,7 +13,6 @@ class NumberFormatter {
     locale: 'en_US',
   );
   
-  // Added: Format for integers with commas
   static final NumberFormat _intFormat = NumberFormat.decimalPattern('en_US');
   
   /// Format a number as currency with dollar sign
@@ -37,7 +39,7 @@ class NumberFormatter {
     return _compactFormat.format(value);
   }
   
-  /// Added: Format an integer with commas
+  /// Format an integer with commas
   /// Example: formatInt(1234567) => "1,234,567"
   static String formatInt(int value) {
     return _intFormat.format(value);
@@ -67,5 +69,41 @@ class NumberFormatter {
       int hours = (seconds % 86400) ~/ 3600;
       return '${days}d ${hours}h';
     }
+  }
+  
+  /// Format a boost time remaining (for UI display)
+  /// Example: formatBoostTimeRemaining(Duration(minutes: 5, seconds: 30)) => "5m 30s"
+  static String formatBoostTimeRemaining(Duration remaining) {
+    final seconds = remaining.inSeconds;
+    return formatTime(seconds);
+  }
+  
+  /// Format a large number with appropriate suffix (K, M, B, T)
+  /// Consolidates the duplicate formatLargeNumber implementations
+  /// Example: formatLargeNumber(1234567) => "$1.2M"
+  static String formatLargeNumber(double value) {
+    if (value >= 1000000000000) {
+      return '\$${(value / 1000000000000).toStringAsFixed(1)}T';
+    } else if (value >= 1000000000) {
+      return '\$${(value / 1000000000).toStringAsFixed(1)}B';
+    } else if (value >= 1000000) {
+      return '\$${(value / 1000000).toStringAsFixed(1)}M';
+    } else if (value >= 1000) {
+      return '\$${(value / 1000).toStringAsFixed(1)}K';
+    } else {
+      return '\$${value.toStringAsFixed(0)}';
+    }
+  }
+  
+  /// Format a multiplier value with 'x' suffix
+  /// Example: formatMultiplier(1.25) => "1.25x"
+  static String formatMultiplier(double value, {int decimalPlaces = 2}) {
+    return '${value.toStringAsFixed(decimalPlaces)}x';
+  }
+  
+  /// Format a time interval for display
+  /// Consolidates duplicate _formatTimeInterval implementations
+  static String formatTimeInterval(int seconds) {
+    return formatTime(seconds);
   }
 }

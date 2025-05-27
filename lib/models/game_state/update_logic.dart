@@ -2,117 +2,109 @@ part of '../game_state.dart';
 
 // Contains methods related to the game's update loop and timers
 extension UpdateLogic on GameState {
+  // Constants for update frequencies - static constants are allowed in extensions
+  static const int _investmentMicroUpdateIntervalSeconds = 5;
+  static const int _netWorthUpdateIntervalMinutes = 30;
+  static const int _maxHistoryEntries = 50; // Limit for history entries
+  static const int _pruneHistoryThreshold = 45; // Prune when we reach this many entries
+  
+  // Tracking variables for income diagnostics
 
-  // Setup game timers
+  // Setup game timers - Optimized to use a single primary timer with error recovery
   void _setupTimers() {
     // Cancel existing timers before creating new ones to prevent duplicates
     if (timersActive) {
-      print("⚠️ Timers already active, ensuring proper cleanup before setup");
       _cancelAllTimers();
     }
 
-    print("⏱️ Setting up game timers...");
-
     // Setup timer for auto-saving every minute
-    // Note: Saving is typically triggered by GameService listening to changes
     _saveTimer = Timer.periodic(const Duration(minutes: 1), (_) {
-      // notifyListeners(); // No longer needed if GameService handles save on notify
-      // print("💾 Autosave timer tick (will trigger save via listener)");
-      // Explicitly trigger save or ensure listener mechanism is robust
+      // Auto-save handled by GameService listener
     });
 
-    // Setup timer for updating game state every second
+    // Single unified timer for game state updates
     _updateTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      _updateGameState();
-    });
-
-    // Timer for updating investment prices (every 30 seconds)
-    _investmentUpdateTimer = Timer.periodic(const Duration(seconds: 30), (_) {
-      if (isInitialized) {
-        // _updateInvestmentPrices(); // Now called within _updateGameState for micro-updates
+      try {
+        _updateGameState();
+      } catch (e, stackTrace) {
+        // Catch errors within the timer callback to prevent timer cancellation
+        print("❌ ERROR in timer callback: $e");
+        print(stackTrace);
       }
     });
     
+    // Initialize update timestamps in the GameState class
+    final now = DateTime.now();
+    _lastUpdateTime = now;
+    _lastInvestmentMicroUpdateTime = now;
+    _lastDailyCheckTime = now;
+    _lastNetWorthUpdateTime = now;
+    
     timersActive = true;
-    print("⏱️ Timers setup complete.");
   }
 
-  // Helper method to cancel all timers
+  // Helper method to cancel all timers - Optimized for the new timer structure
   void _cancelAllTimers() {
-    print("🛑 Cancelling all game timers");
     _saveTimer?.cancel();
     _saveTimer = null;
     
     _updateTimer?.cancel();
     _updateTimer = null;
     
-    _investmentUpdateTimer?.cancel();
-    _investmentUpdateTimer = null;
-    
     // Reset the timer flag
     timersActive = false;
-    print("✅ All game timers cancelled");
   }
 
-  // Update game state every tick (second)
+  // Update game state every tick (second) - Optimized with frequency-based updates
   void _updateGameState() {
-    if (!isInitialized) return; // Don't update if not fully initialized
+    if (!isInitialized) return; // Early return if not ready
     
-    // CRITICAL FIX: Guard against multiple update cycles
-    if (!timersActive) {
-      print("⚠️ [UPDATE] Update called with inactive timers, skipping to prevent duplicate calculation");
-      return;
-    }
+    final DateTime now = DateTime.now();
 
-    DateTime now = DateTime.now();
-
-    // ENHANCED Debounce Check: Use a higher threshold (975ms) to be even safer
+    // ENHANCED SAFEGUARD: More aggressive debounce to prevent duplicate updates
     if (_lastUpdateTime != null) {
       final int msSinceLastUpdate = now.difference(_lastUpdateTime!).inMilliseconds;
-      if (msSinceLastUpdate < 975) {
-        print("🔄 [UPDATE] Skipping update - only ${msSinceLastUpdate}ms since last update (need 975+ms)");
-        return; // Skip this update call
+      if (msSinceLastUpdate < 950) { // Almost a full second to prevent edge cases
+        print("⚠️ Skipping update: Too soon (${msSinceLastUpdate}ms since last update)");
+        return; // Skip update silently if too soon
+      }
+    }
+    
+    // CRITICAL: Add a global update ID to track this specific update cycle
+    // FIXED: Use a more precise update ID that includes milliseconds
+    final String updateId = "${now.millisecondsSinceEpoch}";
+    if (_lastProcessedUpdateId == updateId) {
+      print("🛑 DUPLICATE UPDATE DETECTED: Update ID $updateId already processed");
+      return; // Absolutely prevent duplicate processing of the same update cycle
+    }
+    _lastProcessedUpdateId = updateId;
+  
+    // FIXED: Add additional safeguard against updates that are too close together
+    if (_lastUpdateTime != null) {
+      final int msSinceLastUpdate = now.difference(_lastUpdateTime!).inMilliseconds;
+      if (msSinceLastUpdate < 800) { // Even more aggressive debounce
+        print("🛑 CRITICAL SAFEGUARD: Updates too close together (${msSinceLastUpdate}ms). Skipping.");
+        return;
       }
     }
 
     try {
-      // Record the time of this update attempt *before* potential errors
+      // Record the time of this update attempt
       _lastUpdateTime = now; 
 
-      String hourKey = TimeUtils.getHourKey(now);
+      final String hourKey = TimeUtils.getHourKey(now);
       bool stateChanged = false; // Track if notifyListeners is needed
-      double previousMoney = money; // Track money at the start of the tick
+      final double previousMoney = money; // Track money at the start of the tick
 
       // --- [0] Check/Reset Timed Effects & Limits First --- 
-      // Income Surge
-      if (isIncomeSurgeActive && incomeSurgeEndTime != null && now.isAfter(incomeSurgeEndTime!)) {
-        print("INFO: Income Surge expired.");
-        isIncomeSurgeActive = false;
-        incomeSurgeEndTime = null;
-        stateChanged = true;
-      }
-      // Disaster Shield
-      if (isDisasterShieldActive && disasterShieldEndTime != null && now.isAfter(disasterShieldEndTime!)) {
-        print("INFO: Disaster Shield expired.");
-        isDisasterShieldActive = false;
-        disasterShieldEndTime = null;
-        stateChanged = true;
-      }
-       // Crisis Accelerator
-      if (isCrisisAcceleratorActive && crisisAcceleratorEndTime != null && now.isAfter(crisisAcceleratorEndTime!)) {
-        print("INFO: Crisis Accelerator expired.");
-        isCrisisAcceleratorActive = false;
-        crisisAcceleratorEndTime = null;
-        stateChanged = true;
-      }
+      // Using a more efficient approach to check all timed effects
+      stateChanged |= _checkTimedEffects(now);
+      
       // Time Warp Weekly Reset
       _checkAndResetTimeWarpLimit(now); // Check/handle weekly reset (may update state internally)
 
       // --- [1] Event System --- 
-      // DEBUG: Log event system entry
-      print("DEBUG: Entering event system at ${DateTime.now().millisecondsSinceEpoch}");
       checkAndTriggerEvents(); // From game_state_events.dart extension
-      print("DEBUG: Exiting event system at ${DateTime.now().millisecondsSinceEpoch}");
 
       // --- ADDED [1.5]: Check for Completed Business Upgrades ---
       for (var business in List.from(businesses)) { // Iterate over a copy in case list changes
@@ -144,33 +136,56 @@ extension UpdateLogic on GameState {
       _updateRealEstateUnlocks(); // Update based on current money
 
       // --- [4] Live Income Calculation & Application --- 
+      // CRITICAL: Enhanced timestamp tracking for income to prevent duplicate calculations
+      final String incomeTimestampKey = "${now.hour}:${now.minute}:${now.second}:${now.millisecond ~/ 100}";
+      final bool alreadyProcessedThisSecond = _processedIncomeTimestamps.contains(incomeTimestampKey);
+      
+      // CRITICAL: Add a calculation lock to prevent concurrent income calculations
+      if (_isCalculatingIncome) {
+        print("🛑 INCOME SAFEGUARD: Income calculation already in progress, skipping");
+        return; // Exit the entire update method if we're already calculating income
+      }
+      
+      // Initialize income variables
       double totalIncomeThisTick = 0;
-
-      // Business Income
       double businessIncomeThisTick = 0;
-      // Define multipliers used across income sources
-      double businessEfficiencyMultiplier = isPlatinumEfficiencyActive ? 1.05 : 1.0;
+      double realEstateIncomeThisTick = 0;
+      double dividendIncomeThisTick = 0;
       double permanentIncomeBoostMultiplier = isPermanentIncomeBoostActive ? 1.05 : 1.0;
       
-      // DEBUG: Track income calculation frequency
-      int incomeCalculationsThisTick = 0;
-      DateTime incomeCalculationStartTime = DateTime.now();
+      // Skip income calculation if we've already processed this second
+      if (alreadyProcessedThisSecond) {
+        print("🔔 INCOME SAFEGUARD: Already processed income for timestamp $incomeTimestampKey, skipping");
+      } else {
+        // Set the calculation lock
+        _isCalculatingIncome = true;
+        
+        try {
+          // Record this timestamp to prevent duplicate processing
+          _processedIncomeTimestamps.add(incomeTimestampKey);
+          // Keep a limited history to prevent memory leaks
+          if (_processedIncomeTimestamps.length > 10) {
+            _processedIncomeTimestamps.removeAt(0);
+          }
       
-      print("DEBUG: Starting business income calculation at ${DateTime.now().millisecondsSinceEpoch}");
-      print("DEBUG: Current multipliers - Efficiency: $businessEfficiencyMultiplier, Permanent: $permanentIncomeBoostMultiplier");
+        // DEBUG: Track income calculation frequency
+        DateTime incomeCalculationStartTime = DateTime.now();
+        
+        print("DEBUG: Starting business income calculation at ${DateTime.now().millisecondsSinceEpoch}");
+        
+        // Define business efficiency multiplier
+        double businessEfficiencyMultiplier = isPlatinumEfficiencyActive ? 1.05 : 1.0;
       
-      for (var business in businesses) {
-        if (business.level > 0) {
-          print("DEBUG: Processing business ${business.name} - Level: ${business.level}, Interval: ${business.incomeInterval}, SecondsSinceLast: ${business.secondsSinceLastIncome}");
-          
-          business.secondsSinceLastIncome++;
-          if (business.secondsSinceLastIncome >= business.incomeInterval) {
-            incomeCalculationsThisTick++; // DEBUG: Increment counter
+        // CRITICAL FIX: Use the same per-second income calculation as in getBusinessIncomePerSecond()
+        // This ensures the accrual matches the displayed income rate
+        double businessIncomeThisTick = 0.0;
+        for (var business in businesses) {
+          if (business.level > 0) {
+            print("DEBUG: Processing business ${business.name} - Level: ${business.level}");
             
-            // DEBUG: Log raw base income
+            // Get base income with efficiency multiplier if active
             double baseIncome = business.getCurrentIncome(isResilienceActive: isPlatinumResilienceActive);
             print("DEBUG: Business '${business.name}' baseIncome: $baseIncome at ${DateTime.now().millisecondsSinceEpoch}");
-            print("DEBUG: Business '${business.name}' state - Level: ${business.level}, Resilience: $isPlatinumResilienceActive");
             
             // Apply Platinum Efficiency first
             double incomeWithEfficiency = baseIncome * businessEfficiencyMultiplier;
@@ -197,152 +212,240 @@ extension UpdateLogic on GameState {
               print("DEBUG: Business '${business.name}' after event penalty: $finalIncome");
             }
             
-            // DEBUG: Log final income and calculation count
-            print("DEBUG: Business '${business.name}' finalIncome: $finalIncome (Calculation #$incomeCalculationsThisTick)");
+            // DEBUG: Log final income
+            print("DEBUG: Business '${business.name}' finalIncome: $finalIncome");
             
             businessIncomeThisTick += finalIncome;
-            business.secondsSinceLastIncome = 0;
-            print("DEBUG: Business '${business.name}' secondsSinceLastIncome reset to 0");
           }
         }
-      }
       
-      // DEBUG: Log total calculations and time elapsed
-      Duration incomeCalculationDuration = DateTime.now().difference(incomeCalculationStartTime);
-      print("DEBUG: Total business income calculations this tick: $incomeCalculationsThisTick (Duration: ${incomeCalculationDuration.inMilliseconds}ms)");
-      print("DEBUG: Total business income this tick: $businessIncomeThisTick");
-      
-      // Add business income to total (can be negative now)
-      totalIncomeThisTick += businessIncomeThisTick;
-      passiveEarnings += businessIncomeThisTick; // Track net passive earnings
+        // DEBUG: Log calculation time
+        Duration incomeCalculationDuration = DateTime.now().difference(incomeCalculationStartTime);
+        print("DEBUG: Business income calculation duration: ${incomeCalculationDuration.inMilliseconds}ms");
+        print("DEBUG: Total business income this tick: $businessIncomeThisTick");
+        
+        // Add business income to total (only tracking, not applying to money yet)
+        totalIncomeThisTick += businessIncomeThisTick;
+        if (businessIncomeThisTick > 0) {
+          passiveEarnings += businessIncomeThisTick; // Track net passive earnings
+        }
 
-      // Real Estate Income (Process per property for event checks)
-      double realEstateIncomeThisTick = 0.0;
-      for (var locale in realEstateLocales) {
-        if (locale.unlocked) {
-          bool isLocaleAffectedByEvent = hasActiveEventForLocale(locale.id);
-          bool isFoundationApplied = platinumFoundationsApplied.containsKey(locale.id);
-          bool isYachtDocked = platinumYachtDockedLocaleId == locale.id;
-          double foundationMultiplier = isFoundationApplied ? 1.05 : 1.0;
-          double yachtMultiplier = isYachtDocked ? 1.05 : 1.0;
+        // CRITICAL FIX: Use the same per-second real estate income calculation as in getRealEstateIncomePerSecond()
+        // This ensures the accrual matches the displayed income rate
+        double realEstateIncomeThisTick = 0.0;
+        print("DEBUG: Starting real estate income calculation");
+        
+        for (var locale in realEstateLocales) {
+          if (locale.unlocked) {
+            // Get locale-specific multipliers
+            bool isLocaleAffectedByEvent = hasActiveEventForLocale(locale.id);
+            bool isFoundationApplied = platinumFoundationsApplied.containsKey(locale.id);
+            bool isYachtDocked = platinumYachtDockedLocaleId == locale.id;
+            double foundationMultiplier = isFoundationApplied ? 1.05 : 1.0;
+            double yachtMultiplier = isYachtDocked ? 1.05 : 1.0;
+            
+            print("DEBUG: Processing locale ${locale.name} - Event: $isLocaleAffectedByEvent, Foundation: $isFoundationApplied, Yacht: $isYachtDocked");
 
-          for (var property in locale.properties) {
-            if (property.owned > 0) {
-              // Get base income per property (already includes owned count)
-              // Note: isResilienceActive might be needed if other effects use it
-              double basePropertyIncome = property.getTotalIncomePerSecond(isResilienceActive: isPlatinumResilienceActive); 
-              
-              // Apply locale-specific multipliers (Foundation, Yacht)
-              double incomeWithLocaleBoosts = basePropertyIncome * foundationMultiplier * yachtMultiplier;
+            for (var property in locale.properties) {
+              if (property.owned > 0) {
+                // Get base income per property (already includes owned count)
+                double basePropertyIncome = property.getTotalIncomePerSecond(isResilienceActive: isPlatinumResilienceActive); 
+                print("DEBUG: Property '${property.name}' baseIncome: $basePropertyIncome");
+                
+                // Apply locale-specific multipliers (Foundation, Yacht)
+                double incomeWithLocaleBoosts = basePropertyIncome * foundationMultiplier * yachtMultiplier;
+                print("DEBUG: Property '${property.name}' after locale boosts: $incomeWithLocaleBoosts");
 
-              // Apply standard global multipliers
-              double finalPropertyIncome = incomeWithLocaleBoosts * incomeMultiplier;
+                // Apply standard global multipliers
+                double finalPropertyIncome = incomeWithLocaleBoosts * incomeMultiplier;
+                print("DEBUG: Property '${property.name}' after global multiplier: $finalPropertyIncome");
 
-              // Apply the overall permanent boost
-              finalPropertyIncome *= permanentIncomeBoostMultiplier;
-              
-              // Apply Income Surge (if applicable)
-              if (isIncomeSurgeActive) finalPropertyIncome *= 2.0;
+                // Apply the overall permanent boost
+                finalPropertyIncome *= permanentIncomeBoostMultiplier;
+                print("DEBUG: Property '${property.name}' after permanent boost: $finalPropertyIncome");
+                
+                // Apply Income Surge (if applicable)
+                if (isIncomeSurgeActive) {
+                  finalPropertyIncome *= 2.0;
+                  print("DEBUG: Property '${property.name}' after income surge: $finalPropertyIncome");
+                }
 
-              // Check for negative event affecting the LOCALE and apply multiplier AFTER all bonuses
-              if (isLocaleAffectedByEvent) {
-                finalPropertyIncome *= GameStateEvents.NEGATIVE_EVENT_MULTIPLIER; // Apply -0.25
+                // Check for negative event affecting the LOCALE and apply multiplier AFTER all bonuses
+                if (isLocaleAffectedByEvent) {
+                  finalPropertyIncome *= GameStateEvents.NEGATIVE_EVENT_MULTIPLIER; // Apply -0.25
+                  print("DEBUG: Property '${property.name}' after event penalty: $finalPropertyIncome");
+                }
+                
+                print("DEBUG: Property '${property.name}' final income: $finalPropertyIncome");
+                realEstateIncomeThisTick += finalPropertyIncome;
               }
-              
-              realEstateIncomeThisTick += finalPropertyIncome;
             }
           }
         }
-      }
-      // Add real estate income to total (can be negative now)
-      totalIncomeThisTick += realEstateIncomeThisTick;
-      realEstateEarnings += realEstateIncomeThisTick; // Track net real estate earnings
+        
+        print("DEBUG: Total real estate income this tick: $realEstateIncomeThisTick");
+        // Add real estate income to total (only tracking, not applying to money yet)
+        totalIncomeThisTick += realEstateIncomeThisTick;
+        // FIXED: Always track real estate earnings regardless of sign
+        realEstateEarnings += realEstateIncomeThisTick;
 
-      // Dividend Income (Events don't affect dividends directly - Reverted to simpler calculation)
-      double dividendIncomeThisTick = 0.0;
-      double diversificationBonus = calculateDiversificationBonus();
-      double portfolioMultiplier = isPlatinumPortfolioActive ? 1.25 : 1.0; // Platinum portfolio boost
-      
-      for (var investment in investments) {
-        if (investment.owned > 0 && investment.hasDividends()) {
-          double baseDividend = investment.getDividendIncomePerSecond(); 
-          
-          // Calculate effective dividend per share considering portfolio/diversification
-          double effectiveDividendPerShare = baseDividend * portfolioMultiplier * (1 + diversificationBonus);
-          
-          // Apply global multipliers and owned count
-          double finalInvestmentDividend = effectiveDividendPerShare * investment.owned;
-          
-           // Apply the overall permanent boost
-           finalInvestmentDividend *= permanentIncomeBoostMultiplier;
+        // CRITICAL FIX: Use the same per-second dividend income calculation as in getDividendIncomePerSecond()
+        // This ensures the accrual matches the displayed income rate
+        double dividendIncomeThisTick = 0.0;
+        print("DEBUG: Starting dividend income calculation");
+        
+        double diversificationBonus = calculateDiversificationBonus(); // Calculate once for efficiency
+        double portfolioMultiplier = isPlatinumPortfolioActive ? 1.25 : 1.0;
+        
+        for (var investment in investments) {
+          if (investment.owned > 0 && investment.hasDividends()) {
+            // Get base dividend per second for this investment
+            double baseDividend = investment.getDividendIncomePerSecond();
+            print("DEBUG: Investment '${investment.name}' base dividend: $baseDividend");
+            
+            // Apply portfolio multiplier and diversification bonus
+            double adjustedDividend = baseDividend * portfolioMultiplier * (1 + diversificationBonus);
+            print("DEBUG: Investment '${investment.name}' after portfolio/diversification: $adjustedDividend");
+            
+            // Apply owned count
+            double totalDividendForInvestment = adjustedDividend * investment.owned;
+            print("DEBUG: Investment '${investment.name}' after owned count (${investment.owned}): $totalDividendForInvestment");
+            
+            // Apply global income multiplier
+            totalDividendForInvestment *= incomeMultiplier;
+            print("DEBUG: Investment '${investment.name}' after global multiplier: $totalDividendForInvestment");
+            
+            // Apply the overall permanent boost
+            totalDividendForInvestment *= permanentIncomeBoostMultiplier;
+            print("DEBUG: Investment '${investment.name}' after permanent boost: $totalDividendForInvestment");
 
-           // Apply Income Surge (if applicable)
-           if (isIncomeSurgeActive) finalInvestmentDividend *= 2.0; 
+            // Apply Income Surge (if applicable)
+            if (isIncomeSurgeActive) {
+              totalDividendForInvestment *= 2.0;
+              print("DEBUG: Investment '${investment.name}' after income surge: $totalDividendForInvestment");
+            }
 
-          dividendIncomeThisTick += finalInvestmentDividend;
+            print("DEBUG: Investment '${investment.name}' final dividend: $totalDividendForInvestment");
+            dividendIncomeThisTick += totalDividendForInvestment;
+          }
         }
-      }
-      // Add dividend income to total
-      totalIncomeThisTick += dividendIncomeThisTick;
-      investmentDividendEarnings += dividendIncomeThisTick; // Track net dividend earnings
+        
+        print("DEBUG: Total dividend income this tick: $dividendIncomeThisTick");
+        // Add dividend income to total (only tracking, not applying to money yet)
+        totalIncomeThisTick += dividendIncomeThisTick;
+        // FIXED: Always track dividend earnings regardless of sign
+        investmentDividendEarnings += dividendIncomeThisTick;
 
-      // Apply total NET income for the tick (can be negative)
-      if (totalIncomeThisTick != 0) { // Add or subtract based on the final value
-          money += totalIncomeThisTick;
-          totalEarned += totalIncomeThisTick; // totalEarned can now decrease if income is negative
-          // Update hourly earnings (aggregate for the hour)
-          updateHourlyEarnings(hourKey, totalIncomeThisTick);
+        // Calculate income for diagnostic purposes only
+        // This is used to display income rate and verify it matches what's being applied
+        double incomePerSecond = calculateTotalIncomePerSecond();
+        
+        // Log income calculation for diagnostic purposes
+        if (now.second % 10 == 0) {
+          // Calculate the breakdown of income sources for diagnostics
+          double businessIncome = 0.0;
+          for (var business in businesses) {
+            if (business.level > 0) {
+              double cyclesPerSecond = 1 / business.incomeInterval;
+              businessIncome += business.getCurrentIncome(isResilienceActive: isPlatinumResilienceActive) * 
+                               cyclesPerSecond * 
+                               (isPlatinumEfficiencyActive ? 1.05 : 1.0);
+            }
+          }
           
-          // CRITICAL FIX: Log current income rate for debugging
-          final double currentIncomeRate = calculateTotalIncomePerSecond();
-          print("💰 [INCOME] Applied ${totalIncomeThisTick.toStringAsFixed(2)} this tick");
-          print("💰 [INCOME] Current income rate: ${currentIncomeRate.toStringAsFixed(2)}/sec");
+          double realEstateIncome = 0.0;
+          for (var locale in realEstateLocales) {
+            if (locale.unlocked) {
+              bool isFoundationApplied = platinumFoundationsApplied.containsKey(locale.id);
+              bool isYachtDocked = platinumYachtDockedLocaleId == locale.id;
+              double foundationMultiplier = isFoundationApplied ? 1.05 : 1.0;
+              double yachtMultiplier = isYachtDocked ? 1.05 : 1.0;
+              
+              for (var property in locale.properties) {
+                if (property.owned > 0) {
+                  realEstateIncome += property.getTotalIncomePerSecond(isResilienceActive: isPlatinumResilienceActive) * 
+                                      foundationMultiplier * 
+                                      yachtMultiplier;
+                }
+              }
+            }
+          }
           
-          // Track current money value to help detect issues
-          print("💰 [INCOME] Money now: ${money.toStringAsFixed(2)}");
-      }
+          double dividendIncome = 0.0;
+          double diversificationBonus = calculateDiversificationBonus();
+          double portfolioMultiplier = isPlatinumPortfolioActive ? 1.25 : 1.0;
+          
+          for (var investment in investments) {
+            if (investment.owned > 0 && investment.hasDividends()) {
+              dividendIncome += investment.getDividendIncomePerSecond() * 
+                               portfolioMultiplier * 
+                               (1 + diversificationBonus) * 
+                               investment.owned;
+            }
+          }
+          
+          // Log detailed income breakdown
+          print("💰 [INCOME DIAGNOSTICS] Rate: ${incomePerSecond.toStringAsFixed(2)}/sec, Money: ${money.toStringAsFixed(2)}");
+          print("💰 [INCOME DIAGNOSTICS] Breakdown - Business: ${businessIncome.toStringAsFixed(2)}, Real Estate: ${realEstateIncome.toStringAsFixed(2)}, Dividends: ${dividendIncome.toStringAsFixed(2)}");
+        }
 
-      // Update lastCalculatedIncomePerSecond for consistent UI display
-      // This should match what _calculateIncomePerSecond in main_screen would compute
-      lastCalculatedIncomePerSecond = calculateTotalIncomePerSecond();
+        // Update lastCalculatedIncomePerSecond for consistent UI display
+        // This should match what _calculateIncomePerSecond in main_screen would compute
+        lastCalculatedIncomePerSecond = calculateTotalIncomePerSecond();
+        
+        // CRITICAL FIX: Apply the full income (positive or negative) to the player's cash balance
+        // This ensures events properly impact the player's finances
+        money += totalIncomeThisTick;
+        totalEarned += totalIncomeThisTick; // Track all earnings, positive or negative
+        } finally {
+          // Always reset the calculation lock, even if an error occurs
+          _isCalculatingIncome = false;
+        }
+      } // End of the income safeguard conditional block
       
-      // --- [5] Investment Micro-Updates --- 
-      _updateInvestmentPricesMicro(); // More frequent small price changes for charts
+      // --- [5] Investment Micro-Updates (every 5 seconds) --- 
+      if (_lastInvestmentMicroUpdateTime == null || 
+          now.difference(_lastInvestmentMicroUpdateTime!).inSeconds >= _investmentMicroUpdateIntervalSeconds) {
+        _updateInvestmentPricesMicro();
+        _lastInvestmentMicroUpdateTime = now;
+      }
 
       // --- [6] Daily Investment Update Check --- 
-      int todayDay = now.weekday; // 1-7 (Monday-Sunday)
-      if (todayDay != currentDay) {
-        print("☀️ New Day detected! ($currentDay -> $todayDay)");
+      final int todayDay = now.weekday; // 1-7 (Monday-Sunday)
+      if (_lastDailyCheckTime == null || todayDay != currentDay) {
         currentDay = todayDay;
         _updateInvestments(); // Perform daily investment updates & market events
-         _updateInvestmentPrices(); // Perform a full price update/history push on day change
+        _updateInvestmentPrices(); // Perform a full price update/history push on day change
+        _lastDailyCheckTime = now;
       }
 
       // --- [7] Persistent Net Worth Tracking (Every 30 mins) --- 
-      if (now.minute % 30 == 0 && now.second == 0) { // Check exactly at the start of the minute
-        int timestampMs = now.millisecondsSinceEpoch;
-        double currentNetWorth = calculateNetWorth();
+      if (_lastNetWorthUpdateTime == null || 
+          now.difference(_lastNetWorthUpdateTime!).inMinutes >= _netWorthUpdateIntervalMinutes) {
+        final int timestampMs = now.millisecondsSinceEpoch;
+        final double currentNetWorth = calculateNetWorth();
         persistentNetWorthHistory[timestampMs] = currentNetWorth;
-        print("📈 Recorded Net Worth: $currentNetWorth at $timestampMs");
-        _prunePersistentNetWorthHistory(); // Prune old entries
+        _prunePersistentNetWorthHistory();
+        _lastNetWorthUpdateTime = now;
       }
 
       // --- [8] Final Notification --- 
-      // DEBUG: Log final money state
-      print("DEBUG: Final money state - Previous: $previousMoney, Current: $money, Change: ${money - previousMoney}");
       if (money != previousMoney) {
          stateChanged = true; // Money changed, need notification
       }
 
-      // --- [8] Final Notification --- 
+      // Only notify listeners if state actually changed
       if (stateChanged) {
-        notifyListeners(); // Notify if any relevant state changed during the tick
+        notifyListeners();
       }
 
     } catch (e, stackTrace) {
-      print("❌❌❌ CRITICAL ERROR in _updateGameState: $e");
+      print("❌ ERROR in _updateGameState: $e");
       print(stackTrace);
-      // Consider adding more robust error handling, like disabling timers temporarily
+      // More robust error handling with timer recovery
+      if (timersActive && _updateTimer == null) {
+        _setupTimers(); // Attempt recovery
+      }
     }
   }
 
@@ -355,22 +458,51 @@ extension UpdateLogic on GameState {
      // _pruneHourlyEarnings(); // Use the hourly pruning logic
   }
 
-  // Helper to update hourly earnings (e.g., older than 7 days)
+  // Helper to update hourly earnings with optimized pruning
   void updateHourlyEarnings(String hourKey, double amount) {
-    // CRITICAL FIX: Safeguard against potential rapid, duplicate income entries 
-    // by using last update time as a reference
-    if (_lastUpdateTime != null) {
-      final timeSinceLastUpdate = DateTime.now().difference(_lastUpdateTime!).inMilliseconds;
-      
-      // Only process if we haven't updated too recently
-      if (timeSinceLastUpdate < 900) {
-        print("⚠️ Skipping hourly earning update - too soon since last update (${timeSinceLastUpdate}ms)");
-        return;
-      }
+    // Skip if we're updating too frequently (possible duplicate)
+    if (_lastUpdateTime != null && 
+        DateTime.now().difference(_lastUpdateTime!).inMilliseconds < 900) {
+      return;
     }
 
-    print("💰 Updating hourly earnings for $hourKey with amount: $amount");
+    // Update the earnings value
     hourlyEarnings[hourKey] = (hourlyEarnings[hourKey] ?? 0) + amount;
-    _pruneHourlyEarnings(); // Use the hourly pruning logic
+    
+    // Only prune periodically to reduce overhead - start pruning earlier to avoid large pruning operations
+    if (hourlyEarnings.length > _pruneHistoryThreshold) {
+      _pruneHourlyEarnings();
+    }
+  }
+  
+  // Helper method to check all timed effects at once
+  bool _checkTimedEffects(DateTime now) {
+    bool stateChanged = false;
+    
+    // Income Surge
+    if (isIncomeSurgeActive && incomeSurgeEndTime != null && now.isAfter(incomeSurgeEndTime!)) {
+      isIncomeSurgeActive = false;
+      incomeSurgeEndTime = null;
+      stateChanged = true;
+    }
+    
+    // Disaster Shield
+    if (isDisasterShieldActive && disasterShieldEndTime != null && now.isAfter(disasterShieldEndTime!)) {
+      isDisasterShieldActive = false;
+      disasterShieldEndTime = null;
+      stateChanged = true;
+    }
+    
+    // Crisis Accelerator
+    if (isCrisisAcceleratorActive && crisisAcceleratorEndTime != null && now.isAfter(crisisAcceleratorEndTime!)) {
+      isCrisisAcceleratorActive = false;
+      crisisAcceleratorEndTime = null;
+      stateChanged = true;
+    }
+    
+    // Only check these if they exist in the GameState class
+    // If these properties don't exist yet, you'll need to add them to the GameState class
+    
+    return stateChanged;
   }
 } 

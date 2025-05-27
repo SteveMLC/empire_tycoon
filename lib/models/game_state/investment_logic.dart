@@ -95,7 +95,7 @@ extension InvestmentLogic on GameState {
     return null; // Return null if not found or not owned
   }
 
-  // Update investment prices more frequently (e.g., every 30 seconds)
+  // Update investment prices more frequently (e.g., every 30 seconds) - optimized for memory efficiency
   void _updateInvestmentPrices() {
     for (var investment in investments) {
       // Apply random price change based on volatility and trend
@@ -118,51 +118,49 @@ extension InvestmentLogic on GameState {
 
       investment.currentPrice = newPrice;
 
-      // Update the price history for chart display
-      if (investment.priceHistory.isNotEmpty) {
-         // Add current price to history and prune
-         investment.priceHistory.add(investment.currentPrice);
-         if (investment.priceHistory.length > 30) { // Keep only last 30 points
-            investment.priceHistory.removeAt(0);
-         }
-      }
+      // Use the optimized method to add price to history
+      investment.addPriceHistoryPoint(investment.currentPrice);
     }
 
     // Notify listeners to update UI
     notifyListeners();
   }
 
-  // Update investment prices on new day (also handles daily market events)
+  // Update investment prices on new day (also handles daily market events) - optimized for memory efficiency
   void _updateInvestments() {
     // Generate market events with a small chance
     _generateMarketEvents();
 
     // Process auto-investments if enabled
     _processAutoInvestments();
-
+    
+    // Then update prices for all investments
     for (var investment in investments) {
-      // Apply daily major random price change based on volatility and trend
-      double change = investment.trend; // Base trend for the day
-
+      // Apply random price change based on volatility and trend
+      double change = investment.trend * 0.5; // Base trend
+      
       // Add random component based on volatility
       change += (Random().nextDouble() * 2 - 1) * investment.volatility;
-
+      
       // Ensure price doesn't go below minimum threshold
       double newPrice = investment.currentPrice * (1 + change);
       if (newPrice < investment.basePrice * 0.1) {
         newPrice = investment.basePrice * 0.1;
       }
-
+      
       // Cap maximum price to avoid excessive growth
       double maxPrice = investment.basePrice * 10;
       if (newPrice > maxPrice) {
         newPrice = maxPrice;
       }
-
+      
       investment.currentPrice = newPrice;
-
+      
       // Apply market event effects if any are active
       _applyMarketEventEffects(investment);
+      
+      // Use the optimized method to add price to history
+      investment.addPriceHistoryPoint(investment.currentPrice);
     }
     // Price history and notification is handled by _updateInvestmentPrices
   }
@@ -400,20 +398,20 @@ extension InvestmentLogic on GameState {
     }
   }
 
-  // Add micro-updates to investment prices for more dynamic chart movement
+  // Add micro-updates to investment prices for more dynamic chart movement - optimized for memory efficiency
   void _updateInvestmentPricesMicro() {
-    // Only update occasionally to avoid too many updates per second
-    if (Random().nextDouble() > 0.2) return; // 80% chance to skip each tick
-
     bool changed = false;
     for (var investment in investments) {
-      // Apply a much smaller random price change based on volatility
-      double microChange = (Random().nextDouble() * 2 - 1) * investment.volatility * 0.03;
+      // Apply smaller random price change based on volatility and trend
+      double change = investment.trend * 0.05; // Reduced base trend impact
 
-      // Apply the micro-change
-      double newPrice = investment.currentPrice * (1 + microChange);
+      // Add smaller random component based on volatility
+      change += (Random().nextDouble() * 2 - 1) * investment.volatility * 0.1;
 
-      // Clamp price within reasonable bounds (e.g., 0.1x to 10x base price)
+      // Apply the change to current price
+      double newPrice = investment.currentPrice * (1 + change);
+      
+      // Apply min/max bounds
       double minPrice = investment.basePrice * 0.1;
       double maxPrice = investment.basePrice * 10;
       newPrice = newPrice.clamp(minPrice, maxPrice);
@@ -423,10 +421,8 @@ extension InvestmentLogic on GameState {
           investment.currentPrice = newPrice;
           changed = true;
 
-          // Update the *last* price in history to reflect the current micro-update
-          if (investment.priceHistory.isNotEmpty) {
-             investment.priceHistory[investment.priceHistory.length - 1] = investment.currentPrice;
-          }
+          // Use the optimized method to update the latest price point
+          investment.updateLatestPricePoint(investment.currentPrice);
       }
     }
     // Notify only if any price actually changed - This might be too frequent, handled in main update loop
@@ -436,15 +432,39 @@ extension InvestmentLogic on GameState {
   }
 
   // Function to get the total investment dividend income per second
-  double getTotalDividendIncomePerSecond() {
+  double getDividendIncomePerSecond() {
     double total = 0.0;
     double diversificationBonus = calculateDiversificationBonus(); // Calculate once
+    double portfolioMultiplier = isPlatinumPortfolioActive ? 1.25 : 1.0;
+    
     for (var investment in investments) {
       if (investment.owned > 0 && investment.hasDividends()) {
-        total += investment.getDividendIncomePerSecond() * investment.owned;
+        // Get base dividend per second for this investment
+        double baseDividend = investment.getDividendIncomePerSecond();
+        
+        // Apply portfolio multiplier and diversification bonus
+        double adjustedDividend = baseDividend * portfolioMultiplier * (1 + diversificationBonus);
+        
+        // Apply owned count
+        double totalDividendForInvestment = adjustedDividend * investment.owned;
+        
+        // Apply global income multiplier
+        totalDividendForInvestment *= incomeMultiplier;
+        
+        // Apply permanent income boost if active
+        if (isPermanentIncomeBoostActive) {
+          totalDividendForInvestment *= 1.05;
+        }
+        
+        // Apply income surge if active
+        if (isIncomeSurgeActive) {
+          totalDividendForInvestment *= 2.0;
+        }
+        
+        total += totalDividendForInvestment;
       }
     }
-    // Multipliers and bonus are applied in the main update loop (_updateGameState)
+    
     return total;
   }
 

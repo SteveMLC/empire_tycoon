@@ -93,19 +93,33 @@ class RealEstatePropertyItem extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 4),
-                      Row(
+                      Builder(builder: (context) {
+                        // Check if this property's locale is affected by an event
+                        bool isLocaleAffectedByEvent = gameState.hasActiveEventForLocale(localeId);
+                        
+                        // Calculate income with event penalty if applicable
+                        double baseIncome = property.cashFlowPerSecond;
+                        if (isLocaleAffectedByEvent) {
+                          baseIncome += baseIncome * -0.25; // Apply -25% penalty
+                        }
+                        
+                        double displayedIncome = baseIncome * 
+                                                gameState.incomeMultiplier * 
+                                                gameState.prestigeMultiplier;
+                        
+                        return Row(
                         children: [
-                          Icon(Icons.attach_money, color: Colors.green.shade700, size: 16),
+                          Icon(Icons.attach_money, 
+                              color: isLocaleAffectedByEvent ? Colors.red.shade700 : Colors.green.shade700, 
+                              size: 16),
                           const SizedBox(width: 4),
                           Text(
-                            '\$${NumberFormatter.formatCompact(
-                              property.cashFlowPerSecond * 
-                              gameState.incomeMultiplier * 
-                              gameState.prestigeMultiplier
-                            )}/sec',
+                            isLocaleAffectedByEvent && displayedIncome < 0
+                                ? '(\$${NumberFormatter.formatCompact(displayedIncome.abs())})/sec'
+                                : '\$${NumberFormatter.formatCompact(displayedIncome)}/sec',
                             style: TextStyle(
                               fontSize: 14,
-                              color: Colors.green.shade700,
+                              color: isLocaleAffectedByEvent ? Colors.red.shade700 : Colors.green.shade700,
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -120,7 +134,8 @@ class RealEstatePropertyItem extends StatelessWidget {
                             ),
                           ),
                         ],
-                      ),
+                      );
+                      }),
                     ],
                   ),
                 ),

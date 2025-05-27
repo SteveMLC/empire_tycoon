@@ -123,7 +123,7 @@ class ReincorporationUtils {
                   ),
                 );
 
-                Provider.of<GameService>(context, listen: false).soundManager.playEventReincorporationSound();
+                Provider.of<GameService>(context, listen: false).playSound(() => Provider.of<GameService>(context, listen: false).soundManager.playEventReincorporationSound());
               }
             },
             style: TextButton.styleFrom(foregroundColor: Colors.green),

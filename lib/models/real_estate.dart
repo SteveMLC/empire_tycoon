@@ -198,7 +198,21 @@ class RealEstateLocale {
     for (var property in properties) {
       total += property.getTotalIncomePerSecond();
     }
+    
     return total;
+  }
+  
+  // Get the income with event penalty applied (if affected)
+  double getIncomeWithEventPenalty(bool isAffectedByEvent) {
+    double baseIncome = getTotalIncomePerSecond();
+    
+    // Apply event penalty if this locale is affected by an active event
+    if (isAffectedByEvent) {
+      // Apply the negative event multiplier (hardcoded as -0.25 or -25%)
+      baseIncome += baseIncome * -0.25;
+    }
+    
+    return baseIncome;
   }
 
   // Check if any properties are owned in this locale

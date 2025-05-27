@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../models/game_state.dart';
 import '../../themes/stats_themes.dart';
 import '../../utils/number_formatter.dart';
+import 'stats_utils.dart';
 
 class OverviewCard extends StatelessWidget {
   final GameState gameState;
@@ -88,7 +89,7 @@ class OverviewCard extends StatelessWidget {
             ),
 
             // Enhanced stat rows with icons
-            _buildStatRowWithIcon(
+            StatsUtils.buildStatRowWithIcon(
               'Net Worth', 
               NumberFormatter.formatCurrency(netWorth),
               Icons.account_balance_wallet,
@@ -103,17 +104,17 @@ class OverviewCard extends StatelessWidget {
                 if (gameState.networkWorth > 0) {
                   currentPrestigeLevel = (log(gameState.networkWorth * 100 + 1) / log(10)).floor();
                 }
-                return _buildStatRowWithIcon(
+                return StatsUtils.buildStatRowWithIcon(
                   'Prestige Multiplier', 
-                  '${gameState.incomeMultiplier.toStringAsFixed(2)}x (1.2 compounded ${currentPrestigeLevel}x)',
+                  '+${((gameState.incomeMultiplier - 1) * 100).toStringAsFixed(0)}%',
                   Icons.star,
-                  isExecutive ? theme.secondaryChartColor : Colors.amber.shade600,
+                  isExecutive ? Colors.amber : Colors.amber.shade600,
                   theme
                 );
               }),
 
             // Show network worth as lifetime stat with icon
-            _buildStatRowWithIcon(
+            StatsUtils.buildStatRowWithIcon(
               'Lifetime Network Worth', 
               NumberFormatter.formatCurrency(gameState.networkWorth * 100000000 + gameState.calculateNetWorth()),
               Icons.show_chart,
@@ -121,7 +122,7 @@ class OverviewCard extends StatelessWidget {
               theme
             ),
 
-            _buildStatRowWithIcon(
+            StatsUtils.buildStatRowWithIcon(
               'Total Money Earned', 
               NumberFormatter.formatCurrency(gameState.totalEarned),
               Icons.monetization_on,
@@ -129,19 +130,19 @@ class OverviewCard extends StatelessWidget {
               theme
             ),
             
-            _buildStatRowWithIcon(
-              'Lifetime Taps', 
-              gameState.lifetimeTaps.toString(),
-              Icons.touch_app,
-              isExecutive ? theme.secondaryChartColor : Colors.purple.shade500,
+            StatsUtils.buildStatRowWithIcon(
+              'Platinum Points', 
+              '${gameState.platinumPoints} PP',
+              Icons.diamond,
+              isExecutive ? Colors.purple.shade300 : Colors.purple.shade600,
               theme
             ),
             
-            _buildStatRowWithIcon(
-              'Time Playing', 
-              _calculateTimePlayed(gameState),
-              Icons.timer,
-              isExecutive ? theme.quaternaryChartColor : Colors.indigo.shade500,
+            StatsUtils.buildStatRowWithIcon(
+              'Time Played', 
+              StatsUtils.calculateTimePlayed(gameState),
+              Icons.access_time,
+              isExecutive ? Colors.green.shade300 : Colors.green.shade600,
               theme
             ),
 
@@ -226,93 +227,4 @@ class OverviewCard extends StatelessWidget {
       ),
     );
   }
-
-  Widget _buildStatRowWithIcon(String label, String value, IconData icon, Color iconColor, StatsTheme theme) {
-    final bool isExecutive = theme.id == 'executive';
-    
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12.0),
-      child: Row(
-        children: [
-          Container(
-            width: 30,
-            height: 30,
-            decoration: BoxDecoration(
-              color: isExecutive 
-                  ? iconColor.withOpacity(0.1)
-                  : iconColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Center(
-              child: Icon(
-                icon,
-                color: iconColor,
-                size: 16,
-              ),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              label,
-              style: isExecutive
-                  ? theme.statLabelStyle
-                  : TextStyle(
-                      fontSize: 14,
-                      color: Colors.black87,
-                      fontWeight: FontWeight.w500,
-                    ),
-            ),
-          ),
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            decoration: BoxDecoration(
-              color: isExecutive 
-                  ? const Color(0xFF242C3B) 
-                  : Colors.transparent,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: isExecutive 
-                    ? theme.cardBorderColor 
-                    : Colors.transparent,
-                width: 1,
-              ),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            child: Text(
-              value,
-              style: isExecutive
-                  ? theme.statValueStyle.copyWith(
-                      letterSpacing: 0.3,
-                    )
-                  : TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                      letterSpacing: 0.3,
-                    ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  String _calculateTimePlayed(GameState gameState) {
-    // Use gameStartTime for persistent time tracking across reincorporations
-    final firstStart = gameState.gameStartTime;
-    final playTime = DateTime.now().difference(firstStart);
-
-    final days = playTime.inDays;
-    final hours = playTime.inHours % 24;
-    final minutes = playTime.inMinutes % 60;
-
-    if (days > 0) {
-      return '$days days, $hours hours';
-    } else if (hours > 0) {
-      return '$hours hours, $minutes mins';
-    } else {
-      return '${playTime.inMinutes} mins';
-    }
-  }
-} 
+}

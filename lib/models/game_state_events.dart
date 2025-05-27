@@ -375,32 +375,60 @@ extension GameStateEvents on GameState {
   
   // Update existing events (check for resolved events, update timers)
   void _updateEvents() {
-    if (activeEvents.isEmpty) return;
-    
     final now = DateTime.now();
+    bool hasChanges = false;
     List<GameEvent> eventsToRemove = [];
+    final int eventCount = activeEvents.length;
     
-    for (var event in activeEvents) {
+    // Use direct index access for better performance
+    for (int i = 0; i < eventCount; i++) {
+      final event = activeEvents[i];
+      
+      // Skip already resolved events
+      if (event.isResolved) {
+        eventsToRemove.add(event);
+        continue;
+      }
+      
       // Check if time-based events have expired
       if (event.resolution.type == EventResolutionType.timeBased) {
         final timeLimit = event.resolution.value as int;
         final elapsed = now.difference(event.startTime).inSeconds;
         
         if (elapsed >= timeLimit) {
-          event.resolve();
+          event.resolve(); // Mark as resolved
           eventsToRemove.add(event);
+          hasChanges = true;
+          continue; // Skip further processing for expired events
         }
       }
       
-      // Mark resolved events for removal
-      if (event.isResolved) {
-        eventsToRemove.add(event);
+      // Update tap challenge timers
+      if (event.resolution.type == EventResolutionType.tapChallenge) {
+        final Map<String, dynamic> tapData = event.resolution.value as Map<String, dynamic>;
+        // Calculate remaining time based on startTime and resolution value
+        final int totalTime = tapData['timeLimit'] ?? 60; // Default 60 seconds if not specified
+        final int elapsedSeconds = now.difference(event.startTime).inSeconds;
+        final int remainingSeconds = totalTime - elapsedSeconds;
+        tapData['remainingSeconds'] = remainingSeconds > 0 ? remainingSeconds : 0;
+        
+        // Auto-expire tap challenges that run out of time
+        if (remainingSeconds <= 0 && !event.isResolved) {
+          event.resolve();
+          eventsToRemove.add(event);
+        }
+        
+        hasChanges = true;
       }
     }
     
     // Remove resolved events
     if (eventsToRemove.isNotEmpty) {
       activeEvents.removeWhere((event) => eventsToRemove.contains(event));
+      hasChanges = true;
+    }
+    
+    if (hasChanges) {
       notifyListeners();
     }
   }
@@ -429,8 +457,11 @@ extension GameStateEvents on GameState {
   }
   
   // Check if a business is affected by an active event
+  // Optimized with early return and direct iteration
   bool hasActiveEventForBusiness(String businessId) {
-    for (var event in activeEvents) {
+    final int eventCount = activeEvents.length;
+    for (int i = 0; i < eventCount; i++) {
+      final event = activeEvents[i];
       if (!event.isResolved && event.affectedBusinessIds.contains(businessId)) {
         return true;
       }
@@ -439,8 +470,11 @@ extension GameStateEvents on GameState {
   }
   
   // Check if a locale is affected by an active event
+  // Optimized with early return and direct iteration
   bool hasActiveEventForLocale(String localeId) {
-    for (var event in activeEvents) {
+    final int eventCount = activeEvents.length;
+    for (int i = 0; i < eventCount; i++) {
+      final event = activeEvents[i];
       if (!event.isResolved && event.affectedLocaleIds.contains(localeId)) {
         return true;
       }
@@ -449,17 +483,27 @@ extension GameStateEvents on GameState {
   }
   
   // Process all game events (called from main update loop)
+  // Optimized to avoid redundant checks and improve performance
   void checkAndTriggerEvents() {
     // No need to check if not initialized
     if (!isInitialized) return;
     
-    // Check if events should be unlocked
-    _checkEventUnlockConditions();
+    // Check if events should be unlocked (only if not already unlocked)
+    if (!eventsUnlocked) {
+      _checkEventUnlockConditions();
+    }
     
     // Process existing events and trigger new ones if unlocked
     if (eventsUnlocked) {
-      _updateEvents();      // Update existing events
-      _checkEventTriggers(); // Check for new events
+      // Only update events if there are active events to process
+      if (activeEvents.isNotEmpty) {
+        _updateEvents();
+      }
+      
+      // Only check for new events if we haven't reached the maximum
+      if (activeEvents.length < 3) {
+        _checkEventTriggers();
+      }
     }
   }
   

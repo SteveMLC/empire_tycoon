@@ -119,7 +119,7 @@ class GameEvent {
     return resolution.value as double;
   }
   
-  /// Mark the event as resolved
+  /// Mark the event as resolved 
   void resolve({double? feePaid}) {
     isResolved = true;
     completedTimestamp = DateTime.now();

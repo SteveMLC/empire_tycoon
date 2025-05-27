@@ -7,64 +7,21 @@ extension IncomeLogic on GameState {
 
   // Calculate total income per second (including all sources)
   double calculateTotalIncomePerSecond() {
-    // Business income per second
-    double businessIncome = 0.0;
-    for (var business in businesses) {
-      if (business.level > 0) {
-        double cyclesPerSecond = 1 / business.incomeInterval;
-        double baseIncomePerSecond = business.getCurrentIncome(isResilienceActive: isPlatinumResilienceActive) * cyclesPerSecond;
-        // Apply efficiency multiplier
-        double modifiedIncomePerSecond = baseIncomePerSecond * (isPlatinumEfficiencyActive ? 1.05 : 1.0);
-        businessIncome += modifiedIncomePerSecond;
-      }
-    }
+    // CRITICAL FIX: Use the fixed income calculation methods that properly account for events
     
-    // Real estate income per second
-    double realEstateIncome = 0.0;
-    for (var locale in realEstateLocales) {
-      if (locale.unlocked) {
-        bool isFoundationApplied = platinumFoundationsApplied.containsKey(locale.id);
-        bool isYachtDocked = platinumYachtDockedLocaleId == locale.id;
-        double foundationMultiplier = isFoundationApplied ? 1.05 : 1.0;
-        double yachtMultiplier = isYachtDocked ? 1.05 : 1.0;
-        
-        for (var property in locale.properties) {
-          if (property.owned > 0) {
-            double basePerSecond = property.getTotalIncomePerSecond(isResilienceActive: isPlatinumResilienceActive);
-            realEstateIncome += basePerSecond * foundationMultiplier * yachtMultiplier;
-          }
-        }
-      }
-    }
+    // Business income per second - use the fixed method that accounts for events
+    double businessIncome = getBusinessIncomePerSecond();
     
-    // Dividend income per second
-    double dividendIncome = 0.0;
-    double diversificationBonus = calculateDiversificationBonus();
-    double portfolioMultiplier = isPlatinumPortfolioActive ? 1.25 : 1.0;
+    // Real estate income per second - use the fixed method that accounts for events
+    double realEstateIncome = getRealEstateIncomePerSecond();
     
-    for (var investment in investments) {
-      if (investment.owned > 0 && investment.hasDividends()) {
-        double baseDividendPerSecond = investment.getDividendIncomePerSecond();
-        double effectiveDividendPerShare = baseDividendPerSecond * portfolioMultiplier * (1 + diversificationBonus);
-        dividendIncome += effectiveDividendPerShare * investment.owned;
-      }
-    }
+    // Dividend income per second - use the fixed method that accounts for all multipliers
+    double dividendIncome = getDividendIncomePerSecond();
     
-    // Apply global multipliers
-    double baseTotal = businessIncome + realEstateIncome + dividendIncome;
-    double withGlobalMultipliers = baseTotal * incomeMultiplier;
+    // Sum up all income sources (multipliers already applied in each method)
+    double totalIncome = businessIncome + realEstateIncome + dividendIncome;
     
-    // Apply permanent income boost
-    if (isPermanentIncomeBoostActive) {
-      withGlobalMultipliers *= 1.05;
-    }
-    
-    // Apply income surge if active
-    if (isIncomeSurgeActive) {
-      withGlobalMultipliers *= 2.0;
-    }
-    
-    return withGlobalMultipliers;
+    return totalIncome;
   }
 
   // Handle player tapping to earn money

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:math'; // Import math for max function
+import 'dart:collection'; // Import for Queue
 
 class Investment {
   final String id;
@@ -14,7 +15,22 @@ class Investment {
   int owned;
   final IconData icon;
   final Color color;
-  List<double> priceHistory; // Last 30 price points for more detailed charts
+  // Use a fixed-size queue for price history to avoid array shifts during pruning
+  Queue<double> _priceHistoryQueue = Queue<double>();
+  static const int maxPriceHistoryLength = 30; // Constant for max history length
+  
+  // Getter that returns price history as a List for compatibility with existing code
+  List<double> get priceHistory => _priceHistoryQueue.toList();
+  
+  // Setter for price history - needed for serialization compatibility
+  set priceHistory(List<double> history) {
+    _priceHistoryQueue.clear();
+    for (final price in history) {
+      if (_priceHistoryQueue.length < maxPriceHistoryLength) {
+        _priceHistoryQueue.add(price);
+      }
+    }
+  }
   final String category; // Investment category (e.g., 'Technology', 'Energy', etc.)
   bool autoInvestEnabled = false; // For auto-invest feature
   double autoInvestAmount = 0; // Amount to auto-invest
@@ -41,7 +57,7 @@ class Investment {
     required this.owned,
     required this.icon,
     required this.color,
-    required this.priceHistory,
+    required List<double> priceHistory,
     required this.category,
     this.purchasePrice = 0.0,
     this.autoInvestEnabled = false,
@@ -54,7 +70,17 @@ class Investment {
   }) : // Calculate maxShares based on initial marketCap and basePrice
        maxShares = (basePrice > 0 && marketCap > 0)
            ? ((marketCap * 1e9) / basePrice).floor() // Convert marketCap from billions
-           : 0;
+           : 0 {
+    // Initialize the price history queue with the provided list
+    // Ensure we don't exceed the maximum length
+    if (priceHistory.isNotEmpty) {
+      // If we have more entries than the max, take only the most recent ones
+      final startIndex = max(0, priceHistory.length - maxPriceHistoryLength);
+      for (int i = startIndex; i < priceHistory.length; i++) {
+        _priceHistoryQueue.add(priceHistory[i]);
+      }
+    }
+  }
   
   // Get current value of owned investments
   double getCurrentValue() {
@@ -73,12 +99,13 @@ class Investment {
     return ((currentPrice - purchasePrice) / purchasePrice) * 100;
   }
   
-  // Calculate price change from previous day
+  // Calculate price change from previous day - optimized for the queue implementation
   double getPriceChangePercent() {
-    if (priceHistory.length < 2) return 0.0;
+    final history = priceHistory; // Get the list via the getter
+    if (history.length < 2) return 0.0;
     
-    // Get the current price (most recent in history) and previous price
-    double previousPrice = priceHistory[priceHistory.length - 2];
+    // Get the current price and previous price
+    double previousPrice = history[history.length - 2];
     double latestPrice = currentPrice; // Always use the current price, not the last history entry
     
     // Calculate the percentage change
@@ -86,29 +113,32 @@ class Investment {
     return ((latestPrice - previousPrice) / previousPrice) * 100;
   }
   
-  // Predict trend direction based on historical data
+  // Predict trend direction based on historical data - optimized for memory efficiency
   bool isPriceIncreasing() {
-    if (priceHistory.length < 3) return trend > 0;
+    final history = priceHistory; // Get the list via the getter
+    if (history.length < 3) return trend > 0;
     
+    // Calculate the sum of price changes more efficiently
     double sum = 0;
-    for (int i = 1; i < priceHistory.length; i++) {
-      sum += priceHistory[i] - priceHistory[i-1];
+    for (int i = 1; i < history.length; i++) {
+      sum += history[i] - history[i-1];
     }
     return sum > 0;
   }
   
-  // Calculate a forecast score from -1.0 (strong sell) to 1.0 (strong buy)
+  // Calculate a forecast score from -1.0 (strong sell) to 1.0 (strong buy) - optimized for memory efficiency
   double getForecastScore() {
     // Base score on recent trend strength
     double trendStrength = 0;
-    if (priceHistory.length >= 3) {
-      List<double> changes = [];
-      for (int i = 1; i < priceHistory.length; i++) {
-        changes.add(priceHistory[i] - priceHistory[i-1]);
+    final history = priceHistory; // Get the list via the getter
+    
+    if (history.length >= 3) {
+      // Calculate the average change directly without creating a new list
+      double sumChanges = 0;
+      for (int i = 1; i < history.length; i++) {
+        sumChanges += history[i] - history[i-1];
       }
-      
-      // Average the changes
-      double avgChange = changes.reduce((a, b) => a + b) / changes.length;
+      double avgChange = sumChanges / (history.length - 1);
       
       // Normalize to a -1 to 1 range (adjust multiplier as needed)
       trendStrength = (avgChange / currentPrice) * 100;
@@ -180,7 +210,7 @@ class Investment {
     return (dividendPerSecond / currentPrice) * 100;
   }
   
-  // Calculate trading volume based on price, market cap, and volatility
+  // Calculate trading volume based on price, market cap, and volatility - optimized for consistency
   double getDailyVolume() {
     if (currentPrice <= 0 || marketCap <= 0) return 0.0;
     
@@ -191,13 +221,40 @@ class Investment {
     // Higher volatility means more trading activity
     double volumePercentage = volatility * 0.8; // Base percentage (0-80%) of shares traded daily based on volatility
     
-    // Add a small random component for realism (±10% variation)
-    final random = 0.9 + (DateTime.now().millisecond % 20) / 100; // 0.9 to 1.1 random factor
+    // Use a more deterministic approach for the random component to reduce object creation
+    // Based on investment ID hash and current day to ensure consistency within a day
+    final int dayOfYear = DateTime.now().day + (DateTime.now().month * 31);
+    final int seed = id.hashCode + dayOfYear;
+    final random = 0.9 + ((seed % 20) / 100); // 0.9 to 1.1 deterministic factor
     
     // Calculate actual volume
     double volume = sharesOutstanding * volumePercentage * random;
     
     // Calculate volume in dollars
     return volume * currentPrice;
+  }
+  
+  // Add and remove price history points efficiently
+  void addPriceHistoryPoint(double price) {
+    // Add the new price point
+    _priceHistoryQueue.add(price);
+    
+    // Remove oldest entry if we exceed the maximum length
+    if (_priceHistoryQueue.length > maxPriceHistoryLength) {
+      _priceHistoryQueue.removeFirst();
+    }
+  }
+  
+  // Update the most recent price point (used for micro-updates)
+  void updateLatestPricePoint(double price) {
+    if (_priceHistoryQueue.isEmpty) {
+      _priceHistoryQueue.add(price);
+      return;
+    }
+    
+    // Remove the last item and add the updated one
+    // This is more efficient than creating a new list and replacing an element
+    _priceHistoryQueue.removeLast();
+    _priceHistoryQueue.add(price);
   }
 }

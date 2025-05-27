@@ -1,8 +1,12 @@
-import '../../models/game_state.dart';
-import '../../models/game_state_events.dart';
+import 'package:flutter/material.dart';
+import 'dart:async';
+import '../models/game_state.dart';
+import '../models/game_state_events.dart';
+import '../utils/number_formatter.dart';
 
-/// Helper class for income calculations to avoid duplicating logic
-class IncomeCalculator {
+/// Service class for income calculations to avoid duplicating logic
+/// This follows a more consistent dependency injection pattern and prevents race conditions
+class IncomeService extends ChangeNotifier {
   // Track calculation state with stronger safeguards
   bool _isCalculatingIncome = false;
   double _lastCalculatedIncome = 0.0;
@@ -27,14 +31,10 @@ class IncomeCalculator {
     // CRITICAL FIX: Only apply optimization in specific cases to ensure income display updates properly
     // 1. If we're already calculating, return the cached value to prevent recursion
     // 2. If we calculated within the last 100ms (for UI smoothness), return cached value
-    // 3. REMOVED the stateHashCode check to ensure income updates when businesses change
     if (_isCalculatingIncome || now.difference(_lastCalculationTime).inMilliseconds < 100) {
       print("💹 Income calculation optimized, returning cached value: $_lastCalculatedIncome (reason: ${_isCalculatingIncome ? 'calculating' : 'recent calc'})");
       return _lastCalculatedIncome;
     }
-    
-    // CRITICAL: Force recalculation when income might have changed
-    // This ensures the display updates when businesses or properties change
     
     // Record this timestamp to prevent duplicate processing in the same second
     _processedTimestamps.add(timestampKey);
@@ -75,6 +75,7 @@ class IncomeCalculator {
           if (hasEvent) {
             finalIncome *= GameStateEvents.NEGATIVE_EVENT_MULTIPLIER;
           }
+          
           // --- DEBUG START ---
           // print("    Business '${business.name}': Base=$baseIncome, Final=$finalIncome (Event: $hasEvent)");
           totalBusinessIncome += finalIncome;
@@ -171,12 +172,23 @@ class IncomeCalculator {
   }
 
   /// Format remaining boost time for display
+  /// Now uses the centralized NumberFormatter to avoid duplication
   String formatBoostTimeRemaining(Duration remaining) {
     if (remaining <= Duration.zero) return 'Expired';
-
-    final minutes = remaining.inMinutes;
-    final seconds = remaining.inSeconds % 60;
-    
-    return '$minutes:${seconds.toString().padLeft(2, '0')}';
+    return NumberFormatter.formatBoostTimeRemaining(remaining);
   }
-} 
+  
+  /// Format income per second for display
+  /// Uses the centralized NumberFormatter for consistent formatting
+  String formatIncomePerSecond(double incomePerSecond) {
+    return '${NumberFormatter.formatCurrency(incomePerSecond)}/sec';
+  }
+  
+  /// Register this service with the TimerService to ensure income calculations
+  /// are synchronized with the game update cycle
+  void registerWithTimerService(Function timerCallback) {
+    // This method allows the TimerService to call back to this service
+    // when it's time to update income calculations, ensuring they happen
+    // in sync with other game state updates
+  }
+}

@@ -28,8 +28,8 @@ class PurchaseHandler {
         // Preload the sound first, then play it
         final assetLoader = AssetLoader();
         unawaited(assetLoader.preloadSound('assets/sounds/platinum/platinum_purchase.mp3'));
-        // Use the playSound method directly which has better error handling
-        gameService.soundManager.playPlatinumPurchaseSound();
+        // Use the playSound method which has better error handling
+        gameService.playSound(() => gameService.soundManager.playPlatinumPurchaseSound());
       } catch (e) {
         print("Error playing platinum purchase sound: $e");
         // Continue with the purchase process even if sound fails

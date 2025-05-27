@@ -14,7 +14,8 @@ extension GameStateOfflineIncome on GameState {
 
 
   // Process offline income based on last saved time
-  void processOfflineIncome(DateTime lastSavedTime) {
+  // CRITICAL FIX: Added incomeService parameter to ensure consistent income calculation
+  void processOfflineIncome(DateTime lastSavedTime, {dynamic incomeService}) {
     print("🕒 Calculating offline income...");
     
     final DateTime now = DateTime.now();
@@ -36,9 +37,29 @@ extension GameStateOfflineIncome on GameState {
     }
 
     // Get income rate per second at the time of last save
-    final double incomePerSecond = calculateTotalIncomePerSecond();
+    // CRITICAL FIX: Use the IncomeService if provided, otherwise fall back to direct calculation
+    // This ensures we use the exact same calculation as the UI display
+    double incomePerSecond;
+    if (incomeService != null) {
+      // Use the same income calculation as the top panel
+      incomePerSecond = incomeService.calculateIncomePerSecond(this);
+      print("💰 Using IncomeService for offline income calculation");
+    } else {
+      // Fall back to direct calculation if service not provided
+      incomePerSecond = calculateTotalIncomePerSecond();
+      print("⚠️ Falling back to direct income calculation (not using IncomeService)");
+    }
     
-    // Cap offline time at 24 hours (86400 seconds)
+    print("🔍 DEBUG: Income breakdown for offline calculation:");
+    double businessIncome = getBusinessIncomePerSecond();
+    double realEstateIncome = getRealEstateIncomePerSecond();
+    double dividendIncome = getDividendIncomePerSecond();
+    print("   - Business income: ${NumberFormatter.formatCompact(businessIncome)}/sec");
+    print("   - Real Estate income: ${NumberFormatter.formatCompact(realEstateIncome)}/sec");
+    print("   - Dividend income: ${NumberFormatter.formatCompact(dividendIncome)}/sec");
+    print("   - Total income with all multipliers: ${NumberFormatter.formatCompact(incomePerSecond)}/sec");
+    
+    // Cap offline time at 4 hours (14400 seconds)
     final int cappedOfflineSeconds = min(offlineSeconds, MAX_OFFLINE_SECONDS);
     
     // Calculate total offline income - make sure it's a simple multiplication

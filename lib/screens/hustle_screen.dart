@@ -87,9 +87,9 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
       if (gameService != null) {
         try {
           if (gameState.isAdBoostActive) {
-            gameService.soundManager.playUiTapBoostedSound();
+            gameService.playBoostedTapSound();
           } else {
-            gameService.soundManager.playUiTapSound();
+            gameService.playTapSound();
           }
         } catch (e) {
           print("Sound error: $e");
@@ -133,13 +133,13 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
           GameService? gameService = Provider.of<GameService>(context, listen: false);
           
           if (nextLevel >= 15) {
-            gameService.soundManager.playAchievementMilestoneSound();
+            gameService.playSound(() => gameService.soundManager.playAchievementMilestoneSound());
           } else if (nextLevel >= 10) {
-            gameService.soundManager.playAchievementRareSound();
+            gameService.playSound(() => gameService.soundManager.playAchievementRareSound());
           } else if (nextLevel >= 5) {
-            gameService.soundManager.playAchievementBasicSound();
+            gameService.playAchievementSound();
           } else {
-            gameService.soundManager.playFeedbackSuccessSound();
+            gameService.playSound(() => gameService.soundManager.playFeedbackSuccessSound());
           }
         } catch (e) {
           print("Could not play level up sound: $e");
@@ -209,11 +209,14 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
         final double nextClickValue = gameState.clickLevel >= 20 ? gameState.clickValue :
           _calculateNextClickValue(gameState.clickLevel + 1);
         
+        // Hide boost section ONLY when achievement notification is visible
+        final bool showBoost = !gameState.isAchievementNotificationVisible;
+        
         return Column(
           children: [
             _buildClickInfoCard(gameState, progress, nextClickValue),
-            _buildBoostCard(gameState),
-            
+            if (showBoost)
+              _buildBoostCard(gameState),
             Expanded(
               flex: 6,
               child: Padding(

@@ -2,117 +2,163 @@ part of '../game_state.dart';
 
 // Contains methods related to interacting with the Game Event system
 extension EventLogic on GameState {
-
   // Check if a business is affected by an active event
+  // Optimized business event check with direct indexing
   bool hasActiveEventForBusiness(String businessId) {
-    for (var event in activeEvents) {
-      if (!event.isResolved && event.affectedBusinessIds.contains(businessId)) {
+    // Use direct indexing for better performance
+    final int eventCount = activeEvents.length;
+    for (int i = 0; i < eventCount; i++) {
+      final event = activeEvents[i];
+      // Check resolution status first (faster boolean check)
+      if (event.isResolved) continue;
+      
+      // Only check affected IDs if not resolved
+      if (event.affectedBusinessIds.contains(businessId)) {
         return true;
       }
     }
+    
     return false;
   }
 
   // Check if a locale is affected by an active event
+  // Optimized locale event check with direct indexing
   bool hasActiveEventForLocale(String localeId) {
-    for (var event in activeEvents) {
-      if (!event.isResolved && event.affectedLocaleIds.contains(localeId)) {
+    // Use direct indexing for better performance
+    final int eventCount = activeEvents.length;
+    for (int i = 0; i < eventCount; i++) {
+      final event = activeEvents[i];
+      // Check resolution status first (faster boolean check)
+      if (event.isResolved) continue;
+      
+      // Only check affected IDs if not resolved
+      if (event.affectedLocaleIds.contains(localeId)) {
         return true;
       }
     }
+    
     return false;
   }
 
   // Process tap for tap challenge events
+  // Optimized tap processing with direct access and early returns
   void processTapForEvent(GameEvent event) {
+    // Early return for non-tap events (most common case)
     if (event.resolution.type != EventResolutionType.tapChallenge) return;
+    if (event.isResolved) return; // Don't process already resolved events
 
-    // Get current and required taps
-    Map<String, dynamic> tapData = event.resolution.value as Map<String, dynamic>; // Assume value is correct type
-    int current = tapData['current'] ?? 0;
-    int required = tapData['required'] ?? 0;
+    try {
+      // Direct access to tap data with null safety
+      final Map<String, dynamic> tapData = event.resolution.value as Map<String, dynamic>;
+      final int current = (tapData['current'] ?? 0) + 1; // Increment in a single operation
+      final int required = tapData['required'] ?? 0;
 
-    // Increment taps and check if complete
-    current++;
-    tapData['current'] = current;
+      // Update the current tap count
+      tapData['current'] = current;
 
-    // Increment lifetime taps to track event taps as well
-    lifetimeTaps++;
+      // Increment lifetime taps counter
+      lifetimeTaps++;
 
-    if (current >= required) {
-      event.resolve();
+      // Check if challenge is complete
+      final bool isComplete = current >= required;
+      
+      if (isComplete) {
+        // Mark as resolved
+        event.resolve();
 
-      // Update event achievement tracking
-      totalEventsResolved++;
-      eventsResolvedByTapping++;
-      trackEventResolution(event, "tap"); // Use the tracking method
+        // Update achievement tracking in a single batch
+        totalEventsResolved++;
+        eventsResolvedByTapping++;
+        
+        // Track the resolution with the dedicated method
+        trackEventResolution(event, "tap");
+      }
+
+      // Only notify listeners once per tap
+      notifyListeners();
+    } catch (e) {
+      print('Error in processTapForEvent: $e');
     }
-
-    notifyListeners();
   }
 
   // Track event resolution for achievement tracking
+  // Optimized event resolution tracking with efficient history management
   void trackEventResolution(GameEvent event, String method) {
-    // Track resolution time
-    lastEventResolvedTime = DateTime.now();
+    try {
+      // Skip processing if the event isn't actually resolved
+      if (!event.isResolved) return;
+      
+      // Track resolution time (single operation)
+      lastEventResolvedTime = DateTime.now();
 
-    // Track resolution by locale
-    for (String localeId in event.affectedLocaleIds) {
-      eventsResolvedByLocale[localeId] = (eventsResolvedByLocale[localeId] ?? 0) + 1;
-    }
-
-    // Store resolved event history (ensure it's the resolved event)
-    if (event.isResolved) { // Only add if actually resolved
-        resolvedEvents.add(event);
-        if (resolvedEvents.length > 25) { // Keep only the last 25 events
-          resolvedEvents.removeAt(0);
-        }
-    }
-
-    // Track stats based on resolution method
-    // (These are updated directly where resolution happens now, e.g., processTapForEvent)
-    // switch (method) {
-    //   case "tap":
-    //     eventsResolvedByTapping++;
-    //     break;
-    //   case "fee":
-    //     eventsResolvedByFee++;
-    //     // eventFeesSpent is updated directly in the UI/service layer where fee is paid
-    //     break;
-    //   case "ad":
-    //     eventsResolvedByAd++;
-    //     break;
-    // }
-    // totalEventsResolved++; // Also updated directly where resolution happens
-
-    // Notify listeners of state change
-    notifyListeners();
-  }
-
-   // Property for getting total income per second (used *by* the event system in game_state_events.dart)
-   // This needs to stay accessible or be passed to the event system.
-   // Keeping it here is simpler given the `part of` structure.
-  double get totalIncomePerSecond {
-    double total = 0.0;
-
-    // Add business income (using the dedicated method)
-    total += getBusinessIncomePerSecond(); // Already includes multipliers and event effects
-
-    // Add real estate income (using the dedicated method)
-    total += getRealEstateIncomePerSecond() * incomeMultiplier; // Removed prestigeMultiplier from here
-
-    // Add dividend income from investments
-    double dividendIncome = 0.0;
-    double diversificationBonus = calculateDiversificationBonus();
-    for (var investment in investments) {
-      if (investment.owned > 0 && investment.hasDividends()) {
-        dividendIncome += investment.getDividendIncomePerSecond() * investment.owned;
+      // Track resolution by locale with efficient iteration
+      final localeIds = event.affectedLocaleIds;
+      final int localeCount = localeIds.length;
+      
+      for (int i = 0; i < localeCount; i++) {
+        final String localeId = localeIds[i];
+        eventsResolvedByLocale[localeId] = (eventsResolvedByLocale[localeId] ?? 0) + 1;
       }
-    }
-    // Apply multipliers and bonus to total dividend income
-    total += dividendIncome * incomeMultiplier * (1 + diversificationBonus); // Removed prestigeMultiplier
 
-    return total;
+      // Store resolved event in history with constant-time operations
+      // Add to the end (constant time operation)
+      resolvedEvents.add(event);
+      
+      // Efficiently maintain history size limit with a single operation
+      const int maxHistorySize = 25;
+      if (resolvedEvents.length > maxHistorySize) {
+        // Use sublist for efficient truncation (single operation)
+        resolvedEvents = resolvedEvents.sublist(resolvedEvents.length - maxHistorySize);
+      }
+
+      // Notify listeners of all state changes at once
+      notifyListeners();
+    } catch (e) {
+      print('Error in trackEventResolution: $e');
+    }
   }
 
+  // Property for getting total income per second (used *by* the event system in game_state_events.dart)
+  // This needs to stay accessible or be passed to the event system.
+  // Keeping it here is simpler given the `part of` structure.
+  // Optimized income calculation with efficient iteration and math operations
+  double get totalIncomePerSecond {
+    try {
+      // Initialize with business income (already optimized)
+      double total = getBusinessIncomePerSecond();
+      
+      // Add real estate income with single multiplication
+      total += getRealEstateIncomePerSecond() * incomeMultiplier;
+
+      // Calculate dividend income with optimized iteration
+      double dividendIncome = 0.0;
+      final int investmentCount = investments.length;
+      
+      // Use direct indexing for better performance
+      for (int i = 0; i < investmentCount; i++) {
+        final investment = investments[i];
+        final int owned = investment.owned;
+        
+        // Skip investments not owned or without dividends (combined check)
+        if (owned <= 0 || !investment.hasDividends()) continue;
+        
+        // Add dividend income in a single operation
+        dividendIncome += investment.getDividendIncomePerSecond() * owned;
+      }
+      
+      // Only calculate diversification bonus if we have dividend income
+      if (dividendIncome > 0) {
+        // Apply multipliers and bonus in a single calculation
+        final double diversificationBonus = calculateDiversificationBonus();
+        total += dividendIncome * incomeMultiplier * (1 + diversificationBonus);
+      }
+
+      return total;
+    } catch (e) {
+      print('Error calculating totalIncomePerSecond: $e');
+      return 0.0; // Return safe value on error
+    }
+  }
+  
+  // No caches to clear in extension
 } 

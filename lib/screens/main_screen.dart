@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../models/game_state.dart';
 import '../services/game_service.dart';
+import '../services/income_service.dart';
 import 'business_screen.dart';
 import 'investment_screen.dart';
 import 'stats_screen.dart';
@@ -13,7 +14,6 @@ import 'user_profile_screen.dart';
 import '../widgets/main_screen/top_panel.dart';
 import '../widgets/main_screen/main_tab_bar.dart';
 import '../widgets/main_screen/notification_section.dart';
-import '../widgets/main_screen/income_calculator.dart';
 
 /// Main screen of the app, refactored to use smaller, more maintainable component files.
 /// Components extracted include:
@@ -33,29 +33,24 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
   late TabController _tabController;
   Timer? _boostTimer; // Timer for boost UI updates
   Duration _boostTimeRemaining = Duration.zero; // State variable for remaining time
-  late GameState _gameState;
-  late GameService _gameService;
-  late IncomeCalculator _incomeCalculator;
+  
+  // We'll access these services through Provider instead of storing local references
+  // This helps avoid memory leaks and ensures consistent access patterns
   
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 6, vsync: this);
     
-    // Initialize utility classes
-    _incomeCalculator = IncomeCalculator();
-    
-    // Load dependencies
-    _gameState = Provider.of<GameState>(context, listen: false);
-    _gameService = Provider.of<GameService>(context, listen: false);
-    
-    // Initialize boost timer
-    _initializeBoostTimer();
-    
-    // Use WidgetsBinding to ensure the first frame is built before potentially showing a notification
+    // Initialize boost timer after the first frame is built
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) { // Check if the widget is still in the tree
-        _gameState.tryShowingNextAchievement();
+      if (mounted) {
+        // Initialize boost timer
+        _initializeBoostTimer();
+        
+        // Trigger initial achievement check
+        final gameState = Provider.of<GameState>(context, listen: false);
+        gameState.tryShowingNextAchievement();
         print("🔔 Initial achievement check triggered.");
       }
     });
@@ -65,21 +60,40 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
   void dispose() {
     _tabController.dispose();
     _boostTimer?.cancel(); // Cancel timer on dispose
-    // Remove listener to avoid memory leaks
-    Provider.of<GameState>(context, listen: false).removeListener(_handleGameStateChange);
+    
+    // Remove listener to avoid memory leaks - safely check if context is still valid
+    if (mounted) {
+      Provider.of<GameState>(context, listen: false).removeListener(_handleGameStateChange);
+    }
     super.dispose();
   }
 
   void _initializeBoostTimer() {
+    // Get GameState through Provider to ensure consistent access pattern
+    final gameState = Provider.of<GameState>(context, listen: false);
+    
     // Initial check
-    _updateBoostTimer(_gameState);
-    // Add listener for future changes
-    _gameState.addListener(_handleGameStateChange);
+    _updateBoostTimer(gameState);
+    
+    // Add listener for future changes - safely add only if mounted
+    if (mounted) {
+      gameState.addListener(_handleGameStateChange);
+    }
   }
 
   // Listen to GameState changes to start/stop the timer
   void _handleGameStateChange() {
-    if (!mounted) return; // Avoid calling if widget is disposed
+    // Early return if widget is no longer mounted to prevent memory leaks
+    if (!mounted) {
+      // If not mounted, we should also remove the listener to prevent memory leaks
+      try {
+        Provider.of<GameState>(context, listen: false).removeListener(_handleGameStateChange);
+      } catch (e) {
+        // Ignore errors if context is no longer valid
+      }
+      return;
+    }
+    
     final gameState = Provider.of<GameState>(context, listen: false);
     _updateBoostTimer(gameState);
   }
@@ -139,14 +153,24 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<GameState>(
-      builder: (context, gameState, child) {
-        // ADDED: Logging inside Consumer builder
-        print("🔄 MainScreen Consumer rebuilding...");
-        print("  -> gameState hashCode: ${gameState.hashCode}"); // Log hashCode
-        print("  -> PP: ${gameState.platinumPoints}");
-        print("  -> showPPAnimation: ${gameState.showPPAnimation}");
-        print("  -> showPremiumNotification: ${gameState.showPremiumPurchaseNotification}");
+    // Use a more selective approach to rebuilds by using a Selector instead of Consumer
+    // This will only rebuild when specific properties change, not on every GameState change
+    return Selector<GameState, List<dynamic>>(
+      // Only select the properties we actually need for this screen
+      selector: (_, gameState) => [
+        gameState.isInitialized,
+        gameState.showPPAnimation,
+        gameState.showPremiumPurchaseNotification,
+        // Add any other properties that should trigger a rebuild
+      ],
+      builder: (context, data, child) {
+        // Get the current gameState without listening to all changes
+        final gameState = Provider.of<GameState>(context, listen: false);
+        
+        // ADDED: Logging inside Selector builder with more details
+        print("🔄 MainScreen Selector rebuilding...");
+        print("  -> Rebuild reason: isInitialized=${data[0]}, showPPAnimation=${data[1]}, showPremiumNotification=${data[2]}");
+        print("  -> gameState hashCode: ${gameState.hashCode}");
 
         if (!gameState.isInitialized) {
           return const Scaffold(
@@ -169,11 +193,9 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
         return Scaffold(
           body: Column(
             children: [
-              // Top Panel always at the top
-              TopPanel(
-                formatBoostTimeRemaining: _incomeCalculator.formatBoostTimeRemaining,
-                calculateIncomePerSecond: _incomeCalculator.calculateIncomePerSecond,
-              ),
+              // Top Panel always at the top - no longer passing functions
+              // The TopPanel will access IncomeService directly through Provider
+              const TopPanel(),
 
               // Notification section - pushes down the menu
               const NotificationSection(),

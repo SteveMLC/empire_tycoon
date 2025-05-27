@@ -16,6 +16,7 @@ import '../widgets/stats/hourly_earnings_chart.dart';
 import '../widgets/stats/net_worth_chart.dart';
 import '../widgets/stats/theme_dialog.dart';
 import '../widgets/stats/reincorporation_utils.dart';
+import '../widgets/stats/stats_utils.dart';
 
 class StatsScreen extends StatefulWidget {
   const StatsScreen({Key? key}) : super(key: key);
@@ -25,19 +26,7 @@ class StatsScreen extends StatefulWidget {
 }
 
 class _StatsScreenState extends State<StatsScreen> {
-  String formatLargeNumber(double value) {
-    if (value >= 1000000000000) {
-      return '\$${(value / 1000000000000).toStringAsFixed(1)}T';
-    } else if (value >= 1000000000) {
-      return '\$${(value / 1000000000).toStringAsFixed(1)}B';
-    } else if (value >= 1000000) {
-      return '\$${(value / 1000000).toStringAsFixed(1)}M';
-    } else if (value >= 1000) {
-      return '\$${(value / 1000).toStringAsFixed(1)}K';
-    } else {
-      return '\$${value.toStringAsFixed(0)}';
-    }
-  }
+  // Using NumberFormatter utility instead of duplicating formatting logic
   @override
   Widget build(BuildContext context) {
     return Consumer<GameState>(
@@ -437,7 +426,7 @@ class _StatsScreenState extends State<StatsScreen> {
             ),
 
             // Enhanced stat rows with icons
-            _buildStatRowWithIcon(
+            StatsUtils.buildStatRowWithIcon(
               'Net Worth', 
               NumberFormatter.formatCurrency(netWorth),
               Icons.account_balance_wallet,
@@ -452,7 +441,7 @@ class _StatsScreenState extends State<StatsScreen> {
                 if (gameState.networkWorth > 0) {
                   currentPrestigeLevel = (log(gameState.networkWorth * 100 + 1) / log(10)).floor();
                 }
-                return _buildStatRowWithIcon(
+                return StatsUtils.buildStatRowWithIcon(
                   'Prestige Multiplier', 
                   '${gameState.incomeMultiplier.toStringAsFixed(2)}x (1.2 compounded ${currentPrestigeLevel}x)',
                   Icons.star,
@@ -462,7 +451,7 @@ class _StatsScreenState extends State<StatsScreen> {
               }),
 
             // Show network worth as lifetime stat with icon
-            _buildStatRowWithIcon(
+            StatsUtils.buildStatRowWithIcon(
               'Lifetime Network Worth', 
               NumberFormatter.formatCurrency(gameState.networkWorth * 100000000 + gameState.calculateNetWorth()),
               Icons.show_chart,
@@ -470,7 +459,7 @@ class _StatsScreenState extends State<StatsScreen> {
               theme
             ),
 
-            _buildStatRowWithIcon(
+            StatsUtils.buildStatRowWithIcon(
               'Total Money Earned', 
               NumberFormatter.formatCurrency(gameState.totalEarned),
               Icons.monetization_on,
@@ -478,7 +467,7 @@ class _StatsScreenState extends State<StatsScreen> {
               theme
             ),
             
-            _buildStatRowWithIcon(
+            StatsUtils.buildStatRowWithIcon(
               'Lifetime Taps', 
               gameState.lifetimeTaps.toString(),
               Icons.touch_app,
@@ -486,9 +475,9 @@ class _StatsScreenState extends State<StatsScreen> {
               theme
             ),
             
-            _buildStatRowWithIcon(
+            StatsUtils.buildStatRowWithIcon(
               'Time Playing', 
-              _calculateTimePlayed(gameState),
+              StatsUtils.calculateTimePlayed(gameState),
               Icons.timer,
               isExecutive ? theme.quaternaryChartColor : Colors.indigo.shade500,
               theme
@@ -576,77 +565,6 @@ class _StatsScreenState extends State<StatsScreen> {
     );
   }
 
-  Widget _buildStatRowWithIcon(String label, String value, IconData icon, Color iconColor, StatsTheme theme) {
-    final bool isExecutive = theme.id == 'executive';
-    
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12.0),
-      child: Row(
-        children: [
-          Container(
-            width: 30,
-            height: 30,
-            decoration: BoxDecoration(
-              color: isExecutive 
-                  ? iconColor.withOpacity(0.1)
-                  : iconColor.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Center(
-              child: Icon(
-                icon,
-                color: iconColor,
-                size: 16,
-              ),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              label,
-              style: isExecutive
-                  ? theme.statLabelStyle
-                  : TextStyle(
-                      fontSize: 14,
-                      color: Colors.black87,
-                      fontWeight: FontWeight.w500,
-                    ),
-            ),
-          ),
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            decoration: BoxDecoration(
-              color: isExecutive 
-                  ? const Color(0xFF242C3B) 
-                  : Colors.transparent,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: isExecutive 
-                    ? theme.cardBorderColor 
-                    : Colors.transparent,
-                width: 1,
-              ),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            child: Text(
-              value,
-              style: isExecutive
-                  ? theme.statValueStyle.copyWith(
-                      letterSpacing: 0.3,
-                    )
-                  : TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                      letterSpacing: 0.3,
-                    ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildEarningsBreakdown(GameState gameState, StatsTheme theme) {
     final bool isExecutive = theme.id == 'executive';
     double totalEarned = gameState.manualEarnings +
@@ -708,7 +626,7 @@ class _StatsScreenState extends State<StatsScreen> {
             ),
 
             // Enhanced earnings breakdown with icons
-            _buildStatRowWithIcon(
+            StatsUtils.buildStatRowWithIcon(
               'Hustle Earnings',
               '${NumberFormatter.formatCurrency(gameState.manualEarnings)} (${manualPercent.toStringAsFixed(1)}%)', 
               Icons.touch_app,
@@ -716,7 +634,7 @@ class _StatsScreenState extends State<StatsScreen> {
               theme
             ),
             
-            _buildStatRowWithIcon(
+            StatsUtils.buildStatRowWithIcon(
               'Business Earnings',
               '${NumberFormatter.formatCurrency(gameState.passiveEarnings)} (${passivePercent.toStringAsFixed(1)}%)', 
               Icons.business,
@@ -724,7 +642,7 @@ class _StatsScreenState extends State<StatsScreen> {
               theme
             ),
             
-            _buildStatRowWithIcon(
+            StatsUtils.buildStatRowWithIcon(
               'Investment Earnings',
               '${NumberFormatter.formatCurrency(gameState.investmentEarnings + gameState.investmentDividendEarnings)} (${investmentPercent.toStringAsFixed(1)}%)', 
               Icons.trending_up,
@@ -732,7 +650,7 @@ class _StatsScreenState extends State<StatsScreen> {
               theme
             ),
             
-            _buildStatRowWithIcon(
+            StatsUtils.buildStatRowWithIcon(
               'Real Estate Earnings',
               '${NumberFormatter.formatCurrency(gameState.realEstateEarnings)} (${realEstatePercent.toStringAsFixed(1)}%)', 
               Icons.home,
@@ -755,10 +673,10 @@ class _StatsScreenState extends State<StatsScreen> {
                 ),
                 child: Row(
                   children: [
-                    _buildBreakdownSegment(manualPercent, theme.primaryChartColor, isExecutive),
-                    _buildBreakdownSegment(passivePercent, theme.secondaryChartColor, isExecutive),
-                    _buildBreakdownSegment(investmentPercent, theme.tertiaryChartColor, isExecutive),
-                    _buildBreakdownSegment(realEstatePercent, theme.quaternaryChartColor, isExecutive),
+                    StatsUtils.buildBreakdownSegment(manualPercent / 100, theme.primaryChartColor, isExecutive),
+                    StatsUtils.buildBreakdownSegment(passivePercent / 100, theme.secondaryChartColor, isExecutive),
+                    StatsUtils.buildBreakdownSegment(investmentPercent / 100, theme.tertiaryChartColor, isExecutive),
+                    StatsUtils.buildBreakdownSegment(realEstatePercent / 100, theme.quaternaryChartColor, isExecutive),
                   ],
                 ),
               ),
@@ -771,10 +689,10 @@ class _StatsScreenState extends State<StatsScreen> {
               spacing: 16,
               runSpacing: 8,
               children: [
-                _buildEnhancedLegendItem(theme.primaryChartColor, 'Hustle', theme),
-                _buildEnhancedLegendItem(theme.secondaryChartColor, 'Business', theme),
-                _buildEnhancedLegendItem(theme.tertiaryChartColor, 'Investment', theme),
-                _buildEnhancedLegendItem(theme.quaternaryChartColor, 'Real Estate', theme),
+                StatsUtils.buildEnhancedLegendItem(theme.primaryChartColor, 'Hustle', theme),
+                StatsUtils.buildEnhancedLegendItem(theme.secondaryChartColor, 'Business', theme),
+                StatsUtils.buildEnhancedLegendItem(theme.tertiaryChartColor, 'Investment', theme),
+                StatsUtils.buildEnhancedLegendItem(theme.quaternaryChartColor, 'Real Estate', theme),
               ],
             ),
           ],
@@ -783,60 +701,9 @@ class _StatsScreenState extends State<StatsScreen> {
     );
   }
   
-  Widget _buildBreakdownSegment(double percent, Color color, bool isExecutive) {
-    // Handle zero percentage gracefully
-    if (percent <= 0) return const SizedBox.shrink();
-    
-    return Flexible(
-      flex: max((percent * 100).round(), 1), // Ensure at least 1 flex for visibility
-      child: Container(
-        decoration: BoxDecoration(
-          color: color,
-          boxShadow: isExecutive ? [
-            BoxShadow(
-              color: color.withOpacity(0.3),
-              blurRadius: 1,
-              offset: const Offset(0, 1),
-            ),
-          ] : null,
-        ),
-      ),
-    );
-  }
+  // Using shared StatsUtils.buildBreakdownSegment method instead of duplicating code
   
-  Widget _buildEnhancedLegendItem(Color color, String label, StatsTheme theme) {
-    final bool isExecutive = theme.id == 'executive';
-    
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 12,
-          height: 12,
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(2),
-            boxShadow: isExecutive ? [
-              BoxShadow(
-                color: color.withOpacity(0.3),
-                blurRadius: 2,
-                offset: const Offset(0, 1),
-              ),
-            ] : null,
-          ),
-        ),
-        const SizedBox(width: 6),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: isExecutive ? FontWeight.w500 : FontWeight.normal,
-            color: theme.textColor.withOpacity(isExecutive ? 0.9 : 0.7),
-          ),
-        ),
-      ],
-    );
-  }
+  // Using shared StatsUtils.buildEnhancedLegendItem method instead of duplicating code
 
   Widget _buildAssetsBreakdown(GameState gameState, StatsTheme theme) {
     final bool isExecutive = theme.id == 'executive';
@@ -905,7 +772,7 @@ class _StatsScreenState extends State<StatsScreen> {
             ),
 
             // Enhanced assets breakdown with icons
-            _buildStatRowWithIcon(
+            StatsUtils.buildStatRowWithIcon(
               'Cash',
               '${NumberFormatter.formatCurrency(cash)} (${cashPercent.toStringAsFixed(1)}%)', 
               Icons.attach_money,
@@ -913,7 +780,7 @@ class _StatsScreenState extends State<StatsScreen> {
               theme
             ),
             
-            _buildStatRowWithIcon(
+            StatsUtils.buildStatRowWithIcon(
               'Business Value',
               '${NumberFormatter.formatCurrency(businessValue)} (${businessPercent.toStringAsFixed(1)}%)', 
               Icons.store,
@@ -921,7 +788,7 @@ class _StatsScreenState extends State<StatsScreen> {
               theme
             ),
             
-            _buildStatRowWithIcon(
+            StatsUtils.buildStatRowWithIcon(
               'Investment Value',
               '${NumberFormatter.formatCurrency(investmentValue)} (${investmentPercent.toStringAsFixed(1)}%)', 
               Icons.insert_chart,
@@ -929,7 +796,7 @@ class _StatsScreenState extends State<StatsScreen> {
               theme
             ),
             
-            _buildStatRowWithIcon(
+            StatsUtils.buildStatRowWithIcon(
               'Real Estate Value',
               '${NumberFormatter.formatCurrency(realEstateValue)} (${realEstatePercent.toStringAsFixed(1)}%)', 
               Icons.apartment,
@@ -952,10 +819,10 @@ class _StatsScreenState extends State<StatsScreen> {
                 ),
                 child: Row(
                   children: [
-                    _buildBreakdownSegment(cashPercent, theme.primaryChartColor, isExecutive),
-                    _buildBreakdownSegment(businessPercent, theme.secondaryChartColor, isExecutive),
-                    _buildBreakdownSegment(investmentPercent, theme.tertiaryChartColor, isExecutive),
-                    _buildBreakdownSegment(realEstatePercent, theme.quaternaryChartColor, isExecutive),
+                    StatsUtils.buildBreakdownSegment(cashPercent / 100, theme.primaryChartColor, isExecutive),
+                    StatsUtils.buildBreakdownSegment(businessPercent / 100, theme.secondaryChartColor, isExecutive),
+                    StatsUtils.buildBreakdownSegment(investmentPercent / 100, theme.tertiaryChartColor, isExecutive),
+                    StatsUtils.buildBreakdownSegment(realEstatePercent / 100, theme.quaternaryChartColor, isExecutive),
                   ],
                 ),
               ),
@@ -968,10 +835,10 @@ class _StatsScreenState extends State<StatsScreen> {
               spacing: 16,
               runSpacing: 8,
               children: [
-                _buildEnhancedLegendItem(theme.primaryChartColor, 'Cash', theme),
-                _buildEnhancedLegendItem(theme.secondaryChartColor, 'Business', theme),
-                _buildEnhancedLegendItem(theme.tertiaryChartColor, 'Investment', theme),
-                _buildEnhancedLegendItem(theme.quaternaryChartColor, 'Real Estate', theme),
+                StatsUtils.buildEnhancedLegendItem(theme.primaryChartColor, 'Cash', theme),
+                StatsUtils.buildEnhancedLegendItem(theme.secondaryChartColor, 'Business', theme),
+                StatsUtils.buildEnhancedLegendItem(theme.tertiaryChartColor, 'Investment', theme),
+                StatsUtils.buildEnhancedLegendItem(theme.quaternaryChartColor, 'Real Estate', theme),
               ],
             ),
           ],
@@ -1349,23 +1216,7 @@ class _StatsScreenState extends State<StatsScreen> {
     );
   }
 
-  String _calculateTimePlayed(GameState gameState) {
-    // Use gameStartTime for persistent time tracking across reincorporations
-    final firstStart = gameState.gameStartTime;
-    final playTime = DateTime.now().difference(firstStart);
-
-    final days = playTime.inDays;
-    final hours = playTime.inHours % 24;
-    final minutes = playTime.inMinutes % 60;
-
-    if (days > 0) {
-      return '$days days, $hours hours';
-    } else if (hours > 0) {
-      return '$hours hours, $minutes mins';
-    } else {
-      return '${playTime.inMinutes} mins';
-    }
-  }
+  // Using shared StatsUtils.calculateTimePlayed method instead of duplicating code
 
   void _showReincorporateConfirmation(BuildContext context, GameState gameState) {
     double currentNetWorth = gameState.calculateNetWorth();
@@ -1493,7 +1344,7 @@ class _StatsScreenState extends State<StatsScreen> {
                   ),
                 );
 
-                Provider.of<GameService>(context, listen: false).soundManager.playEventReincorporationSound();
+                Provider.of<GameService>(context, listen: false).playSound(() => Provider.of<GameService>(context, listen: false).soundManager.playEventReincorporationSound());
               }
             },
             style: TextButton.styleFrom(foregroundColor: Colors.green),
@@ -1508,7 +1359,7 @@ class _StatsScreenState extends State<StatsScreen> {
     final gameState = Provider.of<GameState>(context, listen: false);
     double nextThreshold = gameState.getMinimumNetWorthForReincorporation();
 
-    String formattedThreshold = formatLargeNumber(nextThreshold);
+    String formattedThreshold = NumberFormatter.formatCurrency(nextThreshold);
 
     showDialog(
       context: context,
@@ -1774,17 +1625,7 @@ class ChartPainter extends CustomPainter {
   }
 
   String _formatValue(double value) {
-    if (value >= 1000000000000) {
-      return '\$${(value / 1000000000000).toStringAsFixed(1)}T';
-    } else if (value >= 1000000000) {
-      return '\$${(value / 1000000000).toStringAsFixed(1)}B';
-    } else if (value >= 1000000) {
-      return '\$${(value / 1000000).toStringAsFixed(1)}M';
-    } else if (value >= 1000) {
-      return '\$${(value / 1000).toStringAsFixed(1)}K';
-    } else {
-      return '\$${value.toStringAsFixed(0)}';
-    }
+    return NumberFormatter.formatCurrency(value);
   }
 
   @override

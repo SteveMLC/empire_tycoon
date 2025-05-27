@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../models/game_state.dart';
 import '../models/investment.dart';
+import '../models/market_event.dart';
 import '../widgets/portfolio_widget.dart';
 
 class MarketOverviewWidget extends StatelessWidget {
@@ -49,32 +50,41 @@ class MarketOverviewWidget extends StatelessWidget {
                 if (hasMarketEvents)
                   Align(
                     alignment: Alignment.topRight,
-                    child: Tooltip(
-                      message: gameState.activeMarketEvents.map((e) => e.name ?? 'Unknown Event').join(', '),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.purple.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.warning_amber_rounded,
-                              color: Colors.purple,
-                              size: 16,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              'Events',
-                              style: TextStyle(
-                                color: Colors.purple.shade700,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12,
+                    child: InkWell(
+                      onTap: () => _showMarketEventsInfoDialog(context, gameState),
+                      child: Tooltip(
+                        message: gameState.activeMarketEvents.map((e) => e.name ?? 'Unknown Event').join(', '),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.purple.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.warning_amber_rounded,
+                                color: Colors.purple,
+                                size: 16,
                               ),
-                            ),
-                          ],
+                              const SizedBox(width: 4),
+                              Text(
+                                'Events',
+                                style: TextStyle(
+                                  color: Colors.purple.shade700,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Icon(
+                                Icons.info_outline,
+                                color: Colors.purple.shade700,
+                                size: 14,
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -228,7 +238,7 @@ class MarketOverviewWidget extends StatelessWidget {
   }
 }
 
-// Helper function to show the dialog
+// Helper function to show the diversification info dialog
 void _showDiversificationInfoDialog(BuildContext context, GameState gameState) {
   // Get the current bonus percentage
   double bonusPercentage = gameState.calculateDiversificationBonus() * 100;
@@ -280,5 +290,126 @@ void _showDiversificationInfoDialog(BuildContext context, GameState gameState) {
         ],
       );
     },
+  );
+}
+
+// Helper function to show the market events info dialog
+void _showMarketEventsInfoDialog(BuildContext context, GameState gameState) {
+  showDialog(
+    context: context,
+    builder: (BuildContext dialogContext) {
+      return AlertDialog(
+        title: const Text('Active Market Events'),
+        content: SingleChildScrollView(
+          child: ListBody(
+            children: [
+              const Text(
+                'Market events affect investment prices based on their category. Here are the currently active events:',
+              ),
+              const SizedBox(height: 15),
+              ...gameState.activeMarketEvents.map((event) => _buildEventInfoWidget(event)).toList(),
+            ],
+          ),
+        ),
+        actions: <Widget>[
+          TextButton(
+            child: const Text('Got it!'),
+            onPressed: () {
+              Navigator.of(dialogContext).pop(); // Close the dialog
+            },
+          ),
+        ],
+      );
+    },
+  );
+}
+
+// Helper function to build individual event info widgets
+Widget _buildEventInfoWidget(MarketEvent event) {
+  // Determine color based on whether the event is positive or negative
+  Color eventColor = Colors.blue;
+  IconData eventIcon = Icons.info_outline;
+  
+  // Check the first impact value to determine if it's positive or negative
+  if (event.categoryImpacts.isNotEmpty) {
+    double firstImpact = event.categoryImpacts.values.first;
+    if (firstImpact > 1.0) {
+      eventColor = Colors.green;
+      eventIcon = Icons.trending_up;
+    } else if (firstImpact < 1.0) {
+      eventColor = Colors.red;
+      eventIcon = Icons.trending_down;
+    } else {
+      eventColor = Colors.amber;
+      eventIcon = Icons.swap_vert;
+    }
+  }
+  
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Row(
+        children: [
+          Icon(eventIcon, color: eventColor, size: 20),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              event.name,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: eventColor,
+                fontSize: 16,
+              ),
+            ),
+          ),
+          Text(
+            '${event.remainingDays} day${event.remainingDays != 1 ? 's' : ''} left',
+            style: TextStyle(
+              color: Colors.grey.shade600,
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+      const SizedBox(height: 5),
+      Padding(
+        padding: const EdgeInsets.only(left: 28),
+        child: Text(event.description),
+      ),
+      const SizedBox(height: 5),
+      Padding(
+        padding: const EdgeInsets.only(left: 28),
+        child: Wrap(
+          spacing: 4,
+          runSpacing: 4,
+          children: event.categoryImpacts.entries.map((entry) {
+            final category = entry.key;
+            final impact = entry.value;
+            final isPositive = impact > 1.0;
+            final percentChange = ((impact - 1.0) * 100).abs().toStringAsFixed(1);
+            
+            return Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: isPositive ? Colors.green.shade50 : Colors.red.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isPositive ? Colors.green.shade200 : Colors.red.shade200,
+                ),
+              ),
+              child: Text(
+                '$category: ${isPositive ? '+' : '-'}$percentChange%',
+                style: TextStyle(
+                  color: isPositive ? Colors.green.shade700 : Colors.red.shade700,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ),
+      const SizedBox(height: 15),
+    ],
   );
 }

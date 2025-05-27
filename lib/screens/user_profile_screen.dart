@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:math';
 import 'package:flutter/foundation.dart';
+import '../utils/sound_manager.dart';
 
 import '../models/game_state.dart';
 import '../services/game_service.dart';
@@ -769,12 +770,14 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
             Consumer<GameService>(
               builder: (context, gameService, child) {
-                bool soundEnabled = gameService.soundManager.isSoundEnabled;
+                // Get sound enabled state from the SoundManager singleton
+                bool soundEnabled = SoundManager().isSoundEnabled;
                 return SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(
                     onPressed: () {
-                      gameService.soundManager.toggleSound(!soundEnabled);
+                      // Toggle sound using the SoundManager singleton
+                      SoundManager().toggleSound(!soundEnabled);
                       // Force rebuild to update icon
                       setState(() {});
                     },
@@ -1059,16 +1062,23 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                         ),
                       );
 
-                      bool success = await gameService.saveGame();
-
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(success
-                              ? 'Game saved successfully!'
-                              : 'Failed to save game.'),
-                          backgroundColor: success ? Colors.green : Colors.red,
-                        ),
-                      );
+                      try {
+                        await gameService.saveGame();
+                        
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Game saved successfully!'),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+                      } catch (e) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Failed to save game: $e'),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
                     },
                     icon: const Icon(
                       Icons.save,

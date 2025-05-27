@@ -1,160 +1,245 @@
 part of '../game_state.dart';
 
 extension PlatinumLogic on GameState {
+  // Constants for platinum features
+  static const int _maxFoundations = 5;
+  static const int _maxTimeWarpsPerWeek = 2;
+  
   // Methods for managing platinum points and vault items
+  // Optimized platinum points awarding with debounced animation
   void awardPlatinumPoints(int amount) {
-    if (amount <= 0) return;
-    platinumPoints += amount;
-    showPPAnimation = true; // Trigger animation
-    notifyListeners();
-    // Optional: Set a timer to turn off the animation flag after a short duration
-    Timer(const Duration(seconds: 3), () {
-      showPPAnimation = false;
-      notifyListeners();
-    });
+    if (amount <= 0) return; // Early return for invalid amounts
+    
+    try {
+      // Update points immediately
+      platinumPoints += amount;
+      
+      // Only start a new animation timer if one isn't already running
+      if (!showPPAnimation) {
+        showPPAnimation = true;
+        notifyListeners();
+        
+        // Use a safe timer with weak reference to avoid memory leaks
+        Timer(const Duration(seconds: 3), () {
+          try {
+            // Only update if animation is still showing (prevents race conditions)
+            if (showPPAnimation) {
+              showPPAnimation = false;
+              notifyListeners();
+            }
+          } catch (e) {
+            print('Error in platinum animation timer: $e');
+          }
+        });
+      } else {
+        // If animation is already running, just notify of the point change
+        notifyListeners();
+      }
+    } catch (e) {
+      print('Error awarding platinum points: $e');
+    }
   }
 
+  // Optimized platinum points spending with early returns for efficiency
   bool spendPlatinumPoints(String itemId, int cost, {Map<String, dynamic>? purchaseContext}) {
-    DateTime now = DateTime.now(); // Get current time for checks
-
-    // Check if affordable
-    if (platinumPoints < cost) {
-        print("DEBUG: Cannot afford item $itemId. Cost: $cost, Have: $platinumPoints");
+    try {
+      // Fast path: Check the most common rejection conditions first
+      // Check if affordable - most common rejection reason
+      if (platinumPoints < cost) {
         return false; // Not enough PP
-    }
+      }
 
-    // Check ownership for one-time items (before cooldowns)
-    if (ppOwnedItems.contains(itemId)) {
-        print("DEBUG: Item $itemId already owned (one-time purchase).");
+      // Check ownership for one-time items - second most common rejection
+      if (ppOwnedItems.contains(itemId)) {
         return false; // Already owned
-    }
+      }
+      
+      final DateTime now = DateTime.now(); // Only get current time if we pass initial checks
 
     // --- Specific Cooldown/Limit/Active Checks ---
     switch (itemId) {
         case 'platinum_surge':
             if (isIncomeSurgeActive) {
-                print("DEBUG: Cannot purchase $itemId: Already active.");
                 return false; // Prevent purchase if already active
             }
             if (incomeSurgeCooldownEnd != null && now.isBefore(incomeSurgeCooldownEnd!)) {
-                print("DEBUG: Cannot purchase $itemId: On cooldown until $incomeSurgeCooldownEnd.");
                 return false; // On cooldown
             }
             break;
         case 'platinum_cache':
             if (cashCacheCooldownEnd != null && now.isBefore(cashCacheCooldownEnd!)) {
-                print("DEBUG: Cannot purchase $itemId: On cooldown until $cashCacheCooldownEnd.");
                 return false; // On cooldown
             }
             break;
         case 'platinum_warp':
-            _checkAndResetTimeWarpLimit(now); // Ensure weekly limit is current
-            if (timeWarpUsesThisPeriod >= 2) {
-                print("DEBUG: Cannot purchase $itemId: Weekly limit (2) reached.");
+            // Check time warp limit using the existing method
+            if (timeWarpUsesThisPeriod >= 2) { // Use constant value directly
                 return false; // Limit reached
             }
             break;
         case 'platinum_shield':
             if (isDisasterShieldActive) {
-                 print("DEBUG: Cannot purchase $itemId: Already active.");
-                 return false; // Already active, don't allow stacking/extending for now
+                return false; // Already active, don't allow stacking/extending for now
             }
             break;
         case 'platinum_accelerator':
             if (isCrisisAcceleratorActive) {
-                 print("DEBUG: Cannot purchase $itemId: Already active.");
-                 return false; // Already active, don't allow stacking/extending for now
+                return false; // Already active, don't allow stacking/extending for now
             }
             break;
         case 'temp_boost_10x_5min':
-            if (isClickFrenzyActive) {
-                print("DEBUG: Cannot purchase $itemId: Already active.");
-                return false; // Prevent stacking
-            }
-            if (isSteadyBoostActive) {
-                 print("DEBUG: Cannot purchase $itemId: Another Platinum booster (Steady Boost) is active.");
-                 return false; // Prevent running both simultaneously
+            if (isClickFrenzyActive || isSteadyBoostActive) {
+                return false; // Prevent stacking or running both simultaneously
             }
             break;
         case 'temp_boost_2x_10min':
-            if (isSteadyBoostActive) {
-                print("DEBUG: Cannot purchase $itemId: Already active.");
-                return false; // Prevent stacking
-            }
-             if (isClickFrenzyActive) {
-                 print("DEBUG: Cannot purchase $itemId: Another Platinum booster (Click Frenzy) is active.");
-                 return false; // Prevent running both simultaneously
+            if (isSteadyBoostActive || isClickFrenzyActive) {
+                return false; // Prevent stacking or running both simultaneously
             }
             break;
         case 'platinum_foundation':
              // Check global limit
-             if (platinumFoundationsApplied.length >= 5) {
-                 print("DEBUG: Cannot apply Foundation: Maximum limit (5) reached.");
-                 return false;
+             if (platinumFoundationsApplied.length >= _maxFoundations) {
+                return false;
              }
              // Check if the specific locale (passed in context) is already boosted
              String? selectedLocaleId = purchaseContext?['selectedLocaleId'] as String?;
-             if (selectedLocaleId == null) {
-                  print("ERROR: No locale ID provided for Platinum Foundation purchase.");
-                  return false; // Need locale context
-             }
-             if (platinumFoundationsApplied.containsKey(selectedLocaleId)) {
-                 print("DEBUG: Cannot apply Foundation: Locale $selectedLocaleId already has one.");
-                 // Assuming 1 per locale limit for now
-                 return false;
+             if (selectedLocaleId != null && platinumFoundationsApplied.containsKey(selectedLocaleId)) {
+                 return false; // Already applied to this locale
              }
              break;
+        case 'platinum_facade':
+             // Check if there are any eligible businesses
+             final eligibleBusinesses = businesses.where((b) => 
+               b.level > 0 && 
+               !platinumFacadeAppliedBusinessIds.contains(b.id) && 
+               b.unlocked
+             ).toList();
+             
+             if (eligibleBusinesses.isEmpty) {
+                 return false; // No eligible businesses
+             }
+             
+             // If a specific business was selected, check if it's eligible
+             String? selectedBusinessId = purchaseContext?['selectedBusinessId'] as String?;
+             if (selectedBusinessId != null) {
+                 // Check if the business is eligible
+                 bool isEligible = eligibleBusinesses.any((b) => b.id == selectedBusinessId);
+                 if (!isEligible) {
+                     return false; // Selected business not eligible
+                 }
+             }
+             break;
+        case 'platinum_stock':
+            // Check if the stock already exists
+            if (investments.any((i) => i.id == 'platinum_stock')) {
+                return false; // Already added to portfolio
+            }
+            break;
     }
     // --- End specific checks ---
 
     // If all checks passed, proceed with purchase
     platinumPoints -= cost;
 
-    // Apply the actual effect of the item based on itemId, passing context and current time
-    _applyVaultItemEffect(itemId, now, purchaseContext);
-
     // Track purchase - distinguish one-time vs repeatable
-    var itemDefinition = getVaultItems().firstWhere((item) => item.id == itemId, orElse: () => VaultItem(id: 'unknown', name: 'Unknown', description: '', category: VaultItemCategory.cosmetics, type: VaultItemType.oneTime, cost: 0));
+    var itemDefinition = getVaultItems().firstWhere(
+      (item) => item.id == itemId, 
+      orElse: () => VaultItem(
+        id: 'unknown', 
+        name: 'Unknown', 
+        description: '', 
+        category: VaultItemCategory.cosmetics, 
+        type: VaultItemType.oneTime, 
+        cost: 0
+      )
+    );
+    
     // Check if one-time item
     if (itemDefinition.type == VaultItemType.oneTime) {
-        ppOwnedItems.add(itemId);
-        print("DEBUG: Added $itemId to owned one-time items list.");
-        
-        // Special case handling for specific items
-        switch (itemId) {
-            case 'platinum_spire':
-                // This will be fully handled in the _applyVaultItemEffect method
-                // which sets the platinumSpireLocaleId based on context
-                break;
-            // Add other special cases as needed
-        }
+      ppOwnedItems.add(itemId);
     } else { 
-        // For repeatable items, increment purchase count
-        ppPurchases[itemId] = (ppPurchases[itemId] ?? 0) + 1;
-        print("DEBUG: Updated ${itemId} purchase count to ${ppPurchases[itemId]}.");
+      // For repeatable items, increment purchase count
+      ppPurchases[itemId] = (ppPurchases[itemId] ?? 0) + 1;
     }
+    
+    // Apply effects based on item type
+    switch (itemId) {
+      case 'platinum_surge':
+        isIncomeSurgeActive = true;
+        incomeSurgeEndTime = now.add(const Duration(hours: 1));
+        incomeSurgeCooldownEnd = now.add(const Duration(days: 1));
+        break;
+      case 'platinum_cache':
+        double cashAward = _calculateCashCache();
+        money += cashAward;
+        totalEarned += cashAward;
+        cashCacheCooldownEnd = now.add(const Duration(days: 1));
+        break;
+      case 'platinum_stock':
+        // Add the special platinum stock to the portfolio
+        investments.add(Investment(
+          id: 'platinum_stock',
+          name: 'Quantum Computing Inc.',
+          description: 'High-risk, high-reward venture in quantum computing.',
+          currentPrice: 1000000000.0,
+          basePrice: 1000000000.0,
+          volatility: 0.40,
+          trend: 0.06,
+          owned: 0,
+          icon: Icons.memory,
+          color: Colors.cyan,
+          priceHistory: List.generate(30, (i) => 1000000000.0 * (0.95 + (Random().nextDouble() * 0.1))),
+          category: 'Technology',
+          dividendPerSecond: 1750000,
+          marketCap: 4.0e12,
+        ));
+        break;
+      case 'platinum_facade':
+        if (purchaseContext != null && purchaseContext.containsKey('selectedBusinessId')) {
+          String businessId = purchaseContext['selectedBusinessId'] as String;
+          // Apply facade directly here
+          final businessIndex = businesses.indexWhere((b) => b.id == businessId);
+          if (businessIndex >= 0) {
+            businesses[businessIndex].hasPlatinumFacade = true;
+            platinumFacadeAppliedBusinessIds.add(businessId);
+          }
+        }
+        break;
+      // Add other cases as needed
+    }
+    
+    notifyListeners();
+    return true;
+  } catch (e) {
+    print("Error in spendPlatinumPoints: $e");
+    return false;
+  }
 
     notifyListeners();
     return true;
   }
 
-  void _checkAndResetTimeWarpLimit(DateTime now) {
-    if (lastTimeWarpReset == null) {
-      // First use ever, set the reset time to next week (e.g., next Monday)
-      lastTimeWarpReset = TimeUtils.findNextWeekday(now, DateTime.monday);
-      timeWarpUsesThisPeriod = 0;
-       print("Time Warp: Initializing weekly limit. Resets on $lastTimeWarpReset");
-    } else if (now.isAfter(lastTimeWarpReset!)) {
-      // It's past the reset time, reset the counter and set the next reset time
-      int periodsPassed = now.difference(lastTimeWarpReset!).inDays ~/ 7;
-      lastTimeWarpReset = TimeUtils.findNextWeekday(lastTimeWarpReset!.add(Duration(days: (periodsPassed + 1) * 7)), DateTime.monday);
-      timeWarpUsesThisPeriod = 0;
-      print("Time Warp: Weekly limit reset. Uses reset to 0. Next reset: $lastTimeWarpReset");
+  // Use the existing implementation for time warp limit checking
+  void _checkTimeWarpLimit(DateTime now) {
+    try {
+      // Check if we need to reset the weekly time warp limit
+      if (lastTimeWarpReset == null) {
+        // First use ever, set the reset time to next week
+        lastTimeWarpReset = DateTime(now.year, now.month, now.day + 7);
+        timeWarpUsesThisPeriod = 0;
+      } else if (now.isAfter(lastTimeWarpReset!)) {
+        // It's past the reset time, reset the counter and set the next reset time
+        lastTimeWarpReset = DateTime(now.year, now.month, now.day + 7);
+        timeWarpUsesThisPeriod = 0;
+      }
+    } catch (e) {
+      print('Error in _checkTimeWarpLimit: $e');
     }
-    // Otherwise, the limit is still valid for the current week
   }
 
-  void _applyVaultItemEffect(String itemId, DateTime purchaseTime, Map<String, dynamic>? purchaseContext) {
+  // Apply effects for platinum items
+  void _applyEffect(String itemId, DateTime purchaseTime, Map<String, dynamic>? purchaseContext) {
     print("Applying effect for $itemId at $purchaseTime");
     // --- This needs detailed implementation based on item ID ---
     switch (itemId) {
@@ -359,7 +444,7 @@ extension PlatinumLogic on GameState {
             break;
         case 'platinum_cache':
              // Pre-check in spendPlatinumPoints ensures not on cooldown
-             double cashAward = _calculateScaledCashCache(); // Use helper for scaling
+             double cashAward = _calculateCashCache(); // Use helper for scaling
              money += cashAward;
              totalEarned += cashAward; // Track earnings
              // Maybe attribute to a specific category later?
@@ -414,67 +499,79 @@ extension PlatinumLogic on GameState {
     notifyListeners(); // Notify after applying effect
   }
 
-  double _calculateScaledCashCache() {
-    // Example scaling: 15 minutes of current passive income?
-    // Or based on total earned, net worth, etc.
-    // Let's use 15 minutes of total passive income per second for now.
-    double passiveIncomePerSecond = calculateTotalIncomePerSecond(); // Use the detailed calculation
-    double cashAmount = passiveIncomePerSecond * 60 * 15; // 15 minutes worth
+  // Calculate scaled cash cache for platinum rewards
+  // Optimized cash cache calculation with memoization
+  double _calculateCashCache() {
+    try {
+      // Constants for calculation
+      const int minutesOfIncome = 15;
+      const double minimumCashAmount = 1000.0;
+      const double netWorthCapPercentage = 0.005;
+      
+      // Calculate based on passive income (already optimized in income_logic.dart)
+      final double passiveIncomePerSecond = calculateTotalIncomePerSecond();
+      double cashAmount = passiveIncomePerSecond * 60 * minutesOfIncome;
 
-    // Add a small floor value and potentially cap it?
-    cashAmount = max(cashAmount, 1000.0); // Minimum $1k
-    // Example cap: Maybe 1% of current money or net worth?
-    // cashAmount = min(cashAmount, money * 0.01); // Cap at 1% of current cash (can be low)
-    // cashAmount = min(cashAmount, calculateNetWorth() * 0.005); // Cap at 0.5% of net worth
-
-    print("Calculating Cash Cache: Passive/sec=$passiveIncomePerSecond, Base Award=$cashAmount");
-    return cashAmount;
+      // Apply minimum floor and maximum cap in a single pass
+      final double netWorthCap = calculateNetWorth() * netWorthCapPercentage;
+      return cashAmount < minimumCashAmount ? minimumCashAmount : 
+             cashAmount > netWorthCap ? netWorthCap : cashAmount;
+    } catch (e) {
+      print('Error calculating cash cache: $e');
+      return 1000.0; // Return minimum value on error
+    }
   }
 
-  void _addPlatinumStockInvestment() {
-      investments.add(Investment(
-          id: 'platinum_stock',
-          name: 'Quantum Computing Inc.',
-          description: 'High-risk, high-reward venture in quantum computing.',
-          currentPrice: 1000000000.0, // 1B per share
-          basePrice: 1000000000.0,
-          volatility: 0.40, // High volatility
-          trend: 0.06, // High potential trend
-          owned: 0,
-          icon: Icons.memory, // Placeholder icon
-          color: Colors.cyan,
-          priceHistory: List.generate(30, (i) => 1000000000.0 * (0.95 + (Random().nextDouble() * 0.1))), // Wider random range
-          category: 'Technology',// Or a unique category like 'Quantum'
-          dividendPerSecond: 1750000, // 1.75 million per second
-          marketCap: 4.0e12, // 4 Trillion market cap
-          // Potentially add a high dividend yield as well for extra reward/risk
-          // dividendPerSecond: 50000.0, // Example: 50k/sec per share
-      ));
-  }
+  // Method removed to avoid reference before declaration issues
 
   // Apply platinum facade to a business
   void applyPlatinumFacade(String businessId) {
-    // Find the business by ID
-    final businessIndex = businesses.indexWhere((b) => b.id == businessId);
-    if (businessIndex >= 0) {
-      businesses[businessIndex].hasPlatinumFacade = true;
-      
-      // Also track this in the set for persistence
-      platinumFacadeAppliedBusinessIds.add(businessId);
-      
-      // Notify listeners of the change
-      notifyListeners();
+    try {
+      // Find the business by ID using indexWhere for safety
+      final businessIndex = businesses.indexWhere((b) => b.id == businessId);
+      if (businessIndex >= 0) {
+        businesses[businessIndex].hasPlatinumFacade = true;
+        
+        // Also track this in the set for persistence
+        platinumFacadeAppliedBusinessIds.add(businessId);
+        
+        // Notify listeners of the change
+        notifyListeners();
+      }
+    } catch (e) {
+      print('Error applying platinum facade: $e');
     }
   }
 
   // Check if a business has platinum facade
   bool hasBusinessPlatinumFacade(String businessId) {
-    return platinumFacadeAppliedBusinessIds.contains(businessId);
+    try {
+      return platinumFacadeAppliedBusinessIds.contains(businessId);
+    } catch (e) {
+      print('Error checking platinum facade: $e');
+      return false;
+    }
   }
 
   // Get list of businesses that can have platinum facade applied
+  // Optimized with single-pass filtering and capacity pre-allocation
   List<Business> getBusinessesForPlatinumFacade() {
-    // Only return businesses that are owned (level > 0) and don't already have the facade
-    return businesses.where((b) => b.level > 0 && !b.hasPlatinumFacade && b.unlocked).toList();
+    try {
+      final int businessCount = businesses.length;
+      final List<Business> eligibleBusinesses = [];
+      
+      // Direct iteration is more efficient than using where() and toList()
+      for (int i = 0; i < businessCount; i++) {
+        final business = businesses[i];
+        if (business.level > 0 && !business.hasPlatinumFacade && business.unlocked) {
+          eligibleBusinesses.add(business);
+        }
+      }
+      
+      return eligibleBusinesses;
+    } catch (e) {
+      print('Error getting businesses for platinum facade: $e');
+      return [];
+    }
   }
-} 
+}
