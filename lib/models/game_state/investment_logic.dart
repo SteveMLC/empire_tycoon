@@ -98,30 +98,54 @@ extension InvestmentLogic on GameState {
   // Update investment prices more frequently (e.g., every 30 seconds) - optimized for memory efficiency
   void _updateInvestmentPrices() {
     for (var investment in investments) {
-      // Apply random price change based on volatility and trend
-      double change = investment.trend * 0.2; // Base trend (reduced impact)
-
-      // Add random component based on volatility
-      change += (Random().nextDouble() * 2 - 1) * investment.volatility * 0.3;
-
+      // Calculate how far the current price is from the base price (normalized)
+      double priceRatio = investment.currentPrice / investment.basePrice;
+      
+      // Apply very mild mean reversion - only at extreme values
+      double meanReversionFactor = 0.0;
+      if (priceRatio > 8.0) {
+        // Gentle pull down only when price is extremely high (above 8x base)
+        meanReversionFactor = -0.03 * (priceRatio / 10.0); // Very mild correction
+      } else if (priceRatio < 0.2) {
+        // Gentle pull up only when price is extremely low (below 0.2x base)
+        meanReversionFactor = 0.02 * (1.0 - priceRatio); // Very mild correction
+      }
+      // No mean reversion in the normal range to allow more natural price movement
+      
+      // Apply base trend (full impact in normal range, slightly reduced at extremes)
+      double trendImpact = investment.trend * 0.2;
+      // Only reduce trend impact when very close to boundaries
+      if (priceRatio > 9.0 || priceRatio < 0.15) {
+        trendImpact *= 0.5; // Reduce trend impact by half at extremes
+      }
+      double change = trendImpact;
+      
+      // Add mean reversion component (only at extremes)
+      change += meanReversionFactor;
+      
+      // Add random component based on volatility (favoring upside slightly)
+      double randomFactor = (Random().nextDouble() * 2 - 0.9) * investment.volatility * 0.3;
+      // This creates a slight bias toward positive moves (55% up, 45% down)
+      change += randomFactor;
+      
       // Ensure price doesn't go below minimum threshold
       double newPrice = investment.currentPrice * (1 + change);
       if (newPrice < investment.basePrice * 0.1) {
         newPrice = investment.basePrice * 0.1;
       }
-
+      
       // Cap maximum price to avoid excessive growth
       double maxPrice = investment.basePrice * 10;
       if (newPrice > maxPrice) {
         newPrice = maxPrice;
       }
-
+      
       investment.currentPrice = newPrice;
-
+      
       // Use the optimized method to add price to history
       investment.addPriceHistoryPoint(investment.currentPrice);
     }
-
+    
     // Notify listeners to update UI
     notifyListeners();
   }
@@ -136,11 +160,46 @@ extension InvestmentLogic on GameState {
     
     // Then update prices for all investments
     for (var investment in investments) {
-      // Apply random price change based on volatility and trend
-      double change = investment.trend * 0.5; // Base trend
+      // Calculate how far the current price is from the base price (normalized)
+      double priceRatio = investment.currentPrice / investment.basePrice;
       
-      // Add random component based on volatility
-      change += (Random().nextDouble() * 2 - 1) * investment.volatility;
+      // Apply mild mean reversion only at more extreme values
+      double meanReversionFactor = 0.0;
+      if (priceRatio > 7.0) {
+        // Gentle pull down when price is very high
+        meanReversionFactor = -0.08 * (priceRatio / 10.0);
+      } else if (priceRatio < 0.3) {
+        // Gentle pull up when price is very low
+        meanReversionFactor = 0.06 * (1.0 - priceRatio);
+      }
+      // No mean reversion in the normal range to allow more natural price movement
+      
+      // Apply base trend (full impact in normal range, reduced at extremes)
+      double trendImpact = investment.trend * 0.5; // Stronger trend impact
+      // Only reduce at extreme boundaries
+      if (priceRatio > 8.0 || priceRatio < 0.2) {
+        trendImpact *= 0.6; // Moderate reduction at extremes
+      }
+      double change = trendImpact;
+      
+      // Add mean reversion component (only at extremes)
+      change += meanReversionFactor;
+      
+      // Add random component based on volatility (with slight upside bias)
+      change += (Random().nextDouble() * 2 - 0.85) * investment.volatility * 0.8;
+      // This creates a bias toward positive moves (57.5% up, 42.5% down)
+      
+      // Occasionally add market events (8% chance)
+      if (Random().nextDouble() < 0.08) {
+        // If price is high, add a moderate downward correction
+        if (priceRatio > 6.0) {
+          change -= Random().nextDouble() * 0.1 * priceRatio;
+        }
+        // If price is low, add a stronger upward correction (favoring recovery)
+        else if (priceRatio < 0.4) {
+          change += Random().nextDouble() * 0.12 * (1.0 - priceRatio);
+        }
+      }
       
       // Ensure price doesn't go below minimum threshold
       double newPrice = investment.currentPrice * (1 + change);
@@ -168,7 +227,7 @@ extension InvestmentLogic on GameState {
   // Generate random market events
   void _generateMarketEvents() {
     // Small chance to generate a new market event
-    if (Random().nextDouble() < 0.15) { // 15% chance per day
+    if (Random().nextDouble() < 0.25) { // 25% chance per day
       // Create a random market event
       MarketEvent newEvent = _createRandomMarketEvent(); // Use constructor if it's a class
       activeMarketEvents.add(newEvent);
@@ -402,12 +461,35 @@ extension InvestmentLogic on GameState {
   void _updateInvestmentPricesMicro() {
     bool changed = false;
     for (var investment in investments) {
-      // Apply smaller random price change based on volatility and trend
-      double change = investment.trend * 0.05; // Reduced base trend impact
-
-      // Add smaller random component based on volatility
-      change += (Random().nextDouble() * 2 - 1) * investment.volatility * 0.1;
-
+      // Calculate how far the current price is from the base price (normalized)
+      double priceRatio = investment.currentPrice / investment.basePrice;
+      
+      // Apply minimal mean reversion only at extreme values
+      double meanReversionFactor = 0.0;
+      if (priceRatio > 9.0) {
+        // Very gentle pull down only when extremely close to ceiling
+        meanReversionFactor = -0.01 * (priceRatio / 10.0);
+      } else if (priceRatio < 0.15) {
+        // Very gentle pull up only when extremely close to floor
+        meanReversionFactor = 0.01 * (1.0 - priceRatio);
+      }
+      // No mean reversion in the normal range
+      
+      // Apply smaller trend impact (full impact in normal range)
+      double trendImpact = investment.trend * 0.03;
+      // Only reduce at extreme boundaries
+      if (priceRatio > 9.5 || priceRatio < 0.12) {
+        trendImpact *= 0.7; // Slight reduction at extremes
+      }
+      double change = trendImpact;
+      
+      // Add mean reversion component (only at extremes)
+      change += meanReversionFactor;
+      
+      // Add smaller random component based on volatility (slight upside bias)
+      change += (Random().nextDouble() * 2 - 0.9) * investment.volatility * 0.1;
+      // This creates a slight bias toward positive moves (55% up, 45% down)
+      
       // Apply the change to current price
       double newPrice = investment.currentPrice * (1 + change);
       
@@ -415,7 +497,7 @@ extension InvestmentLogic on GameState {
       double minPrice = investment.basePrice * 0.1;
       double maxPrice = investment.basePrice * 10;
       newPrice = newPrice.clamp(minPrice, maxPrice);
-
+      
       // Only update if the price change is significant enough
       if ((newPrice - investment.currentPrice).abs() > 0.001) {
           investment.currentPrice = newPrice;

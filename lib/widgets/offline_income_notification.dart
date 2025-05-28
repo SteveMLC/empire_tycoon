@@ -474,14 +474,24 @@ class _OfflineIncomeNotificationState extends State<OfflineIncomeNotification> w
       return 'while you were away';
     }
     
-    final duration = gameState.offlineIncomeEndTime!.difference(gameState.offlineIncomeStartTime!);
-    if (duration.inMinutes < 60) {
-      return '${duration.inMinutes} minutes';
-    } else if (duration.inHours < 24) {
-      return '${duration.inHours}h ${duration.inMinutes % 60}m';
+    // Get the actual duration between start and end time
+    final actualDuration = gameState.offlineIncomeEndTime!.difference(gameState.offlineIncomeStartTime!);
+    
+    // Apply the 4-hour cap that's used in the income calculation
+    // This matches the MAX_OFFLINE_SECONDS constant in GameStateOfflineIncome
+    final int maxOfflineSeconds = 4 * 60 * 60; // 4 hours in seconds
+    final int cappedSeconds = min(actualDuration.inSeconds, maxOfflineSeconds);
+    
+    // Create a capped duration
+    final cappedDuration = Duration(seconds: cappedSeconds);
+    
+    // Format the capped duration
+    if (cappedDuration.inMinutes < 60) {
+      return '${cappedDuration.inMinutes} minutes';
     } else {
-      // Cap at 4 hours as per spec
-      return '4 hours';
+      final hours = cappedDuration.inHours;
+      final minutes = cappedDuration.inMinutes % 60;
+      return '${hours}h ${minutes}m';
     }
   }
 } 

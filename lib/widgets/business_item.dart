@@ -22,6 +22,58 @@ class BusinessItem extends StatefulWidget {
 
 class _BusinessItemState extends State<BusinessItem> {
   Timer? _timer;
+  
+  // List of more balanced business colors - vibrant but not overwhelming
+  static const List<Color> _businessColors = [
+    Color(0xFF5D8CAE), // Muted Blue   
+    Color(0xFF5BA587), // Muted Green
+    Color(0xFF9178B2), // Muted Purple
+    Color(0xFFD28B5A), // Muted Orange
+    Color(0xFF4A8C8C), // Teal
+    Color(0xFF7D6B9E), // Muted Wisteria
+    Color(0xFFBF7E52), // Muted Pumpkin
+    Color(0xFF5C85AD), // Muted Belize Blue
+    Color(0xFF5E9E75), // Muted Green
+    Color(0xFFB86A65), // Muted Red
+    Color(0xFF4A9C96), // Muted Turquoise
+    Color(0xFFD2A75A), // Muted Yellow
+    Color(0xFF7F8C8D), // Asbestos
+    Color(0xFF6A89B0), // Muted Peter River
+    Color(0xFFA67D53), // Muted Brown
+    // Color(0xFF2ECC71), // Emerald Green
+    // Color(0xFF9B59B6), // Amethyst Purple
+    // Color(0xFFE67E22), // Carrot Orange
+    // Color(0xFF16A085), // Green Sea
+    // Color(0xFF8E44AD), // Wisteria Purple
+    // Color(0xFFD35400), // Pumpkin Orange
+    // Color(0xFF2980B9), // Belize Blue
+    // Color(0xFF27AE60), // Nephritis Green
+    // Color(0xFFE74C3C), // Alizarin Red
+    // Color(0xFF1ABC9C), // Turquoise
+    // Color(0xFFF39C12), // Orange
+  ];
+  
+  // Map to track which businesses have been assigned which colors
+  static final Map<String, int> _businessColorAssignments = {};  
+  // Counter to track the next color to assign
+  static int _nextColorIndex = 0;
+  
+  // Get a consistent color based on business ID, ensuring no duplicates
+  Color _getBusinessColor(String id) {
+    // If this business already has an assigned color, use it
+    if (_businessColorAssignments.containsKey(id)) {
+      return _businessColors[_businessColorAssignments[id]!];
+    }
+    
+    // Assign the next available color to this business
+    int colorIndex = _nextColorIndex;
+    _businessColorAssignments[id] = colorIndex;
+    
+    // Move to the next color for the next business
+    _nextColorIndex = (_nextColorIndex + 1) % _businessColors.length;
+    
+    return _businessColors[colorIndex];
+  }
 
   @override
   void initState() {
@@ -114,13 +166,19 @@ class _BusinessItemState extends State<BusinessItem> {
     // Check if business has platinum facade
     final bool hasPlatinumFacade = business.hasPlatinumFacade;
     
+    // Generate a unique color for each business based on its ID
+    final Color businessBaseColor = _getBusinessColor(business.id);
+    final Color businessLightColor = businessBaseColor.withOpacity(0.15);
+    final Color businessMediumColor = businessBaseColor.withOpacity(0.3);
+    final Color businessDarkColor = businessBaseColor.withOpacity(0.8);
+    
     return Card(
-      elevation: 2,
+      elevation: 3,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: hasPlatinumFacade 
             ? BorderSide(color: const Color(0xFFE5E4E2), width: 2.0) 
-            : BorderSide.none,
+            : BorderSide(color: businessMediumColor, width: 1.5),
       ),
       color: hasPlatinumFacade ? null : Colors.white,
       clipBehavior: Clip.antiAlias,
@@ -131,37 +189,73 @@ class _BusinessItemState extends State<BusinessItem> {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    Colors.white,
+                    const Color(0xFFF5F5F5),
                     const Color(0xFFE5E4E2),
                     Colors.white,
                   ],
+                  stops: const [0.0, 0.5, 1.0],
                 ),
               )
-            : null,
+            : BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topRight,
+                end: Alignment.bottomLeft,
+                colors: [
+                  Colors.white,
+                  businessLightColor.withOpacity(0.5),
+                ],
+                stops: const [0.8, 1.0],
+              ),
+            ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Business header section
-            Padding(
+            // Business header section with colored background
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                  colors: [
+                    businessBaseColor,
+                    businessBaseColor.withOpacity(0.7),
+                  ],
+                ),
+                borderRadius: const BorderRadius.only(
+                  bottomRight: Radius.circular(20),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: businessBaseColor.withOpacity(0.2),
+                    blurRadius: 3,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              
               padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
-                  // Business icon
+                  // Business icon with enhanced styling
                   Container(
-                    width: 48,
-                    height: 48,
+                    width: 54,
+                    height: 54,
                     decoration: BoxDecoration(
-                      color: hasPlatinumFacade 
-                          ? const Color(0xFFE5E4E2).withOpacity(0.3)
-                          : Colors.blue.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(10),
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.white.withOpacity(0.8), width: 2),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
                     child: Icon(
                       business.icon,
-                      color: hasPlatinumFacade
-                          ? const Color(0xFF8E8E8E)
-                          : Colors.blue,
-                      size: 26,
+                      color: businessBaseColor,
+                      size: 30,
                     ),
                   ),
                   const SizedBox(width: 14),
@@ -175,35 +269,67 @@ class _BusinessItemState extends State<BusinessItem> {
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 18,
+                            color: Colors.white,
+                            shadows: [
+                              Shadow(
+                                color: Colors.black26,
+                                offset: Offset(0, 1),
+                                blurRadius: 2,
+                              ),
+                            ],
                           ),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 6),
                         Row(
                           children: [
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                               decoration: BoxDecoration(
-                                color: Colors.blue.shade100,
+                                color: Colors.white,
                                 borderRadius: BorderRadius.circular(12),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.1),
+                                    blurRadius: 2,
+                                    offset: const Offset(0, 1),
+                                  ),
+                                ],
                               ),
-                              child: Text(
-                                'Level ${business.level}',
-                                style: TextStyle(
-                                  color: Colors.blue.shade800,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500,
-                                ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.star,
+                                    size: 14,
+                                    color: businessBaseColor,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Level ${business.level}',
+                                    style: TextStyle(
+                                      color: businessBaseColor,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
+
                             if (business.level > 0 && !business.isMaxLevel())
                               Expanded(
-                                child: Padding(
-                                  padding: const EdgeInsets.only(left: 8),
+                                child: Container(
+                                  margin: const EdgeInsets.only(left: 8),
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.85),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
                                   child: Text(
                                     business.getCurrentLevelDescription(),
                                     style: TextStyle(
-                                      color: Colors.grey[600],
-                                      fontSize: 12,
+                                      color: businessBaseColor.withOpacity(0.8),
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w500,
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                     maxLines: 1,
@@ -219,9 +345,9 @@ class _BusinessItemState extends State<BusinessItem> {
               ),
             ),
             
-            // Business stats section
+            // Business stats section with more padding
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
               child: _buildBusinessStats(context),
             ),
             
@@ -236,31 +362,46 @@ class _BusinessItemState extends State<BusinessItem> {
             if (!business.isMaxLevel() && !isUpgrading && business.level > 0)
               Container(
                 margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
                   color: Colors.green.shade50,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.green.shade100),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.green.shade200),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 3,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        Icon(Icons.upgrade, size: 16, color: Colors.green.shade700),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'Next Upgrade: ${business.getNextLevelDescription()}',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w500,
-                              color: Colors.green.shade800,
+                    Container(
+                      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
+                      decoration: BoxDecoration(
+                        color: Colors.green.shade100,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.upgrade, size: 16, color: Colors.green.shade700),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'NEXT UPGRADE: ${business.getNextLevelDescription()}',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                                color: Colors.green.shade800,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
                             ),
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Row(
@@ -399,9 +540,10 @@ class _BusinessItemState extends State<BusinessItem> {
               ? Colors.grey.shade400
               : (canAfford ? Colors.green.shade600 : Colors.grey.shade400),
           foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-          elevation: 2,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+          elevation: 3,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shadowColor: canAfford ? Colors.green.withOpacity(0.4) : Colors.grey.withOpacity(0.3),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -480,27 +622,46 @@ class _BusinessItemState extends State<BusinessItem> {
     double progress = business.getUpgradeProgress();
 
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.orange.shade50,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.orange.shade100),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.orange.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 3,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(Icons.construction, size: 16, color: Colors.orange.shade700),
-              const SizedBox(width: 8),
-              Text(
-                'Upgrading to: ${business.getNextLevelDescription()}',
-                style: TextStyle(
-                  fontWeight: FontWeight.w500,
-                  color: Colors.orange.shade800,
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
+            decoration: BoxDecoration(
+              color: Colors.orange.shade100,
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.construction, size: 16, color: Colors.orange.shade700),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'UPGRADING TO: ${business.getNextLevelDescription()}',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                      color: Colors.orange.shade800,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
           const SizedBox(height: 12),
           Row(
@@ -545,9 +706,10 @@ class _BusinessItemState extends State<BusinessItem> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.orange.shade600,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                elevation: 1,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                elevation: 2,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                shadowColor: Colors.orange.withOpacity(0.4),
               ),
             ),
           ),
@@ -561,6 +723,9 @@ class _BusinessItemState extends State<BusinessItem> {
     final business = widget.business;
     final bool isUpgrading = business.isUpgrading;
     final bool isOwned = business.level > 0;
+    
+    // Get business-specific color for consistent styling
+    final Color businessBaseColor = _getBusinessColor(business.id);
     
     // Calculate displayed income per second with all multipliers
     double baseIncomePerSecond = business.getIncomePerSecond();
@@ -581,136 +746,156 @@ class _BusinessItemState extends State<BusinessItem> {
                                            gameState.prestigeMultiplier * 
                                            permanentIncomeBoostMultiplier;
     
-    return Row(
+    // Define colors for consistent styling
+    final Color incomeColor = Colors.green.shade600;
+    final Color roiColor = businessBaseColor;
+    
+    return Column(
       children: [
-        // Income display
-        Expanded(
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
-            decoration: BoxDecoration(
-              color: Colors.green.shade50,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.green.shade100),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.attach_money, size: 18, color: Colors.green.shade700),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        isOwned ? 'Income' : 'Expected Income', 
-                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+        // Income display - full width
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
+          decoration: BoxDecoration(
+            color: Colors.green.shade50,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: Colors.green.shade200),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.03),
+                blurRadius: 3,
+                offset: const Offset(0, 1),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.attach_money, size: 18, color: incomeColor),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      isOwned ? 'INCOME:' : 'EXPECTED INCOME:',
+                      style: TextStyle(
+                        fontSize: 12, 
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey.shade700,
                       ),
-                      const SizedBox(height: 2),
+                    ),
+                    Row(
+                      children: [
+                        Text(
+                          isOwned 
+                            ? '${NumberFormatter.formatCurrency(displayedIncomePerSecond)}/s'
+                            : '${NumberFormatter.formatCurrency(expectedDisplayedIncomePerSecond)}/s',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                            color: gameState.hasActiveEventForBusiness(business.id) ? Colors.red : incomeColor,
+                          ),
+                        ),
+                        if (gameState.hasActiveEventForBusiness(business.id))
+                          Padding(
+                            padding: const EdgeInsets.only(left: 4),
+                            child: Icon(Icons.warning_amber_rounded, color: Colors.red, size: 14),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        
+        const SizedBox(height: 8),
+        
+        // ROI and Payback Period in a row - more compact
+        Row(
+          children: [
+            // ROI display (only if business is owned and not upgrading)
+            if (!isUpgrading && isOwned)
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: businessBaseColor.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: businessBaseColor.withOpacity(0.2)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
                       Row(
                         children: [
-                          Text(
-                            isOwned 
-                              ? '${NumberFormatter.formatCurrency(displayedIncomePerSecond)}/s'
-                              : '${NumberFormatter.formatCurrency(expectedDisplayedIncomePerSecond)}/s',
+                          Icon(Icons.trending_up, size: 16, color: roiColor),
+                          const SizedBox(width: 6),
+                          Text('ROI:', 
                             style: TextStyle(
+                              fontSize: 12, 
                               fontWeight: FontWeight.bold,
-                              fontSize: 15,
-                              color: gameState.hasActiveEventForBusiness(business.id) ? Colors.red : Colors.green.shade800,
+                              color: Colors.grey.shade700,
                             ),
                           ),
-                          if (gameState.hasActiveEventForBusiness(business.id))
-                            Padding(
-                              padding: const EdgeInsets.only(left: 4),
-                              child: Icon(Icons.warning_amber_rounded, color: Colors.red, size: 14),
-                            ),
                         ],
+                      ),
+                      Text(
+                        '${(business.getROI() * gameState.incomeMultiplier).toStringAsFixed(2)}%',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                          color: roiColor,
+                        ),
                       ),
                     ],
                   ),
                 ),
-              ],
-            ),
-          ),
+              ),
+            
+            // For unpurchased businesses, show payback period
+            if (!isOwned)
+              Expanded(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: businessBaseColor.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: businessBaseColor.withOpacity(0.2)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.schedule, size: 16, color: roiColor),
+                          const SizedBox(width: 6),
+                          Text('PAYBACK:', 
+                            style: TextStyle(
+                              fontSize: 12, 
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey.shade700,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Text(
+                        expectedDisplayedIncomePerSecond > 0
+                          ? '${TimeFormatter.formatDuration(Duration(seconds: (business.getNextUpgradeCost() / expectedDisplayedIncomePerSecond).ceil()))}'
+                          : 'N/A',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                          color: roiColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
         ),
-        
-        const SizedBox(width: 8),
-        
-        // ROI display (only if business is owned and not upgrading)
-        if (!isUpgrading && isOwned)
-          Expanded(
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
-              decoration: BoxDecoration(
-                color: Colors.blue.shade50,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.blue.shade100),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.trending_up, size: 18, color: Colors.blue.shade700),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('ROI', 
-                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          '${(business.getROI() * gameState.incomeMultiplier).toStringAsFixed(2)}%',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
-                            color: Colors.blue.shade800,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        
-        // For unpurchased businesses, show payback period
-        if (!isOwned)
-          Expanded(
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
-              decoration: BoxDecoration(
-                color: Colors.blue.shade50,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.blue.shade100),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.schedule, size: 18, color: Colors.blue.shade700),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Payback Period', 
-                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          expectedDisplayedIncomePerSecond > 0
-                            ? '${TimeFormatter.formatDuration(Duration(seconds: (business.getNextUpgradeCost() / expectedDisplayedIncomePerSecond).ceil()))}'
-                            : 'N/A',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
-                            color: Colors.blue.shade800,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
       ],
     );
   }
@@ -725,7 +910,7 @@ class _BusinessItemState extends State<BusinessItem> {
         child: LinearProgressIndicator(
           value: business.getIncomeProgress(),
           backgroundColor: Colors.grey.shade200,
-          valueColor: AlwaysStoppedAnimation<Color>(Colors.blue.shade400),
+          valueColor: AlwaysStoppedAnimation<Color>(_getBusinessColor(business.id)),
           minHeight: 3,
         ),
       ),
