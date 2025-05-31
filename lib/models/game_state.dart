@@ -85,6 +85,10 @@ class GameState with ChangeNotifier {
   bool isMogulAvatarsUnlocked = false;
   String? selectedMogulAvatarId;
   
+  // ADDED: Premium avatar tracking
+  bool isPremiumAvatarsUnlocked = false;
+  String? selectedPremiumAvatarId;
+  
   // >> START: Platinum Points System Fields <<
   int platinumPoints = 0;
   bool _retroactivePPAwarded = false; // Flag for retroactive PP grant
@@ -207,11 +211,13 @@ class GameState with ChangeNotifier {
   final List<Achievement> _pendingAchievementNotifications = [];
   Achievement? _currentAchievementNotification;
   bool _isAchievementNotificationVisible = false;
+  bool _isAchievementAnimationInProgress = false; // Flag to track animation state
   Timer? _achievementNotificationTimer; // ADDED: Timer for hiding notification
 
   List<Achievement> get pendingAchievementNotifications => List.unmodifiable(_pendingAchievementNotifications);
   Achievement? get currentAchievementNotification => _currentAchievementNotification;
   bool get isAchievementNotificationVisible => _isAchievementNotificationVisible;
+  bool get isAchievementAnimationInProgress => _isAchievementAnimationInProgress;
 
   // CRITICAL FIX: ensure these are always initialized
   DateTime lastSaved = DateTime.now(); // When the game was last saved
@@ -234,6 +240,7 @@ class GameState with ChangeNotifier {
   int localesWithPropertiesCount = 0;
 
   int totalEventsResolved = 0;
+  double totalEventFeesPaid = 0.0; // Track total money spent on resolving events
   int eventsResolvedByTapping = 0;
   int eventsResolvedByFee = 0;
   double eventFeesSpent = 0.0;

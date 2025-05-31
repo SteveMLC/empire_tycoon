@@ -8,7 +8,9 @@ import '../models/game_state.dart';
 import '../services/game_service.dart';
 import '../utils/number_formatter.dart';
 import '../models/mogul_avatar.dart';
+import '../models/premium_avatar.dart';
 import '../widgets/platinum_crest_avatar.dart';
+import '../widgets/premium_avatar_selector.dart';
 
 // Custom painter for the toggle switch track (moved to top-level)
 class ToggleTrackPainter extends CustomPainter {
@@ -68,6 +70,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   // Add state to track if avatar selection is expanded
   bool _isAvatarSelectionExpanded = false;
   bool _isMogulAvatarSectionExpanded = false;
+  bool _isPremiumAvatarSectionExpanded = false;
   
   // Add username controller as a class variable
   late TextEditingController _usernameController;
@@ -273,6 +276,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                     showCrest: gameState.isPlatinumCrestUnlocked,
                     userAvatar: currentAvatar,
                     mogulAvatarId: gameState.selectedMogulAvatarId,
+                    premiumAvatarId: gameState.selectedPremiumAvatarId,
                     size: 80.0,
                   ),
                   
@@ -426,7 +430,11 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                           return GestureDetector(
                             onTap: () {
                               setState(() {
+                                // Set the standard avatar emoji
                                 gameState.userAvatar = avatar;
+                                // Clear both Premium and Mogul Avatar selections to avoid conflicts
+                                gameState.selectedPremiumAvatarId = null;
+                                gameState.selectedMogulAvatarId = null;
                                 // Auto collapse after selection
                                 _isAvatarSelectionExpanded = false;
                               });
@@ -474,6 +482,105 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                         ),
                       ),
                       
+                      // Add premium avatars section if premium is purchased
+                      if (gameState.isPremium) ...[  
+                        const SizedBox(height: 20),
+                        
+                        // Premium Avatars Section Header with Purple accent
+                        Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                Colors.purple.shade700.withOpacity(0.8),
+                                Colors.purple.shade300.withOpacity(0.8),
+                              ],
+                              begin: Alignment.centerLeft,
+                              end: Alignment.centerRight,
+                            ),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                children: [
+                                  const Icon(Icons.auto_awesome, color: Colors.white),
+                                  const SizedBox(width: 8),
+                                  const Text(
+                                    'Premium Avatars',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                      shadows: [
+                                        Shadow(
+                                          offset: Offset(1, 1),
+                                          blurRadius: 2,
+                                          color: Color(0x80000000),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              IconButton(
+                                icon: Icon(
+                                  _isPremiumAvatarSectionExpanded 
+                                    ? Icons.expand_less 
+                                    : Icons.expand_more,
+                                  color: Colors.white,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _isPremiumAvatarSectionExpanded = !_isPremiumAvatarSectionExpanded;
+                                  });
+                                },
+                              ),
+                            ],
+                          ),
+                        ),
+                        
+                        // Premium Avatars Section Content (collapsible)
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 300),
+                          height: _isPremiumAvatarSectionExpanded ? null : 0,
+                          clipBehavior: Clip.antiAlias,
+                          decoration: const BoxDecoration(),
+                          child: AnimatedOpacity(
+                            duration: const Duration(milliseconds: 200),
+                            opacity: _isPremiumAvatarSectionExpanded ? 1.0 : 0.0,
+                            child: _isPremiumAvatarSectionExpanded ? Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const SizedBox(height: 12),
+                                
+                                // Premium Avatar Selector
+                                PremiumAvatarSelector(
+                                  isPremium: gameState.isPremium,
+                                  selectedPremiumAvatarId: gameState.selectedPremiumAvatarId,
+                                  onAvatarSelected: (avatarId) {
+                                    setState(() {
+                                      // Get the premium avatar emoji for the selected avatar
+                                      final avatar = getPremiumAvatars().firstWhere((a) => a.id == avatarId);
+                                      // Set the selected Premium Avatar ID
+                                      gameState.selectedPremiumAvatarId = avatarId;
+                                      // Clear any Mogul Avatar selection to avoid conflicts
+                                      gameState.selectedMogulAvatarId = null;
+                                      // Update the user's avatar emoji
+                                      gameState.userAvatar = avatar.emoji;
+                                    });
+                                    
+                                    // Save the game to persist the avatar choice
+                                    Provider.of<GameService>(context, listen: false).saveGame();
+                                  },
+                                ),
+                              ],
+                            ) : const SizedBox(),
+                          ),
+                        ),
+                      ],
+                      
                       // Add mogul avatars section if unlocked
                       if (gameState.isMogulAvatarsUnlocked) ...[
                         const SizedBox(height: 20),
@@ -500,7 +607,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                                   const Icon(Icons.stars, color: Colors.white),
                                   const SizedBox(width: 8),
                                   const Text(
-                                    'Premium Mogul Avatars',
+                                    'Platinum Mogul Avatars',
                                     style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
@@ -565,7 +672,11 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                                     return GestureDetector(
                                       onTap: () {
                                         setState(() {
+                                          // Set the selected Mogul Avatar ID
                                           gameState.selectedMogulAvatarId = mogulAvatar.id;
+                                          // Clear any Premium Avatar selection to avoid conflicts
+                                          gameState.selectedPremiumAvatarId = null;
+                                          // Update the user's avatar emoji
                                           gameState.userAvatar = mogulAvatar.emoji;
                                         });
                                         
@@ -657,11 +768,13 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                           ),
                         ),
                       ],
-                    ],
-                  ) : const SizedBox.shrink(),
+                      ],
+                    ) : const SizedBox.shrink(),
+                  ),
                 ),
-              ),
-            ],
+                
+                // Removed premium avatars section from here - moved inside the collapsible area
+              ],
           ),
         ),
       ),

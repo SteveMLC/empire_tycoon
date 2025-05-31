@@ -13,6 +13,7 @@ class OverviewCard extends StatelessWidget {
   final Function(BuildContext) showReincorporateConfirmation;
   final Function(BuildContext) showReincorporateInfo;
   final Function(BuildContext, GameState, StatsTheme) buildThemeToggle;
+  final Function(String)? scrollToSection;
 
   const OverviewCard({
     Key? key,
@@ -21,6 +22,7 @@ class OverviewCard extends StatelessWidget {
     required this.showReincorporateConfirmation,
     required this.showReincorporateInfo,
     required this.buildThemeToggle,
+    this.scrollToSection,
   }) : super(key: key);
 
   @override
@@ -144,6 +146,19 @@ class OverviewCard extends StatelessWidget {
               Icons.access_time,
               isExecutive ? Colors.green.shade300 : Colors.green.shade600,
               theme
+            ),
+            
+            // Events Solved stat with clickable functionality
+            InkWell(
+              onTap: () => scrollToSection?.call('events'),
+              child: StatsUtils.buildStatRowWithIcon(
+                'Events Solved', 
+                '${gameState.totalEventsResolved}',
+                Icons.bolt, // Using the same exciting icon as in the events breakdown card
+                isExecutive ? Colors.orange.shade300 : Colors.orange.shade600,
+                theme,
+                showClickIndicator: true
+              ),
             ),
 
             const SizedBox(height: 20),

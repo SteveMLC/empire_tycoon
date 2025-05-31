@@ -503,7 +503,7 @@ class PurchaseHandler {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'You\'ve unlocked premium Mogul Avatars!',
+              'You\'ve unlocked Platinum Mogul Avatars!',
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
@@ -523,7 +523,7 @@ class PurchaseHandler {
               showPurchaseFeedback(context, true, VaultItem(
                 id: 'platinum_mogul',
                 name: 'Platinum Mogul',
-                description: 'Unlock exclusive premium mogul avatars for your profile.',
+                description: 'Unlock exclusive Platinum Mogul Avatars for your profile.',
                 category: VaultItemCategory.cosmetics,
                 type: VaultItemType.oneTime,
                 cost: 250,

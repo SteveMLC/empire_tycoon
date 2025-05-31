@@ -82,6 +82,15 @@ extension PrestigeLogic on GameState {
       'selectedStatsTheme': selectedStatsTheme,
       'isPlatinumEfficiencyActive': isPlatinumEfficiencyActive,
       'isPlatinumPortfolioActive': isPlatinumPortfolioActive,
+      'totalEventsResolved': totalEventsResolved,
+      'totalEventFeesPaid': totalEventFeesPaid,
+      'eventsResolvedByTapping': eventsResolvedByTapping,
+      'eventsResolvedByFee': eventsResolvedByFee,
+      'eventFeesSpent': eventFeesSpent,
+      'eventsResolvedByAd': eventsResolvedByAd,
+      'eventsResolvedByLocale': eventsResolvedByLocale,
+      'resolvedEvents': resolvedEvents.map((e) => e.toJson()).toList(),
+      'lastEventResolvedTime': lastEventResolvedTime?.toIso8601String(),
       'isPlatinumResilienceActive': isPlatinumResilienceActive,
       'isPermanentIncomeBoostActive': isPermanentIncomeBoostActive,
       'isPermanentClickBoostActive': isPermanentClickBoostActive,
@@ -187,15 +196,8 @@ extension PrestigeLogic on GameState {
     businessesOwnedCount = 0;
     localesWithPropertiesCount = 0;
     
-    // Reset event achievement tracking fields
-    totalEventsResolved = 0;
-    eventsResolvedByTapping = 0;
-    eventsResolvedByFee = 0;
-    eventFeesSpent = 0.0;
-    eventsResolvedByAd = 0;
-    eventsResolvedByLocale = {};
-    lastEventResolvedTime = null;
-    resolvedEvents = [];
+    // We're now preserving event stats through reincorporation
+    // DO NOT reset event achievement tracking fields
 
     // Reset achievement tracking (keep completed status)
     _pendingAchievementNotifications.clear();
@@ -230,6 +232,28 @@ extension PrestigeLogic on GameState {
     // ADDED: Restore hustle taps progress
     taps = preservedState['taps'];
     clickLevel = preservedState['clickLevel'];
+    
+    // Restore event stats
+    totalEventsResolved = preservedState['totalEventsResolved'];
+    totalEventFeesPaid = preservedState['totalEventFeesPaid'];
+    eventsResolvedByTapping = preservedState['eventsResolvedByTapping'];
+    eventsResolvedByFee = preservedState['eventsResolvedByFee'];
+    eventFeesSpent = preservedState['eventFeesSpent'];
+    eventsResolvedByAd = preservedState['eventsResolvedByAd'];
+    eventsResolvedByLocale = Map<String, int>.from(preservedState['eventsResolvedByLocale']);
+    
+    // Restore resolved events history
+    if (preservedState['resolvedEvents'] != null) {
+      final List<dynamic> eventsList = preservedState['resolvedEvents'] as List<dynamic>;
+      resolvedEvents = eventsList
+          .map((e) => GameEvent.fromJson(e as Map<String, dynamic>))
+          .toList();
+    }
+    
+    // Restore last event resolved time if available
+    if (preservedState['lastEventResolvedTime'] != null) {
+      lastEventResolvedTime = DateTime.parse(preservedState['lastEventResolvedTime']);
+    }
     
     // Update unlocks based on new starting money and preserved state
     _updateBusinessUnlocks(); // From business_logic.dart

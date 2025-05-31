@@ -95,8 +95,23 @@ class SoundService {
     _soundManager.playInvestmentSellStockSound();
   }
   
-  // Direct access to playSound method for custom sounds
+  // Direct sound asset playing method
   Future<void> playSoundAsset(String path, {bool useCache = true, SoundPriority priority = SoundPriority.normal}) async {
     return _soundManager.playSound(path, useCache: useCache, priority: priority);
+  }
+  
+  // Expose sound manager for direct access when needed
+  SoundManager get soundManager => _soundManager;
+  
+  // Add method to stop all sounds (useful for app lifecycle management)
+  void stopAllSounds() {
+    _soundManager.stopAllSounds();
+  }
+  
+  // Add method to check if sounds are enabled
+  bool get isSoundEnabled => _soundManager.isSoundEnabled;
+  
+  void dispose() {
+    _soundManager.dispose();
   }
 }

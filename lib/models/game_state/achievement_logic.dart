@@ -11,7 +11,10 @@ extension AchievementLogic on GameState {
   /// Checks if a notification can be shown and triggers the display of the next one if conditions are met.
   void tryShowingNextAchievement() {
     // Can only show if nothing is currently visible and the queue is not empty
-    if (!_isAchievementNotificationVisible && _pendingAchievementNotifications.isNotEmpty) {
+    // Also check that we're not in the middle of an animation transition
+    if (!_isAchievementNotificationVisible && 
+        !_isAchievementAnimationInProgress && 
+        _pendingAchievementNotifications.isNotEmpty) {
       _showNextPendingAchievement();
     }
   }
@@ -22,6 +25,7 @@ extension AchievementLogic on GameState {
 
     _currentAchievementNotification = _pendingAchievementNotifications.removeAt(0);
     _isAchievementNotificationVisible = true;
+    _isAchievementAnimationInProgress = true; // Set animation in progress flag
     print("🔔 Displaying achievement: ${_currentAchievementNotification!.name}");
     notifyListeners(); // Notify UI to show the current achievement
   }
@@ -35,10 +39,17 @@ extension AchievementLogic on GameState {
     _isAchievementNotificationVisible = false;
     notifyListeners(); // Notify UI to hide the notification
 
-    // Important: Immediately try to show the next one after dismissal
-    // Use a short delay to prevent immediate re-triggering if dismissal was rapid
-    Future.delayed(Duration(milliseconds: 100), () {
-       tryShowingNextAchievement();
+    // Reset animation flag after a short delay to ensure smooth transitions
+    Future.delayed(Duration(milliseconds: 300), () {
+      _isAchievementAnimationInProgress = false;
+      
+      // Try showing the next achievement after the animation completes
+      tryShowingNextAchievement();
     });
   }
-} 
+  
+  /// Called when an achievement animation has completed (entry or exit)
+  void notifyAchievementAnimationCompleted() {
+    _isAchievementAnimationInProgress = false;
+  }
+}

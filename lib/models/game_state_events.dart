@@ -519,6 +519,7 @@ extension GameStateEvents on GameState {
       
       // Event achievement tracking data
       'totalEventsResolved': totalEventsResolved,
+      'totalEventFeesPaid': totalEventFeesPaid,
       'eventsResolvedByTapping': eventsResolvedByTapping,
       'eventsResolvedByFee': eventsResolvedByFee,
       'eventFeesSpent': eventFeesSpent,
@@ -562,6 +563,7 @@ extension GameStateEvents on GameState {
     
     // Load event achievement tracking data
     totalEventsResolved = json['totalEventsResolved'] as int? ?? 0;
+    totalEventFeesPaid = json['totalEventFeesPaid'] as double? ?? 0.0;
     eventsResolvedByTapping = json['eventsResolvedByTapping'] as int? ?? 0;
     eventsResolvedByFee = json['eventsResolvedByFee'] as int? ?? 0;
     eventFeesSpent = json['eventFeesSpent'] as double? ?? 0.0;

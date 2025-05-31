@@ -11,12 +11,14 @@ class AchievementNotification extends StatefulWidget {
   final Achievement achievement;
   final Function onDismiss;
   final GameService gameService;
+  final Function? onAnimationComplete; // Optional callback for animation completion
 
   const AchievementNotification({
     Key? key,
     required this.achievement,
     required this.onDismiss,
     required this.gameService,
+    this.onAnimationComplete,
   }) : super(key: key);
 
   @override
@@ -42,6 +44,9 @@ class _AchievementNotificationState extends State<AchievementNotification> with 
       vsync: this,
       duration: const Duration(milliseconds: 2000),
     );
+    
+    // Add status listener to notify when animation completes
+    _animationController.addStatusListener(_handleAnimationStatusChange);
     
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
@@ -85,6 +90,7 @@ class _AchievementNotificationState extends State<AchievementNotification> with 
       ),
     );
     
+    // Start the entrance animation
     _animationController.forward();
     
     // Trigger PP animation after the achievement appears
@@ -96,9 +102,9 @@ class _AchievementNotificationState extends State<AchievementNotification> with 
       }
     });
     
-    // Dismiss after animation completes
+    // Auto-dismiss after animation completes (if not manually dismissed)
     Future.delayed(const Duration(seconds: 4), () {
-      if (mounted) {
+      if (mounted && _animationController.status != AnimationStatus.reverse) {
         _dismiss();
       }
     });
@@ -129,13 +135,26 @@ class _AchievementNotificationState extends State<AchievementNotification> with 
   }
   
   void _dismiss() {
+    // Start the reverse animation
     _animationController.reverse().then((_) {
+      // Only call onDismiss after animation is complete
       widget.onDismiss();
     });
   }
   
+  // Handle animation status changes
+  void _handleAnimationStatusChange(AnimationStatus status) {
+    // When animation completes (either forward or reverse)
+    if (status == AnimationStatus.completed || status == AnimationStatus.dismissed) {
+      // Notify parent if callback is provided
+      widget.onAnimationComplete?.call();
+    }
+  }
+  
   @override
   void dispose() {
+    // Remove listener before disposing
+    _animationController.removeStatusListener(_handleAnimationStatusChange);
     _animationController.dispose();
     super.dispose();
   }

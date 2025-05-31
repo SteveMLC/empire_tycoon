@@ -99,6 +99,16 @@ extension EventLogic on GameState {
         final String localeId = localeIds[i];
         eventsResolvedByLocale[localeId] = (eventsResolvedByLocale[localeId] ?? 0) + 1;
       }
+      
+      // Track fee paid for resolving the event (if applicable)
+      if (event.resolutionFeePaid != null && event.resolutionFeePaid! > 0) {
+        totalEventFeesPaid += event.resolutionFeePaid!;
+        
+        // If this was a fee-based resolution, update the counter
+        if (event.resolution.type == EventResolutionType.feeBased) {
+          eventsResolvedByFee++;
+        }
+      }
 
       // Store resolved event in history with constant-time operations
       // Add to the end (constant time operation)

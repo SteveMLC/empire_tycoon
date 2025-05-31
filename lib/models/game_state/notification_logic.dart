@@ -14,6 +14,8 @@ extension NotificationLogic on GameState {
     isPremium = true;
     // Award bonus platinum points
     platinumPoints += 1500;
+    // Unlock premium avatars
+    isPremiumAvatarsUnlocked = true;
     // Show premium purchase notification
     showPremiumPurchaseNotification = true;
     
@@ -50,8 +52,8 @@ extension NotificationLogic on GameState {
     
     _pendingAchievementNotifications.addAll(achievements);
     
-    // If no notification is currently displayed, show the next one
-    if (!_isAchievementNotificationVisible) {
+    // If no notification is currently displayed and no animation is in progress, show the next one
+    if (!_isAchievementNotificationVisible && !_isAchievementAnimationInProgress) {
       _showNextAchievementNotification();
     }
   }
@@ -61,23 +63,40 @@ extension NotificationLogic on GameState {
     if (_pendingAchievementNotifications.isEmpty) {
       _isAchievementNotificationVisible = false;
       _currentAchievementNotification = null;
+      _isAchievementAnimationInProgress = false; // Reset animation flag
       notifyListeners();
       return;
     }
     
+    // Set animation in progress flag
+    _isAchievementAnimationInProgress = true;
+    
+    // Display the next achievement
     _currentAchievementNotification = _pendingAchievementNotifications.removeAt(0);
     _isAchievementNotificationVisible = true;
+    print("🏆 Showing achievement: ${_currentAchievementNotification!.name}");
     notifyListeners();
     
-    // Hide after a delay
+    // Cancel any existing timer
     _achievementNotificationTimer?.cancel();
+    
+    // Set a timer to auto-dismiss the notification after 5 seconds
+    // Note: This timer will be canceled if the user manually dismisses the notification
     _achievementNotificationTimer = Timer(const Duration(seconds: 5), () {
+      print("⏱️ Auto-dismissing achievement: ${_currentAchievementNotification?.name}");
       _isAchievementNotificationVisible = false;
+      _currentAchievementNotification = null;
       notifyListeners();
       
-      // Show next notification after a short pause
+      // Wait for exit animation to complete before showing next notification
+      // This delay should match the exit animation duration
       Timer(const Duration(milliseconds: 500), () {
-        _showNextAchievementNotification();
+        _isAchievementAnimationInProgress = false; // Reset animation flag
+        
+        // Check if there are more achievements to show
+        if (_pendingAchievementNotifications.isNotEmpty) {
+          _showNextAchievementNotification();
+        }
       });
     });
   }

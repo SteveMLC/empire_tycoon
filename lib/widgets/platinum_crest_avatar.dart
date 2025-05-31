@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:math';
 import '../painters/platinum_crest_painter.dart';
 import '../models/mogul_avatar.dart';
+import '../models/premium_avatar.dart';
 
 /// A widget that displays an avatar with a platinum crest decoration
 /// when the platinum_crest is unlocked
@@ -9,6 +10,7 @@ class PlatinumCrestAvatar extends StatefulWidget {
   final bool showCrest;
   final String? userAvatar;
   final String? mogulAvatarId;
+  final String? premiumAvatarId;
   final double size;
   
   const PlatinumCrestAvatar({
@@ -16,6 +18,7 @@ class PlatinumCrestAvatar extends StatefulWidget {
     required this.showCrest,
     this.userAvatar,
     this.mogulAvatarId,
+    this.premiumAvatarId,
     this.size = 80.0,
   }) : super(key: key);
 
@@ -158,56 +161,9 @@ class _PlatinumCrestAvatarState extends State<PlatinumCrestAvatar> with SingleTi
                 ] : null,
               ),
               child: Center(
-                child: widget.mogulAvatarId != null
-                  ? Container(
-                      width: widget.size * 0.8,
-                      height: widget.size * 0.8,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.grey.shade200,
-                        // Add subtle inner shadow for depth
-                        boxShadow: widget.showCrest ? [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 4,
-                            spreadRadius: -2,
-                            offset: const Offset(0, 1),
-                          ),
-                        ] : null,
-                      ),
-                      child: ClipOval(
-                        child: Image.asset(
-                          getMogulAvatars()
-                            .firstWhere((avatar) => avatar.id == widget.mogulAvatarId)
-                            .imagePath,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Center(
-                              child: Text(
-                                getMogulAvatars()
-                                  .firstWhere((avatar) => avatar.id == widget.mogulAvatarId)
-                                  .emoji,
-                                style: const TextStyle(fontSize: 32),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    )
-                  : Text(
-                      widget.userAvatar ?? '👨‍💼',
-                      style: TextStyle(
-                        fontSize: 40,
-                        // Add shadow to text if crest is active
-                        shadows: widget.showCrest ? [
-                          Shadow(
-                            offset: const Offset(1, 1),
-                            blurRadius: 3,
-                            color: Colors.black.withOpacity(0.2),
-                          ),
-                        ] : null,
-                      ),
-                    ),
+                // Display the avatar based on what the user has selected most recently
+                // No priority logic - just display what's been selected
+                child: _getSelectedAvatarWidget(),
               ),
             ),
             
@@ -222,6 +178,112 @@ class _PlatinumCrestAvatarState extends State<PlatinumCrestAvatar> with SingleTi
     );
   }
   
+  // Determine which avatar to display based on the user's selection
+  Widget _getSelectedAvatarWidget() {
+    // Check if the user has selected a specific avatar type
+    // This is determined by the most recent selection, not by priority
+    
+    // If user has selected a premium avatar and it's available
+    if (widget.premiumAvatarId != null) {
+      try {
+        final avatar = getPremiumAvatars().firstWhere((a) => a.id == widget.premiumAvatarId);
+        return Container(
+          width: widget.size * 0.8,
+          height: widget.size * 0.8,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.grey.shade200,
+            // Add subtle inner shadow for depth with purple accent for premium
+            boxShadow: widget.showCrest ? [
+              BoxShadow(
+                color: Colors.purple.withOpacity(0.2),
+                blurRadius: 4,
+                spreadRadius: -2,
+                offset: const Offset(0, 1),
+              ),
+            ] : null,
+          ),
+          child: ClipOval(
+            child: Image.asset(
+              avatar.imagePath,
+              fit: BoxFit.contain,  // Better display
+              width: widget.size * 0.7,
+              height: widget.size * 0.7,
+              errorBuilder: (context, error, stackTrace) {
+                return Center(
+                  child: Text(
+                    avatar.emoji,
+                    style: const TextStyle(fontSize: 32),
+                  ),
+                );
+              },
+            ),
+          ),
+        );
+      } catch (e) {
+        // If there's an error finding the premium avatar, fall through to next option
+        print('Error displaying premium avatar: $e');
+      }
+    }
+    
+    // If user has selected a mogul avatar and it's available
+    if (widget.mogulAvatarId != null) {
+      try {
+        final avatar = getMogulAvatars().firstWhere((a) => a.id == widget.mogulAvatarId);
+        return Container(
+          width: widget.size * 0.8,
+          height: widget.size * 0.8,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.grey.shade200,
+            // Add subtle inner shadow for depth
+            boxShadow: widget.showCrest ? [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 4,
+                spreadRadius: -2,
+                offset: const Offset(0, 1),
+              ),
+            ] : null,
+          ),
+          child: ClipOval(
+            child: Image.asset(
+              avatar.imagePath,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Center(
+                  child: Text(
+                    avatar.emoji,
+                    style: const TextStyle(fontSize: 32),
+                  ),
+                );
+              },
+            ),
+          ),
+        );
+      } catch (e) {
+        // If there's an error finding the mogul avatar, fall through to default
+        print('Error displaying mogul avatar: $e');
+      }
+    }
+    
+    // Default to standard emoji avatar
+    return Text(
+      widget.userAvatar ?? '👨‍💼',
+      style: TextStyle(
+        fontSize: 40,
+        // Add shadow to text if crest is active
+        shadows: widget.showCrest ? [
+          Shadow(
+            offset: const Offset(1, 1),
+            blurRadius: 3,
+            color: Colors.black.withOpacity(0.2),
+          ),
+        ] : null,
+      ),
+    );
+  }
+
   // Build an animated sparkle at different positions
   Widget _buildAnimatedSparkle(int index) {
     // Calculate position based on index and animation value
@@ -260,4 +322,4 @@ class _PlatinumCrestAvatarState extends State<PlatinumCrestAvatar> with SingleTi
       ),
     );
   }
-} 
+}

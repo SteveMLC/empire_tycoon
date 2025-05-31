@@ -17,6 +17,7 @@ import '../widgets/stats/net_worth_chart.dart';
 import '../widgets/stats/theme_dialog.dart';
 import '../widgets/stats/reincorporation_utils.dart';
 import '../widgets/stats/stats_utils.dart';
+import '../widgets/stats/events_breakdown_card.dart';
 
 class StatsScreen extends StatefulWidget {
   const StatsScreen({Key? key}) : super(key: key);
@@ -27,6 +28,21 @@ class StatsScreen extends StatefulWidget {
 
 class _StatsScreenState extends State<StatsScreen> {
   // Using NumberFormatter utility instead of duplicating formatting logic
+  final Map<String, GlobalKey> _sectionKeys = {
+    'events': GlobalKey(),
+  };
+  
+  // Method to scroll to a specific section by ID
+  void _scrollToSection(String sectionId) {
+    if (_sectionKeys.containsKey(sectionId)) {
+      Scrollable.ensureVisible(
+        _sectionKeys[sectionId]!.currentContext!,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+        alignment: 0.0,
+      );
+    }
+  }
   @override
   Widget build(BuildContext context) {
     return Consumer<GameState>(
@@ -58,6 +74,7 @@ class _StatsScreenState extends State<StatsScreen> {
                           showReincorporateInfo: (context) => 
                               ReincorporationUtils.showReincorporateInfo(context),
                           buildThemeToggle: ThemeDialogUtils.buildThemeToggle,
+                          scrollToSection: _scrollToSection,
                         ),
 
                         const SizedBox(height: 20),
@@ -96,6 +113,15 @@ class _StatsScreenState extends State<StatsScreen> {
 
                         // Achievements Section (already a separate widget)
                         AchievementsSection(theme: theme),
+                        
+                        const SizedBox(height: 20),
+                        
+                        // Events Breakdown Card
+                        EventsBreakdownCard(
+                          key: _sectionKeys['events'],
+                          gameState: gameState,
+                          theme: theme,
+                        ),
 
                         const SizedBox(height: 50),
                       ],

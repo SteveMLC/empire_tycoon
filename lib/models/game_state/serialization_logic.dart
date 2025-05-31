@@ -98,6 +98,10 @@ extension SerializationLogic on GameState {
       // ADDED: Mogul avatars fields
       'isMogulAvatarsUnlocked': isMogulAvatarsUnlocked,
       'selectedMogulAvatarId': selectedMogulAvatarId,
+      
+      // ADDED: Premium avatars fields
+      'isPremiumAvatarsUnlocked': isPremiumAvatarsUnlocked,
+      'selectedPremiumAvatarId': selectedPremiumAvatarId,
 
       // New Executive Stats Theme properties
       'isExecutiveStatsThemeUnlocked': isExecutiveStatsThemeUnlocked,
@@ -194,6 +198,10 @@ extension SerializationLogic on GameState {
     // ADDED: Load mogul avatars fields
     isMogulAvatarsUnlocked = json['isMogulAvatarsUnlocked'] ?? false;
     selectedMogulAvatarId = json['selectedMogulAvatarId'];
+
+    // ADDED: Load premium avatars fields
+    isPremiumAvatarsUnlocked = json['isPremiumAvatarsUnlocked'] ?? false;
+    selectedPremiumAvatarId = json['selectedPremiumAvatarId'];
 
     // Load achievement tracking fields
     totalUpgradeSpending = (json['totalUpgradeSpending'] as num?)?.toDouble() ?? 0.0;

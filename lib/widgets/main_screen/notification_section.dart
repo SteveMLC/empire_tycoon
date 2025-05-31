@@ -100,6 +100,11 @@ class NotificationSection extends StatelessWidget {
         // No need to call setState here as GameState's notifyListeners will handle the rebuild
         gameState.dismissCurrentAchievementNotification();
       },
+      // Add animation completion callback
+      onAnimationComplete: () {
+        // Notify GameState when animation completes
+        gameState.notifyAchievementAnimationCompleted();
+      },
     );
   }
   

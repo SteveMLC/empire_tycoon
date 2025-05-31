@@ -11,8 +11,9 @@ class StatsUtils {
     String value, 
     IconData icon, 
     Color iconColor, 
-    StatsTheme theme
-  ) {
+    StatsTheme theme, {
+    bool showClickIndicator = false,
+  }) {
     final bool isExecutive = theme.id == 'executive';
     
     return Padding(
@@ -49,34 +50,47 @@ class StatsUtils {
                     ),
             ),
           ),
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            decoration: BoxDecoration(
-              color: isExecutive 
-                  ? const Color(0xFF242C3B) 
-                  : Colors.transparent,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: isExecutive 
-                    ? theme.cardBorderColor 
-                    : Colors.transparent,
-                width: 1,
+          Row(
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                decoration: BoxDecoration(
+                  color: isExecutive 
+                      ? const Color(0xFF242C3B) 
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: isExecutive 
+                        ? theme.cardBorderColor 
+                        : Colors.transparent,
+                    width: 1,
+                  ),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                child: Text(
+                  value,
+                  style: isExecutive
+                      ? theme.statValueStyle.copyWith(
+                          letterSpacing: 0.3,
+                        )
+                      : TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                          letterSpacing: 0.3,
+                        ),
+                ),
               ),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            child: Text(
-              value,
-              style: isExecutive
-                  ? theme.statValueStyle.copyWith(
-                      letterSpacing: 0.3,
-                    )
-                  : TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                      letterSpacing: 0.3,
-                    ),
-            ),
+              if (showClickIndicator)
+                Padding(
+                  padding: const EdgeInsets.only(left: 4.0),
+                  child: Icon(
+                    Icons.arrow_forward_ios,
+                    size: 12,
+                    color: isExecutive ? Colors.blue.shade300 : Colors.blue.shade600,
+                  ),
+                ),
+            ],
           ),
         ],
       ),
