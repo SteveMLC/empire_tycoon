@@ -960,8 +960,10 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
                                   // Use the playRealEstateSound method
                                   gameService.playRealEstateSound();
                                 } catch (e) {
-                                  print("Error playing real estate purchase sound: $e");
-                                  // Continue with the purchase process even if sound fails
+                                  // Only log real estate sound errors occasionally to reduce spam
+                                  if (DateTime.now().second % 30 == 0) {
+                                    print("Error playing real estate purchase sound: $e");
+                                  }
                                 }
 
                                 ScaffoldMessenger.of(context).showSnackBar(
@@ -1031,7 +1033,10 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
                 // Use the business sound method as it uses the same sound
                 gameService.playBusinessSound();
               } catch (e) {
-                print("Error playing real estate upgrade sound: $e");
+                // Only log real estate sound errors occasionally to reduce spam
+                if (DateTime.now().second % 30 == 0) {
+                  print("Error playing real estate upgrade sound: $e");
+                }
                 // Continue with the upgrade process even if sound fails
               }
               ScaffoldMessenger.of(context).showSnackBar(

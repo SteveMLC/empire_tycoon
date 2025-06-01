@@ -81,6 +81,13 @@ class GameState with ChangeNotifier {
   String? username;
   String? userAvatar;
   
+  // Google Play Games Services properties
+  bool isGooglePlayConnected = false;
+  String? googlePlayPlayerId;
+  String? googlePlayDisplayName;
+  String? googlePlayAvatarUrl;
+  DateTime? lastCloudSync;
+  
   // ADDED: Mogul avatar tracking
   bool isMogulAvatarsUnlocked = false;
   String? selectedMogulAvatarId;
@@ -473,12 +480,15 @@ class GameState with ChangeNotifier {
     final String hourKey = TimeUtils.getHourKey(now);
     final String dayKey = TimeUtils.getDayKey(now);
     
-    // CRITICAL SAFEGUARD: Prevent duplicate income application
-    // If the last income application was too recent, skip this update
+    // OPTIMIZED SAFEGUARD: Prevent duplicate income application with improved thresholds
+    // Increased threshold and reduced logging frequency to improve performance
     if (_lastIncomeApplicationTime != null) {
       final int msSinceLastIncome = now.difference(_lastIncomeApplicationTime!).inMilliseconds;
-      if (msSinceLastIncome < 950) { // Almost a full second to prevent edge cases
-        print("⚠️ INCOME SAFEGUARD: Skipping income application - too soon (${msSinceLastIncome}ms since last)");
+      if (msSinceLastIncome < 1000) { // Increased to full second for better stability
+        // Only log every 20th skip and only if significant delay to reduce spam
+        if (msSinceLastIncome < 100 && DateTime.now().second % 20 == 0 && DateTime.now().millisecond < 100) {
+          print("! INCOME SAFEGUARD: Skipping income application - too soon (${msSinceLastIncome}ms since last)");
+        }
         return; // Skip update entirely if too soon
       }
     }

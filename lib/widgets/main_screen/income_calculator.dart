@@ -29,7 +29,10 @@ class IncomeCalculator {
     // 2. If we calculated within the last 100ms (for UI smoothness), return cached value
     // 3. REMOVED the stateHashCode check to ensure income updates when businesses change
     if (_isCalculatingIncome || now.difference(_lastCalculationTime).inMilliseconds < 100) {
-      print("💹 Income calculation optimized, returning cached value: $_lastCalculatedIncome (reason: ${_isCalculatingIncome ? 'calculating' : 'recent calc'})");
+      // OPTIMIZED: Reduced logging frequency to prevent spam - only log every 5 seconds
+      if (now.difference(_lastCalculationTime).inMilliseconds < 50 && now.second % 5 == 0 && now.millisecond < 100) {
+        print("💹 Income calculation optimized, returning cached value: $_lastCalculatedIncome");
+      }
       return _lastCalculatedIncome;
     }
     
@@ -45,14 +48,19 @@ class IncomeCalculator {
     
     _isCalculatingIncome = true;
     try {
-      // --- DEBUG START ---
-      print("--- Calculating Display Income --- ");
-      print("  Global Multipliers: income=${gameState.incomeMultiplier.toStringAsFixed(2)}, prestige=${gameState.prestigeMultiplier.toStringAsFixed(2)}");
-      print("  Permanent Boosts: income=${gameState.isPermanentIncomeBoostActive}, efficiency=${gameState.isPlatinumEfficiencyActive}, portfolio=${gameState.isPlatinumPortfolioActive}");
+      // OPTIMIZED: Reduced debug logging frequency to improve performance
+      // Only log detailed breakdown every 10 seconds to reduce spam
+      bool shouldLogDetails = (now.second % 10 == 0 && now.millisecond < 200);
+      
+      if (shouldLogDetails) {
+        print("--- Calculating Display Income --- ");
+        print("  Global Multipliers: income=${gameState.incomeMultiplier.toStringAsFixed(2)}, prestige=${gameState.prestigeMultiplier.toStringAsFixed(2)}");
+        print("  Permanent Boosts: income=${gameState.isPermanentIncomeBoostActive}, efficiency=${gameState.isPlatinumEfficiencyActive}, portfolio=${gameState.isPlatinumPortfolioActive}");
+      }
+      
       double totalBusinessIncome = 0;
       double totalRealEstateIncome = 0;
       double totalDividendIncome = 0;
-      // --- DEBUG END ---
       
       double total = 0.0;
       
@@ -75,16 +83,19 @@ class IncomeCalculator {
           if (hasEvent) {
             finalIncome *= GameStateEvents.NEGATIVE_EVENT_MULTIPLIER;
           }
-          // --- DEBUG START ---
-          // print("    Business '${business.name}': Base=$baseIncome, Final=$finalIncome (Event: $hasEvent)");
+          // OPTIMIZED: Reduced debug logging for performance
+          if (shouldLogDetails && totalBusinessIncome == 0) {
+            // Log example business income on first calculation only
+            // print("    Business '${business.name}': Base=$baseIncome, Final=$finalIncome (Event: $hasEvent)");
+          }
           totalBusinessIncome += finalIncome;
-          // --- DEBUG END ---
           total += finalIncome;
         }
       }
-      // --- DEBUG START ---
-      print("  Subtotal Business: ${totalBusinessIncome.toStringAsFixed(2)}");
-      // --- DEBUG END ---
+      // OPTIMIZED: Only log subtotals when detailed logging is enabled
+      if (shouldLogDetails) {
+        print("  Subtotal Business: ${totalBusinessIncome.toStringAsFixed(2)}");
+      }
       
       // Real Estate Income (with event check per locale/property)
       for (var locale in gameState.realEstateLocales) {
@@ -118,18 +129,21 @@ class IncomeCalculator {
                 finalIncome *= GameStateEvents.NEGATIVE_EVENT_MULTIPLIER;
               }
               
-              // --- DEBUG START ---
-              // print("    RE Property '${property.name}': Base=${basePropertyIncome}, Final=$finalIncome (Event: $isLocaleAffectedByEvent)");
+              // OPTIMIZED: Reduced debug logging for performance
+              if (shouldLogDetails && totalRealEstateIncome == 0) {
+                // Log example property income on first calculation only
+                // print("    RE Property '${property.name}': Base=${basePropertyIncome}, Final=$finalIncome (Event: $isLocaleAffectedByEvent)");
+              }
               totalRealEstateIncome += finalIncome;
-              // --- DEBUG END ---
               total += finalIncome;
             }
           }
         }
       }
-      // --- DEBUG START ---
-      print("  Subtotal Real Estate: ${totalRealEstateIncome.toStringAsFixed(2)}");
-      // --- DEBUG END ---
+      // OPTIMIZED: Only log subtotals when detailed logging is enabled
+      if (shouldLogDetails) {
+        print("  Subtotal Real Estate: ${totalRealEstateIncome.toStringAsFixed(2)}");
+      }
       
       // Dividend Income from Investments
       double diversificationBonusValue = (1.0 + diversificationBonus);
@@ -147,18 +161,21 @@ class IncomeCalculator {
           // Apply Income Surge (if applicable)
           if (gameState.isIncomeSurgeActive) finalDividend *= 2.0;
           
-          // --- DEBUG START ---
-          // print("    Investment '${investment.name}': BaseTotal=$baseDividend, Final=$finalDividend");
+          // OPTIMIZED: Reduced debug logging for performance
+          if (shouldLogDetails && totalDividendIncome == 0) {
+            // Log example investment dividend on first calculation only
+            // print("    Investment '${investment.name}': BaseTotal=$baseDividend, Final=$finalDividend");
+          }
           totalDividendIncome += finalDividend;
-          // --- DEBUG END ---
           total += finalDividend;
         }
       }
-      // --- DEBUG START ---
-      print("  Subtotal Dividends: ${totalDividendIncome.toStringAsFixed(2)}");
-      print("  TOTAL Display Income: ${total.toStringAsFixed(2)}");
-      print("--- End Calculating Display Income --- ");
-      // --- DEBUG END ---
+      // OPTIMIZED: Only log final totals when detailed logging is enabled
+      if (shouldLogDetails) {
+        print("  Subtotal Dividends: ${totalDividendIncome.toStringAsFixed(2)}");
+        print("  TOTAL Display Income: ${total.toStringAsFixed(2)}");
+        print("--- End Calculating Display Income --- ");
+      }
       
       // Cache the result with enhanced tracking
       _lastCalculatedIncome = total;

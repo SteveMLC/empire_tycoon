@@ -125,11 +125,18 @@ class _AchievementNotificationState extends State<AchievementNotification> with 
           break;
       }
     } catch (e) {
-      print("Error playing achievement sound: $e");
+      // Only log achievement sound errors occasionally to reduce spam
+      if (DateTime.now().second % 30 == 0) {
+        print("Error playing achievement sound: $e");
+      }
+      // Try fallback success sound
       try {
-        widget.gameService.playSound(() => widget.gameService.soundManager.playFeedbackSuccessSound());
-      } catch (e) {
-        print("Error playing fallback success sound: $e");
+        widget.gameService.soundManager.playFeedbackSuccessSound();
+      } catch (fallbackError) {
+        // Only log fallback sound errors occasionally to reduce spam
+        if (DateTime.now().second % 30 == 0) {
+          print("Error playing fallback success sound: $fallbackError");
+        }
       }
     }
   }
@@ -261,6 +268,8 @@ class _AchievementNotificationState extends State<AchievementNotification> with 
                                   fontWeight: FontWeight.bold,
                                   color: rarityColors['nameColor'],
                                 ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
                               ),
                               const SizedBox(height: 2),
                               Padding(
@@ -271,6 +280,8 @@ class _AchievementNotificationState extends State<AchievementNotification> with 
                                     fontSize: 14,
                                     color: rarityColors['descriptionColor'],
                                   ),
+                                  maxLines: 3,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                             ],

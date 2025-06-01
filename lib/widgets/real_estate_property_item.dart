@@ -108,33 +108,33 @@ class RealEstatePropertyItem extends StatelessWidget {
                                                 gameState.prestigeMultiplier;
                         
                         return Row(
-                        children: [
-                          Icon(Icons.attach_money, 
-                              color: isLocaleAffectedByEvent ? Colors.red.shade700 : Colors.green.shade700, 
-                              size: 16),
-                          const SizedBox(width: 4),
-                          Text(
-                            isLocaleAffectedByEvent && displayedIncome < 0
-                                ? '(\$${NumberFormatter.formatCompact(displayedIncome.abs())})/sec'
-                                : '\$${NumberFormatter.formatCompact(displayedIncome)}/sec',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: isLocaleAffectedByEvent ? Colors.red.shade700 : Colors.green.shade700,
-                              fontWeight: FontWeight.w500,
+                          children: [
+                            Icon(Icons.attach_money, 
+                                color: isLocaleAffectedByEvent ? Colors.red.shade700 : Colors.green.shade700, 
+                                size: 16),
+                            const SizedBox(width: 4),
+                            Text(
+                              isLocaleAffectedByEvent && displayedIncome < 0
+                                  ? '(\$${NumberFormatter.formatCompact(displayedIncome.abs())})/sec'
+                                  : '\$${NumberFormatter.formatCompact(displayedIncome)}/sec',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: isLocaleAffectedByEvent ? Colors.red.shade700 : Colors.green.shade700,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 16),
-                          Icon(Icons.show_chart, color: Colors.green.shade700, size: 16),
-                          const SizedBox(width: 4),
-                          Text(
-                            'ROI: ${property.getROI().toStringAsFixed(2)}%/sec',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.green.shade700,
+                            const SizedBox(width: 16),
+                            Icon(Icons.show_chart, color: Colors.green.shade700, size: 16),
+                            const SizedBox(width: 4),
+                            Text(
+                              'ROI: ${property.getROI().toStringAsFixed(2)}%/sec',
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.green.shade700,
+                              ),
                             ),
-                          ),
-                        ],
-                      );
+                          ],
+                        );
                       }),
                     ],
                   ),
@@ -150,64 +150,65 @@ class RealEstatePropertyItem extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    if (property.owned > 0) {
+                    if (property.owned > 0)
                       // --- Calculate Correct Display Income --- 
-                      bool isLocaleAffectedByEvent = gameState.hasActiveEventForLocale(localeId);
-                      
-                      // Fetch relevant multipliers from GameState
-                      double permanentIncomeBoostMultiplier = gameState.isPermanentIncomeBoostActive ? 1.05 : 1.0;
-                      bool isFoundationApplied = gameState.platinumFoundationsApplied.containsKey(localeId);
-                      bool isYachtDocked = gameState.platinumYachtDockedLocaleId == localeId;
-                      double foundationMultiplier = isFoundationApplied ? 1.05 : 1.0;
-                      double yachtMultiplier = isYachtDocked ? 1.05 : 1.0;
-                      
-                      // Get base income per property
-                      double basePropertyIncome = property.getTotalIncomePerSecond(isResilienceActive: gameState.isPlatinumResilienceActive);
-                      
-                      // Apply locale-specific multipliers
-                      double incomeWithLocaleBoosts = basePropertyIncome * foundationMultiplier * yachtMultiplier;
+                      Builder(builder: (context) {
+                        bool isLocaleAffectedByEvent = gameState.hasActiveEventForLocale(localeId);
+                        
+                        // Fetch relevant multipliers from GameState
+                        double permanentIncomeBoostMultiplier = gameState.isPermanentIncomeBoostActive ? 1.05 : 1.0;
+                        bool isFoundationApplied = gameState.platinumFoundationsApplied.containsKey(localeId);
+                        bool isYachtDocked = gameState.platinumYachtDockedLocaleId == localeId;
+                        double foundationMultiplier = isFoundationApplied ? 1.05 : 1.0;
+                        double yachtMultiplier = isYachtDocked ? 1.05 : 1.0;
+                        
+                        // Get base income per property
+                        double basePropertyIncome = property.getTotalIncomePerSecond(isResilienceActive: gameState.isPlatinumResilienceActive);
+                        
+                        // Apply locale-specific multipliers
+                        double incomeWithLocaleBoosts = basePropertyIncome * foundationMultiplier * yachtMultiplier;
 
-                      // Apply standard global multipliers
-                      double finalPropertyIncome = incomeWithLocaleBoosts * gameState.incomeMultiplier;
+                        // Apply standard global multipliers
+                        double finalPropertyIncome = incomeWithLocaleBoosts * gameState.incomeMultiplier;
 
-                      // Apply the overall permanent boost
-                      finalPropertyIncome *= permanentIncomeBoostMultiplier;
-                      
-                      // Apply Income Surge (if applicable)
-                      if (gameState.isIncomeSurgeActive) finalPropertyIncome *= 2.0;
+                        // Apply the overall permanent boost
+                        finalPropertyIncome *= permanentIncomeBoostMultiplier;
+                        
+                        // Apply Income Surge (if applicable)
+                        if (gameState.isIncomeSurgeActive) finalPropertyIncome *= 2.0;
 
-                      // Check for negative event affecting the LOCALE and apply multiplier AFTER all bonuses
-                      if (isLocaleAffectedByEvent) {
-                        finalPropertyIncome *= GameStateEvents.NEGATIVE_EVENT_MULTIPLIER; // Apply -0.25
-                      }
-                      // --- End Calculation ---
-                      
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            // Use the correctly calculated finalPropertyIncome
-                            'Income: \$${NumberFormatter.formatCompact(finalPropertyIncome)}/sec',
-                            style: TextStyle(
-                              fontSize: 14,
-                              // Use isLocaleAffectedByEvent for color
-                              color: isLocaleAffectedByEvent ? Colors.red.shade700 : Colors.green.shade700,
-                              fontWeight: isLocaleAffectedByEvent ? FontWeight.bold : FontWeight.normal,
-                            ),
-                          ),
-                          // Use isLocaleAffectedByEvent for warning icon
-                          if (isLocaleAffectedByEvent)
-                            const Padding(
-                              padding: EdgeInsets.only(left: 4),
-                              child: Icon(
-                                Icons.warning_amber_rounded,
-                                color: Colors.red,
-                                size: 14,
+                        // Check for negative event affecting the LOCALE and apply multiplier AFTER all bonuses
+                        if (isLocaleAffectedByEvent) {
+                          finalPropertyIncome *= GameStateEvents.NEGATIVE_EVENT_MULTIPLIER; // Apply -0.25
+                        }
+                        // --- End Calculation ---
+                        
+                        return Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              // Use the correctly calculated finalPropertyIncome
+                              'Income: \$${NumberFormatter.formatCompact(finalPropertyIncome)}/sec',
+                              style: TextStyle(
+                                fontSize: 14,
+                                // Use isLocaleAffectedByEvent for color
+                                color: isLocaleAffectedByEvent ? Colors.red.shade700 : Colors.green.shade700,
+                                fontWeight: isLocaleAffectedByEvent ? FontWeight.bold : FontWeight.normal,
                               ),
                             ),
-                        ],
-                      ),
-                    },
+                            // Use isLocaleAffectedByEvent for warning icon
+                            if (isLocaleAffectedByEvent)
+                              const Padding(
+                                padding: EdgeInsets.only(left: 4),
+                                child: Icon(
+                                  Icons.warning_amber_rounded,
+                                  color: Colors.red,
+                                  size: 14,
+                                ),
+                              ),
+                          ],
+                        );
+                      }),
                   ],
                 ),
               ],

@@ -93,33 +93,51 @@ class _VaultItemCardState extends State<VaultItemCard> with SingleTickerProvider
           timer.cancel();
           return;
         }
-        setState(() {
-          bool activeTimerRunning = false;
-          bool cooldownTimerRunning = false;
+        
+        bool activeTimerRunning = false;
+        bool cooldownTimerRunning = false;
+        bool uiNeedsUpdate = false; // Track if UI actually needs updating
 
-          if (_currentActiveRemaining != null && _currentActiveRemaining! > Duration.zero) {
-            _currentActiveRemaining = _currentActiveRemaining! - const Duration(seconds: 1);
-            if (_currentActiveRemaining! <= Duration.zero) {
-              _currentActiveRemaining = Duration.zero;
-            } else {
-               activeTimerRunning = true;
-            }
+        if (_currentActiveRemaining != null && _currentActiveRemaining! > Duration.zero) {
+          final newActiveRemaining = _currentActiveRemaining! - const Duration(seconds: 1);
+          // Only update if the displayed seconds value changed
+          if (_currentActiveRemaining!.inSeconds != newActiveRemaining.inSeconds) {
+            _currentActiveRemaining = newActiveRemaining;
+            uiNeedsUpdate = true;
           }
-          if (_currentCooldownRemaining != null && _currentCooldownRemaining! > Duration.zero) {
-            _currentCooldownRemaining = _currentCooldownRemaining! - const Duration(seconds: 1);
-             if (_currentCooldownRemaining! <= Duration.zero) {
-              _currentCooldownRemaining = Duration.zero;
-            } else {
-              cooldownTimerRunning = true;
-            }
+          if (_currentActiveRemaining! <= Duration.zero) {
+            _currentActiveRemaining = Duration.zero;
+            uiNeedsUpdate = true;
+          } else {
+             activeTimerRunning = true;
           }
+        }
+        if (_currentCooldownRemaining != null && _currentCooldownRemaining! > Duration.zero) {
+          final newCooldownRemaining = _currentCooldownRemaining! - const Duration(seconds: 1);
+          // Only update if the displayed seconds value changed
+          if (_currentCooldownRemaining!.inSeconds != newCooldownRemaining.inSeconds) {
+            _currentCooldownRemaining = newCooldownRemaining;
+            uiNeedsUpdate = true;
+          }
+           if (_currentCooldownRemaining! <= Duration.zero) {
+            _currentCooldownRemaining = Duration.zero;
+            uiNeedsUpdate = true;
+          } else {
+            cooldownTimerRunning = true;
+          }
+        }
 
-          if (!activeTimerRunning && !cooldownTimerRunning) {
-            timer.cancel();
-            _timer = null;
-            // Optionally trigger a state refresh from GameState if needed
-          }
-        });
+        // OPTIMIZED: Only call setState if timer state changes or UI display would change
+        if (!activeTimerRunning && !cooldownTimerRunning) {
+          timer.cancel();
+          _timer = null;
+          // Optionally trigger a state refresh from GameState if needed
+        }
+        
+        // Only rebuild if the UI display would actually change
+        if (uiNeedsUpdate) {
+          setState(() {});
+        }
       });
     }
   }

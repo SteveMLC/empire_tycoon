@@ -39,6 +39,7 @@ class _EventNotificationState extends State<EventNotification> {
         child: Padding(
           padding: const EdgeInsets.all(12.0),
           child: _isMinimized ? _buildMinimizedView() : Column(
+            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Top row with event name and minimize button
@@ -49,6 +50,7 @@ class _EventNotificationState extends State<EventNotification> {
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Row(
                           children: [
@@ -60,6 +62,8 @@ class _EventNotificationState extends State<EventNotification> {
                                   fontSize: 16,
                                   color: Colors.white,
                                 ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ],
@@ -72,6 +76,8 @@ class _EventNotificationState extends State<EventNotification> {
                             color: Colors.white,
                             fontWeight: FontWeight.w300,
                           ),
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),

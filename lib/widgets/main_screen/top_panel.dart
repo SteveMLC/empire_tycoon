@@ -21,8 +21,8 @@ class TopPanel extends StatelessWidget {
     // Use Consumer for efficient rebuilds
     return Consumer<GameState>(
       builder: (context, gameState, child) {
-        // Log rebuild for debugging
-        print("TopPanel rebuilding with gameState hashCode: ${gameState.hashCode}");
+        // OPTIMIZED: Removed excessive debug logging that was causing performance issues
+        // Only log on significant changes to reduce spam
         
         // Access the IncomeService through Provider
         final incomeService = Provider.of<IncomeService>(context, listen: false);

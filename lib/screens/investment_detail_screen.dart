@@ -594,7 +594,10 @@ class _InvestmentDetailScreenState extends State<InvestmentDetailScreen> {
                                         // Play sound through GameService for better error handling
                                         gameService.playSound(() => gameService.soundManager.playInvestmentBuyStockSound());
                                       } catch (e) {
-                                        print("Error playing investment buy sound: $e");
+                                        // Only log investment sound errors occasionally to reduce spam
+                                        if (DateTime.now().second % 30 == 0) {
+                                          print("Error playing investment buy sound: $e");
+                                        }
                                         // Continue with the purchase process even if sound fails
                                       }
                                     } else {
@@ -605,7 +608,10 @@ class _InvestmentDetailScreenState extends State<InvestmentDetailScreen> {
                                         // Play sound directly through sound manager for better error handling
                                         gameService.playSound(() => gameService.soundManager.playInvestmentSellStockSound());
                                       } catch (e) {
-                                        print("Error playing investment sell sound: $e");
+                                        // Only log investment sound errors occasionally to reduce spam
+                                        if (DateTime.now().second % 30 == 0) {
+                                          print("Error playing investment sell sound: $e");
+                                        }
                                         // Continue with the sell process even if sound fails
                                       }
                                     }
@@ -637,7 +643,10 @@ class _InvestmentDetailScreenState extends State<InvestmentDetailScreen> {
                                       // Use generic playSound for error
                                       gameService.soundManager.playSound(SoundAssets.feedbackError, priority: SoundPriority.normal);
                                     } catch (e) {
-                                      print("Error playing error sound: $e");
+                                      // Only log error sound errors occasionally to reduce spam
+                                      if (DateTime.now().second % 30 == 0) {
+                                        print("Error playing error sound: $e");
+                                      }
                                       // Continue with the error handling even if sound fails
                                     }
                                     

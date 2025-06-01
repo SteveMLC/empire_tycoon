@@ -1,4 +1,5 @@
 import 'dart:async'; // Import dart:async for Timer
+import 'package:flutter/foundation.dart'; // Import for kDebugMode
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -51,7 +52,10 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
         // Trigger initial achievement check
         final gameState = Provider.of<GameState>(context, listen: false);
         gameState.tryShowingNextAchievement();
-        print("🔔 Initial achievement check triggered.");
+        // Only log in debug mode to reduce production spam
+        if (kDebugMode) {
+          print("🔔 Initial achievement check triggered.");
+        }
       }
     });
   }
@@ -116,34 +120,45 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
         final endTime = Provider.of<GameState>(context, listen: false).clickBoostEndTime;
         if (endTime == null || now.isAfter(endTime)) {
           timer.cancel();
-          setState(() {
-            _boostTimeRemaining = Duration.zero; // Reset remaining time
-          });
+          if (mounted) {
+            setState(() {
+              _boostTimeRemaining = Duration.zero; // Reset remaining time
+            });
+          }
           // Optionally trigger a final GameState check/update here if needed
         } else {
-          setState(() {
-            _boostTimeRemaining = endTime.difference(now);
-          });
+          final newRemaining = endTime.difference(now);
+          // OPTIMIZED: Only call setState if the seconds value actually changed
+          if (mounted && _boostTimeRemaining.inSeconds != newRemaining.inSeconds) {
+            setState(() {
+              _boostTimeRemaining = newRemaining;
+            });
+          }
         }
       });
       // Initial update
        if (gameState.clickBoostEndTime != null) {
-         setState(() {
-           _boostTimeRemaining = gameState.clickBoostEndTime!.difference(DateTime.now());
-           if (_boostTimeRemaining.isNegative) _boostTimeRemaining = Duration.zero;
-         });
+         final newRemaining = gameState.clickBoostEndTime!.difference(DateTime.now());
+         if (mounted && _boostTimeRemaining.inSeconds != newRemaining.inSeconds) {
+           setState(() {
+             _boostTimeRemaining = newRemaining.isNegative ? Duration.zero : newRemaining;
+           });
+         }
        }
     } else if (!isBoostActive && (_boostTimer != null && _boostTimer!.isActive)) {
       // Stop the timer if boost is not active and timer is running
       _boostTimer?.cancel();
-      setState(() {
-         _boostTimeRemaining = Duration.zero; // Ensure UI updates if boost ends early
-      });
+      if (mounted) {
+        setState(() {
+           _boostTimeRemaining = Duration.zero; // Ensure UI updates if boost ends early
+        });
+      }
     } else if (isBoostActive) {
        // Ensure remaining time is updated if the boost end time changes while active
        final endTime = gameState.clickBoostEndTime!;
        final remaining = endTime.difference(DateTime.now());
-       if (_boostTimeRemaining.inSeconds != remaining.inSeconds && mounted) {
+       // OPTIMIZED: Only call setState if the seconds value actually changed
+       if (mounted && _boostTimeRemaining.inSeconds != remaining.inSeconds) {
          setState(() {
            _boostTimeRemaining = remaining.isNegative ? Duration.zero : remaining;
          });
@@ -167,10 +182,11 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
         // Get the current gameState without listening to all changes
         final gameState = Provider.of<GameState>(context, listen: false);
         
-        // ADDED: Logging inside Selector builder with more details
-        print("🔄 MainScreen Selector rebuilding...");
-        print("  -> Rebuild reason: isInitialized=${data[0]}, showPPAnimation=${data[1]}, showPremiumNotification=${data[2]}");
-        print("  -> gameState hashCode: ${gameState.hashCode}");
+        // REMOVED: Excessive debug logging that was causing log spam
+        // Only log rebuilds in debug mode and less frequently
+        if (kDebugMode && DateTime.now().second % 30 == 0) {
+          print("🔄 MainScreen Selector rebuilding (periodic check)");
+        }
 
         if (!gameState.isInitialized) {
           return const Scaffold(

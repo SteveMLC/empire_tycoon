@@ -111,7 +111,7 @@ class AssetsBreakdownCard extends StatelessWidget {
               'Real Estate Value',
               '${NumberFormatter.formatCurrency(realEstateValue)} (${realEstatePercent.toStringAsFixed(1)}%)', 
               Icons.apartment,
-              isExecutive ? theme.quaternaryChartColor : Colors.indigo.shade500,
+              isExecutive ? theme.quaternaryChartColor : Colors.red.shade600,
               theme
             ),
 

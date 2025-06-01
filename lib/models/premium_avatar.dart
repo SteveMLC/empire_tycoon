@@ -72,7 +72,7 @@ List<PremiumAvatar> getPremiumAvatars() {
     // Investment
     PremiumAvatar(
       id: 'investment_tycoon',
-      imagePath: 'assets/images/premium_avatars/Investment_Tycoon.png',
+      imagePath: 'assets/images/premium_avatars/Investment_Tycoon_Avatar.png',
       name: 'Investment Tycoon',
       description: 'Master of financial markets and investment strategies.',
       category: PremiumAvatarCategory.investment,

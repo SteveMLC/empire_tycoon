@@ -23,11 +23,16 @@ extension BoosterLogic on GameState {
     _boostTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (boostRemainingSeconds > 0) {
         boostRemainingSeconds--;
+        // OPTIMIZED: Only notify listeners every 5 seconds or when boost expires
+        // This reduces excessive UI rebuilds while keeping functionality
+        if (boostRemainingSeconds == 0 || boostRemainingSeconds % 5 == 0) {
+          notifyListeners();
+        }
       } else {
         timer.cancel();
         _boostTimer = null;
+        notifyListeners(); // Always notify when timer ends
       }
-      notifyListeners();
     });
   }
 
@@ -37,11 +42,16 @@ extension BoosterLogic on GameState {
     _adBoostTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (adBoostRemainingSeconds > 0) {
         adBoostRemainingSeconds--;
+        // OPTIMIZED: Only notify listeners every 5 seconds or when boost expires
+        // This reduces excessive UI rebuilds while keeping functionality
+        if (adBoostRemainingSeconds == 0 || adBoostRemainingSeconds % 5 == 0) {
+          notifyListeners();
+        }
       } else {
         timer.cancel();
         _adBoostTimer = null;
+        notifyListeners(); // Always notify when timer ends
       }
-      notifyListeners();
     });
   }
 
@@ -63,7 +73,11 @@ extension BoosterLogic on GameState {
     _platinumClickFrenzyTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (platinumClickFrenzyRemainingSeconds > 0) {
         platinumClickFrenzyRemainingSeconds--;
-        notifyListeners(); // Notify UI about remaining time change
+        // OPTIMIZED: Only notify listeners every 10 seconds or when boost expires
+        // This reduces excessive UI rebuilds while keeping functionality
+        if (platinumClickFrenzyRemainingSeconds == 0 || platinumClickFrenzyRemainingSeconds % 10 == 0) {
+          notifyListeners(); // Notify UI about remaining time change
+        }
       } else {
         timer.cancel();
         _platinumClickFrenzyTimer = null;
@@ -79,7 +93,11 @@ extension BoosterLogic on GameState {
     _platinumSteadyBoostTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (platinumSteadyBoostRemainingSeconds > 0) {
         platinumSteadyBoostRemainingSeconds--;
-        notifyListeners(); // Notify UI about remaining time change
+        // OPTIMIZED: Only notify listeners every 10 seconds or when boost expires
+        // This reduces excessive UI rebuilds while keeping functionality
+        if (platinumSteadyBoostRemainingSeconds == 0 || platinumSteadyBoostRemainingSeconds % 10 == 0) {
+          notifyListeners(); // Notify UI about remaining time change
+        }
       } else {
         timer.cancel();
         _platinumSteadyBoostTimer = null;

@@ -106,7 +106,7 @@ class EarningsBreakdownCard extends StatelessWidget {
               'Real Estate Earnings',
               '${NumberFormatter.formatCurrency(gameState.realEstateEarnings)} (${realEstatePercent.toStringAsFixed(1)}%)', 
               Icons.home,
-              isExecutive ? theme.quaternaryChartColor : Colors.purple.shade600,
+              isExecutive ? theme.quaternaryChartColor : Colors.red.shade600,
               theme
             ),
 
@@ -128,7 +128,7 @@ class EarningsBreakdownCard extends StatelessWidget {
                     StatsUtils.buildBreakdownSegment(manualPercent / 100, isExecutive ? theme.primaryChartColor : Colors.blue.shade500, isExecutive),
                     StatsUtils.buildBreakdownSegment(passivePercent / 100, isExecutive ? theme.secondaryChartColor : Colors.amber.shade600, isExecutive),
                     StatsUtils.buildBreakdownSegment(investmentPercent / 100, isExecutive ? theme.tertiaryChartColor : Colors.green.shade600, isExecutive),
-                    StatsUtils.buildBreakdownSegment(realEstatePercent / 100, isExecutive ? theme.quaternaryChartColor : Colors.purple.shade600, isExecutive),
+                    StatsUtils.buildBreakdownSegment(realEstatePercent / 100, isExecutive ? theme.quaternaryChartColor : Colors.red.shade600, isExecutive),
                   ],
                 ),
               ),

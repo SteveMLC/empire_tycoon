@@ -95,6 +95,13 @@ extension SerializationLogic on GameState {
       'username': username,
       'userAvatar': userAvatar,
       
+      // Google Play Games Services properties
+      'isGooglePlayConnected': isGooglePlayConnected,
+      'googlePlayPlayerId': googlePlayPlayerId,
+      'googlePlayDisplayName': googlePlayDisplayName,
+      'googlePlayAvatarUrl': googlePlayAvatarUrl,
+      'lastCloudSync': lastCloudSync?.toIso8601String(),
+      
       // ADDED: Mogul avatars fields
       'isMogulAvatarsUnlocked': isMogulAvatarsUnlocked,
       'selectedMogulAvatarId': selectedMogulAvatarId,
@@ -194,6 +201,19 @@ extension SerializationLogic on GameState {
     totalRealEstateUpgradesPurchased = json['totalRealEstateUpgradesPurchased'] ?? 0;
     username = json['username'];
     userAvatar = json['userAvatar'];
+    
+    // Load Google Play Games Services properties
+    isGooglePlayConnected = json['isGooglePlayConnected'] ?? false;
+    googlePlayPlayerId = json['googlePlayPlayerId'];
+    googlePlayDisplayName = json['googlePlayDisplayName'];
+    googlePlayAvatarUrl = json['googlePlayAvatarUrl'];
+    if (json['lastCloudSync'] != null) {
+      try {
+        lastCloudSync = DateTime.parse(json['lastCloudSync']);
+      } catch (_) {
+        lastCloudSync = null;
+      }
+    }
     
     // ADDED: Load mogul avatars fields
     isMogulAvatarsUnlocked = json['isMogulAvatarsUnlocked'] ?? false;

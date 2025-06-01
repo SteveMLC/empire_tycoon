@@ -1,0 +1,34 @@
+{
+  "project_info": {
+    "project_number": "400590136347",
+    "project_id": "empiretycoon",
+    "storage_bucket": "empiretycoon.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:400590136347:android:73a4fb8297b2cd4f",
+        "android_client_info": {
+          "package_name": "com.go7studio.empire_tycoon"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "400590136347-mhhlc9hpv4biojp0okkqtc5k9k50tes9.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDexampleKeyForYourProject"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+} 

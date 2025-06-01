@@ -64,7 +64,10 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
       final gameState = Provider.of<GameState>(context, listen: false);
       
       if (!gameState.isInitialized) {
-        print("Game not yet initialized, ignoring tap");
+        // Only log this occasionally to reduce spam
+        if (DateTime.now().second % 10 == 0) {
+          print("Game not yet initialized, ignoring tap");
+        }
         return;
       }
       
@@ -72,7 +75,10 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
       try {
         gameService = Provider.of<GameService>(context, listen: false);
       } catch (e) {
-        print("Could not get GameService: $e");
+        // Only log service errors occasionally
+        if (DateTime.now().second % 30 == 0) {
+          print("Could not get GameService: $e");
+        }
       }
       
       // Use the helper function to avoid extension conflicts
@@ -92,11 +98,17 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
             gameService.playTapSound();
           }
         } catch (e) {
-          print("Sound error: $e");
+          // Only log sound errors occasionally to reduce spam
+          if (DateTime.now().second % 30 == 0) {
+            print("Sound error: $e");
+          }
         }
       }
     } catch (e) {
-      print("Error in _earnMoney: $e");
+      // Only log general errors occasionally
+      if (DateTime.now().second % 30 == 0) {
+        print("Error in _earnMoney: $e");
+      }
     }
   }
   
@@ -142,13 +154,22 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
             gameService.playSound(() => gameService.soundManager.playFeedbackSuccessSound());
           }
         } catch (e) {
-          print("Could not play level up sound: $e");
+          // Only log sound errors occasionally to reduce spam
+          if (DateTime.now().second % 30 == 0) {
+            print("Sound error: $e");
+          }
         }
         
-        print("🌟 LEVEL UP! New click level: ${gameState.clickLevel}, new value: ${gameState.clickValue.toStringAsFixed(2)}");
+        // Only log level ups occasionally to reduce spam, or for significant milestones
+        if (nextLevel % 5 == 0 || nextLevel >= 15) {
+          print("🌟 LEVEL UP! New click level: ${gameState.clickLevel}, new value: ${gameState.clickValue.toStringAsFixed(2)}");
+        }
       }
     } catch (e) {
-      print("Error in _checkForLevelUp: $e");
+      // Only log errors occasionally
+      if (DateTime.now().second % 30 == 0) {
+        print("Error in _checkForLevelUp: $e");
+      }
     }
   }
   
@@ -161,7 +182,6 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
       if (!mounted) return;
       
       // Call GameState to start the actual boost using the new method
-      print("~~~ HustleScreen._startAdBoost: Calling gameState.startAdBoost() ~~~"); // DEBUG LOG
       Provider.of<GameState>(context, listen: false).startAdBoost();
       
       // Update local state for UI
@@ -173,7 +193,10 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
         GameService? gameService = Provider.of<GameService>(context, listen: false);
         gameService.soundManager.playFeedbackNotificationSound();
       } catch (e) {
-        print("Could not play boost success sound: $e");
+        // Only log boost sound errors occasionally to reduce spam
+        if (DateTime.now().second % 30 == 0) {
+          print("Could not play boost success sound: $e");
+        }
       }
     });
   }
@@ -504,7 +527,6 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
     return GestureDetector(
       onTap: () {
         _earnMoney();
-        print("TAP REGISTERED IN HUSTLE SCREEN");
       },
       onTapDown: _onTapDown,
       onTapUp: _onTapUp,
@@ -551,6 +573,7 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
                     child: Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           Icon(
                             Icons.touch_app,
@@ -560,36 +583,46 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
                                 : Colors.blue.shade400,
                           ),
                           const SizedBox(height: 16),
-                          Text(
-                            'Tap to earn ${NumberFormatter.formatCurrency(_calculateClickValue(gameState))}',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: gameState.isAdBoostActive
-                                  ? Colors.amber.shade800
-                                  : Colors.blue.shade800,
+                          Flexible(
+                            child: Text(
+                              'Tap to earn ${NumberFormatter.formatCurrency(_calculateClickValue(gameState))}',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: gameState.isAdBoostActive
+                                    ? Colors.amber.shade800
+                                    : Colors.blue.shade800,
+                              ),
+                              textAlign: TextAlign.center,
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 2,
                             ),
                           ),
                           if (gameState.isPlatinumBoostActive)
-                            _buildPlatinumBoostStatus(gameState),
+                            Flexible(
+                              child: _buildPlatinumBoostStatus(gameState),
+                            ),
                           if (gameState.isAdBoostActive)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 8.0),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.amber.shade100,
-                                  borderRadius: BorderRadius.circular(16),
-                                  border: Border.all(color: Colors.amber),
-                                ),
-                                child: Text(
-                                  '10x BOOST ACTIVE',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.amber.shade800,
+                            Flexible(
+                              child: Padding(
+                                padding: const EdgeInsets.only(top: 8.0),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.amber.shade100,
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(color: Colors.amber),
+                                  ),
+                                  child: Text(
+                                    '10x BOOST ACTIVE',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.amber.shade800,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
                               ),

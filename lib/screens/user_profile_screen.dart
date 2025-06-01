@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'dart:math';
 import 'package:flutter/foundation.dart';
 import '../utils/sound_manager.dart';
+import '../services/auth_service.dart';
 
 import '../models/game_state.dart';
 import '../services/game_service.dart';
@@ -768,13 +769,11 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                           ),
                         ),
                       ],
-                      ],
-                    ) : const SizedBox.shrink(),
-                  ),
+                    ],
+                  ) : const SizedBox.shrink(),
                 ),
-                
-                // Removed premium avatars section from here - moved inside the collapsible area
-              ],
+              ),
+            ],
           ),
         ),
       ),
@@ -799,45 +798,116 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             const SizedBox(height: 16),
             
             // Google Play Games Services login button
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  // TODO: Implement Google Play Games login
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Google Play Games login coming soon!'),
-                      duration: Duration(seconds: 2),
+            Consumer<AuthService>(
+              builder: (context, authService, child) {
+                return SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: authService.isInitialized 
+                        ? (authService.isSignedIn 
+                            ? () async {
+                                // Sign out
+                                await authService.signOut();
+                                // Update game state
+                                gameState.isGooglePlayConnected = false;
+                                gameState.googlePlayPlayerId = null;
+                                gameState.googlePlayDisplayName = null;
+                                gameState.googlePlayAvatarUrl = null;
+                                // Save the changes
+                                Provider.of<GameService>(context, listen: false).saveGame();
+                              }
+                            : () async {
+                                // Sign in
+                                final success = await authService.signIn();
+                                if (success) {
+                                  // Update game state
+                                  gameState.isGooglePlayConnected = true;
+                                  gameState.googlePlayPlayerId = authService.playerId;
+                                  gameState.googlePlayDisplayName = authService.playerName;
+                                  gameState.googlePlayAvatarUrl = authService.playerAvatarUrl;
+                                  gameState.lastCloudSync = DateTime.now();
+                                  // Save the changes
+                                  Provider.of<GameService>(context, listen: false).saveGame();
+                                  
+                                  // Show success message
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Successfully signed in to Google Play Games!'),
+                                      backgroundColor: Colors.green,
+                                      duration: Duration(seconds: 3),
+                                    ),
+                                  );
+                                } else {
+                                  // Show error message
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Failed to sign in to Google Play Games'),
+                                      backgroundColor: Colors.red,
+                                      duration: Duration(seconds: 3),
+                                    ),
+                                  );
+                                }
+                              }
+                          )
+                        : null, // Disabled while initializing
+                    icon: Icon(
+                      authService.isSignedIn ? Icons.logout : Icons.games,
+                      color: Colors.white,
                     ),
-                  );
-                },
-                icon: const Icon(Icons.games),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                ),
-                label: const Text('Sign in with Google Play Games'),
-              ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: authService.isSignedIn ? Colors.orange : Colors.green,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    label: Text(
+                      authService.isInitialized 
+                          ? (authService.isSignedIn 
+                              ? 'Sign out from Google Play Games'
+                              : 'Sign in with Google Play Games')
+                          : 'Initializing...',
+                    ),
+                  ),
+                );
+              },
             ),
             
             const SizedBox(height: 12),
             
             // Cloud save status
-            Row(
-              children: [
-                const Icon(Icons.cloud_sync, color: Colors.blue, size: 20),
-                const SizedBox(width: 8),
-                const Text(
-                  'Cloud Save:',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'Not connected',
-                  style: TextStyle(color: Colors.grey.shade600),
-                ),
-              ],
+            Consumer<AuthService>(
+              builder: (context, authService, child) {
+                return Row(
+                  children: [
+                    Icon(
+                      authService.isSignedIn ? Icons.cloud_done : Icons.cloud_off,
+                      color: authService.isSignedIn ? Colors.green : Colors.grey,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'Cloud Save:',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      authService.isSignedIn ? 'Connected' : 'Not connected',
+                      style: TextStyle(
+                        color: authService.isSignedIn ? Colors.green : Colors.grey.shade600,
+                      ),
+                    ),
+                    if (authService.isSignedIn && authService.playerName != null) ...[
+                      const SizedBox(width: 8),
+                      Text(
+                        '(${authService.playerName})',
+                        style: TextStyle(
+                          color: Colors.grey.shade600,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ],
+                );
+              },
             ),
             
             const SizedBox(height: 8),

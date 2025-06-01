@@ -6,6 +6,7 @@ import 'models/game_state.dart';
 import 'screens/main_screen.dart';
 import 'services/game_service.dart';
 import 'services/income_service.dart';
+import 'services/auth_service.dart';
 import 'screens/platinum_vault_screen.dart';
 
 void main() async {
@@ -34,6 +35,8 @@ class MyApp extends StatelessWidget {
         }),
         // Add IncomeService to the provider tree for consistent dependency injection
         ChangeNotifierProvider(create: (context) => IncomeService()),
+        // Add AuthService for Google Play Games Services
+        ChangeNotifierProvider(create: (context) => AuthService()),
       ],
       child: MaterialApp(
         title: 'Investment Account',
@@ -99,9 +102,16 @@ class _GameInitializerState extends State<GameInitializer> {
   Future<void> _initializeGame() async {
     try {
       _gameService = Provider.of<GameService>(context, listen: false);
+      final authService = Provider.of<AuthService>(context, listen: false);
+      
       print('Game initializer: Starting gameService.init()');
       await _gameService!.init();
       print('Game initializer: Finished gameService.init()');
+      
+      print('Game initializer: Starting authService.initialize()');
+      await authService.initialize();
+      print('Game initializer: Finished authService.initialize()');
+      
       setState(() {
         _isInitialized = true;
       });

@@ -680,7 +680,7 @@ class _StatsScreenState extends State<StatsScreen> {
               'Real Estate Earnings',
               '${NumberFormatter.formatCurrency(gameState.realEstateEarnings)} (${realEstatePercent.toStringAsFixed(1)}%)', 
               Icons.home,
-              isExecutive ? theme.quaternaryChartColor : Colors.indigo.shade500,
+              isExecutive ? theme.quaternaryChartColor : Colors.red.shade600,
               theme
             ),
 
@@ -826,7 +826,7 @@ class _StatsScreenState extends State<StatsScreen> {
               'Real Estate Value',
               '${NumberFormatter.formatCurrency(realEstateValue)} (${realEstatePercent.toStringAsFixed(1)}%)', 
               Icons.apartment,
-              isExecutive ? theme.quaternaryChartColor : Colors.indigo.shade500,
+              isExecutive ? theme.quaternaryChartColor : Colors.red.shade600,
               theme
             ),
 

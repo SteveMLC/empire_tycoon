@@ -23,34 +23,23 @@ class BusinessItem extends StatefulWidget {
 class _BusinessItemState extends State<BusinessItem> {
   Timer? _timer;
   
-  // List of more balanced business colors - vibrant but not overwhelming
+  // List of professional, attractive business colors
   static const List<Color> _businessColors = [
-    Color(0xFF5D8CAE), // Muted Blue   
-    Color(0xFF5BA587), // Muted Green
-    Color(0xFF9178B2), // Muted Purple
-    Color(0xFFD28B5A), // Muted Orange
-    Color(0xFF4A8C8C), // Teal
-    Color(0xFF7D6B9E), // Muted Wisteria
-    Color(0xFFBF7E52), // Muted Pumpkin
-    Color(0xFF5C85AD), // Muted Belize Blue
-    Color(0xFF5E9E75), // Muted Green
-    Color(0xFFB86A65), // Muted Red
-    Color(0xFF4A9C96), // Muted Turquoise
-    Color(0xFFD2A75A), // Muted Yellow
-    Color(0xFF7F8C8D), // Asbestos
-    Color(0xFF6A89B0), // Muted Peter River
-    Color(0xFFA67D53), // Muted Brown
-    // Color(0xFF2ECC71), // Emerald Green
-    // Color(0xFF9B59B6), // Amethyst Purple
-    // Color(0xFFE67E22), // Carrot Orange
-    // Color(0xFF16A085), // Green Sea
-    // Color(0xFF8E44AD), // Wisteria Purple
-    // Color(0xFFD35400), // Pumpkin Orange
-    // Color(0xFF2980B9), // Belize Blue
-    // Color(0xFF27AE60), // Nephritis Green
-    // Color(0xFFE74C3C), // Alizarin Red
-    // Color(0xFF1ABC9C), // Turquoise
-    // Color(0xFFF39C12), // Orange
+    Color(0xFF2563EB), // Professional Blue   
+    Color(0xFF059669), // Professional Green
+    Color(0xFF7C3AED), // Professional Purple
+    Color(0xFFDC2626), // Professional Red
+    Color(0xFF0891B2), // Professional Cyan
+    Color(0xFFDB2777), // Professional Pink
+    Color(0xFFEA580C), // Professional Orange
+    Color(0xFF65A30D), // Professional Lime
+    Color(0xFF4338CA), // Professional Indigo
+    Color(0xFFBE185D), // Professional Rose
+    Color(0xFF0369A1), // Professional Sky
+    Color(0xFF7E22CE), // Professional Violet
+    Color(0xFF059212), // Professional Emerald
+    Color(0xFFCA8A04), // Professional Yellow
+    Color(0xFF9333EA), // Professional Fuchsia
   ];
   
   // Map to track which businesses have been assigned which colors
@@ -108,7 +97,12 @@ class _BusinessItemState extends State<BusinessItem> {
         timer.cancel();
         return;
       }
-      setState(() {});
+      // OPTIMIZED: Only call setState every 5 seconds or when upgrade completes
+      // This reduces excessive UI rebuilds while still showing progress
+      final remainingTime = widget.business.getRemainingUpgradeTime();
+      if (remainingTime <= Duration.zero || DateTime.now().second % 5 == 0) {
+        setState(() {});
+      }
     });
   }
 
@@ -173,92 +167,88 @@ class _BusinessItemState extends State<BusinessItem> {
     final Color businessDarkColor = businessBaseColor.withOpacity(0.8);
     
     return Card(
-      elevation: 3,
+      elevation: isOwned ? 4 : 1,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(20),
         side: hasPlatinumFacade 
             ? BorderSide(color: const Color(0xFFE5E4E2), width: 2.0) 
-            : BorderSide(color: businessMediumColor, width: 1.5),
+            : BorderSide(
+                color: isOwned 
+                    ? businessBaseColor.withOpacity(0.3) 
+                    : Colors.grey.shade300, 
+                width: isOwned ? 2.0 : 1.0
+              ),
       ),
-      color: hasPlatinumFacade ? null : Colors.white,
+      color: Colors.white,
       clipBehavior: Clip.antiAlias,
       child: Container(
         decoration: hasPlatinumFacade
             ? BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    const Color(0xFFF5F5F5),
-                    const Color(0xFFE5E4E2),
-                    Colors.white,
-                  ],
-                  stops: const [0.0, 0.5, 1.0],
+                color: const Color(0xFFFAFAFA),
+                border: Border(
+                  left: BorderSide(color: const Color(0xFFE5E4E2), width: 6),
                 ),
               )
             : BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topRight,
-                end: Alignment.bottomLeft,
-                colors: [
-                  Colors.white,
-                  businessLightColor.withOpacity(0.5),
-                ],
-                stops: const [0.8, 1.0],
+                color: Colors.white,
+                border: Border(
+                  left: BorderSide(
+                    color: isOwned ? businessBaseColor : Colors.grey.shade400, 
+                    width: 6
+                  ),
+                ),
               ),
-            ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Business header section with colored background
+            // Business header section with clean design
             Container(
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
-                  colors: [
-                    businessBaseColor,
-                    businessBaseColor.withOpacity(0.7),
-                  ],
-                ),
-                borderRadius: const BorderRadius.only(
-                  bottomRight: Radius.circular(20),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: businessBaseColor.withOpacity(0.2),
-                    blurRadius: 3,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
+                color: hasPlatinumFacade 
+                    ? const Color(0xFFF8F9FA)
+                    : (isOwned 
+                        ? businessBaseColor.withOpacity(0.03) 
+                        : Colors.grey.shade50),
               ),
-              
               padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
-                  // Business icon with enhanced styling
+                  // Business icon with premium styling
                   Container(
-                    width: 54,
-                    height: 54,
+                    width: 56,
+                    height: 56,
                     decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.white.withOpacity(0.8), width: 2),
-                      boxShadow: [
+                      color: hasPlatinumFacade 
+                          ? Colors.white
+                          : (isOwned 
+                              ? businessBaseColor.withOpacity(0.1) 
+                              : Colors.grey.shade100),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: hasPlatinumFacade 
+                            ? const Color(0xFFE5E4E2)
+                            : (isOwned 
+                                ? businessBaseColor.withOpacity(0.2) 
+                                : Colors.grey.shade300), 
+                        width: 2
+                      ),
+                      boxShadow: isOwned ? [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 4,
+                          color: businessBaseColor.withOpacity(0.1),
+                          blurRadius: 6,
                           offset: const Offset(0, 2),
                         ),
-                      ],
+                      ] : null,
                     ),
                     child: Icon(
                       business.icon,
-                      color: businessBaseColor,
-                      size: 30,
+                      color: hasPlatinumFacade 
+                          ? const Color(0xFF666666)
+                          : (isOwned ? businessBaseColor : Colors.grey.shade500),
+                      size: 28,
                     ),
                   ),
-                  const SizedBox(width: 14),
+                  const SizedBox(width: 16),
                   // Business name and level
                   Expanded(
                     child: Column(
@@ -266,17 +256,12 @@ class _BusinessItemState extends State<BusinessItem> {
                       children: [
                         Text(
                           business.name,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            fontSize: 18,
-                            color: Colors.white,
-                            shadows: [
-                              Shadow(
-                                color: Colors.black26,
-                                offset: Offset(0, 1),
-                                blurRadius: 2,
-                              ),
-                            ],
+                            fontSize: 17,
+                            color: hasPlatinumFacade 
+                                ? const Color(0xFF333333)
+                                : (isOwned ? Colors.grey.shade800 : Colors.grey.shade600),
                           ),
                         ),
                         const SizedBox(height: 6),
@@ -285,50 +270,60 @@ class _BusinessItemState extends State<BusinessItem> {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                               decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.1),
-                                    blurRadius: 2,
-                                    offset: const Offset(0, 1),
-                                  ),
-                                ],
+                                color: hasPlatinumFacade 
+                                    ? Colors.white
+                                    : (isOwned 
+                                        ? businessBaseColor.withOpacity(0.1) 
+                                        : Colors.grey.shade100),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: hasPlatinumFacade 
+                                      ? const Color(0xFFE5E4E2)
+                                      : (isOwned 
+                                          ? businessBaseColor.withOpacity(0.3) 
+                                          : Colors.grey.shade300),
+                                  width: 1
+                                ),
                               ),
                               child: Row(
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Icon(
-                                    Icons.star,
+                                    isOwned ? Icons.star : Icons.star_border,
                                     size: 14,
-                                    color: businessBaseColor,
+                                    color: hasPlatinumFacade 
+                                        ? const Color(0xFF666666)
+                                        : (isOwned ? businessBaseColor : Colors.grey.shade500),
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
-                                    'Level ${business.level}',
+                                    isOwned ? 'Level ${business.level}' : 'Not Owned',
                                     style: TextStyle(
-                                      color: businessBaseColor,
+                                      color: hasPlatinumFacade 
+                                          ? const Color(0xFF666666)
+                                          : (isOwned ? businessBaseColor : Colors.grey.shade600),
                                       fontSize: 12,
-                                      fontWeight: FontWeight.bold,
+                                      fontWeight: FontWeight.w600,
                                     ),
                                   ),
                                 ],
                               ),
                             ),
-
-                            if (business.level > 0 && !business.isMaxLevel())
+                            if (isOwned && business.level > 0)
                               Expanded(
                                 child: Container(
                                   margin: const EdgeInsets.only(left: 8),
                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                   decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.85),
-                                    borderRadius: BorderRadius.circular(8),
+                                    color: Colors.grey.shade100,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: Colors.grey.shade300, width: 1),
                                   ),
                                   child: Text(
                                     business.getCurrentLevelDescription(),
                                     style: TextStyle(
-                                      color: businessBaseColor.withOpacity(0.8),
-                                      fontSize: 11,
+                                      color: Colors.grey.shade600,
+                                      fontSize: 10,
                                       fontWeight: FontWeight.w500,
                                       overflow: TextOverflow.ellipsis,
                                     ),
@@ -345,111 +340,69 @@ class _BusinessItemState extends State<BusinessItem> {
               ),
             ),
             
-            // Business stats section with more padding
+            // Business stats section
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              padding: const EdgeInsets.all(16),
               child: _buildBusinessStats(context),
             ),
             
-            // Income progress indicator (subtle, only if business is owned and not upgrading)
+            // Income progress indicator (only if business is owned and not upgrading)
             if (business.level > 0 && !isUpgrading) 
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: _buildIncomeProgressIndicator(),
               ),
             
-            // Upgrade info section
+            // Upgrade info section (only for owned businesses)
             if (!business.isMaxLevel() && !isUpgrading && business.level > 0)
               Container(
                 margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: Colors.green.shade50,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.green.shade200),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 3,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
+                  color: businessBaseColor.withOpacity(0.02),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: businessBaseColor.withOpacity(0.15), width: 1),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
-                      decoration: BoxDecoration(
-                        color: Colors.green.shade100,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.upgrade, size: 16, color: Colors.green.shade700),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'NEXT UPGRADE: ${business.getNextLevelDescription()}',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12,
-                                color: Colors.green.shade800,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
+                    Row(
+                      children: [
+                        Icon(Icons.upgrade, size: 16, color: businessBaseColor),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            'Next: ${business.getNextLevelDescription()}',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                              color: businessBaseColor,
                             ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        Expanded(
-                          child: Row(
-                            children: [
-                              Icon(Icons.trending_up, size: 14, color: Colors.green.shade700),
-                              const SizedBox(width: 4),
-                              Text(
-                                'Income Increase:',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.grey[700],
-                                ),
-                              ),
-                            ],
+                        Icon(Icons.trending_up, size: 14, color: businessBaseColor.withOpacity(0.7)),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Income Boost: ',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: Colors.green.shade100,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            '+${NumberFormatter.formatCurrency(incomeIncrease)}/s',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.green.shade800,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: Colors.amber.shade100,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            '+${incomeIncreasePercentage.toStringAsFixed(0)}%',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.amber.shade800,
-                            ),
+                        Text(
+                          '+${NumberFormatter.formatCurrency(incomeIncrease)}/s',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: businessBaseColor,
                           ),
                         ),
                       ],
@@ -469,7 +422,7 @@ class _BusinessItemState extends State<BusinessItem> {
             Padding(
               padding: const EdgeInsets.all(16),
               child: isUpgrading
-                  ? const SizedBox.shrink() // No button when upgrading
+                  ? const SizedBox.shrink()
                   : _buildBuyUpgradeButton(context, gameState, business, canAfford, incomeIncreasePercentage),
             ),
           ],
@@ -510,7 +463,8 @@ class _BusinessItemState extends State<BusinessItem> {
   Widget _buildBuyUpgradeButton(BuildContext context, GameState gameState, Business business, bool canAfford, double incomeIncreasePercentage) {
     final cost = business.getNextUpgradeCost();
     final timerSeconds = business.getNextUpgradeTimerSeconds();
-    final isInitialPurchase = business.level == 0;  // Store the initial state
+    final isInitialPurchase = business.level == 0;
+    final businessBaseColor = _getBusinessColor(business.id);
 
     return SizedBox(
       width: double.infinity,
@@ -518,18 +472,18 @@ class _BusinessItemState extends State<BusinessItem> {
         onPressed: business.isMaxLevel() ? null : (canAfford
             ? () {
                 if (gameState.buyBusiness(business.id)) {
-                  // Play different sounds for purchase vs upgrade based on the initial state
                   try {
                     final gameService = Provider.of<GameService>(context, listen: false);
                     if (isInitialPurchase) {
-                      // Play purchase sound for new business
                       gameService.playSound(() => gameService.soundManager.playBusinessPurchaseSound());
                     } else {
-                      // Play upgrade sound for existing business
                       gameService.playBusinessSound();
                     }
                   } catch (e) {
-                    print("Error playing business sound: $e");
+                    // Only log sound errors occasionally to reduce spam
+                    if (DateTime.now().second % 30 == 0) {
+                      print("Error playing business sound: $e");
+                    }
                   }
                 }
               }
@@ -538,80 +492,115 @@ class _BusinessItemState extends State<BusinessItem> {
         style: ElevatedButton.styleFrom(
           backgroundColor: business.isMaxLevel()
               ? Colors.grey.shade400
-              : (canAfford ? Colors.green.shade600 : Colors.grey.shade400),
+              : (canAfford 
+                  ? (isInitialPurchase ? businessBaseColor : Colors.green.shade600)
+                  : Colors.grey.shade400),
           foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-          elevation: 3,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          shadowColor: canAfford ? Colors.green.withOpacity(0.4) : Colors.grey.withOpacity(0.3),
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+          elevation: canAfford ? 2 : 0,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          shadowColor: canAfford 
+              ? (isInitialPurchase ? businessBaseColor.withOpacity(0.3) : Colors.green.withOpacity(0.3))
+              : null,
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            // Main button content
-            Flexible(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
+            if (business.isMaxLevel())
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  if (business.isMaxLevel())
-                    const Text(
-                      'MAX LEVEL',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15,
+                  Icon(Icons.star, size: 18),
+                  const SizedBox(width: 6),
+                  Text(
+                    'MAX LEVEL REACHED',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              )
+            else
+              Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        isInitialPurchase ? Icons.shopping_cart : Icons.upgrade,
+                        size: 18,
                       ),
-                    )
-                  else
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Flexible(
-                          child: Text(
-                            business.level == 0
-                                ? 'Buy: ${NumberFormatter.formatCurrency(cost)}'
-                                : 'Upgrade to Lvl ${business.level + 1}: ${NumberFormatter.formatCurrency(cost)}',
-                            textAlign: TextAlign.center,
-                            overflow: TextOverflow.visible,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15,
-                            ),
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          isInitialPurchase
+                              ? 'Purchase for ${NumberFormatter.formatCurrency(cost)}'
+                              : 'Upgrade to Level ${business.level + 1}',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
                           ),
                         ),
-                        if (!business.isMaxLevel() && business.level > 0 && canAfford)
-                          Container(
-                            margin: const EdgeInsets.only(left: 8),
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: Colors.amber.shade700,
-                              borderRadius: BorderRadius.circular(4),
+                      ),
+                    ],
+                  ),
+                  if (!isInitialPurchase)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 3),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            '${NumberFormatter.formatCurrency(cost)}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white.withOpacity(0.9),
                             ),
-                            child: Text(
-                              '+${incomeIncreasePercentage.toStringAsFixed(0)}%',
-                              style: const TextStyle(
-                                fontSize: 11,
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
+                          ),
+                          if (canAfford && incomeIncreasePercentage > 0)
+                            Container(
+                              margin: const EdgeInsets.only(left: 8),
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                '+${incomeIncreasePercentage.toStringAsFixed(0)}%',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
-                          ),
-                      ],
+                        ],
+                      ),
                     ),
-                  if (!business.isMaxLevel() && timerSeconds > 0)
+                  if (timerSeconds > 0)
                     Padding(
-                      padding: const EdgeInsets.only(top: 4.0),
-                      child: Text(
-                        '(Takes ${TimeFormatter.formatDuration(Duration(seconds: timerSeconds))})',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.white.withOpacity(0.9),
-                        ),
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.schedule, size: 12, color: Colors.white.withOpacity(0.8)),
+                          const SizedBox(width: 3),
+                          Text(
+                            'Takes ${TimeFormatter.formatDuration(Duration(seconds: timerSeconds))}',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.white.withOpacity(0.8),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                 ],
               ),
-            ),
           ],
         ),
       ),
@@ -622,27 +611,21 @@ class _BusinessItemState extends State<BusinessItem> {
     double progress = business.getUpgradeProgress();
 
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.orange.shade50,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.orange.shade200),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 3,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.orange.shade200, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
             decoration: BoxDecoration(
-              color: Colors.orange.shade100,
-              borderRadius: BorderRadius.circular(6),
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.orange.shade300, width: 1),
             ),
             child: Row(
               children: [
@@ -652,7 +635,7 @@ class _BusinessItemState extends State<BusinessItem> {
                   child: Text(
                     'UPGRADING TO: ${business.getNextLevelDescription()}',
                     style: TextStyle(
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w600,
                       fontSize: 12,
                       color: Colors.orange.shade800,
                     ),
@@ -663,7 +646,7 @@ class _BusinessItemState extends State<BusinessItem> {
               ],
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -672,6 +655,7 @@ class _BusinessItemState extends State<BusinessItem> {
                 style: TextStyle(
                   fontSize: 13,
                   color: Colors.grey[700],
+                  fontWeight: FontWeight.w500,
                 ),
               ),
               Text(
@@ -679,26 +663,27 @@ class _BusinessItemState extends State<BusinessItem> {
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   color: Colors.orange.shade700,
+                  fontSize: 14,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           ClipRRect(
-            borderRadius: BorderRadius.circular(4),
+            borderRadius: BorderRadius.circular(6),
             child: LinearProgressIndicator(
               value: progress,
               backgroundColor: Colors.orange.shade100,
               valueColor: AlwaysStoppedAnimation<Color>(Colors.orange.shade500),
-              minHeight: 6,
+              minHeight: 8,
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
               icon: const Icon(Icons.fast_forward, size: 18),
-              label: const Text('Speed Up (Watch AD)'),
+              label: const Text('Speed Up (Watch AD)', style: TextStyle(fontWeight: FontWeight.w600)),
               onPressed: () {
                 print("UI: Speed Up button pressed for ${business.id}");
                 gameState.speedUpUpgradeWithAd(business.id);
@@ -706,10 +691,9 @@ class _BusinessItemState extends State<BusinessItem> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.orange.shade600,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                elevation: 2,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                elevation: 0,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                shadowColor: Colors.orange.withOpacity(0.4),
               ),
             ),
           ),
@@ -747,43 +731,45 @@ class _BusinessItemState extends State<BusinessItem> {
                                            permanentIncomeBoostMultiplier;
     
     // Define colors for consistent styling
-    final Color incomeColor = Colors.green.shade600;
-    final Color roiColor = businessBaseColor;
+    final Color incomeColor = isOwned ? Colors.green.shade600 : Colors.grey.shade500;
+    final Color roiColor = isOwned ? businessBaseColor : Colors.grey.shade500;
     
     return Column(
       children: [
-        // Income display - full width
+        // Income display - styled differently for owned vs unowned
         Container(
           width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 14),
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
           decoration: BoxDecoration(
-            color: Colors.green.shade50,
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: Colors.green.shade200),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.03),
-                blurRadius: 3,
-                offset: const Offset(0, 1),
-              ),
-            ],
+            color: isOwned ? Colors.green.shade50 : Colors.grey.shade50,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: isOwned ? Colors.green.shade200 : Colors.grey.shade300, 
+              width: 1
+            ),
           ),
           child: Row(
             children: [
-              Icon(Icons.attach_money, size: 18, color: incomeColor),
-              const SizedBox(width: 8),
+              Icon(
+                isOwned ? Icons.attach_money : Icons.monetization_on_outlined, 
+                size: 18, 
+                color: incomeColor
+              ),
+              const SizedBox(width: 10),
               Expanded(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      isOwned ? 'INCOME:' : 'EXPECTED INCOME:',
+                      isOwned ? 'CURRENT INCOME' : 'POTENTIAL INCOME',
                       style: TextStyle(
-                        fontSize: 12, 
-                        fontWeight: FontWeight.bold,
-                        color: Colors.grey.shade700,
+                        fontSize: 11, 
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey.shade600,
+                        letterSpacing: 0.5,
                       ),
                     ),
+                    const SizedBox(height: 2),
                     Row(
                       children: [
                         Text(
@@ -799,7 +785,7 @@ class _BusinessItemState extends State<BusinessItem> {
                         if (gameState.hasActiveEventForBusiness(business.id))
                           Padding(
                             padding: const EdgeInsets.only(left: 4),
-                            child: Icon(Icons.warning_amber_rounded, color: Colors.red, size: 14),
+                            child: Icon(Icons.warning_amber_rounded, color: Colors.red, size: 16),
                           ),
                       ],
                     ),
@@ -810,92 +796,87 @@ class _BusinessItemState extends State<BusinessItem> {
           ),
         ),
         
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
         
-        // ROI and Payback Period in a row - more compact
-        Row(
-          children: [
-            // ROI display (only if business is owned and not upgrading)
-            if (!isUpgrading && isOwned)
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-                  decoration: BoxDecoration(
-                    color: businessBaseColor.withOpacity(0.08),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: businessBaseColor.withOpacity(0.2)),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(Icons.trending_up, size: 16, color: roiColor),
-                          const SizedBox(width: 6),
-                          Text('ROI:', 
-                            style: TextStyle(
-                              fontSize: 12, 
-                              fontWeight: FontWeight.bold,
-                              color: Colors.grey.shade700,
-                            ),
-                          ),
-                        ],
+        // ROI and Payback Period - only show for owned businesses
+        if (isOwned && !isUpgrading)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+            decoration: BoxDecoration(
+              color: businessBaseColor.withOpacity(0.05),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: businessBaseColor.withOpacity(0.2), width: 1),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.trending_up, size: 16, color: roiColor),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Return on Investment',
+                      style: TextStyle(
+                        fontSize: 12, 
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey.shade700,
                       ),
-                      Text(
-                        '${(business.getROI() * gameState.incomeMultiplier).toStringAsFixed(2)}%',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                          color: roiColor,
-                        ),
-                      ),
-                    ],
+                    ),
+                  ],
+                ),
+                Text(
+                  '${(business.getROI() * gameState.incomeMultiplier).toStringAsFixed(2)}%',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    color: roiColor,
                   ),
                 ),
-              ),
-            
-            // For unpurchased businesses, show payback period
-            if (!isOwned)
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-                  decoration: BoxDecoration(
-                    color: businessBaseColor.withOpacity(0.08),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: businessBaseColor.withOpacity(0.2)),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(Icons.schedule, size: 16, color: roiColor),
-                          const SizedBox(width: 6),
-                          Text('PAYBACK:', 
-                            style: TextStyle(
-                              fontSize: 12, 
-                              fontWeight: FontWeight.bold,
-                              color: Colors.grey.shade700,
-                            ),
-                          ),
-                        ],
+              ],
+            ),
+          ),
+        
+        // Payback period for unowned businesses
+        if (!isOwned)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade50,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey.shade300, width: 1),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.schedule, size: 16, color: Colors.grey.shade500),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Payback Time',
+                      style: TextStyle(
+                        fontSize: 12, 
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey.shade600,
                       ),
-                      Text(
-                        expectedDisplayedIncomePerSecond > 0
-                          ? '${TimeFormatter.formatDuration(Duration(seconds: (business.getNextUpgradeCost() / expectedDisplayedIncomePerSecond).ceil()))}'
-                          : 'N/A',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                          color: roiColor,
-                        ),
-                      ),
-                    ],
+                    ),
+                  ],
+                ),
+                Text(
+                  expectedDisplayedIncomePerSecond > 0
+                    ? '${TimeFormatter.formatDuration(Duration(seconds: (business.getNextUpgradeCost() / expectedDisplayedIncomePerSecond).ceil()))}'
+                    : 'N/A',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    color: Colors.grey.shade600,
                   ),
                 ),
-              ),
-          ],
-        ),
+              ],
+            ),
+          ),
       ],
     );
   }

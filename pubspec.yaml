@@ -22,28 +22,30 @@ dependencies:
   meta: 1.16.0
   
   # Regular dependencies
-  cupertino_icons: ^1.0.6
-  provider: ^6.1.4
+  cupertino_icons: ^1.0.2
+  
+  # For state management
+  provider: ^6.1.2
+  
+  # For data persistence
   shared_preferences: ^2.2.2
-  intl: ^0.18.1
-  audioplayers: ^5.2.1
-  path_provider: ^2.1.2
+  
+  # Essential app dependencies
+  intl: ^0.18.0
+  uuid: ^3.0.0
+  audioplayers: ^5.0.0
+  path_provider: ^2.0.0
   fl_chart: ^0.62.0
-  font_awesome_flutter: ^10.6.0
-  # vibration: ^1.9.0
-  flutter_vibrate:
-    git:
-      url: https://github.com/10urbulut/flutter_vibrate.git
-      ref: main
-  google_fonts: ^4.0.4
-  uuid: ^3.0.7
-  flutter_svg: ^2.0.9
-  flutter_riverpod: ^2.6.1
+  flutter_svg: ^2.0.0
+  google_fonts: ^4.0.0
+  
+  # Google Play Games Services
+  games_services: ^4.1.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^2.0.3
+  flutter_lints: ^3.0.0
 
   workspace: any
 flutter:
