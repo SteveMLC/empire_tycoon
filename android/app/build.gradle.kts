@@ -23,12 +23,12 @@ android {
     ndkVersion = "27.0.12077973"
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
     }
 
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = "11"
     }
 
     // Configure signing
@@ -48,7 +48,11 @@ android {
         applicationId = "com.go7studio.empire_tycoon"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        
+        // ADMOB FIX: Set minSdk to 23 to satisfy Google Mobile Ads SDK requirements
+        // Previous: minSdk = flutter.minSdkVersion (was 21)
+        // Google Mobile Ads SDK requires API 23 minimum
+        minSdk = 23
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
@@ -70,4 +74,9 @@ android {
 
 flutter {
     source = "../.."
+}
+
+// Add Google Mobile Ads dependency for AdMob integration
+dependencies {
+    implementation("com.google.android.gms:play-services-ads:24.2.0")
 }

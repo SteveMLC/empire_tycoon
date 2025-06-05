@@ -55,7 +55,7 @@ class _BusinessScreenState extends State<BusinessScreen> {
                           if (!business.unlocked) return const SizedBox.shrink();
 
                           return Padding(
-                            padding: const EdgeInsets.only(bottom: 12.0), // Add consistent spacing between cards
+                            padding: const EdgeInsets.only(bottom: 8.0), // Reduced from 12.0 to 8.0 for more compact layout
                             child: BusinessItem(
                               business: business,
                             ),

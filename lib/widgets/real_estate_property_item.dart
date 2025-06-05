@@ -179,7 +179,7 @@ class RealEstatePropertyItem extends StatelessWidget {
 
                         // Check for negative event affecting the LOCALE and apply multiplier AFTER all bonuses
                         if (isLocaleAffectedByEvent) {
-                          finalPropertyIncome *= GameStateEvents.NEGATIVE_EVENT_MULTIPLIER; // Apply -0.25
+                          finalPropertyIncome *= 0.75; // Apply -25% penalty (75% of original income)
                         }
                         // --- End Calculation ---
                         

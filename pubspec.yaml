@@ -41,6 +41,9 @@ dependencies:
   
   # Google Play Games Services
   games_services: ^4.1.1
+  
+  # Google Mobile Ads SDK for AdMob integration
+  google_mobile_ads: ^5.1.0
 
 dev_dependencies:
   flutter_test:

@@ -278,48 +278,6 @@ class GameState with ChangeNotifier {
     return false;
   }
 
-  void processTapForEvent(GameEvent event) {
-    if (event.resolution.type != EventResolutionType.tapChallenge) return;
-
-    Map<String, dynamic> tapData = event.resolution.value as Map<String, dynamic>;
-    int current = tapData['current'] ?? 0;
-    int required = tapData['required'] ?? 0;
-
-    // Apply Platinum Resilience: Reduce required taps by 10% if active
-    double resilienceMultiplier = isPlatinumResilienceActive ? 0.9 : 1.0;
-    int finalRequired = (required * resilienceMultiplier).ceil(); // Use ceil to ensure it doesn't become 0 easily
-
-    current++;
-    tapData['current'] = current;
-
-    lifetimeTaps++; // Increment lifetime taps to track event taps as well
-
-    if (current >= finalRequired) {
-      event.resolve();
-
-      totalEventsResolved++;
-      eventsResolvedByTapping++;
-      trackEventResolution(event, "tap");
-    }
-
-    notifyListeners();
-  }
-
-  void trackEventResolution(GameEvent event, String method) {
-    lastEventResolvedTime = DateTime.now();
-
-    for (String localeId in event.affectedLocaleIds) {
-      eventsResolvedByLocale[localeId] = (eventsResolvedByLocale[localeId] ?? 0) + 1;
-    }
-
-    resolvedEvents.add(event);
-    if (resolvedEvents.length > 25) { // Keep only the last 25 events
-      resolvedEvents.removeAt(0);
-    }
-
-    notifyListeners();
-  }
-
   double get totalIncomePerSecond {
     double total = 0.0;
 
@@ -346,6 +304,8 @@ class GameState with ChangeNotifier {
 
   double prestigeMultiplier = 1.0;
   double networkWorth = 0.0; // Accumulates with each reincorporation
+  // ADDED: Track actual networth accumulated at time of each reincorporation
+  double lifetimeNetworkWorth = 0.0; // Accumulates actual networth at reincorporation time
   int reincorporationUsesAvailable = 0;
   int totalReincorporations = 0;
 
@@ -594,19 +554,25 @@ class GameState with ChangeNotifier {
           if (business.secondsSinceLastIncome >= business.incomeInterval) {
             bool hasEvent = hasActiveEventForBusiness(business.id);
             // Apply Platinum Efficiency to base income first
-            double income = business.getCurrentIncome() * businessEfficiencyMultiplier;
+            double income = business.getCurrentIncome(isResilienceActive: isPlatinumResilienceActive) * businessEfficiencyMultiplier;
             // Then apply standard multipliers
             income *= incomeMultiplier; // Removed prestigeMultiplier
             // Then apply the overall permanent boost
             income *= permanentIncomeBoostMultiplier;
             // ADDED: Apply Income Surge
             if (isIncomeSurgeActive) income *= 2.0;
+            
+            // CRITICAL FIX: Apply event penalty if business is affected
+            if (hasEvent) {
+              income *= GameStateEvents.NEGATIVE_EVENT_MULTIPLIER;
+            }
+            
             businessIncomeThisTick += income;
             business.secondsSinceLastIncome = 0;
           }
         }
       }
-      if (businessIncomeThisTick > 0) {
+      if (businessIncomeThisTick != 0) {
         money += businessIncomeThisTick;
         totalEarned += businessIncomeThisTick;
         passiveEarnings += businessIncomeThisTick;
@@ -1369,6 +1335,13 @@ class GameState with ChangeNotifier {
         double baseIncomePerSecond = business.getCurrentIncome(isResilienceActive: isPlatinumResilienceActive) * cyclesPerSecond;
         // Apply efficiency multiplier
         double modifiedIncomePerSecond = baseIncomePerSecond * (isPlatinumEfficiencyActive ? 1.05 : 1.0);
+        
+        // CRITICAL FIX: Apply event penalty if business is affected
+        bool hasEvent = hasActiveEventForBusiness(business.id);
+        if (hasEvent) {
+          modifiedIncomePerSecond *= GameStateEvents.NEGATIVE_EVENT_MULTIPLIER;
+        }
+        
         businessIncome += modifiedIncomePerSecond;
       }
     }
@@ -1382,16 +1355,26 @@ class GameState with ChangeNotifier {
         double foundationMultiplier = isFoundationApplied ? 1.05 : 1.0;
         double yachtMultiplier = isYachtDocked ? 1.05 : 1.0;
         
+        // CRITICAL FIX: Apply event penalty if locale is affected
+        bool hasEvent = hasActiveEventForLocale(locale.id);
+        
         for (var property in locale.properties) {
           if (property.owned > 0) {
             double basePerSecond = property.getTotalIncomePerSecond(isResilienceActive: isPlatinumResilienceActive);
-            realEstateIncome += basePerSecond * foundationMultiplier * yachtMultiplier;
+            double incomeWithBoosts = basePerSecond * foundationMultiplier * yachtMultiplier;
+            
+            // Apply event penalty if locale is affected
+            if (hasEvent) {
+              incomeWithBoosts *= GameStateEvents.NEGATIVE_EVENT_MULTIPLIER;
+            }
+            
+            realEstateIncome += incomeWithBoosts;
           }
         }
       }
     }
     
-    // Dividend income per second
+    // Dividend income per second (investments are not affected by events)
     double dividendIncome = 0.0;
     double diversificationBonus = calculateDiversificationBonus();
     double portfolioMultiplier = isPlatinumPortfolioActive ? 1.25 : 1.0;

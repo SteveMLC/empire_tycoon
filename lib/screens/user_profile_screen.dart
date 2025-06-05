@@ -1350,12 +1350,14 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
   Widget _buildPremiumSection(GameState gameState) {
     return Card(
-      elevation: 4,
+      elevation: 6,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         side: BorderSide(
-          color: Colors.purple.shade300,
-          width: 2,
+          color: gameState.isPremium 
+              ? Colors.amber.shade400.withOpacity(0.6)
+              : Colors.purple.shade300,
+          width: gameState.isPremium ? 2.5 : 2,
         ),
       ),
       child: Container(
@@ -1363,66 +1365,235 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              Colors.purple.shade50,
-              Colors.white,
-            ],
+            colors: gameState.isPremium 
+                ? [
+                    const Color(0xFFF8F5FF),
+                    const Color(0xFFFFF8E1),
+                    Colors.white,
+                  ]
+                : [
+                    Colors.purple.shade50,
+                    const Color(0xFFF3E5F5),
+                    Colors.white,
+                  ],
+            stops: gameState.isPremium ? [0.0, 0.5, 1.0] : [0.0, 0.7, 1.0],
           ),
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: gameState.isPremium 
+              ? [
+                  BoxShadow(
+                    color: Colors.amber.shade200.withOpacity(0.3),
+                    blurRadius: 8,
+                    spreadRadius: 1,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
         ),
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.all(20.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.star,
-                    color: Colors.purple.shade700,
-                    size: 24,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Premium Features',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.purple.shade700,
+              // Enhanced Header
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                decoration: BoxDecoration(
+                  gradient: gameState.isPremium
+                      ? LinearGradient(
+                          colors: [
+                            Colors.amber.shade600,
+                            Colors.amber.shade400,
+                          ],
+                        )
+                      : LinearGradient(
+                          colors: [
+                            Colors.purple.shade600,
+                            Colors.purple.shade400,
+                          ],
+                        ),
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: (gameState.isPremium ? Colors.amber.shade400 : Colors.purple.shade400)
+                          .withOpacity(0.3),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
                     ),
-                  ),
-                ],
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      gameState.isPremium ? Icons.workspace_premium : Icons.star,
+                      color: Colors.white,
+                      size: 24,
+                      shadows: const [
+                        Shadow(
+                          color: Colors.black26,
+                          blurRadius: 2,
+                          offset: Offset(0, 1),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      gameState.isPremium ? 'Premium Active' : 'Premium Features',
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        letterSpacing: 0.5,
+                        shadows: [
+                          Shadow(
+                            color: Colors.black26,
+                            blurRadius: 2,
+                            offset: Offset(0, 1),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (gameState.isPremium) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Text(
+                          'OWNED',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
               ),
               
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
               
               if (!gameState.isPremium)
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildPremiumFeatureItem('Remove all ads from the game'),
-                    _buildPremiumFeatureItem('Bonus +✦1500 Platinum'),
-                    _buildPremiumFeatureItem('Exclusive profile customizations'),
-                    _buildPremiumFeatureItem('More features coming soon!'),
-
-                    const SizedBox(height: 20),
-
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: () => _showPremiumPurchaseDialog(context, gameState),
-                        icon: const Icon(Icons.star),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.purple,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          elevation: 3,
+                    // Enhanced Feature List with Better Visual Hierarchy
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.7),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: Colors.purple.shade100,
+                          width: 1,
                         ),
-                        label: const Text(
-                          'Get Premium (\$4.99)',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
+                      ),
+                      child: Column(
+                        children: [
+                          _buildEnhancedPremiumFeatureItem(
+                            'Remove all ads from the game',
+                            Icons.block,
+                            'Enjoy uninterrupted gameplay',
+                          ),
+                          const SizedBox(height: 8),
+                          _buildEnhancedPremiumFeatureItem(
+                            'Bonus +✦1500 Platinum',
+                            Icons.diamond,
+                            'Instant boost to accelerate progress',
+                          ),
+                          const SizedBox(height: 8),
+                          _buildEnhancedPremiumFeatureItem(
+                            'Exclusive profile customizations',
+                            Icons.palette,
+                            'Stand out with premium avatars',
+                          ),
+                          const SizedBox(height: 8),
+                          _buildEnhancedPremiumFeatureItem(
+                            'More features coming soon!',
+                            Icons.auto_awesome,
+                            'Future updates included',
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // Enhanced Purchase Button with Better Call-to-Action
+                    Container(
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Colors.purple.shade600,
+                            Colors.purple.shade700,
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.purple.shade400.withOpacity(0.4),
+                            blurRadius: 8,
+                            spreadRadius: 1,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          onTap: () => _showPremiumPurchaseDialog(context, gameState),
+                          borderRadius: BorderRadius.circular(14),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.2),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.star,
+                                    color: Colors.white,
+                                    size: 24,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                const Column(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      'Get Premium',
+                                      style: TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                    Text(
+                                      '\$4.99 • One-time payment',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.white70,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
@@ -1430,27 +1601,78 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                   ],
                 )
               else
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Thank you for supporting Empire Tycoon!',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                // Enhanced Post-Purchase Thank You Section
+                Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.amber.shade50,
+                        Colors.orange.shade50,
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.amber.shade200,
+                      width: 1.5,
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  Colors.amber.shade400,
+                                  Colors.orange.shade400,
+                                ],
+                              ),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.favorite,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          const Expanded(
+                            child: Text(
+                              'Thank you for supporting Empire Tycoon!',
+                              style: TextStyle(
+                                fontSize: 17,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    const Text(
-                      'You have access to all premium features:',
-                      style: TextStyle(fontSize: 15),
-                    ),
-                    const SizedBox(height: 8),
-                    _buildPremiumFeatureItem('Ad-free gameplay', enabled: true),
-                    _buildPremiumFeatureItem('Bonus +✦1500 Platinum', enabled: true),
-                    _buildPremiumFeatureItem('Exclusive profile customizations', enabled: true),
-                    _buildPremiumFeatureItem('Premium customer support', enabled: true),
-                  ],
+                      const SizedBox(height: 16),
+                      const Text(
+                        'You have access to all premium features:',
+                        style: TextStyle(
+                          fontSize: 15,
+                          color: Colors.black87,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      _buildEnhancedPremiumFeatureItem('Ad-free gameplay', Icons.verified, null, enabled: true),
+                      const SizedBox(height: 6),
+                      _buildEnhancedPremiumFeatureItem('Bonus +✦1500 Platinum', Icons.verified, null, enabled: true),
+                      const SizedBox(height: 6),
+                      _buildEnhancedPremiumFeatureItem('Exclusive profile customizations', Icons.verified, null, enabled: true),
+                      const SizedBox(height: 6),
+                      _buildEnhancedPremiumFeatureItem('Premium customer support', Icons.verified, null, enabled: true),
+                    ],
+                  ),
                 ),
             ],
           ),
@@ -1459,24 +1681,56 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     );
   }
 
-  Widget _buildPremiumFeatureItem(String text, {bool enabled = false}) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8.0),
+  Widget _buildEnhancedPremiumFeatureItem(
+    String text, 
+    IconData iconData, 
+    String? subtitle, 
+    {bool enabled = false}
+  ) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            enabled ? Icons.check_circle : Icons.star,
-            color: enabled ? Colors.green : Colors.purple.shade300,
-            size: 20,
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: enabled 
+                  ? Colors.green.shade100 
+                  : Colors.purple.shade100,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              enabled ? Icons.verified : iconData,
+              color: enabled ? Colors.green.shade600 : Colors.purple.shade600,
+              size: 16,
+            ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 12),
           Expanded(
-            child: Text(
-              text,
-              style: TextStyle(
-                fontSize: 15,
-                color: enabled ? Colors.black87 : Colors.black87,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  text,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: enabled ? Colors.black87 : Colors.black87,
+                  ),
+                ),
+                if (subtitle != null && !enabled) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey.shade600,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
         ],
@@ -1529,6 +1783,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             const SizedBox(height: 8),
             const Text('• Remove all ads from the game'),
             const Text('• Bonus +✦1500 Platinum'),
+            const Text('• Exclusive profile customizations'),
             const Text('• More features coming soon!'),
             const SizedBox(height: 16),
             const Text(

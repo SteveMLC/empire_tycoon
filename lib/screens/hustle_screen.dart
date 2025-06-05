@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../models/game_state.dart';
 import '../services/game_service.dart';
+import '../services/admob_service.dart';
 import '../widgets/hustle/upgrade_dialog.dart';
 import '../widgets/hustle/boost_dialog.dart';
 import '../utils/number_formatter.dart';
@@ -174,20 +175,13 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
   }
   
   void _startAdBoost() {
-    setState(() {
-      _isWatchingAd = true;
-    });
+    final gameState = Provider.of<GameState>(context, listen: false);
+    final adMobService = Provider.of<AdMobService>(context, listen: false);
     
-    Future.delayed(const Duration(seconds: 3), () {
-      if (!mounted) return;
-      
-      // Call GameState to start the actual boost using the new method
-      Provider.of<GameState>(context, listen: false).startAdBoost();
-      
-      // Update local state for UI
-      setState(() {
-        _isWatchingAd = false;
-      });
+    // Check if premium user should skip ads
+    if (gameState.isPremium) {
+      // Premium users skip ads and get boost immediately
+      gameState.startAdBoost();
       
       try {
         GameService? gameService = Provider.of<GameService>(context, listen: false);
@@ -198,7 +192,52 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
           print("Could not play boost success sound: $e");
         }
       }
+      return;
+    }
+    
+    setState(() {
+      _isWatchingAd = true;
     });
+    
+    // Show AdMob rewarded ad
+    adMobService.showHustleBoostAd(
+      onRewardEarned: () {
+        if (!mounted) return;
+        
+        // User watched the ad successfully, give the boost
+        gameState.startAdBoost();
+        
+        // Update local state for UI
+        setState(() {
+          _isWatchingAd = false;
+        });
+        
+        try {
+          GameService? gameService = Provider.of<GameService>(context, listen: false);
+          gameService.soundManager.playFeedbackNotificationSound();
+        } catch (e) {
+          // Only log boost sound errors occasionally to reduce spam
+          if (DateTime.now().second % 30 == 0) {
+            print("Could not play boost success sound: $e");
+          }
+        }
+      },
+      onAdFailure: () {
+        if (!mounted) return;
+        
+        // Ad failed to load or show, reset state and show error
+        setState(() {
+          _isWatchingAd = false;
+        });
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Ad not available. Please try again later.'),
+            duration: Duration(seconds: 3),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -498,16 +537,18 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
                           : Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text(
-                                  'Watch Ad for 10x Boost',
-                                  style: TextStyle(
+                                Text(
+                                  gameState.isPremium ? 'Premium Boost (No Ads)' : 'Watch Ad for 10x Boost',
+                                  style: const TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 16,
                                   ),
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  'Get 10x click earnings for 60 seconds',
+                                  gameState.isPremium 
+                                    ? 'Get instant 10x click earnings for 60 seconds'
+                                    : 'Get 10x click earnings for 60 seconds',
                                   style: TextStyle(
                                     color: Colors.grey.shade700,
                                   ),

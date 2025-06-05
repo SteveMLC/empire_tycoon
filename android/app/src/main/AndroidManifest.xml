@@ -15,6 +15,13 @@
             android:name="com.google.android.gms.games.APP_ID"
             android:value="@string/app_id" />
         
+        <!-- AdMob App ID - TEST ID for development/testing -->
+        <!-- TODO: Replace with live AdMob app ID when going to production -->
+        <!-- TEST APP ID: ca-app-pub-1738655803893663~7413442778 -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-1738655803893663~7413442778" />
+        
         <activity
             android:name=".MainActivity"
             android:exported="true"

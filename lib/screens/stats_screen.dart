@@ -479,7 +479,7 @@ class _StatsScreenState extends State<StatsScreen> {
             // Show network worth as lifetime stat with icon
             StatsUtils.buildStatRowWithIcon(
               'Lifetime Network Worth', 
-              NumberFormatter.formatCurrency(gameState.networkWorth * 100000000 + gameState.calculateNetWorth()),
+              NumberFormatter.formatCurrency(gameState.lifetimeNetworkWorth + gameState.calculateNetWorth()),
               Icons.show_chart,
               isExecutive ? theme.tertiaryChartColor : Colors.green.shade600,
               theme

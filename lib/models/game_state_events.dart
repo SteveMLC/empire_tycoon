@@ -384,9 +384,11 @@ extension GameStateEvents on GameState {
     for (int i = 0; i < eventCount; i++) {
       final event = activeEvents[i];
       
-      // Skip already resolved events
+      // Check if event is already resolved and needs to be removed
       if (event.isResolved) {
         eventsToRemove.add(event);
+        hasChanges = true;
+        print('🗑️ Removing resolved event: ${event.name}');
         continue;
       }
       
@@ -399,61 +401,50 @@ extension GameStateEvents on GameState {
           event.resolve(); // Mark as resolved
           eventsToRemove.add(event);
           hasChanges = true;
+          print('⏰ Time-based event expired: ${event.name}');
+          
+          // Track the resolution
+          this.trackEventResolution(event, "time");
           continue; // Skip further processing for expired events
         }
       }
       
-      // Update tap challenge timers
+      // Update tap challenge timers (if they have time limits)
       if (event.resolution.type == EventResolutionType.tapChallenge) {
         final Map<String, dynamic> tapData = event.resolution.value as Map<String, dynamic>;
-        // Calculate remaining time based on startTime and resolution value
-        final int totalTime = tapData['timeLimit'] ?? 60; // Default 60 seconds if not specified
-        final int elapsedSeconds = now.difference(event.startTime).inSeconds;
-        final int remainingSeconds = totalTime - elapsedSeconds;
-        tapData['remainingSeconds'] = remainingSeconds > 0 ? remainingSeconds : 0;
-        
-        // Auto-expire tap challenges that run out of time
-        if (remainingSeconds <= 0 && !event.isResolved) {
-          event.resolve();
-          eventsToRemove.add(event);
+        // Only apply time limits if they exist in the tap data
+        if (tapData.containsKey('timeLimit')) {
+          final int totalTime = tapData['timeLimit'] ?? 60;
+          final int elapsedSeconds = now.difference(event.startTime).inSeconds;
+          final int remainingSeconds = totalTime - elapsedSeconds;
+          tapData['remainingSeconds'] = remainingSeconds > 0 ? remainingSeconds : 0;
+          
+          // Auto-expire tap challenges that run out of time
+          if (remainingSeconds <= 0 && !event.isResolved) {
+            event.resolve();
+            eventsToRemove.add(event);
+            hasChanges = true;
+            print('⏰ Tap challenge timed out: ${event.name}');
+            
+            // Track the resolution as timeout
+            this.trackEventResolution(event, "timeout");
+          }
         }
-        
-        hasChanges = true;
       }
     }
     
-    // Remove resolved events
+    // Remove resolved events from the active list
     if (eventsToRemove.isNotEmpty) {
-      activeEvents.removeWhere((event) => eventsToRemove.contains(event));
+      for (final eventToRemove in eventsToRemove) {
+        activeEvents.remove(eventToRemove);
+      }
       hasChanges = true;
+      print('📊 Active events count after cleanup: ${activeEvents.length}');
     }
     
     if (hasChanges) {
       notifyListeners();
     }
-  }
-  
-  // Process tap for tap challenge events
-  void processTapForEvent(GameEvent event) {
-    if (event.resolution.type != EventResolutionType.tapChallenge) return;
-    
-    // Get current and required taps
-    Map<String, dynamic> tapData = event.resolution.value as Map<String, dynamic>;
-    int current = tapData['current'] ?? 0;
-    int required = tapData['required'] ?? 0;
-    
-    // Increment taps and check if complete
-    current++;
-    tapData['current'] = current;
-    
-    // Increment lifetime taps to track event taps as well
-    lifetimeTaps++; 
-    
-    if (current >= required) {
-      event.resolve();
-    }
-    
-    notifyListeners();
   }
   
   // Check if a business is affected by an active event

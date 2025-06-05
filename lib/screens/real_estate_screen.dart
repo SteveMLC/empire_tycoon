@@ -42,7 +42,7 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
       body: Column(
         children: [
           Container(
-            padding: const EdgeInsets.fromLTRB(20, 30, 20, 15),
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
             decoration: BoxDecoration(
               color: theme.colorScheme.primary,
               boxShadow: [
@@ -79,7 +79,7 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
                   ],
                 ),
 
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
 
                 Text(
                   displayedTotalREIncome < 0
@@ -94,7 +94,7 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
                 ),
 
                 if (gameState.getTotalOwnedProperties() > 0) Column(children: [
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 8),
                   InkWell(
                     onTap: () {
                       List<Map<String, dynamic>> ownedProperties = gameState.getAllOwnedPropertiesWithDetails();

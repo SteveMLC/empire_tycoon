@@ -53,14 +53,18 @@ extension EventLogic on GameState {
       final int current = (tapData['current'] ?? 0) + 1; // Increment in a single operation
       final int required = tapData['required'] ?? 0;
 
+      // Apply Platinum Resilience: Reduce required taps by 10% if active
+      final double resilienceMultiplier = isPlatinumResilienceActive ? 0.9 : 1.0;
+      final int finalRequired = (required * resilienceMultiplier).ceil(); // Use ceil to ensure it doesn't become 0 easily
+
       // Update the current tap count
       tapData['current'] = current;
 
       // Increment lifetime taps counter
       lifetimeTaps++;
 
-      // Check if challenge is complete
-      final bool isComplete = current >= required;
+      // Check if challenge is complete using the adjusted requirement
+      final bool isComplete = current >= finalRequired;
       
       if (isComplete) {
         // Mark as resolved
@@ -72,12 +76,15 @@ extension EventLogic on GameState {
         
         // Track the resolution with the dedicated method
         trackEventResolution(event, "tap");
+        
+        print('✅ Event "${event.name}" resolved by tapping ($current/$finalRequired taps)');
       }
 
       // Only notify listeners once per tap
       notifyListeners();
     } catch (e) {
       print('Error in processTapForEvent: $e');
+      // Don't let errors break the tap challenge - continue processing
     }
   }
 
@@ -152,8 +159,9 @@ extension EventLogic on GameState {
         // Skip investments not owned or without dividends (combined check)
         if (owned <= 0 || !investment.hasDividends()) continue;
         
-        // Add dividend income in a single operation
-        dividendIncome += investment.getDividendIncomePerSecond() * owned;
+        // FIXED: Removed duplicate multiplication by owned
+        // investment.getDividendIncomePerSecond() already multiplies by owned
+        dividendIncome += investment.getDividendIncomePerSecond();
       }
       
       // Only calculate diversification bonus if we have dividend income

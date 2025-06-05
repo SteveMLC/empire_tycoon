@@ -133,6 +133,49 @@ class GameEvent {
     }
   }
   
+  /// Get a display-friendly string of affected entities
+  String getAffectedEntitiesDisplay(List<dynamic> businesses, List<dynamic> locales) {
+    List<String> descriptions = [];
+    
+    // Get business names
+    if (affectedBusinessIds.isNotEmpty) {
+      List<String> businessNames = [];
+      for (String businessId in affectedBusinessIds) {
+        try {
+          final business = businesses.firstWhere((b) => b.id == businessId, orElse: () => null);
+          if (business != null) {
+            businessNames.add(business.name);
+          }
+        } catch (e) {
+          print('Error resolving business name for $businessId: $e');
+        }
+      }
+      if (businessNames.isNotEmpty) {
+        descriptions.add("Business: ${businessNames.join(', ')}");
+      }
+    }
+    
+    // Get locale names
+    if (affectedLocaleIds.isNotEmpty) {
+      List<String> localeNames = [];
+      for (String localeId in affectedLocaleIds) {
+        try {
+          final locale = locales.firstWhere((l) => l.id == localeId, orElse: () => null);
+          if (locale != null) {
+            localeNames.add(locale.name);
+          }
+        } catch (e) {
+          print('Error resolving locale name for $localeId: $e');
+        }
+      }
+      if (localeNames.isNotEmpty) {
+        descriptions.add("Location: ${localeNames.join(', ')}");
+      }
+    }
+    
+    return descriptions.join(' • ');
+  }
+  
   /// Convert to JSON for persistence
   Map<String, dynamic> toJson() {
     return {

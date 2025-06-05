@@ -151,7 +151,7 @@ class IncomeService extends ChangeNotifier {
       double diversificationBonusValue = (1.0 + diversificationBonus);
       for (var investment in gameState.investments) {
         if (investment.owned > 0 && investment.hasDividends()) {
-          double baseDividend = investment.getDividendIncomePerSecond() * investment.owned;
+          double baseDividend = investment.getDividendIncomePerSecond();
           double portfolioAdjustedDividend = baseDividend * portfolioMultiplier * diversificationBonusValue;
           
           // Apply global multipliers

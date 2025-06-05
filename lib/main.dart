@@ -7,6 +7,7 @@ import 'screens/main_screen.dart';
 import 'services/game_service.dart';
 import 'services/income_service.dart';
 import 'services/auth_service.dart';
+import 'services/admob_service.dart';
 import 'screens/platinum_vault_screen.dart';
 
 void main() async {
@@ -37,6 +38,8 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (context) => IncomeService()),
         // Add AuthService for Google Play Games Services
         ChangeNotifierProvider(create: (context) => AuthService()),
+        // Add AdMobService for ad integration (singleton)
+        Provider<AdMobService>.value(value: AdMobService.instance),
       ],
       child: MaterialApp(
         title: 'Investment Account',
@@ -103,6 +106,7 @@ class _GameInitializerState extends State<GameInitializer> {
     try {
       _gameService = Provider.of<GameService>(context, listen: false);
       final authService = Provider.of<AuthService>(context, listen: false);
+      final adMobService = Provider.of<AdMobService>(context, listen: false);
       
       print('Game initializer: Starting gameService.init()');
       await _gameService!.init();
@@ -111,6 +115,10 @@ class _GameInitializerState extends State<GameInitializer> {
       print('Game initializer: Starting authService.initialize()');
       await authService.initialize();
       print('Game initializer: Finished authService.initialize()');
+      
+      print('Game initializer: Starting AdMob initialization');
+      await adMobService.initialize();
+      print('Game initializer: Finished AdMob initialization');
       
       setState(() {
         _isInitialized = true;

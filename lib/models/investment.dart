@@ -40,6 +40,23 @@ class Investment {
   final int maxShares; // Maximum number of shares available based on initial market cap/price
   bool unlocked; // Track if the investment is visible/purchasable
   
+  // Dynamic trend properties for better price movement
+  double _currentTrend; // Current trend direction (can change over time)
+  int _trendDuration = 0; // How many updates the current trend has been active
+  double _targetPrice = 0.0; // Target price for mean reversion within reasonable range
+  DateTime _lastTrendChange = DateTime.now(); // Track when trend last changed
+  
+  // Getter for current trend
+  double get currentTrend => _currentTrend;
+  
+  // Getter for trend duration
+  int get trendDuration => _trendDuration;
+  
+  // Setters for serialization
+  set currentTrend(double value) => _currentTrend = value;
+  set trendDuration(int value) => _trendDuration = value;
+  void setTargetPrice(double value) => _targetPrice = value;
+  
   // Get price change percentage - this is now a getter to simplify access
   double get priceChangePercent => getPriceChangePercent();
   
@@ -70,7 +87,9 @@ class Investment {
   }) : // Calculate maxShares based on initial marketCap and basePrice
        maxShares = (basePrice > 0 && marketCap > 0)
            ? ((marketCap * 1e9) / basePrice).floor() // Convert marketCap from billions
-           : 0 {
+           : 0,
+       _currentTrend = trend, // Initialize current trend with base trend
+       _targetPrice = basePrice { // Initialize target price at base price
     // Initialize the price history queue with the provided list
     // Ensure we don't exceed the maximum length
     if (priceHistory.isNotEmpty) {
@@ -236,25 +255,115 @@ class Investment {
   
   // Add and remove price history points efficiently
   void addPriceHistoryPoint(double price) {
-    // Add the new price point
     _priceHistoryQueue.add(price);
     
-    // Remove oldest entry if we exceed the maximum length
-    if (_priceHistoryQueue.length > maxPriceHistoryLength) {
+    // Remove oldest entries if we exceed the max length
+    while (_priceHistoryQueue.length > maxPriceHistoryLength) {
       _priceHistoryQueue.removeFirst();
     }
   }
   
-  // Update the most recent price point (used for micro-updates)
+  // Update the latest price point in history (for micro-updates)
   void updateLatestPricePoint(double price) {
-    if (_priceHistoryQueue.isEmpty) {
-      _priceHistoryQueue.add(price);
-      return;
+    if (_priceHistoryQueue.isNotEmpty) {
+      // Remove the last point and add the new one
+      _priceHistoryQueue.removeLast();
+    }
+    _priceHistoryQueue.add(price);
+  }
+  
+  // Method to update trend dynamically based on market conditions
+  void updateTrend() {
+    _trendDuration++;
+    
+    // Check if trend should reverse based on duration and current price
+    bool shouldReverse = false;
+    
+    // Calculate how far from base price we are
+    double priceRatio = currentPrice / basePrice;
+    
+    // Higher volatility = shorter trend durations (more frequent reversals)
+    int maxTrendDuration = (15 / (volatility + 0.1)).round(); // Decreased from 20, making reversals more frequent
+    maxTrendDuration = maxTrendDuration.clamp(3, 30); // Reduced minimum and maximum for more dynamic behavior
+    
+    // Enhanced trend reversal conditions for more movement
+    if (_trendDuration >= maxTrendDuration) {
+      shouldReverse = true;
+    } else if (priceRatio > 3.5 && _currentTrend > 0) { // Trigger reversal earlier
+      // Reverse upward trend if price gets too high
+      shouldReverse = true;
+    } else if (priceRatio < 0.5 && _currentTrend < 0) { // Trigger reversal earlier
+      // Reverse downward trend if price gets too low
+      shouldReverse = true;
+    } else if (Random().nextDouble() < (volatility * 0.08)) { // Increased random reversal chance
+      // Random reversal based on volatility (more volatile = more reversals)
+      shouldReverse = true;
+    } else if (_trendDuration > 5 && Random().nextDouble() < 0.1) {
+      // Additional random reversal chance after minimum duration to prevent stagnation
+      shouldReverse = true;
     }
     
-    // Remove the last item and add the updated one
-    // This is more efficient than creating a new list and replacing an element
-    _priceHistoryQueue.removeLast();
-    _priceHistoryQueue.add(price);
+    if (shouldReverse) {
+      reverseTrend();
+    }
+    
+    // Update target price based on current trend and volatility
+    _updateTargetPrice();
+  }
+  
+  // Reverse the current trend
+  void reverseTrend() {
+    _currentTrend = -_currentTrend + (Random().nextDouble() * 0.02 - 0.01); // Add some randomness
+    _trendDuration = 0;
+    _lastTrendChange = DateTime.now();
+    
+    // Set new target price in the opposite direction
+    double priceRatio = currentPrice / basePrice;
+    if (_currentTrend > 0) {
+      // Trend is now upward - target higher price within reasonable range
+      _targetPrice = basePrice * (priceRatio + 0.3 + Random().nextDouble() * 0.5);
+    } else {
+      // Trend is now downward - target lower price within reasonable range
+      _targetPrice = basePrice * (priceRatio - 0.3 - Random().nextDouble() * 0.5);
+    }
+    
+    // Keep target price within bounds
+    _targetPrice = _targetPrice.clamp(basePrice * 0.3, basePrice * 3.0);
+  }
+  
+  // Update target price based on current trend
+  void _updateTargetPrice() {
+    // Slowly drift target price to create natural cycles
+    double drift = Random().nextDouble() * 0.02 - 0.01; // Small random drift
+    double priceRatio = currentPrice / basePrice;
+    
+    if (_currentTrend > 0) {
+      // Upward trend - target should be above current price
+      _targetPrice = basePrice * (priceRatio + 0.1 + Random().nextDouble() * 0.3);
+    } else {
+      // Downward trend - target should be below current price
+      _targetPrice = basePrice * (priceRatio - 0.1 - Random().nextDouble() * 0.3);
+    }
+    
+    _targetPrice += drift;
+    _targetPrice = _targetPrice.clamp(basePrice * 0.3, basePrice * 3.0);
+  }
+  
+  // Get mean reversion factor towards target price
+  double getMeanReversionFactor() {
+    if (_targetPrice <= 0) return 0.0;
+    
+    double targetRatio = _targetPrice / currentPrice;
+    
+    if (targetRatio > 1.05) { // Reduced threshold for more responsive reversion
+      // Target is significantly higher - stronger pull up
+      return 0.04 * (targetRatio - 1.0); // Increased from 0.02
+    } else if (targetRatio < 0.95) { // Reduced threshold for more responsive reversion
+      // Target is significantly lower - stronger pull down
+      return -0.04 * (1.0 - targetRatio); // Increased from 0.02
+    }
+    
+    // Add small random movement even when near target to prevent complete stagnation
+    return (Random().nextDouble() * 2 - 1.0) * 0.005;
   }
 }

@@ -102,9 +102,11 @@ class _AchievementNotificationState extends State<AchievementNotification> with 
       }
     });
     
-    // Auto-dismiss after animation completes (if not manually dismissed)
-    Future.delayed(const Duration(seconds: 4), () {
+    // Auto-dismiss when animation completes for consistency
+    // The animation duration is 2000ms, so this ensures smooth timing
+    Future.delayed(const Duration(milliseconds: 2100), () {
       if (mounted && _animationController.status != AnimationStatus.reverse) {
+        print("🎬 Achievement animation completed, auto-dismissing for consistency");
         _dismiss();
       }
     });

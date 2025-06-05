@@ -50,6 +50,7 @@ extension NotificationLogic on GameState {
   void queueAchievementsForDisplay(List<Achievement> achievements) {
     if (achievements.isEmpty) return;
     
+    print("📬 Queuing ${achievements.length} achievements for display");
     _pendingAchievementNotifications.addAll(achievements);
     
     // If no notification is currently displayed and no animation is in progress, show the next one
@@ -68,34 +69,41 @@ extension NotificationLogic on GameState {
       return;
     }
     
-    // Set animation in progress flag
+    // Set animation in progress flag to prevent overlap
     _isAchievementAnimationInProgress = true;
     
     // Display the next achievement
     _currentAchievementNotification = _pendingAchievementNotifications.removeAt(0);
     _isAchievementNotificationVisible = true;
-    print("🏆 Showing achievement: ${_currentAchievementNotification!.name}");
+    print("🏆 Showing achievement: ${_currentAchievementNotification!.name} (${_pendingAchievementNotifications.length} remaining in queue)");
     notifyListeners();
     
     // Cancel any existing timer
     _achievementNotificationTimer?.cancel();
     
-    // Set a timer to auto-dismiss the notification after 5 seconds
-    // Note: This timer will be canceled if the user manually dismisses the notification
+    // Set a timer to auto-dismiss the notification after 5 seconds (reduced from 6)
+    // This serves as a fallback in case animation completion doesn't trigger properly
     _achievementNotificationTimer = Timer(const Duration(seconds: 5), () {
       print("⏱️ Auto-dismissing achievement: ${_currentAchievementNotification?.name}");
+      
+      // Don't auto-dismiss if user is interacting (we'll keep this simple for now)
       _isAchievementNotificationVisible = false;
       _currentAchievementNotification = null;
       notifyListeners();
       
       // Wait for exit animation to complete before showing next notification
-      // This delay should match the exit animation duration
-      Timer(const Duration(milliseconds: 500), () {
+      // Increased delay to ensure smooth transitions and prevent overlap
+      Timer(const Duration(milliseconds: 800), () {
         _isAchievementAnimationInProgress = false; // Reset animation flag
+        
+        print("🎬 Achievement animation complete, checking for next in queue...");
         
         // Check if there are more achievements to show
         if (_pendingAchievementNotifications.isNotEmpty) {
+          print("📋 Showing next achievement from queue (${_pendingAchievementNotifications.length} remaining)");
           _showNextAchievementNotification();
+        } else {
+          print("📭 Achievement queue is now empty");
         }
       });
     });

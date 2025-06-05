@@ -42,11 +42,15 @@ extension PrestigeLogic on GameState {
          return false;
     }
 
-    // Calculate the networkWorth increment for the level being used
+    // FIXED: Store actual networth at time of reincorporation instead of just threshold increment
+    // Add the current networth to the lifetime accumulated networth
+    lifetimeNetworkWorth += currentNetWorth;
+
+    // Calculate the networkWorth increment for the level being used (for prestige level tracking)
     // Level 1 ($1M) adds 0.01, Level 2 ($10M) adds 0.1, Level 3 ($100M) adds 1.0, etc.
     double networkWorthIncrement = pow(10, currentPrestigeLevelUsed - 1).toDouble() / 100.0;
 
-    // Update network worth (persistent lifetime stat)
+    // Update network worth (persistent lifetime stat for prestige level tracking)
     networkWorth += networkWorthIncrement;
 
     // Recalculate total achieved levels based on the *new* networkWorth
@@ -263,7 +267,7 @@ extension PrestigeLogic on GameState {
     // Notify listeners that state has changed
     notifyListeners();
 
-    print("✅ Reincorporated! Level Used: $currentPrestigeLevelUsed, New Network Worth: $networkWorth, Prestige Multiplier: $prestigeMultiplier, Passive Bonus: $incomeMultiplier");
+    print("✅ Reincorporated! Level Used: $currentPrestigeLevelUsed, New Network Worth: $networkWorth, Lifetime Network Worth: $lifetimeNetworkWorth, Prestige Multiplier: $prestigeMultiplier, Passive Bonus: $incomeMultiplier");
     return true;
   }
 

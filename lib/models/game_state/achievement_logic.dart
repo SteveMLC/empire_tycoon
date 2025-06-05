@@ -15,19 +15,9 @@ extension AchievementLogic on GameState {
     if (!_isAchievementNotificationVisible && 
         !_isAchievementAnimationInProgress && 
         _pendingAchievementNotifications.isNotEmpty) {
-      _showNextPendingAchievement();
+      // Use the proper notification system from NotificationLogic
+      _showNextAchievementNotification();
     }
-  }
-
-  /// Internal method to display the next achievement from the queue.
-  void _showNextPendingAchievement() {
-    if (_pendingAchievementNotifications.isEmpty) return; // Safety check
-
-    _currentAchievementNotification = _pendingAchievementNotifications.removeAt(0);
-    _isAchievementNotificationVisible = true;
-    _isAchievementAnimationInProgress = true; // Set animation in progress flag
-    print("🔔 Displaying achievement: ${_currentAchievementNotification!.name}");
-    notifyListeners(); // Notify UI to show the current achievement
   }
 
   /// Called when the currently displayed achievement notification is dismissed by the user or timer.
@@ -35,12 +25,16 @@ extension AchievementLogic on GameState {
     if (_currentAchievementNotification != null) {
        print("✅ Dismissed achievement notification: ${_currentAchievementNotification!.name}");
     }
+    
+    // Cancel any active auto-dismiss timer
+    _achievementNotificationTimer?.cancel();
+    
     _currentAchievementNotification = null;
     _isAchievementNotificationVisible = false;
     notifyListeners(); // Notify UI to hide the notification
 
     // Reset animation flag after a short delay to ensure smooth transitions
-    Future.delayed(Duration(milliseconds: 300), () {
+    Future.delayed(Duration(milliseconds: 500), () {
       _isAchievementAnimationInProgress = false;
       
       // Try showing the next achievement after the animation completes
@@ -51,5 +45,10 @@ extension AchievementLogic on GameState {
   /// Called when an achievement animation has completed (entry or exit)
   void notifyAchievementAnimationCompleted() {
     _isAchievementAnimationInProgress = false;
+    
+    // If this was an exit animation and there are more achievements, show the next one
+    if (!_isAchievementNotificationVisible && _pendingAchievementNotifications.isNotEmpty) {
+      tryShowingNextAchievement();
+    }
   }
 }

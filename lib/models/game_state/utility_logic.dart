@@ -148,6 +148,7 @@ extension UtilityLogic on GameState {
     // Reset prestige system
     prestigeMultiplier = 1.0;
     networkWorth = 0.0;
+    lifetimeNetworkWorth = 0.0;
     reincorporationUsesAvailable = 0;
     totalReincorporations = 0;
 

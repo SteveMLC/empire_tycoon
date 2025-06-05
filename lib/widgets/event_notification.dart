@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
+import 'package:provider/provider.dart';
 import '../models/event.dart';
 import '../models/game_state.dart';
 import '../models/game_state_events.dart';
+import '../services/admob_service.dart';
 
 class EventNotification extends StatefulWidget {
   final GameEvent event;
@@ -25,8 +27,64 @@ class EventNotification extends StatefulWidget {
 class _EventNotificationState extends State<EventNotification> {
   bool _isMinimized = false;
 
+  /// Get affected business names from IDs
+  List<String> _getAffectedBusinessNames() {
+    List<String> businessNames = [];
+    for (String businessId in widget.event.affectedBusinessIds) {
+      try {
+        final matchingBusinesses = widget.gameState.businesses
+            .where((b) => b.id == businessId)
+            .toList();
+        if (matchingBusinesses.isNotEmpty) {
+          businessNames.add(matchingBusinesses.first.name);
+        }
+      } catch (e) {
+        print('Error getting business name for ID $businessId: $e');
+      }
+    }
+    return businessNames;
+  }
+
+  /// Get affected locale names from IDs
+  List<String> _getAffectedLocaleNames() {
+    List<String> localeNames = [];
+    for (String localeId in widget.event.affectedLocaleIds) {
+      try {
+        final matchingLocales = widget.gameState.realEstateLocales
+            .where((l) => l.id == localeId)
+            .toList();
+        if (matchingLocales.isNotEmpty) {
+          localeNames.add(matchingLocales.first.name);
+        }
+      } catch (e) {
+        print('Error getting locale name for ID $localeId: $e');
+      }
+    }
+    return localeNames;
+  }
+
+  /// Get a comprehensive affected entities description
+  String _getAffectedEntitiesDescription() {
+    final businessNames = _getAffectedBusinessNames();
+    final localeNames = _getAffectedLocaleNames();
+    
+    List<String> descriptions = [];
+    
+    if (businessNames.isNotEmpty) {
+      descriptions.add("Business: ${businessNames.join(', ')}");
+    }
+    
+    if (localeNames.isNotEmpty) {
+      descriptions.add("Location: ${localeNames.join(', ')}");
+    }
+    
+    return descriptions.join(' • ');
+  }
+
   @override
   Widget build(BuildContext context) {
+    final gameState = Provider.of<GameState>(context);
+    
     return Card(
       color: _getBackgroundColor(),
       margin: const EdgeInsets.fromLTRB(16, 4, 16, 4),
@@ -79,6 +137,23 @@ class _EventNotificationState extends State<EventNotification> {
                           maxLines: 3,
                           overflow: TextOverflow.ellipsis,
                         ),
+                        // Add affected entities information
+                        const SizedBox(height: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            _getAffectedEntitiesDescription(),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.white,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -120,10 +195,10 @@ class _EventNotificationState extends State<EventNotification> {
                 ),
               ),
             ],
-            ),
           ),
         ),
-      );
+      ),
+    );
   }
   
   // Build minimized view with just the essential info
@@ -134,17 +209,33 @@ class _EventNotificationState extends State<EventNotification> {
         _getEventIcon(),
         const SizedBox(width: 8),
         
-        // Event name
+        // Event name and affected entities
         Expanded(
-          child: Text(
-            widget.event.name,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-              color: Colors.white,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                widget.event.name,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: Colors.white,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              Text(
+                _getAffectedEntitiesDescription(),
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: Colors.white70,
+                  fontWeight: FontWeight.w400,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
           ),
         ),
         
@@ -249,12 +340,38 @@ class _EventNotificationState extends State<EventNotification> {
         final bool isPremium = widget.gameState.isPremium;
         return InkWell(
           onTap: () {
-            widget.event.resolve();
-            // Update event achievement tracking
-            widget.gameState.totalEventsResolved++;
-            widget.gameState.eventsResolvedByAd++;
-            widget.gameState.trackEventResolution(widget.event, "ad");
-            widget.onResolved();
+            if (isPremium) {
+              // Premium users skip ads and resolve immediately
+              widget.event.resolve();
+              // Update event achievement tracking
+              widget.gameState.totalEventsResolved++;
+              widget.gameState.eventsResolvedByAd++;
+              widget.gameState.trackEventResolution(widget.event, "ad");
+              widget.onResolved();
+            } else {
+              // Regular users need to watch an ad
+              final adMobService = Provider.of<AdMobService>(context, listen: false);
+              adMobService.showEventClearAd(
+                onRewardEarned: () {
+                  // User successfully watched the ad
+                  widget.event.resolve();
+                  // Update event achievement tracking
+                  widget.gameState.totalEventsResolved++;
+                  widget.gameState.eventsResolvedByAd++;
+                  widget.gameState.trackEventResolution(widget.event, "ad");
+                  widget.onResolved();
+                },
+                onAdFailure: () {
+                  // Ad failed to show, show error message
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Ad not available. Please try again later.'),
+                      duration: Duration(seconds: 3),
+                    ),
+                  );
+                },
+              );
+            }
           },
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -351,14 +468,38 @@ class _EventNotificationState extends State<EventNotification> {
         final bool isPremium = widget.gameState.isPremium;
         return ElevatedButton.icon(
           onPressed: () {
-            // If premium, bypass ad and resolve immediately
-            // If not premium, would show ad here in a real app
-            widget.event.resolve();
-            // Update event achievement tracking
-            widget.gameState.totalEventsResolved++;
-            widget.gameState.eventsResolvedByAd++;
-            widget.gameState.trackEventResolution(widget.event, "ad");
-            widget.onResolved();
+            if (isPremium) {
+              // Premium users skip ads and resolve immediately
+              widget.event.resolve();
+              // Update event achievement tracking
+              widget.gameState.totalEventsResolved++;
+              widget.gameState.eventsResolvedByAd++;
+              widget.gameState.trackEventResolution(widget.event, "ad");
+              widget.onResolved();
+            } else {
+              // Regular users need to watch an ad
+              final adMobService = Provider.of<AdMobService>(context, listen: false);
+              adMobService.showEventClearAd(
+                onRewardEarned: () {
+                  // User successfully watched the ad
+                  widget.event.resolve();
+                  // Update event achievement tracking
+                  widget.gameState.totalEventsResolved++;
+                  widget.gameState.eventsResolvedByAd++;
+                  widget.gameState.trackEventResolution(widget.event, "ad");
+                  widget.onResolved();
+                },
+                onAdFailure: () {
+                  // Ad failed to show, show error message
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Ad not available. Please try again later.'),
+                      duration: Duration(seconds: 3),
+                    ),
+                  );
+                },
+              );
+            }
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: isPremium ? Colors.purple : Colors.amber,

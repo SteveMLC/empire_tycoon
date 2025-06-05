@@ -76,19 +76,27 @@ extension BusinessLogic on GameState {
   }
 
   // ADDED: Method to speed up an upgrade using an Ad reward
-  void speedUpUpgradeWithAd(String businessId) {
+  void speedUpUpgradeWithAd(String businessId, {required Function() onAdCompleted, required Function() onAdFailed}) {
     int index = businesses.indexWhere((b) => b.id == businessId);
-    if (index == -1) return;
+    if (index == -1) {
+      onAdFailed();
+      return;
+    }
 
     Business business = businesses[index];
 
-    if (business.isUpgrading) {
-      Duration reduction = const Duration(minutes: 15);
-      print("⏩ Speeding up upgrade for ${business.name} by ${reduction.inMinutes} minutes.");
+    if (!business.isUpgrading) {
+      print("⚠️ Cannot speed up upgrade for ${business.name}: Not currently upgrading.");
+      onAdFailed();
+      return;
+    }
 
-      // --- TODO: Placeholder for actual Ad logic ---
-      // 1. Trigger Ad display using an Ad service
-      // 2. On successful ad completion (callback): 
+    // Check if premium user should skip ads
+    if (isPremium) {
+      // Premium users skip ads and get speed up immediately
+      Duration reduction = const Duration(minutes: 15);
+      print("⏩ Premium speed up for ${business.name} by ${reduction.inMinutes} minutes.");
+      
       business.reduceUpgradeTime(reduction);
       // Check if the upgrade is now complete after reduction
       if (business.getRemainingUpgradeTime() <= Duration.zero) {
@@ -96,11 +104,23 @@ extension BusinessLogic on GameState {
       } else {
         notifyListeners(); // Notify UI about the reduced time
       }
-      // --- End Placeholder ---
-
-    } else {
-       print("⚠️ Cannot speed up upgrade for ${business.name}: Not currently upgrading.");
+      onAdCompleted();
+      return;
     }
+
+    // For non-premium users, the ad will be shown by the UI layer
+    // When ad is completed successfully, this callback will handle the business logic
+    Duration reduction = const Duration(minutes: 15);
+    print("⏩ Ad-based speed up for ${business.name} by ${reduction.inMinutes} minutes.");
+
+    business.reduceUpgradeTime(reduction);
+    // Check if the upgrade is now complete after reduction
+    if (business.getRemainingUpgradeTime() <= Duration.zero) {
+      completeBusinessUpgrade(businessId);
+    } else {
+      notifyListeners(); // Notify UI about the reduced time
+    }
+    onAdCompleted();
   }
 
   // Update which businesses are unlocked based on money

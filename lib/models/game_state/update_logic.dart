@@ -299,7 +299,7 @@ extension UpdateLogic on GameState {
         
         for (var investment in investments) {
           if (investment.owned > 0 && investment.hasDividends()) {
-            // Get base dividend per second for this investment
+            // Get base dividend per second for this investment (already includes owned count)
             double baseDividend = investment.getDividendIncomePerSecond();
             print("DEBUG: Investment '${investment.name}' base dividend: $baseDividend");
             
@@ -307,9 +307,10 @@ extension UpdateLogic on GameState {
             double adjustedDividend = baseDividend * portfolioMultiplier * (1 + diversificationBonus);
             print("DEBUG: Investment '${investment.name}' after portfolio/diversification: $adjustedDividend");
             
-            // Apply owned count
-            double totalDividendForInvestment = adjustedDividend * investment.owned;
-            print("DEBUG: Investment '${investment.name}' after owned count (${investment.owned}): $totalDividendForInvestment");
+            // FIXED: Removed duplicate multiplication by investment.owned
+            // investment.getDividendIncomePerSecond() already multiplies by owned
+            double totalDividendForInvestment = adjustedDividend;
+            print("DEBUG: Investment '${investment.name}' after removing duplicate owned multiplication: $totalDividendForInvestment");
             
             // Apply global income multiplier
             totalDividendForInvestment *= incomeMultiplier;
@@ -379,8 +380,7 @@ extension UpdateLogic on GameState {
             if (investment.owned > 0 && investment.hasDividends()) {
               dividendIncome += investment.getDividendIncomePerSecond() * 
                                portfolioMultiplier * 
-                               (1 + diversificationBonus) * 
-                               investment.owned;
+                               (1 + diversificationBonus);
             }
           }
           

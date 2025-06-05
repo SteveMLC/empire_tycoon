@@ -36,6 +36,7 @@ extension SerializationLogic on GameState {
       'clickMultiplier': clickMultiplier,
       'prestigeMultiplier': prestigeMultiplier,
       'networkWorth': networkWorth,
+      'lifetimeNetworkWorth': lifetimeNetworkWorth,
       'reincorporationUsesAvailable': reincorporationUsesAvailable,
       'totalReincorporations': totalReincorporations, // Save total reincorporations performed
       'lastOpened': lastOpened.toIso8601String(),
@@ -146,6 +147,9 @@ extension SerializationLogic on GameState {
       // Save auto-invest state
       'autoInvestEnabled': investment.autoInvestEnabled,
       'autoInvestAmount': investment.autoInvestAmount,
+      // Save dynamic trend properties
+      'currentTrend': investment.currentTrend,
+      'trendDuration': investment.trendDuration,
     }).toList();
 
     // Save real estate state
@@ -249,6 +253,7 @@ extension SerializationLogic on GameState {
     clickMultiplier = (json['clickMultiplier'] as num?)?.toDouble() ?? 1.0;
     prestigeMultiplier = (json['prestigeMultiplier'] as num?)?.toDouble() ?? 1.0;
     networkWorth = (json['networkWorth'] as num?)?.toDouble() ?? 0.0;
+    lifetimeNetworkWorth = (json['lifetimeNetworkWorth'] as num?)?.toDouble() ?? 0.0;
     reincorporationUsesAvailable = json['reincorporationUsesAvailable'] ?? 0;
     totalReincorporations = json['totalReincorporations'] ?? 0;
     isInitialized = json['isInitialized'] ?? false;
@@ -330,6 +335,17 @@ extension SerializationLogic on GameState {
              // Load auto-invest state
              investments[index].autoInvestEnabled = investmentJson['autoInvestEnabled'] ?? false;
              investments[index].autoInvestAmount = (investmentJson['autoInvestAmount'] as num?)?.toDouble() ?? 0.0;
+
+            // Load dynamic trend properties if available, otherwise use defaults
+            if (investmentJson.containsKey('currentTrend')) {
+              investments[index].currentTrend = (investmentJson['currentTrend'] as num?)?.toDouble() ?? investments[index].trend;
+            }
+            if (investmentJson.containsKey('trendDuration')) {
+              investments[index].trendDuration = investmentJson['trendDuration'] ?? 0;
+            }
+            
+            // Initialize target price if not set during deserialization
+            investments[index].setTargetPrice(investments[index].basePrice);
 
             // Load price history safely
             if (investmentJson['priceHistory'] != null && investmentJson['priceHistory'] is List) {
