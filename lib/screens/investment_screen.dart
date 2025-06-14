@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter/services.dart';
 
 import '../models/game_state.dart';
 import '../models/investment.dart';
 import '../screens/investment_detail_screen.dart';
+import '../screens/investment_portfolio_screen.dart';
 import '../widgets/investment_list_item.dart';
 import '../widgets/market_overview_widget.dart';
-import '../widgets/portfolio_widget.dart';
 
 class InvestmentScreen extends StatefulWidget {
   const InvestmentScreen({Key? key}) : super(key: key);
@@ -30,7 +29,6 @@ class _InvestmentScreenState extends State<InvestmentScreen> {
   
   String _currentSort = 'Default';
   String _selectedCategory = 'All Categories';
-  bool _showPortfolio = false;
 
   @override
   Widget build(BuildContext context) {
@@ -39,57 +37,37 @@ class _InvestmentScreenState extends State<InvestmentScreen> {
         // Get list of investments and sort based on selection
         List<Investment> investments = _getSortedInvestments(gameState.investments);
         
-        return Stack(
-          children: [
-            // Main content
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12.0, 8.0, 12.0, 8.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // Market overview widget (new compact design)
-                  MarketOverviewWidget(
-                    investments: gameState.investments,
-                    onOpenPortfolio: () => setState(() => _showPortfolio = true),
-                  ),
-                  
-                  const SizedBox(height: 10),
-                  
-                  // Filter controls row
-                  _buildFilterControls(gameState),
-                  
-                  const SizedBox(height: 8),
-                  
-                  // Investments list
-                  Expanded(
-                    child: _buildInvestmentsList(investments),
-                  ),
-                ],
-              ),
-            ),
-            
-            // Portfolio overlay (shown when portfolio button is tapped)
-            if (_showPortfolio)
-              Positioned.fill(
-                child: Container(
-                  color: Colors.black.withOpacity(0.5),
-                  child: Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: ConstrainedBox(
-                        constraints: BoxConstraints(
-                          maxWidth: MediaQuery.of(context).size.width * 0.9,
-                          maxHeight: MediaQuery.of(context).size.height * 0.8,
-                        ),
-                        child: PortfolioWidget(
-                          onClose: () => setState(() => _showPortfolio = false),
-                        ),
-                      ),
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(12.0, 8.0, 12.0, 8.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Market overview widget (new compact design)
+              MarketOverviewWidget(
+                investments: gameState.investments,
+                onOpenPortfolio: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const InvestmentPortfolioScreen(),
                     ),
-                  ),
-                ),
+                  );
+                },
               ),
-          ],
+              
+              const SizedBox(height: 10),
+              
+              // Filter controls row
+              _buildFilterControls(gameState),
+              
+              const SizedBox(height: 8),
+              
+              // Investments list
+              Expanded(
+                child: _buildInvestmentsList(investments),
+              ),
+            ],
+          ),
         );
       },
     );

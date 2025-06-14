@@ -242,7 +242,8 @@ class Investment {
     
     // Use a more deterministic approach for the random component to reduce object creation
     // Based on investment ID hash and current day to ensure consistency within a day
-    final int dayOfYear = DateTime.now().day + (DateTime.now().month * 31);
+    DateTime now = DateTime.now();
+    final int dayOfYear = now.day + (now.month * 31); // Simple approximation of day of year
     final int seed = id.hashCode + dayOfYear;
     final random = 0.9 + ((seed % 20) / 100); // 0.9 to 1.1 deterministic factor
     
@@ -282,24 +283,31 @@ class Investment {
     // Calculate how far from base price we are
     double priceRatio = currentPrice / basePrice;
     
-    // Higher volatility = shorter trend durations (more frequent reversals)
-    int maxTrendDuration = (15 / (volatility + 0.1)).round(); // Decreased from 20, making reversals more frequent
-    maxTrendDuration = maxTrendDuration.clamp(3, 30); // Reduced minimum and maximum for more dynamic behavior
+    // More realistic trend durations based on volatility
+    int maxTrendDuration = (25 / (volatility + 0.05)).round(); // Longer base duration
+    maxTrendDuration = maxTrendDuration.clamp(8, 40); // Wider range for more varied cycles
     
-    // Enhanced trend reversal conditions for more movement
+    // Enhanced trend reversal conditions with better balance
     if (_trendDuration >= maxTrendDuration) {
       shouldReverse = true;
-    } else if (priceRatio > 3.5 && _currentTrend > 0) { // Trigger reversal earlier
-      // Reverse upward trend if price gets too high
+    } else if (priceRatio > 2.5 && _currentTrend > 0) {
+      // Reverse upward trend if price gets too high (less aggressive)
       shouldReverse = true;
-    } else if (priceRatio < 0.5 && _currentTrend < 0) { // Trigger reversal earlier
-      // Reverse downward trend if price gets too low
+    } else if (priceRatio < 0.6 && _currentTrend < 0) {
+      // Reverse downward trend if price gets too low (less aggressive)
       shouldReverse = true;
-    } else if (Random().nextDouble() < (volatility * 0.08)) { // Increased random reversal chance
-      // Random reversal based on volatility (more volatile = more reversals)
+    } else if (Random().nextDouble() < (volatility * 0.04)) {
+      // Random reversal based on volatility (reduced frequency)
       shouldReverse = true;
-    } else if (_trendDuration > 5 && Random().nextDouble() < 0.1) {
-      // Additional random reversal chance after minimum duration to prevent stagnation
+    } else if (_trendDuration > 10 && Random().nextDouble() < 0.06) {
+      // Additional random reversal chance after minimum duration
+      shouldReverse = true;
+    }
+    
+    // Special condition: Force trend toward neutral if too far from base price
+    if (priceRatio > 2.0 && _currentTrend > 0.01) {
+      shouldReverse = true;
+    } else if (priceRatio < 0.7 && _currentTrend < -0.01) {
       shouldReverse = true;
     }
     
@@ -307,63 +315,85 @@ class Investment {
       reverseTrend();
     }
     
-    // Update target price based on current trend and volatility
+    // Update target price based on current trend
     _updateTargetPrice();
   }
   
-  // Reverse the current trend
+  // Enhanced trend reversal with neutral periods
   void reverseTrend() {
-    _currentTrend = -_currentTrend + (Random().nextDouble() * 0.02 - 0.01); // Add some randomness
+    // 30% chance of going to neutral trend instead of reversing
+    if (Random().nextDouble() < 0.3) {
+      _currentTrend = (Random().nextDouble() * 0.006 - 0.003); // Very small neutral range ±0.3%
+    } else {
+      // Normal reversal with some randomness
+      double baseReverse = -_currentTrend;
+      double randomFactor = (Random().nextDouble() * 0.015 - 0.0075); // ±0.75% variation
+      _currentTrend = baseReverse + randomFactor;
+      
+      // Clamp to reasonable range
+      _currentTrend = _currentTrend.clamp(-0.08, 0.08); // ±8% max trend
+    }
+    
     _trendDuration = 0;
     _lastTrendChange = DateTime.now();
     
-    // Set new target price in the opposite direction
+    // Set new target price based on trend direction
     double priceRatio = currentPrice / basePrice;
-    if (_currentTrend > 0) {
-      // Trend is now upward - target higher price within reasonable range
-      _targetPrice = basePrice * (priceRatio + 0.3 + Random().nextDouble() * 0.5);
+    if (_currentTrend > 0.005) {
+      // Upward trend - target moderately higher price
+      _targetPrice = basePrice * (priceRatio + 0.2 + Random().nextDouble() * 0.3);
+    } else if (_currentTrend < -0.005) {
+      // Downward trend - target moderately lower price  
+      _targetPrice = basePrice * (priceRatio - 0.2 - Random().nextDouble() * 0.3);
     } else {
-      // Trend is now downward - target lower price within reasonable range
-      _targetPrice = basePrice * (priceRatio - 0.3 - Random().nextDouble() * 0.5);
+      // Neutral trend - target back toward base price
+      _targetPrice = basePrice * (0.9 + Random().nextDouble() * 0.2); // 90%-110% of base
     }
     
-    // Keep target price within bounds
-    _targetPrice = _targetPrice.clamp(basePrice * 0.3, basePrice * 3.0);
+    // Keep target price within realistic bounds
+    _targetPrice = _targetPrice.clamp(basePrice * 0.4, basePrice * 3.0);
   }
   
-  // Update target price based on current trend
+  // Update target price with drift toward base price over time
   void _updateTargetPrice() {
-    // Slowly drift target price to create natural cycles
-    double drift = Random().nextDouble() * 0.02 - 0.01; // Small random drift
+    // Slowly drift target price toward base price (mean reversion over long term)
+    double basePriceBias = (basePrice - _targetPrice) * 0.001; // Very slow drift toward base
+    double randomDrift = Random().nextDouble() * 0.01 - 0.005; // Small random drift
+    
     double priceRatio = currentPrice / basePrice;
     
-    if (_currentTrend > 0) {
-      // Upward trend - target should be above current price
-      _targetPrice = basePrice * (priceRatio + 0.1 + Random().nextDouble() * 0.3);
+    if (_currentTrend > 0.005) {
+      // Upward trend - target should be above current price but not too extreme
+      _targetPrice = basePrice * (priceRatio + 0.05 + Random().nextDouble() * 0.2);
+    } else if (_currentTrend < -0.005) {
+      // Downward trend - target should be below current price but not too extreme
+      _targetPrice = basePrice * (priceRatio - 0.05 - Random().nextDouble() * 0.2);
     } else {
-      // Downward trend - target should be below current price
-      _targetPrice = basePrice * (priceRatio - 0.1 - Random().nextDouble() * 0.3);
+      // Neutral trend - slowly drift toward base price
+      _targetPrice = basePrice * (0.95 + Random().nextDouble() * 0.1); // 95%-105% of base
     }
     
-    _targetPrice += drift;
-    _targetPrice = _targetPrice.clamp(basePrice * 0.3, basePrice * 3.0);
+    _targetPrice += basePriceBias + randomDrift;
+    _targetPrice = _targetPrice.clamp(basePrice * 0.4, basePrice * 3.0);
   }
   
-  // Get mean reversion factor towards target price
+  // Enhanced mean reversion that's stronger when far from target
   double getMeanReversionFactor() {
     if (_targetPrice <= 0) return 0.0;
     
     double targetRatio = _targetPrice / currentPrice;
     
-    if (targetRatio > 1.05) { // Reduced threshold for more responsive reversion
-      // Target is significantly higher - stronger pull up
-      return 0.04 * (targetRatio - 1.0); // Increased from 0.02
-    } else if (targetRatio < 0.95) { // Reduced threshold for more responsive reversion
-      // Target is significantly lower - stronger pull down
-      return -0.04 * (1.0 - targetRatio); // Increased from 0.02
+    if (targetRatio > 1.08) {
+      // Target is significantly higher - pull up with progressive strength
+      double strength = (targetRatio - 1.0) * 0.03; // Progressive strength
+      return strength.clamp(0.0, 0.06); // Max 6% pull
+    } else if (targetRatio < 0.92) {
+      // Target is significantly lower - pull down with progressive strength
+      double strength = (1.0 - targetRatio) * 0.03; // Progressive strength
+      return -strength.clamp(0.0, 0.06); // Max 6% pull
     }
     
-    // Add small random movement even when near target to prevent complete stagnation
-    return (Random().nextDouble() * 2 - 1.0) * 0.005;
+    // When near target, add small random movement to prevent stagnation
+    return (Random().nextDouble() * 2 - 1.0) * 0.002; // ±0.2% random movement
   }
 }

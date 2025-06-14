@@ -88,6 +88,8 @@ class InvestmentListItem extends StatelessWidget {
                     fontSize: 16,
                   ),
                 ),
+                
+                // Show market performance for all investments (owned and non-owned)
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
@@ -103,6 +105,7 @@ class InvestmentListItem extends StatelessWidget {
                     ),
                   ),
                 ),
+                
                 // Always show dividend yield if the investment has dividends, regardless of ownership
                 if (investment.hasDividends()) ...[
                   const SizedBox(height: 2),

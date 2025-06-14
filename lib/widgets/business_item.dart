@@ -597,22 +597,42 @@ class _BusinessItemState extends State<BusinessItem> {
                       ),
                     ],
                   ),
-                  if (!isInitialPurchase && canAfford && incomeIncreasePercentage > 0)
+                  if (!isInitialPurchase && incomeIncreasePercentage > 0)
                     Padding(
                       padding: const EdgeInsets.only(top: 3),
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
+                          color: canAfford 
+                              ? Colors.white.withOpacity(0.2)
+                              : Colors.grey.withOpacity(0.15),
                           borderRadius: BorderRadius.circular(8),
+                          border: !canAfford 
+                              ? Border.all(color: Colors.grey.withOpacity(0.3), width: 0.5)
+                              : null,
                         ),
-                        child: Text(
-                          '+${incomeIncreasePercentage.toStringAsFixed(0)}% Income',
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (!canAfford) ...[
+                              Icon(
+                                Icons.lock_outline,
+                                size: 8,
+                                color: Colors.grey.shade600,
+                              ),
+                              const SizedBox(width: 2),
+                            ],
+                            Text(
+                              '+${incomeIncreasePercentage.toStringAsFixed(0)}% Income',
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: canAfford 
+                                    ? Colors.white
+                                    : Colors.grey.shade600,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),

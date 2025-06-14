@@ -18,52 +18,65 @@ class PortfolioWidget extends StatefulWidget {
 }
 
 class _PortfolioWidgetState extends State<PortfolioWidget> {
-  String _sortMode = 'Value (High to Low)';
+  String _sortMode = 'value';
   
   @override
   Widget build(BuildContext context) {
+    final screenHeight = MediaQuery.of(context).size.height;
+    final isCompact = screenHeight < 700; // Detect smaller screens or limited space
+    
     return Card(
-      elevation: 5,
+      elevation: 6,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          gradient: LinearGradient(
+            colors: [Colors.white, Colors.grey.shade50],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Your Portfolio',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
+            // Header
+            Padding(
+              padding: EdgeInsets.all(isCompact ? 12.0 : 16.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.account_balance_wallet,
+                        color: Colors.blue.shade700,
+                        size: isCompact ? 20 : 24,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'My Portfolio',
+                        style: TextStyle(
+                          fontSize: isCompact ? 18 : 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey.shade800,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: widget.onClose,
-                ),
-              ],
+                  _buildSortDropdown(),
+                ],
+              ),
             ),
             
-            const SizedBox(height: 8),
-            
-            _buildSortDropdown(),
-            
-            const SizedBox(height: 16),
-            
-            // Portfolio summary
+            // Portfolio Summary
             _buildPortfolioSummary(),
             
-            const SizedBox(height: 16),
-            
-            // Owned investments list
-            Expanded(
-              child: _buildOwnedInvestmentsList(),
+            // Investments List - Using Flexible instead of unbounded ListView
+            Flexible(
+              child: _buildInvestmentsList(),
             ),
           ],
         ),
@@ -73,35 +86,39 @@ class _PortfolioWidgetState extends State<PortfolioWidget> {
   
   Widget _buildSortDropdown() {
     return Container(
+      width: 120,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
+        color: Colors.white,
         border: Border.all(color: Colors.grey.shade300),
         borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.shade200,
+            blurRadius: 2,
+            offset: const Offset(0, 1),
+          ),
+        ],
       ),
       child: DropdownButton<String>(
         value: _sortMode,
         isExpanded: true,
         underline: const SizedBox(),
-        icon: const Icon(Icons.sort),
-        onChanged: (String? newValue) {
-          if (newValue != null) {
-            setState(() {
-              _sortMode = newValue;
-            });
-          }
+        icon: Icon(Icons.sort, color: Colors.blue.shade700, size: 16),
+        style: TextStyle(
+          color: Colors.grey.shade800,
+          fontSize: 12,
+        ),
+        items: const [
+          DropdownMenuItem(value: 'value', child: Text('Value')),
+          DropdownMenuItem(value: 'profit', child: Text('P&L')),
+          DropdownMenuItem(value: 'name', child: Text('Name')),
+        ],
+        onChanged: (value) {
+          setState(() {
+            _sortMode = value!;
+          });
         },
-        items: [
-          'Value (High to Low)',
-          'Value (Low to High)',
-          'Profit/Loss (Best First)',
-          'Profit/Loss (Worst First)',
-          'Alphabetical',
-        ].map<DropdownMenuItem<String>>((String value) {
-          return DropdownMenuItem<String>(
-            value: value,
-            child: Text(value),
-          );
-        }).toList(),
       ),
     );
   }
@@ -124,139 +141,184 @@ class _PortfolioWidgetState extends State<PortfolioWidget> {
           }
         }
         
-        return Card(
-          color: Colors.blue.shade50,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
+        return Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.blue.shade50, Colors.blue.shade100],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.blue.shade200),
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Total Value:',
-                      style: TextStyle(
-                        fontSize: 16,
-                      ),
-                    ),
-                    Text(
-                      '\$${totalValue.toStringAsFixed(2)}',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-                
-                const SizedBox(height: 8),
-                
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Total Profit/Loss:',
-                      style: TextStyle(
-                        fontSize: 16,
-                      ),
-                    ),
-                    Text(
-                      '\$${totalProfit.toStringAsFixed(2)}',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: totalProfit >= 0 ? Colors.green : Colors.red,
-                      ),
-                    ),
-                  ],
-                ),
-                
-                if (totalDividends > 0) ...[
-                  const SizedBox(height: 8),
-                  
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          child: Column(
+            children: [
+              // Primary metrics row
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Total Portfolio Value
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          Icon(Icons.payments, size: 16, color: Colors.green.shade700),
-                          const SizedBox(width: 4),
-                          const Text(
-                            'Dividend Income:',
-                            style: TextStyle(
-                              fontSize: 16,
-                            ),
-                          ),
-                        ],
-                      ),
                       Text(
-                        '\$${totalDividends.toStringAsFixed(2)}/sec',
+                        'Total Value',
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: 12,
+                          color: Colors.grey.shade700,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '\$${totalValue.toStringAsFixed(2)}',
+                        style: TextStyle(
+                          fontSize: 20,
                           fontWeight: FontWeight.bold,
-                          color: Colors.green.shade700,
+                          color: Colors.blue.shade800,
                         ),
                       ),
                     ],
                   ),
-                ],
-                
-                const SizedBox(height: 8),
-                
-                // Diversification bonus
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Diversification Bonus:',
-                      style: TextStyle(
-                        fontSize: 16,
+                  
+                  // Total P&L
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        'Total P&L',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade700,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
-                    ),
-                    Text(
-                      '+${(gameState.calculateDiversificationBonus() * 100).toStringAsFixed(1)}%',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.blue.shade700,
+                      const SizedBox(height: 4),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            totalProfit >= 0 ? Icons.trending_up : Icons.trending_down,
+                            size: 16,
+                            color: totalProfit >= 0 ? Colors.green.shade700 : Colors.red.shade700,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${totalProfit >= 0 ? '+' : ''}\$${totalProfit.toStringAsFixed(2)}',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: totalProfit >= 0 ? Colors.green.shade700 : Colors.red.shade700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              
+              // Secondary metrics row
+              if (totalDividends > 0) ...[
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.green.shade100,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.green.shade300),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.attach_money,
+                            size: 14,
+                            color: Colors.green.shade700,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Dividends: \$${totalDividends.toStringAsFixed(2)}/s',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.green.shade700,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
               ],
-            ),
+            ],
           ),
         );
       },
     );
   }
   
-  Widget _buildOwnedInvestmentsList() {
+  Widget _buildInvestmentsList() {
     return Consumer<GameState>(
       builder: (context, gameState, _) {
-        // Filter to only owned investments
         List<Investment> ownedInvestments = gameState.investments
             .where((investment) => investment.owned > 0)
             .toList();
-        
-        // Sort based on selected mode
+
+        // Sort investments
         _sortInvestments(ownedInvestments);
-        
+
         if (ownedInvestments.isEmpty) {
-          return const Center(
-            child: Text(
-              'You don\'t own any investments yet',
-              style: TextStyle(
-                color: Colors.grey,
-                fontSize: 16,
+          return SizedBox(
+            height: 200, // Fixed height for empty state
+            child: Center(
+              child: Container(
+                padding: const EdgeInsets.all(32),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade100,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.account_balance_wallet_outlined,
+                        size: 48,
+                        color: Colors.grey.shade400,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'No Investments Yet',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Start building your portfolio by\npurchasing some investments!',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey.shade500,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           );
         }
-        
+
         return ListView.builder(
           shrinkWrap: true,
           itemCount: ownedInvestments.length,
@@ -275,86 +337,284 @@ class _PortfolioWidgetState extends State<PortfolioWidget> {
                   ),
                 );
               },
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: Row(
-                  children: [
-                    // Investment icon
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: investment.color.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Icon(
-                        investment.icon,
-                        size: 24,
-                        color: investment.color,
-                      ),
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey.shade200),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.shade100,
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
                     ),
-                    
-                    const SizedBox(width: 12),
-                    
-                    // Investment details
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            investment.name,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                          Row(
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    // Header Row
+                    Row(
+                      children: [
+                        // Investment Icon & Name
+                        Expanded(
+                          child: Row(
                             children: [
-                              Text('${investment.owned} shares'),
-                              const SizedBox(width: 8),
-                              if (investment.hasDividends())
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: investment.category == 'Stock' 
+                                      ? Colors.blue.shade50
+                                      : investment.category == 'Bond'
+                                          ? Colors.green.shade50
+                                          : Colors.orange.shade50,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Icon(
+                                  investment.category == 'Stock' 
+                                      ? Icons.trending_up
+                                      : investment.category == 'Bond'
+                                          ? Icons.account_balance
+                                          : Icons.business,
+                                  color: investment.category == 'Stock' 
+                                      ? Colors.blue.shade600
+                                      : investment.category == 'Bond'
+                                          ? Colors.green.shade600
+                                          : Colors.orange.shade600,
+                                  size: 20,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Icon(
-                                      Icons.payments,
-                                      size: 12,
-                                      color: Colors.green.shade700,
-                                    ),
-                                    const SizedBox(width: 2),
                                     Text(
-                                      '\$${investment.getDividendIncomePerSecond().toStringAsFixed(2)}/s',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.green.shade700,
+                                      investment.name,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 15,
                                       ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    Row(
+                                      children: [
+                                        Text(
+                                          '${investment.owned} shares',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey.shade600,
+                                          ),
+                                        ),
+                                        if (investment.hasDividends()) ...[
+                                          const SizedBox(width: 6),
+                                          Flexible(
+                                            child: Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: Colors.green.shade100,
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Icon(
+                                                    Icons.attach_money,
+                                                    size: 10,
+                                                    color: Colors.green.shade700,
+                                                  ),
+                                                  Text(
+                                                    'DIV',
+                                                    style: TextStyle(
+                                                      fontSize: 8,
+                                                      color: Colors.green.shade700,
+                                                      fontWeight: FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ],
                                     ),
                                   ],
                                 ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        
+                        // Total Value
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              '\$${investment.getCurrentValue().toStringAsFixed(2)}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
+                            ),
+                            Text(
+                              '\$${investment.currentPrice.toStringAsFixed(2)}/share',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey.shade600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    
+                    const SizedBox(height: 12),
+                    
+                    // Performance Section
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Column(
+                        children: [
+                          // Purchase info row
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Avg. cost: \$${investment.purchasePrice.toStringAsFixed(2)}',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.grey.shade600,
+                                ),
+                              ),
+                              Text(
+                                'Total invested: \$${(investment.purchasePrice * investment.owned).toStringAsFixed(2)}',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.grey.shade600,
+                                ),
+                              ),
+                            ],
+                          ),
+                          
+                          const SizedBox(height: 8),
+                          
+                          // P&L and Market Performance Row
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              // Your P&L (Most Important)
+                              Expanded(
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+                                  decoration: BoxDecoration(
+                                    color: investment.getProfitLoss() >= 0 ? Colors.green.shade50 : Colors.red.shade50,
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(
+                                      color: investment.getProfitLoss() >= 0 ? Colors.green.shade200 : Colors.red.shade200,
+                                    ),
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      Text(
+                                        'Your P&L',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          color: Colors.grey.shade600,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            investment.getProfitLoss() >= 0 ? Icons.trending_up : Icons.trending_down,
+                                            size: 12,
+                                            color: investment.getProfitLoss() >= 0 ? Colors.green.shade700 : Colors.red.shade700,
+                                          ),
+                                          const SizedBox(width: 2),
+                                          Text(
+                                            '\$${investment.getProfitLoss().toStringAsFixed(2)}',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.bold,
+                                              color: investment.getProfitLoss() >= 0 ? Colors.green.shade700 : Colors.red.shade700,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      Text(
+                                        '${investment.getProfitLoss() >= 0 ? '+' : ''}${investment.getProfitLossPercentage().toStringAsFixed(1)}%',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: investment.getProfitLoss() >= 0 ? Colors.green.shade600 : Colors.red.shade600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              
+                              const SizedBox(width: 12),
+                              
+                              // Market Performance (Secondary)
+                              Expanded(
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.shade50,
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(color: Colors.grey.shade200),
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      Text(
+                                        'Market Today',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          color: Colors.grey.shade600,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            priceChange >= 0 ? Icons.arrow_upward : Icons.arrow_downward,
+                                            size: 10,
+                                            color: priceChange >= 0 ? Colors.green.shade600 : Colors.red.shade600,
+                                          ),
+                                          const SizedBox(width: 2),
+                                          Text(
+                                            '${priceChange >= 0 ? '+' : ''}${priceChange.toStringAsFixed(1)}%',
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              color: priceChange >= 0 ? Colors.green.shade600 : Colors.red.shade600,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      Text(
+                                        'vs. yesterday',
+                                        style: TextStyle(
+                                          fontSize: 9,
+                                          color: Colors.grey.shade500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
                             ],
                           ),
                         ],
                       ),
-                    ),
-                    
-                    // Price and change
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          '\$${investment.getCurrentValue().toStringAsFixed(2)}',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Text(
-                          '${priceChange >= 0 ? '+' : ''}${priceChange.toStringAsFixed(2)}%',
-                          style: TextStyle(
-                            color: priceChange >= 0 ? Colors.green : Colors.red,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
                     ),
                   ],
                 ),
@@ -368,19 +628,13 @@ class _PortfolioWidgetState extends State<PortfolioWidget> {
   
   void _sortInvestments(List<Investment> investments) {
     switch (_sortMode) {
-      case 'Value (High to Low)':
+      case 'value':
         investments.sort((a, b) => b.getCurrentValue().compareTo(a.getCurrentValue()));
         break;
-      case 'Value (Low to High)':
-        investments.sort((a, b) => a.getCurrentValue().compareTo(b.getCurrentValue()));
+      case 'profit':
+        investments.sort((a, b) => b.getProfitLoss().compareTo(a.getProfitLoss()));
         break;
-      case 'Profit/Loss (Best First)':
-        investments.sort((a, b) => b.getProfitLossPercentage().compareTo(a.getProfitLossPercentage()));
-        break;
-      case 'Profit/Loss (Worst First)':
-        investments.sort((a, b) => a.getProfitLossPercentage().compareTo(b.getProfitLossPercentage()));
-        break;
-      case 'Alphabetical':
+      case 'name':
         investments.sort((a, b) => a.name.compareTo(b.name));
         break;
     }
