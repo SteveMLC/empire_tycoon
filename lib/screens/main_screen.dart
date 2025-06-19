@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../models/game_state.dart';
-import '../services/game_service.dart';
 import '../services/income_service.dart';
 import 'business_screen.dart';
 import 'investment_screen.dart';
@@ -15,6 +14,7 @@ import 'user_profile_screen.dart';
 import '../widgets/main_screen/top_panel.dart';
 import '../widgets/main_screen/main_tab_bar.dart';
 import '../widgets/main_screen/notification_section.dart';
+import '../widgets/empire_loading_screen.dart';
 
 /// Main screen of the app, refactored to use smaller, more maintainable component files.
 /// Components extracted include:
@@ -189,20 +189,9 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
         }
 
         if (!gameState.isInitialized) {
-          return const Scaffold(
-            body: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 20),
-                  Text(
-                    'Loading game...',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
-            ),
+          return const EmpireLoadingScreen(
+            loadingText: 'EMPIRE TYCOON',
+            subText: 'Finalizing your business empire...',
           );
         }
         

@@ -800,73 +800,168 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             // Google Play Games Services login button
             Consumer<AuthService>(
               builder: (context, authService, child) {
-                return SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: authService.isInitialized 
-                        ? (authService.isSignedIn 
-                            ? () async {
-                                // Sign out
-                                await authService.signOut();
-                                // Update game state
-                                gameState.isGooglePlayConnected = false;
-                                gameState.googlePlayPlayerId = null;
-                                gameState.googlePlayDisplayName = null;
-                                gameState.googlePlayAvatarUrl = null;
-                                // Save the changes
-                                Provider.of<GameService>(context, listen: false).saveGame();
-                              }
-                            : () async {
-                                // Sign in
-                                final success = await authService.signIn();
-                                if (success) {
-                                  // Update game state
-                                  gameState.isGooglePlayConnected = true;
-                                  gameState.googlePlayPlayerId = authService.playerId;
-                                  gameState.googlePlayDisplayName = authService.playerName;
-                                  gameState.googlePlayAvatarUrl = authService.playerAvatarUrl;
-                                  gameState.lastCloudSync = DateTime.now();
-                                  // Save the changes
-                                  Provider.of<GameService>(context, listen: false).saveGame();
-                                  
-                                  // Show success message
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Successfully signed in to Google Play Games!'),
-                                      backgroundColor: Colors.green,
-                                      duration: Duration(seconds: 3),
-                                    ),
-                                  );
-                                } else {
-                                  // Show error message
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Failed to sign in to Google Play Games'),
-                                      backgroundColor: Colors.red,
-                                      duration: Duration(seconds: 3),
-                                    ),
-                                  );
-                                }
-                              }
-                          )
-                        : null, // Disabled while initializing
-                    icon: Icon(
-                      authService.isSignedIn ? Icons.logout : Icons.games,
-                      color: Colors.white,
+                return Column(
+                  children: [
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: authService.isInitialized 
+                            ? (authService.isSignedIn 
+                                ? () async {
+                                    // Sign out
+                                    await authService.signOut();
+                                    // Update game state
+                                    gameState.isGooglePlayConnected = false;
+                                    gameState.googlePlayPlayerId = null;
+                                    gameState.googlePlayDisplayName = null;
+                                    gameState.googlePlayAvatarUrl = null;
+                                    // Save the changes
+                                    Provider.of<GameService>(context, listen: false).saveGame();
+                                  }
+                                : () async {
+                                    // Show loading state
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Row(
+                                          children: [
+                                            SizedBox(
+                                              width: 20,
+                                              height: 20,
+                                              child: CircularProgressIndicator(strokeWidth: 2),
+                                            ),
+                                            SizedBox(width: 16),
+                                            Text('Signing in to Google Play Games...'),
+                                          ],
+                                        ),
+                                        duration: Duration(seconds: 10),
+                                      ),
+                                    );
+                                    
+                                    // Sign in
+                                    final success = await authService.signIn();
+                                    
+                                    // Clear the loading message
+                                    ScaffoldMessenger.of(context).clearSnackBars();
+                                    
+                                    if (success) {
+                                      // Update game state
+                                      gameState.isGooglePlayConnected = true;
+                                      gameState.googlePlayPlayerId = authService.playerId;
+                                      gameState.googlePlayDisplayName = authService.playerName;
+                                      gameState.googlePlayAvatarUrl = authService.playerAvatarUrl;
+                                      gameState.lastCloudSync = DateTime.now();
+                                      // Save the changes
+                                      Provider.of<GameService>(context, listen: false).saveGame();
+                                      
+                                      // Show success message
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Row(
+                                            children: [
+                                              const Icon(Icons.check_circle, color: Colors.white),
+                                              const SizedBox(width: 8),
+                                              Text('Successfully signed in to Google Play Games!${authService.playerName != null ? ' Welcome, ${authService.playerName}!' : ''}'),
+                                            ],
+                                          ),
+                                          backgroundColor: Colors.green,
+                                          duration: const Duration(seconds: 4),
+                                        ),
+                                      );
+                                    } else {
+                                      // Show detailed error message
+                                      final errorMsg = authService.lastError ?? 'Failed to sign in to Google Play Games';
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Row(
+                                            children: [
+                                              const Icon(Icons.error, color: Colors.white),
+                                              const SizedBox(width: 8),
+                                              Expanded(child: Text(errorMsg)),
+                                            ],
+                                          ),
+                                          backgroundColor: Colors.red,
+                                          duration: const Duration(seconds: 6),
+                                          action: SnackBarAction(
+                                            label: 'Debug Info',
+                                            textColor: Colors.white,
+                                            onPressed: () {
+                                              // Show debug information
+                                              showDialog(
+                                                context: context,
+                                                builder: (context) => AlertDialog(
+                                                  title: const Text('Debug Information'),
+                                                  content: SingleChildScrollView(
+                                                    child: Text(
+                                                      authService.getDiagnosticInfo().entries
+                                                          .map((e) => '${e.key}: ${e.value}')
+                                                          .join('\n'),
+                                                      style: const TextStyle(fontFamily: 'monospace'),
+                                                    ),
+                                                  ),
+                                                  actions: [
+                                                    TextButton(
+                                                      onPressed: () => Navigator.of(context).pop(),
+                                                      child: const Text('Close'),
+                                                    ),
+                                                  ],
+                                                ),
+                                              );
+                                            },
+                                          ),
+                                        ),
+                                      );
+                                    }
+                                  }
+                              )
+                            : null, // Disabled while initializing
+                        icon: Icon(
+                          authService.isSignedIn ? Icons.logout : Icons.games,
+                          color: Colors.white,
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: authService.isSignedIn ? Colors.orange : Colors.green,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        label: Text(
+                          authService.isInitialized 
+                              ? (authService.isSignedIn 
+                                  ? 'Sign out from Google Play Games'
+                                  : 'Sign in with Google Play Games')
+                              : 'Initializing...',
+                        ),
+                      ),
                     ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: authService.isSignedIn ? Colors.orange : Colors.green,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    label: Text(
-                      authService.isInitialized 
-                          ? (authService.isSignedIn 
-                              ? 'Sign out from Google Play Games'
-                              : 'Sign in with Google Play Games')
-                          : 'Initializing...',
-                    ),
-                  ),
+                    
+                    // Show error message if there's one
+                    if (authService.lastError != null && !authService.isSignedIn) ...[
+                      const SizedBox(height: 8),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.red.shade50,
+                          border: Border.all(color: Colors.red.shade200),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.warning, color: Colors.red.shade700, size: 16),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                authService.lastError!,
+                                style: TextStyle(
+                                  color: Colors.red.shade700,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
                 );
               },
             ),
@@ -1523,7 +1618,78 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                       ),
                     ),
 
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16),
+
+                    // Restore Purchases Button
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: () async {
+                          final gameService = Provider.of<GameService>(context, listen: false);
+                          
+                          // Show loading
+                          showDialog(
+                            context: context,
+                            barrierDismissible: false,
+                            builder: (context) => const AlertDialog(
+                              content: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  CircularProgressIndicator(),
+                                  SizedBox(height: 16),
+                                  Text('Restoring purchases...'),
+                                ],
+                              ),
+                            ),
+                          );
+                          
+                          await gameService.restorePurchases(
+                            onComplete: (bool success, String? error) {
+                              Navigator.of(context).pop(); // Close loading
+                              
+                              if (success) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    backgroundColor: Colors.green,
+                                    content: Row(
+                                      children: [
+                                        Icon(Icons.check_circle, color: Colors.white),
+                                        SizedBox(width: 8),
+                                        Text('Purchases restored successfully'),
+                                      ],
+                                    ),
+                                    duration: Duration(seconds: 3),
+                                  ),
+                                );
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    backgroundColor: Colors.orange,
+                                    content: Row(
+                                      children: [
+                                        const Icon(Icons.info_outline, color: Colors.white),
+                                        const SizedBox(width: 8),
+                                        Expanded(child: Text(error ?? 'No purchases found to restore')),
+                                      ],
+                                    ),
+                                    duration: const Duration(seconds: 3),
+                                  ),
+                                );
+                              }
+                            },
+                          );
+                        },
+                        icon: const Icon(Icons.restore),
+                        label: const Text('Restore Purchases'),
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(color: Colors.purple.shade300),
+                          foregroundColor: Colors.purple.shade700,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
 
                     // Enhanced Purchase Button with Better Call-to-Action
                     Container(
@@ -1798,32 +1964,99 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () {
-              print("🅿️ Premium Purchase Button Pressed."); // Log before call
-              // TODO: Implement actual purchase logic with Google Play Store
-              // For now, just enable premium immediately
-
-              // Log hashCode of the gameState instance used in onPressed
-              print("🅿️ onPressed using gameState hashCode: ${gameState.hashCode}");
-
-              // Option 1: Try accessing via Provider directly
-              Provider.of<GameState>(context, listen: false).enablePremium();
-              print("🅿️ Called Provider.of<GameState>.enablePremium()");
-
+            onPressed: () async {
+              print("🅿️ Premium Purchase Button Pressed.");
+              
+              final gameService = Provider.of<GameService>(context, listen: false);
+              
+              // Check if billing is available
+              if (!gameService.isPremiumAvailable()) {
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Purchase not available. Please try again later.'),
+                    backgroundColor: Colors.red,
+                    duration: Duration(seconds: 3),
+                  ),
+                );
+                return;
+              }
+              
+              // Close dialog first to avoid UI conflicts
               Navigator.of(context).pop();
-
-              // Play the sound effect AFTER enabling premium
-              Provider.of<GameService>(context, listen: false)
-                  .soundManager
-                  .playAchievementMilestoneSound();
-
-              // Snackbar is less important now with the dedicated notification, but keep for backup
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
-                  content: Text('Premium features activated! +1500 Platinum!'),
-                  duration: const Duration(seconds: 4),
+              
+              // Show loading indicator
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (context) => const AlertDialog(
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircularProgressIndicator(),
+                      SizedBox(height: 16),
+                      Text('Processing purchase...'),
+                    ],
+                  ),
                 ),
+              );
+              
+              // Initiate actual Google Play purchase
+              await gameService.purchasePremium(
+                onComplete: (bool success, String? error) {
+                  // Close loading dialog
+                  Navigator.of(context).pop();
+                  
+                  if (success) {
+                    print("🟢 Premium purchase successful!");
+                    
+                    // Enable premium features
+                    Provider.of<GameState>(context, listen: false).enablePremium();
+                    
+                    // Play success sound
+                    gameService.playAchievementMilestoneSound();
+                    
+                    // Show success message
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        backgroundColor: Colors.green,
+                        content: const Row(
+                          children: [
+                            Icon(Icons.check_circle, color: Colors.white),
+                            SizedBox(width: 8),
+                            Text('Premium features activated! +1500 Platinum!'),
+                          ],
+                        ),
+                        duration: const Duration(seconds: 4),
+                      ),
+                    );
+                  } else {
+                    print("🔴 Premium purchase failed: $error");
+                    
+                    // Play error sound
+                    gameService.playFeedbackErrorSound();
+                    
+                    // Show error message
+                    String displayError = error ?? 'Purchase failed';
+                    if (displayError.toLowerCase().contains('cancel')) {
+                      displayError = 'Purchase was cancelled';
+                    }
+                    
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        backgroundColor: Colors.red,
+                        content: Row(
+                          children: [
+                            const Icon(Icons.error_outline, color: Colors.white),
+                            const SizedBox(width: 8),
+                            Expanded(child: Text(displayError)),
+                          ],
+                        ),
+                        duration: const Duration(seconds: 4),
+                      ),
+                    );
+                  }
+                },
               );
             },
             style: TextButton.styleFrom(foregroundColor: Colors.purple),

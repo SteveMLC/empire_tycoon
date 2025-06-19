@@ -5,7 +5,7 @@ description: "Build your global business empire! A sophisticated idle tycoon gam
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' 
 
-version: 1.0.0+104
+version: 1.0.0+109
 # Version format: [major].[minor].[patch]+[build-number]
 # The build number (100) is used by Android as versionCode
 
@@ -44,6 +44,9 @@ dependencies:
   
   # Google Mobile Ads SDK for AdMob integration
   google_mobile_ads: ^5.1.0
+  
+  # Google Play Billing for in-app purchases
+  in_app_purchase: ^3.1.13
 
 dev_dependencies:
   flutter_test:

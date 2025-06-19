@@ -9,6 +9,7 @@ import 'services/income_service.dart';
 import 'services/auth_service.dart';
 import 'services/admob_service.dart';
 import 'screens/platinum_vault_screen.dart';
+import 'widgets/empire_loading_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -120,6 +121,18 @@ class _GameInitializerState extends State<GameInitializer> {
       await adMobService.initialize();
       print('Game initializer: Finished AdMob initialization');
       
+      // ADDED: Check if user has previously purchased premium
+      print('Game initializer: Checking premium ownership');
+      final hasPremium = await _gameService!.checkPremiumOwnership();
+      if (hasPremium) {
+        final gameState = Provider.of<GameState>(context, listen: false);
+        if (!gameState.isPremium) {
+          print('Game initializer: Restoring premium features');
+          gameState.enablePremium();
+        }
+      }
+      print('Game initializer: Finished premium ownership check');
+      
       setState(() {
         _isInitialized = true;
       });
@@ -168,20 +181,9 @@ class _GameInitializerState extends State<GameInitializer> {
         );
       }
       
-      return Scaffold(
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: const [
-              CircularProgressIndicator(),
-              SizedBox(height: 20),
-              Text(
-                'Loading game...',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-            ],
-          ),
-        ),
+      return const EmpireLoadingScreen(
+        loadingText: 'EMPIRE TYCOON',
+        subText: 'Loading your business empire...',
       );
     }
     

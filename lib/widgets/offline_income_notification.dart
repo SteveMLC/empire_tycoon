@@ -561,9 +561,14 @@ class _OfflineIncomeNotificationState extends State<OfflineIncomeNotification>
                                                       
                                                       // Show AdMob rewarded ad for offline income boost
                                                       adMobService.showOfflineIncomeBoostAd(
-                                                        onRewardEarned: () {
-                                                          // User successfully watched the ad
-                                                          gameState.setOfflineIncomeAdWatched(true);
+                                                        onRewardEarned: (String rewardType) {
+                                                          // Verify we received the correct reward type
+                                                          if (rewardType == 'OfflineIncomeBoost') {
+                                                            // User successfully watched the ad
+                                                            gameState.setOfflineIncomeAdWatched(true);
+                                                          } else {
+                                                            print('Warning: Expected OfflineIncomeBoost reward but received: $rewardType');
+                                                          }
                                                         },
                                                         onAdFailure: () async {
                                                           // Ad failed to show, show error message

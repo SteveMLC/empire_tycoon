@@ -748,27 +748,32 @@ class _BusinessItemState extends State<BusinessItem> {
                 } else {
                   // Regular users need to watch an ad
                   adMobService.showBuildSkipAd(
-                    onRewardEarned: () {
-                      // User successfully watched the ad
-                      gameState.speedUpUpgradeWithAd(
-                        business.id,
-                        onAdCompleted: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Speed up successful! 15 minutes reduced.'),
-                              duration: Duration(seconds: 2),
-                            ),
-                          );
-                        },
-                        onAdFailed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Speed up failed. Please try again.'),
-                              duration: Duration(seconds: 2),
-                            ),
-                          );
-                        },
-                      );
+                    onRewardEarned: (String rewardType) {
+                      // Verify we received the correct reward type
+                      if (rewardType == 'BuildingUpgradeBoost') {
+                        // User successfully watched the ad
+                        gameState.speedUpUpgradeWithAd(
+                          business.id,
+                          onAdCompleted: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Speed up successful! 15 minutes reduced.'),
+                                duration: Duration(seconds: 2),
+                              ),
+                            );
+                          },
+                          onAdFailed: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Speed up failed. Please try again.'),
+                                duration: Duration(seconds: 2),
+                              ),
+                            );
+                          },
+                        );
+                      } else {
+                        print('Warning: Expected BuildingUpgradeBoost reward but received: $rewardType');
+                      }
                     },
                     onAdFailure: () {
                       // Ad failed to show

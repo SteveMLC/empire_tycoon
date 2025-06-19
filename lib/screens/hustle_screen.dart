@@ -201,25 +201,30 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
     
     // Show AdMob rewarded ad
     adMobService.showHustleBoostAd(
-      onRewardEarned: () {
+      onRewardEarned: (String rewardType) {
         if (!mounted) return;
         
-        // User watched the ad successfully, give the boost
-        gameState.startAdBoost();
-        
-        // Update local state for UI
-        setState(() {
-          _isWatchingAd = false;
-        });
-        
-        try {
-          GameService? gameService = Provider.of<GameService>(context, listen: false);
-          gameService.soundManager.playFeedbackNotificationSound();
-        } catch (e) {
-          // Only log boost sound errors occasionally to reduce spam
-          if (DateTime.now().second % 30 == 0) {
-            print("Could not play boost success sound: $e");
+        // Verify we received the correct reward type
+        if (rewardType == 'HustleBoost') {
+          // User watched the ad successfully, give the boost
+          gameState.startAdBoost();
+          
+          // Update local state for UI
+          setState(() {
+            _isWatchingAd = false;
+          });
+          
+          try {
+            GameService? gameService = Provider.of<GameService>(context, listen: false);
+            gameService.soundManager.playFeedbackNotificationSound();
+          } catch (e) {
+            // Only log boost sound errors occasionally to reduce spam
+            if (DateTime.now().second % 30 == 0) {
+              print("Could not play boost success sound: $e");
+            }
           }
+        } else {
+          print('Warning: Expected HustleBoost reward but received: $rewardType');
         }
       },
       onAdFailure: () {

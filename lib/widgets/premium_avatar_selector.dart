@@ -332,23 +332,93 @@ class _PremiumAvatarSelectorState extends State<PremiumAvatarSelector> with Sing
             child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () {
-              // Enable premium
-              Provider.of<GameState>(context, listen: false).enablePremium();
+            onPressed: () async {
+              final gameService = Provider.of<GameService>(context, listen: false);
+              
+              // Check if billing is available
+              if (!gameService.isPremiumAvailable()) {
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Purchase not available. Please try again later.'),
+                    backgroundColor: Colors.red,
+                    duration: Duration(seconds: 3),
+                  ),
+                );
+                return;
+              }
+              
+              // Close dialog first
               Navigator.of(context).pop();
               
-              // Play sound effect
-              Provider.of<GameService>(context, listen: false)
-                  .soundManager
-                  .playAchievementMilestoneSound();
-              
-              // Show confirmation
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
-                  content: const Text('Premium features activated! +1500 Platinum!'),
-                  duration: const Duration(seconds: 4),
+              // Show loading indicator
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (context) => const AlertDialog(
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircularProgressIndicator(),
+                      SizedBox(height: 16),
+                      Text('Processing purchase...'),
+                    ],
+                  ),
                 ),
+              );
+              
+              // Initiate Google Play purchase
+              await gameService.purchasePremium(
+                onComplete: (bool success, String? error) {
+                  // Close loading dialog
+                  Navigator.of(context).pop();
+                  
+                  if (success) {
+                    // Enable premium features
+                    Provider.of<GameState>(context, listen: false).enablePremium();
+                    
+                    // Play success sound
+                    gameService.playAchievementMilestoneSound();
+                    
+                    // Show success message
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        backgroundColor: Colors.green,
+                        content: const Row(
+                          children: [
+                            Icon(Icons.check_circle, color: Colors.white),
+                            SizedBox(width: 8),
+                            Text('Premium features activated! +1500 Platinum!'),
+                          ],
+                        ),
+                        duration: const Duration(seconds: 4),
+                      ),
+                    );
+                  } else {
+                    // Play error sound
+                    gameService.playFeedbackErrorSound();
+                    
+                    // Show error message
+                    String displayError = error ?? 'Purchase failed';
+                    if (displayError.toLowerCase().contains('cancel')) {
+                      displayError = 'Purchase was cancelled';
+                    }
+                    
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        backgroundColor: Colors.red,
+                        content: Row(
+                          children: [
+                            const Icon(Icons.error_outline, color: Colors.white),
+                            const SizedBox(width: 8),
+                            Expanded(child: Text(displayError)),
+                          ],
+                        ),
+                        duration: const Duration(seconds: 4),
+                      ),
+                    );
+                  }
+                },
               );
             },
             style: TextButton.styleFrom(foregroundColor: Colors.purple),

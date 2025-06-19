@@ -10,6 +10,7 @@ import 'components/timer_service.dart';
 import 'components/persistence_service.dart';
 import 'components/diagnostic_service.dart';
 import 'income_service.dart'; // ADDED: Import IncomeService
+import 'billing_service.dart'; // ADDED: Import BillingService for Google Play purchases
 
 class GameService {
   final SharedPreferences _prefs;
@@ -22,6 +23,7 @@ class GameService {
   late final PersistenceService _persistenceService;
   late final DiagnosticService _diagnosticService;
   late final IncomeService _incomeService; // ADDED: IncomeService for consistent income calculation
+  late final BillingService _billingService; // ADDED: BillingService for Google Play purchases
   
   // Expose soundManager for backward compatibility
   // This will be removed once all direct soundManager references are updated
@@ -31,6 +33,7 @@ class GameService {
     // Initialize component services
     _soundService = SoundService();
     _incomeService = IncomeService(); // ADDED: Initialize IncomeService
+    _billingService = BillingService(); // ADDED: Initialize BillingService
     _timerService = TimerService(_gameState, _performAutoSave);
     _persistenceService = PersistenceService(_prefs, _gameState, incomeService: _incomeService); // UPDATED: Pass IncomeService
     _diagnosticService = DiagnosticService(
@@ -72,6 +75,9 @@ class GameService {
 
       // Initialize sound service
       await _soundService.init();
+      
+      // Initialize billing service
+      await _billingService.initialize();
       
       // Check game version and clear data if needed
       await _persistenceService.checkVersion();
@@ -150,6 +156,7 @@ class GameService {
   void dispose() {
     print("🧹 Disposing GameService");
     _cancelAllTimers();
+    _billingService.dispose(); // ADDED: Dispose billing service
   }
 
   // Sound methods delegated to SoundService
@@ -239,5 +246,31 @@ class GameService {
   // Helper method for DiagnosticService
   void _setLastGameUpdateTime(DateTime time) {
     _timerService.setLastGameUpdateTime(time);
+  }
+  
+  // ADDED: Billing service methods
+  /// Purchase premium features through Google Play Store
+  Future<void> purchasePremium({required Function(bool success, String? error) onComplete}) async {
+    await _billingService.purchasePremium(onComplete: onComplete);
+  }
+  
+  /// Restore previous purchases
+  Future<void> restorePurchases({required Function(bool success, String? error) onComplete}) async {
+    await _billingService.restorePurchases(onComplete: onComplete);
+  }
+  
+  /// Check if user has purchased premium (for app startup)
+  Future<bool> checkPremiumOwnership() async {
+    return await _billingService.checkPremiumOwnership();
+  }
+  
+  /// Check if premium purchase is available
+  bool isPremiumAvailable() {
+    return _billingService.isPremiumAvailable();
+  }
+  
+  /// Get localized price for premium
+  String getPremiumPrice() {
+    return _billingService.getPremiumPrice();
   }
 }

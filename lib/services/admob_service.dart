@@ -5,25 +5,33 @@ import 'dart:async';
 
 /// AdMob service for handling rewarded ads across the Empire Tycoon game
 /// 
-/// This service manages four primary ad placements:
-/// 1. Hustle Boost (10x earnings for 60 seconds)
-/// 2. Build Upgrade Skip (reduce upgrade time by 15 minutes)
-/// 3. Event Clear (resolve events immediately)
-/// 4. Offline Income Boost (2x offline income)
+/// This service manages four primary ad placements with proper reward validation:
+/// 1. HustleBoost (10x earnings for 60 seconds) - Reward: 'HustleBoost'
+/// 2. BuildingUpgradeBoost (reduce upgrade time by 15 minutes) - Reward: 'BuildingUpgradeBoost'
+/// 3. EventAdSkip (resolve events immediately) - Reward: 'EventAdSkip'
+/// 4. OfflineIncomeBoost (2x offline income) - Reward: 'OfflineIncomeBoost'
+/// 
+/// Each reward ad provides the adtype and rewardtype matching the ad name.
+/// The reward for watching an ad is the adname itself.
 class AdMobService {
   static AdMobService? _instance;
   static AdMobService get instance => _instance ??= AdMobService._internal();
   
   AdMobService._internal();
 
+  // ⚠️ PLAY STORE SUBMISSION FLAG ⚠️
+  // Set this to FALSE when submitting to Google Play Store
+  // Set this to TRUE after approval with production ad unit IDs
+  static const bool _adsEnabled = true;
+
   // Test Ad Unit IDs (use these during development/testing)
   static const String _testRewardedAdUnitId = 'ca-app-pub-3940256099942544/5224354917';
   
-  // Production Ad Unit IDs (replace these with your actual AdMob ad unit IDs)
-  static const String _prodHustleBoostAdUnitId = 'ca-app-pub-1738655803893663/HUSTLE_BOOST_AD_UNIT';
-  static const String _prodBuildSkipAdUnitId = 'ca-app-pub-1738655803893663/BUILD_SKIP_AD_UNIT';
-  static const String _prodEventClearAdUnitId = 'ca-app-pub-1738655803893663/EVENT_CLEAR_AD_UNIT';
-  static const String _prodOfflineIncomeBoostAdUnitId = 'ca-app-pub-1738655803893663/OFFLINE_INCOME_BOOST_AD_UNIT';
+  // Production Ad Unit IDs (updated with actual AdMob ad unit IDs)
+  static const String _prodHustleBoostAdUnitId = 'ca-app-pub-1738655803893663/5010660196';
+  static const String _prodBuildSkipAdUnitId = 'ca-app-pub-1738655803893663/3789077869';
+  static const String _prodEventClearAdUnitId = 'ca-app-pub-1738655803893663/4305735571';
+  static const String _prodOfflineIncomeBoostAdUnitId = 'ca-app-pub-1738655803893663/2711799918';
 
   // Test device IDs for development (add your device IDs here)
   static const List<String> _testDeviceIds = [
@@ -54,10 +62,10 @@ class AdMobService {
   DateTime? _sessionStartTime;
 
   // Ad availability states
-  bool get isHustleBoostAdReady => _hustleBoostAd != null;
-  bool get isBuildSkipAdReady => _buildSkipAd != null;
-  bool get isEventClearAdReady => _eventClearAd != null;
-  bool get isOfflineIncomeBoostAdReady => _offlineIncomeBoostAd != null;
+  bool get isHustleBoostAdReady => _adsEnabled ? _hustleBoostAd != null : true;
+  bool get isBuildSkipAdReady => _adsEnabled ? _buildSkipAd != null : true;
+  bool get isEventClearAdReady => _adsEnabled ? _eventClearAd != null : true;
+  bool get isOfflineIncomeBoostAdReady => _adsEnabled ? _offlineIncomeBoostAd != null : true;
 
   // Get last error for debugging
   String? get lastAdError => _lastAdError;
@@ -77,6 +85,15 @@ class AdMobService {
       
       if (kDebugMode) {
         print('🎯 Starting AdMob SDK initialization...');
+        print('🎯 Ads Enabled: $_adsEnabled');
+      }
+      
+      // Skip AdMob initialization if ads are disabled
+      if (!_adsEnabled) {
+        if (kDebugMode) {
+          print('🎯 AdMob disabled for Play Store submission - skipping initialization');
+        }
+        return;
       }
       
       await MobileAds.instance.initialize();
@@ -186,6 +203,7 @@ class AdMobService {
 
   // Simplified ad loading methods
   Future<void> _loadHustleBoostAd() async {
+    if (!_adsEnabled) return; // Skip loading if ads are disabled
     if (_isHustleBoostAdLoading || _hustleBoostAd != null) return;
     _isHustleBoostAdLoading = true;
     
@@ -211,6 +229,7 @@ class AdMobService {
   }
 
   Future<void> _loadBuildSkipAd() async {
+    if (!_adsEnabled) return; // Skip loading if ads are disabled
     if (_isBuildSkipAdLoading || _buildSkipAd != null) return;
     _isBuildSkipAdLoading = true;
     
@@ -235,6 +254,7 @@ class AdMobService {
   }
 
   Future<void> _loadEventClearAd() async {
+    if (!_adsEnabled) return; // Skip loading if ads are disabled
     if (_isEventClearAdLoading || _eventClearAd != null) return;
     _isEventClearAdLoading = true;
     
@@ -259,6 +279,7 @@ class AdMobService {
   }
 
   Future<void> _loadOfflineIncomeBoostAd() async {
+    if (!_adsEnabled) return; // Skip loading if ads are disabled
     if (_isOfflineIncomeBoostAdLoading || _offlineIncomeBoostAd != null) return;
     _isOfflineIncomeBoostAdLoading = true;
     
@@ -282,11 +303,20 @@ class AdMobService {
     );
   }
 
-  // Simplified show methods
+  // Simplified show methods with proper reward type validation
   Future<void> showHustleBoostAd({
-    required Function() onRewardEarned,
+    required Function(String rewardType) onRewardEarned,
     Function()? onAdFailure,
   }) async {
+    // If ads are disabled, immediately grant reward (for Play Store submission)
+    if (!_adsEnabled) {
+      if (kDebugMode) {
+        print('🎯 Ads disabled - granting HustleBoost reward directly');
+      }
+      onRewardEarned('HustleBoost');
+      return;
+    }
+    
     if (_hustleBoostAd == null) {
       await _loadHustleBoostAd();
       if (_hustleBoostAd == null) {
@@ -311,19 +341,29 @@ class AdMobService {
 
     await _hustleBoostAd!.show(
       onUserEarnedReward: (AdWithoutView ad, RewardItem reward) {
-        _trackAdShown('Hustle Boost');
+        _trackAdShown('HustleBoost');
         if (kDebugMode) {
-          print('🎁 User earned Hustle Boost reward: ${reward.amount} ${reward.type}');
+          print('🎁 User earned HustleBoost reward: ${reward.amount} ${reward.type}');
         }
-        onRewardEarned();
+        // Provide HustleBoost as the reward type
+        onRewardEarned('HustleBoost');
       },
     );
   }
 
   Future<void> showBuildSkipAd({
-    required Function() onRewardEarned,
+    required Function(String rewardType) onRewardEarned,
     Function()? onAdFailure,
   }) async {
+    // If ads are disabled, immediately grant reward (for Play Store submission)
+    if (!_adsEnabled) {
+      if (kDebugMode) {
+        print('🎯 Ads disabled - granting BuildingUpgradeBoost reward directly');
+      }
+      onRewardEarned('BuildingUpgradeBoost');
+      return;
+    }
+    
     if (_buildSkipAd == null) {
       await _loadBuildSkipAd();
       if (_buildSkipAd == null) {
@@ -349,34 +389,66 @@ class AdMobService {
 
     await _buildSkipAd!.show(
       onUserEarnedReward: (AdWithoutView ad, RewardItem reward) {
-        _trackAdShown('Build Skip');
+        _trackAdShown('BuildingUpgradeBoost');
         if (kDebugMode) {
-          print('🎁 User earned Build Skip reward: ${reward.amount} ${reward.type}');
+          print('🎁 User earned BuildingUpgradeBoost reward: ${reward.amount} ${reward.type}');
         }
-        onRewardEarned();
+        // Provide BuildingUpgradeBoost as the reward type
+        onRewardEarned('BuildingUpgradeBoost');
       },
     );
   }
 
   Future<void> showEventClearAd({
-    required Function() onRewardEarned,
+    required Function(String rewardType) onRewardEarned,
     Function()? onAdFailure,
   }) async {
+    if (kDebugMode) {
+      print('🎯 === EventAdSkip Ad Request ===');
+      print('🎯 Ads Enabled: $_adsEnabled');
+      print('🎯 Event Clear Ad Ready: $_eventClearAd != null');
+    }
+    
+    // If ads are disabled, immediately grant reward (for Play Store submission)
+    if (!_adsEnabled) {
+      if (kDebugMode) {
+        print('🎯 Ads disabled - granting EventAdSkip reward directly');
+      }
+      onRewardEarned('EventAdSkip');
+      return;
+    }
+    
     if (_eventClearAd == null) {
+      if (kDebugMode) {
+        print('🎯 Event Clear Ad not loaded, attempting to load...');
+      }
       await _loadEventClearAd();
       if (_eventClearAd == null) {
+        if (kDebugMode) {
+          print('❌ Event Clear Ad failed to load');
+        }
         onAdFailure?.call();
         return;
       }
     }
 
+    if (kDebugMode) {
+      print('🎯 Event Clear Ad loaded successfully, setting up callbacks...');
+    }
+
     _eventClearAd!.fullScreenContentCallback = FullScreenContentCallback(
       onAdDismissedFullScreenContent: (RewardedAd ad) {
+        if (kDebugMode) {
+          print('🎯 Event Clear Ad dismissed (user closed ad)');
+        }
         ad.dispose();
         _eventClearAd = null;
         Future.delayed(const Duration(seconds: 1), () => _loadEventClearAd());
       },
       onAdFailedToShowFullScreenContent: (RewardedAd ad, AdError error) {
+        if (kDebugMode) {
+          print('❌ Event Clear Ad failed to show: ${error.message}');
+        }
         ad.dispose();
         _eventClearAd = null;
         Future.delayed(const Duration(seconds: 1), () => _loadEventClearAd());
@@ -384,21 +456,48 @@ class AdMobService {
       },
     );
 
+    if (kDebugMode) {
+      print('🎯 Showing Event Clear Ad...');
+    }
+
     await _eventClearAd!.show(
       onUserEarnedReward: (AdWithoutView ad, RewardItem reward) {
-        _trackAdShown('Event Clear');
+        _trackAdShown('EventAdSkip');
         if (kDebugMode) {
-          print('🎁 User earned Event Clear reward: ${reward.amount} ${reward.type}');
+          print('🎁 === EVENT AD REWARD EARNED ===');
+          print('🎁 Reward Amount: ${reward.amount}');
+          print('🎁 Reward Type: ${reward.type}');
+          print('🎁 Calling onRewardEarned with EventAdSkip...');
         }
-        onRewardEarned();
+        
+        // Use a delayed callback to ensure UI has time to process
+        Future.microtask(() {
+          if (kDebugMode) {
+            print('🎁 Executing EventAdSkip reward callback NOW');
+          }
+          onRewardEarned('EventAdSkip');
+        });
       },
     );
+    
+    if (kDebugMode) {
+      print('🎯 Event Clear Ad show() method completed');
+    }
   }
 
   Future<void> showOfflineIncomeBoostAd({
-    required Function() onRewardEarned,
+    required Function(String rewardType) onRewardEarned,
     Function()? onAdFailure,
   }) async {
+    // If ads are disabled, immediately grant reward (for Play Store submission)
+    if (!_adsEnabled) {
+      if (kDebugMode) {
+        print('🎯 Ads disabled - granting OfflineIncomeBoost reward directly');
+      }
+      onRewardEarned('OfflineIncomeBoost');
+      return;
+    }
+    
     if (_offlineIncomeBoostAd == null) {
       await _loadOfflineIncomeBoostAd();
       if (_offlineIncomeBoostAd == null) {
@@ -423,11 +522,12 @@ class AdMobService {
 
     await _offlineIncomeBoostAd!.show(
       onUserEarnedReward: (AdWithoutView ad, RewardItem reward) {
-        _trackAdShown('Offline Income Boost');
+        _trackAdShown('OfflineIncomeBoost');
         if (kDebugMode) {
-          print('🎁 User earned Offline Income Boost reward: ${reward.amount} ${reward.type}');
+          print('🎁 User earned OfflineIncomeBoost reward: ${reward.amount} ${reward.type}');
         }
-        onRewardEarned();
+        // Provide OfflineIncomeBoost as the reward type
+        onRewardEarned('OfflineIncomeBoost');
       },
     );
   }

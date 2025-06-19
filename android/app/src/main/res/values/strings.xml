@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Google Play Games Services App ID -->
+    <!-- Google Play Games Services App ID (games_services plugin) -->
     <string name="app_id" translatable="false">400590136347</string>
 </resources> 

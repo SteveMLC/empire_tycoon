@@ -5,6 +5,7 @@ import '../models/event.dart';
 import '../models/game_state.dart';
 import '../models/game_state_events.dart';
 import '../services/admob_service.dart';
+import 'package:flutter/foundation.dart';
 
 class EventNotification extends StatefulWidget {
   final GameEvent event;
@@ -351,15 +352,75 @@ class _EventNotificationState extends State<EventNotification> {
             } else {
               // Regular users need to watch an ad
               final adMobService = Provider.of<AdMobService>(context, listen: false);
+              
+              if (kDebugMode) {
+                print('🎯 === EVENT AD BUTTON PRESSED ===');
+                print('🎯 Event: ${widget.event.name}');
+                print('🎯 Event ID: ${widget.event.id}');
+                print('🎯 Event IsResolved: ${widget.event.isResolved}');
+              }
+              
               adMobService.showEventClearAd(
-                onRewardEarned: () {
-                  // User successfully watched the ad
-                  widget.event.resolve();
-                  // Update event achievement tracking
-                  widget.gameState.totalEventsResolved++;
-                  widget.gameState.eventsResolvedByAd++;
-                  widget.gameState.trackEventResolution(widget.event, "ad");
-                  widget.onResolved();
+                onRewardEarned: (String rewardType) {
+                  if (kDebugMode) {
+                    print('🎁 === EVENT AD REWARD CALLBACK ===');
+                    print('🎁 Received reward type: $rewardType');
+                    print('🎁 Expected: EventAdSkip');
+                    print('🎁 Event before resolution: ${widget.event.name} (${widget.event.id})');
+                    print('🎁 Event isResolved before: ${widget.event.isResolved}');
+                  }
+                  
+                  // Verify we received the correct reward type
+                  if (rewardType == 'EventAdSkip') {
+                    try {
+                      // User successfully watched the ad
+                      widget.event.resolve();
+                      
+                      if (kDebugMode) {
+                        print('🎁 Event.resolve() called');
+                        print('🎁 Event isResolved after: ${widget.event.isResolved}');
+                      }
+                      
+                      // Update event achievement tracking
+                      widget.gameState.totalEventsResolved++;
+                      widget.gameState.eventsResolvedByAd++;
+                      widget.gameState.trackEventResolution(widget.event, "ad");
+                      
+                      if (kDebugMode) {
+                        print('🎁 Achievement tracking updated');
+                        print('🎁 Total events resolved: ${widget.gameState.totalEventsResolved}');
+                        print('🎁 Calling widget.onResolved()...');
+                      }
+                      
+                      widget.onResolved();
+                      
+                      if (kDebugMode) {
+                        print('🎁 === EVENT AD SKIP COMPLETE ===');
+                      }
+                    } catch (e) {
+                      if (kDebugMode) {
+                        print('❌ Error in event resolution: $e');
+                      }
+                      // Show error to user
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Error resolving event. Please try again.'),
+                          duration: Duration(seconds: 3),
+                        ),
+                      );
+                    }
+                  } else {
+                    if (kDebugMode) {
+                      print('❌ Warning: Expected EventAdSkip reward but received: $rewardType');
+                    }
+                    // Show warning to user about incorrect reward
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Unexpected reward type: $rewardType. Please try again.'),
+                        duration: const Duration(seconds: 3),
+                      ),
+                    );
+                  }
                 },
                 onAdFailure: () {
                   // Ad failed to show, show error message
@@ -479,15 +540,75 @@ class _EventNotificationState extends State<EventNotification> {
             } else {
               // Regular users need to watch an ad
               final adMobService = Provider.of<AdMobService>(context, listen: false);
+              
+              if (kDebugMode) {
+                print('🎯 === EVENT AD BUTTON PRESSED ===');
+                print('🎯 Event: ${widget.event.name}');
+                print('🎯 Event ID: ${widget.event.id}');
+                print('🎯 Event IsResolved: ${widget.event.isResolved}');
+              }
+              
               adMobService.showEventClearAd(
-                onRewardEarned: () {
-                  // User successfully watched the ad
-                  widget.event.resolve();
-                  // Update event achievement tracking
-                  widget.gameState.totalEventsResolved++;
-                  widget.gameState.eventsResolvedByAd++;
-                  widget.gameState.trackEventResolution(widget.event, "ad");
-                  widget.onResolved();
+                onRewardEarned: (String rewardType) {
+                  if (kDebugMode) {
+                    print('🎁 === EVENT AD REWARD CALLBACK ===');
+                    print('🎁 Received reward type: $rewardType');
+                    print('🎁 Expected: EventAdSkip');
+                    print('🎯 Event before resolution: ${widget.event.name} (${widget.event.id})');
+                    print('🎯 Event isResolved before: ${widget.event.isResolved}');
+                  }
+                  
+                  // Verify we received the correct reward type
+                  if (rewardType == 'EventAdSkip') {
+                    try {
+                      // User successfully watched the ad
+                      widget.event.resolve();
+                      
+                      if (kDebugMode) {
+                        print('🎁 Event.resolve() called');
+                        print('🎁 Event isResolved after: ${widget.event.isResolved}');
+                      }
+                      
+                      // Update event achievement tracking
+                      widget.gameState.totalEventsResolved++;
+                      widget.gameState.eventsResolvedByAd++;
+                      widget.gameState.trackEventResolution(widget.event, "ad");
+                      
+                      if (kDebugMode) {
+                        print('🎁 Achievement tracking updated');
+                        print('🎁 Total events resolved: ${widget.gameState.totalEventsResolved}');
+                        print('🎁 Calling widget.onResolved()...');
+                      }
+                      
+                      widget.onResolved();
+                      
+                      if (kDebugMode) {
+                        print('🎁 === EVENT AD SKIP COMPLETE ===');
+                      }
+                    } catch (e) {
+                      if (kDebugMode) {
+                        print('❌ Error in event resolution: $e');
+                      }
+                      // Show error to user
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Error resolving event. Please try again.'),
+                          duration: Duration(seconds: 3),
+                        ),
+                      );
+                    }
+                  } else {
+                    if (kDebugMode) {
+                      print('❌ Warning: Expected EventAdSkip reward but received: $rewardType');
+                    }
+                    // Show warning to user about incorrect reward
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Unexpected reward type: $rewardType. Please try again.'),
+                        duration: const Duration(seconds: 3),
+                      ),
+                    );
+                  }
                 },
                 onAdFailure: () {
                   // Ad failed to show, show error message

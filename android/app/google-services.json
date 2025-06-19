@@ -1,26 +1,21 @@
 {
   "project_info": {
-    "project_number": "400590136347",
-    "project_id": "empiretycoon",
-    "storage_bucket": "empiretycoon.appspot.com"
+    "project_number": "716473238772",
+    "project_id": "empiretycoon-ab85c",
+    "storage_bucket": "empiretycoon-ab85c.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:400590136347:android:73a4fb8297b2cd4f",
+        "mobilesdk_app_id": "1:716473238772:android:5206a836ba057d9e250aa1",
         "android_client_info": {
           "package_name": "com.go7studio.empire_tycoon"
         }
       },
-      "oauth_client": [
-        {
-          "client_id": "400590136347-mhhlc9hpv4biojp0okkqtc5k9k50tes9.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
+      "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyDexampleKeyForYourProject"
+          "current_key": "AIzaSyAuGCDudQjD5Qw4ZynejdetR-sNFfpKMxc"
         }
       ],
       "services": {
@@ -31,4 +26,4 @@
     }
   ],
   "configuration_version": "1"
-} 
+}
