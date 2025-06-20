@@ -87,8 +87,6 @@ class AuthService extends ChangeNotifier {
   Future<bool> signIn() async {
     try {
       debugPrint('🎮 AuthService: Starting sign-in process');
-      debugPrint('🎮 AuthService: Running diagnostic checks...');
-      await runDiagnostics();
       
       if (!_isInitialized) {
         debugPrint('🔴 AuthService: Service not initialized, initializing now');
@@ -133,14 +131,6 @@ class AuthService extends ChangeNotifier {
             break;
           case 'SIGN_IN_FAILED':
             _lastError = 'Sign-in failed - Check Google Play Games configuration';
-            break;
-          case 'failed_to_authenticate':
-            _lastError = 'Authentication failed - Check SHA-1 fingerprints and test account';
-            debugPrint('🔴 CRITICAL: failed_to_authenticate error suggests:');
-            debugPrint('  1. SHA-1 fingerprint mismatch between keystore and Google Cloud Console');
-            debugPrint('  2. Test account not added to Google Play Console testers');
-            debugPrint('  3. Google Play Games Services not properly configured');
-            debugPrint('  4. App not published to internal testing track');
             break;
           case 'NETWORK_ERROR':
             _lastError = 'Network error - Check internet connection';
@@ -208,9 +198,9 @@ class AuthService extends ChangeNotifier {
   }
 
   /// Get current player data
-  PlayerData? get currentPlayer {
-    // Note: In games_services 4.1.1, we access current player through the stream
-    return null; // This would be updated through the stream listener
+  PlayerData? getCurrentPlayer() {
+    // This would be available through the GameAuth.player stream
+    return null; // We'd need to store the current player data
   }
 
   /// Show the achievements UI
@@ -256,25 +246,5 @@ class AuthService extends ChangeNotifier {
       'platform': defaultTargetPlatform.toString(),
       'timestamp': DateTime.now().toIso8601String(),
     };
-  }
-
-  /// Diagnostic method to check Google Play Games Services configuration
-  Future<void> runDiagnostics() async {
-    debugPrint('🔍 Running Google Play Games Services Diagnostics...');
-    debugPrint('🔍 Package: com.go7studio.empire_tycoon');
-    debugPrint('🔍 App ID: 400590136347');
-    debugPrint('🔍 Expected SHA-1: C0:E6:EB:20:DC:8F:D3:DF:E1:F0:EB:DA:9F:02:5E:76:72:45:85:BF');
-    debugPrint('🔍 Is Initialized: $_isInitialized');
-    debugPrint('🔍 Is Signed In: $_isSignedIn');
-    debugPrint('🔍 Last Error: $_lastError');
-    debugPrint('🔍 Platform: ${defaultTargetPlatform.toString()}');
-    
-    if (defaultTargetPlatform == TargetPlatform.android) {
-      debugPrint('🔍 Android-specific checks:');
-      debugPrint('  - Ensure Google Play Services is updated');
-      debugPrint('  - Ensure test account is added to Google Play Console');
-      debugPrint('  - Ensure SHA-1 fingerprint matches in Google Cloud Console');
-      debugPrint('  - Ensure Play Games Services setup is complete (5 of 5 steps)');
-    }
   }
 } 

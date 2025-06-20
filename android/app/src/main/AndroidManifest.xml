@@ -1,12 +1,9 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.go7studio.empire_tycoon">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- Required by Google Play Services for advertising ID -->
     <uses-permission android:name="com.google.android.gms.permission.AD_ID"/>
     <!-- Required for Google Play Games Services -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <!-- Critical: Required for Google Play Games Services authentication -->
-    <uses-permission android:name="com.google.android.gms.permission.GAME_SERVICE" />
     <!-- Required for Google Play Billing -->
     <uses-permission android:name="com.android.vending.BILLING" />
     
@@ -15,7 +12,7 @@
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         
-        <!-- Google Play Games Services App ID (games_services plugin) -->
+        <!-- Google Play Games Services App ID -->
         <meta-data
             android:name="com.google.android.gms.games.APP_ID"
             android:value="@string/app_id" />

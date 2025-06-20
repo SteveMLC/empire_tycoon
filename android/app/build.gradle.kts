@@ -79,6 +79,6 @@ flutter {
 // Add Google Mobile Ads dependency for AdMob integration
 dependencies {
     implementation("com.google.android.gms:play-services-ads:24.2.0")
-    // Note: games_services plugin handles Play Games Services dependencies internally
-    // Do not add play-services-games manually as it causes conflicts
+    // Note: play-services-games and play-services-auth are already included by the games_services plugin
+    // Do not add them manually to avoid duplicate class conflicts
 }
