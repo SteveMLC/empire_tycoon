@@ -16,4 +16,14 @@
 -keep class io.flutter.util.**  { *; }
 -keep class io.flutter.view.**  { *; }
 -keep class io.flutter.**  { *; }
--keep class io.flutter.plugins.**  { *; } 
+-keep class io.flutter.plugins.**  { *; }
+
+# Google Play Games Services v2 SDK - REQUIRED
+-keep class com.google.android.gms.games.** { *; }
+-keep class com.google.android.gms.common.** { *; }
+-keep class com.google.android.gms.auth.** { *; }
+-keep class com.google.android.gms.tasks.** { *; }
+
+# Keep all classes used by Google Play Services
+-dontwarn com.google.android.gms.**
+-keep class * extends com.google.android.gms.** { *; } 

@@ -194,7 +194,7 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
 
                         Expanded(
                           child: ListView(
-                            padding: const EdgeInsets.all(16),
+                            padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
                             children: _getSortedLocales(gameState.realEstateLocales).map((locale) =>
                               _buildLocaleItem(locale, gameState, theme)
                             ).toList(),
@@ -459,7 +459,7 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
 
     return ListView(
       key: ValueKey<String>(locale.id),
-      padding: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.only(bottom: 80),
       children: [
         Container(
           padding: const EdgeInsets.only(bottom: 16),

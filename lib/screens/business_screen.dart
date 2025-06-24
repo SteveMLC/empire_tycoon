@@ -47,7 +47,7 @@ class _BusinessScreenState extends State<BusinessScreen> {
                     ? const Center(child: Text('No businesses available yet'))
                     : ListView.builder(
                         itemCount: businesses.length,
-                        padding: const EdgeInsets.only(top: 8.0), // Add padding at the top of list
+                        padding: const EdgeInsets.only(top: 8.0, bottom: 80.0), // Add bottom padding to prevent Android UI overlap
                         itemBuilder: (context, index) {
                           Business business = businesses[index];
 

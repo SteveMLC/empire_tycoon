@@ -34,7 +34,7 @@ class CategoryContent extends StatelessWidget {
     }
 
     return GridView.builder(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 96.0),
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
         maxCrossAxisExtent: 200.0,
         childAspectRatio: 2 / 4.2,

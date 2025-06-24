@@ -283,18 +283,36 @@ class AdMobService {
     if (_isOfflineIncomeBoostAdLoading || _offlineIncomeBoostAd != null) return;
     _isOfflineIncomeBoostAdLoading = true;
     
+    if (kDebugMode) {
+      print('🎯 Loading Offline Income Boost Ad...');
+      print('🎯 Ad Unit ID: ${_getAdUnitId(AdType.offlineIncomeBoost)}');
+    }
+    
     await RewardedAd.load(
       adUnitId: _getAdUnitId(AdType.offlineIncomeBoost),
       request: const AdRequest(),
       rewardedAdLoadCallback: RewardedAdLoadCallback(
         onAdLoaded: (RewardedAd ad) {
+          if (kDebugMode) {
+            print('✅ Offline Income Boost Ad loaded successfully');
+          }
           _offlineIncomeBoostAd = ad;
           _isOfflineIncomeBoostAdLoading = false;
         },
         onAdFailedToLoad: (LoadAdError error) {
+          if (kDebugMode) {
+            print('❌ Offline Income Boost Ad failed to load:');
+            print('   Error Code: ${error.code}');
+            print('   Error Message: ${error.message}');
+            print('   Error Domain: ${error.domain}');
+          }
+          _logError('Offline Income Boost Ad Load Failed: ${error.message} (Code: ${error.code})');
           _isOfflineIncomeBoostAdLoading = false;
           Future.delayed(const Duration(seconds: 30), () {
             if (!_isOfflineIncomeBoostAdLoading && _offlineIncomeBoostAd == null) {
+              if (kDebugMode) {
+                print('🔄 Retrying Offline Income Boost Ad load after 30 seconds...');
+              }
               _loadOfflineIncomeBoostAd();
             }
           });
@@ -489,6 +507,12 @@ class AdMobService {
     required Function(String rewardType) onRewardEarned,
     Function()? onAdFailure,
   }) async {
+    if (kDebugMode) {
+      print('🎯 === OfflineIncomeBoost Ad Request ===');
+      print('🎯 Ads Enabled: $_adsEnabled');
+      print('🎯 Offline Income Boost Ad Ready: $_offlineIncomeBoostAd != null');
+    }
+    
     // If ads are disabled, immediately grant reward (for Play Store submission)
     if (!_adsEnabled) {
       if (kDebugMode) {
@@ -499,20 +523,36 @@ class AdMobService {
     }
     
     if (_offlineIncomeBoostAd == null) {
+      if (kDebugMode) {
+        print('🎯 Offline Income Boost Ad not loaded, attempting to load...');
+      }
       await _loadOfflineIncomeBoostAd();
       if (_offlineIncomeBoostAd == null) {
+        if (kDebugMode) {
+          print('❌ Offline Income Boost Ad failed to load');
+        }
         onAdFailure?.call();
         return;
       }
     }
 
+    if (kDebugMode) {
+      print('🎯 Offline Income Boost Ad loaded successfully, setting up callbacks...');
+    }
+
     _offlineIncomeBoostAd!.fullScreenContentCallback = FullScreenContentCallback(
       onAdDismissedFullScreenContent: (RewardedAd ad) {
+        if (kDebugMode) {
+          print('🎯 Offline Income Boost Ad dismissed (user closed ad)');
+        }
         ad.dispose();
         _offlineIncomeBoostAd = null;
         Future.delayed(const Duration(seconds: 1), () => _loadOfflineIncomeBoostAd());
       },
       onAdFailedToShowFullScreenContent: (RewardedAd ad, AdError error) {
+        if (kDebugMode) {
+          print('❌ Offline Income Boost Ad failed to show: ${error.message}');
+        }
         ad.dispose();
         _offlineIncomeBoostAd = null;
         Future.delayed(const Duration(seconds: 1), () => _loadOfflineIncomeBoostAd());
@@ -520,16 +560,33 @@ class AdMobService {
       },
     );
 
+    if (kDebugMode) {
+      print('🎯 Showing Offline Income Boost Ad...');
+    }
+
     await _offlineIncomeBoostAd!.show(
       onUserEarnedReward: (AdWithoutView ad, RewardItem reward) {
         _trackAdShown('OfflineIncomeBoost');
         if (kDebugMode) {
-          print('🎁 User earned OfflineIncomeBoost reward: ${reward.amount} ${reward.type}');
+          print('🎁 === OFFLINE INCOME BOOST AD REWARD EARNED ===');
+          print('🎁 Reward Amount: ${reward.amount}');
+          print('🎁 Reward Type: ${reward.type}');
+          print('🎁 Calling onRewardEarned with OfflineIncomeBoost...');
         }
-        // Provide OfflineIncomeBoost as the reward type
-        onRewardEarned('OfflineIncomeBoost');
+        
+        // Use a delayed callback to ensure UI has time to process
+        Future.microtask(() {
+          if (kDebugMode) {
+            print('🎁 Executing OfflineIncomeBoost reward callback NOW');
+          }
+          onRewardEarned('OfflineIncomeBoost');
+        });
       },
     );
+    
+    if (kDebugMode) {
+      print('🎯 Offline Income Boost Ad show() method completed');
+    }
   }
 
   // Debug status for troubleshooting
@@ -550,6 +607,21 @@ class AdMobService {
         print('🎯 Last Error: $_lastAdError (${_lastErrorTime})');
       }
       print('🎯 === End Debug Status ===');
+    }
+  }
+
+  // Debug method specifically for offline income ads
+  void debugOfflineIncomeAd() {
+    if (kDebugMode) {
+      print('🔍 === OFFLINE INCOME AD DEBUG ===');
+      print('🔍 Ads Enabled: $_adsEnabled');
+      print('🔍 Ad Instance: $_offlineIncomeBoostAd');
+      print('🔍 Is Loading: $_isOfflineIncomeBoostAdLoading');
+      print('🔍 Is Ready: $isOfflineIncomeBoostAdReady');
+      print('🔍 Ad Unit ID: ${_getAdUnitId(AdType.offlineIncomeBoost)}');
+      print('🔍 Last Error: $_lastAdError');
+      print('🔍 Last Error Time: $_lastErrorTime');
+      print('🔍 === END OFFLINE INCOME AD DEBUG ===');
     }
   }
 

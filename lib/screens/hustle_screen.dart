@@ -292,7 +292,7 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
               ),
             ),
             
-            const SizedBox(height: 20),
+            const SizedBox(height: 80),
           ],
         );
       },

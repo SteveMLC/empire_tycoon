@@ -82,6 +82,17 @@ class _BusinessItemState extends State<BusinessItem> {
         _startUiUpdateTimer();
       } else {
         _stopUiUpdateTimer();
+        
+        // If the business was upgrading and now isn't, the upgrade completed
+        // Cancel the notification for this business
+        if (oldWidget.business.isUpgrading && !widget.business.isUpgrading) {
+          try {
+            final gameService = Provider.of<GameService>(context, listen: false);
+            gameService.cancelBusinessUpgradeNotification(widget.business.id);
+          } catch (e) {
+            print("Error cancelling business upgrade notification: $e");
+          }
+        }
       }
     }
   }
@@ -155,9 +166,6 @@ class _BusinessItemState extends State<BusinessItem> {
                                      permanentIncomeBoostMultiplier;
                                      
     double incomeIncrease = nextLevelDisplayedIncome - currentIncome;
-    double incomeIncreasePercentage = currentIncome > 0 
-                                    ? (incomeIncrease / currentIncome) * 100 
-                                    : 0;
     
     // Check if business has platinum facade
     final bool hasPlatinumFacade = business.hasPlatinumFacade;
@@ -502,7 +510,7 @@ class _BusinessItemState extends State<BusinessItem> {
               // Action button
               if (!isUpgrading) ...[
                 const SizedBox(height: 12),
-                _buildBuyUpgradeButton(context, gameState, business, canAfford, incomeIncreasePercentage),
+                _buildBuyUpgradeButton(context, gameState, business, canAfford, incomeIncrease),
               ],
             ],
           ),
@@ -511,7 +519,7 @@ class _BusinessItemState extends State<BusinessItem> {
     );
   }
   
-  Widget _buildBuyUpgradeButton(BuildContext context, GameState gameState, Business business, bool canAfford, double incomeIncreasePercentage) {
+  Widget _buildBuyUpgradeButton(BuildContext context, GameState gameState, Business business, bool canAfford, double incomeIncrease) {
     final cost = business.getNextUpgradeCost();
     final timerSeconds = business.getNextUpgradeTimerSeconds();
     final isInitialPurchase = business.level == 0;
@@ -525,15 +533,32 @@ class _BusinessItemState extends State<BusinessItem> {
                 if (gameState.buyBusiness(business.id)) {
                   try {
                     final gameService = Provider.of<GameService>(context, listen: false);
+                    
+                    // Play sound
                     if (isInitialPurchase) {
                       gameService.playSound(() => gameService.soundManager.playBusinessPurchaseSound());
                     } else {
                       gameService.playBusinessSound();
                     }
+                    
+                    // Schedule notification if this business upgrade has a timer
+                    if (timerSeconds > 0) {
+                      gameService.scheduleBusinessUpgradeNotification(
+                        business.id,
+                        business.name,
+                        Duration(seconds: timerSeconds),
+                      );
+                    }
+                    
+                    // Request notification permissions on first business upgrade
+                    if (gameState.shouldRequestNotificationPermissions) {
+                      gameService.requestNotificationPermissions(context);
+                      gameState.resetNotificationPermissionRequest();
+                    }
                   } catch (e) {
-                    // Only log sound errors occasionally to reduce spam
+                    // Only log errors occasionally to reduce spam
                     if (DateTime.now().second % 30 == 0) {
-                      print("Error playing business sound: $e");
+                      print("Error with business purchase services: $e");
                     }
                   }
                 }
@@ -597,7 +622,7 @@ class _BusinessItemState extends State<BusinessItem> {
                       ),
                     ],
                   ),
-                  if (!isInitialPurchase && incomeIncreasePercentage > 0)
+                  if (!isInitialPurchase && incomeIncrease > 0)
                     Padding(
                       padding: const EdgeInsets.only(top: 3),
                       child: Container(
@@ -623,7 +648,7 @@ class _BusinessItemState extends State<BusinessItem> {
                               const SizedBox(width: 2),
                             ],
                             Text(
-                              '+${incomeIncreasePercentage.toStringAsFixed(0)}% Income',
+                              '+${NumberFormatter.formatCurrency(incomeIncrease)}/s',
                               style: TextStyle(
                                 fontSize: 10,
                                 color: canAfford 
@@ -729,6 +754,26 @@ class _BusinessItemState extends State<BusinessItem> {
                   gameState.speedUpUpgradeWithAd(
                     business.id,
                     onAdCompleted: () {
+                      // Update notification with new time
+                      try {
+                        final gameService = Provider.of<GameService>(context, listen: false);
+                        final remainingTime = business.getRemainingUpgradeTime();
+                        
+                        // Cancel old notification
+                        gameService.cancelBusinessUpgradeNotification(business.id);
+                        
+                        // Schedule new notification if there's still significant time left
+                        if (remainingTime.inMinutes > 10) {
+                          gameService.scheduleBusinessUpgradeNotification(
+                            business.id,
+                            business.name,
+                            remainingTime,
+                          );
+                        }
+                      } catch (e) {
+                        print("Error updating notification after speed up: $e");
+                      }
+                      
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text('Premium speed up applied! 15 minutes reduced.'),
@@ -755,6 +800,26 @@ class _BusinessItemState extends State<BusinessItem> {
                         gameState.speedUpUpgradeWithAd(
                           business.id,
                           onAdCompleted: () {
+                            // Update notification with new time
+                            try {
+                              final gameService = Provider.of<GameService>(context, listen: false);
+                              final remainingTime = business.getRemainingUpgradeTime();
+                              
+                              // Cancel old notification
+                              gameService.cancelBusinessUpgradeNotification(business.id);
+                              
+                              // Schedule new notification if there's still significant time left
+                              if (remainingTime.inMinutes > 10) {
+                                gameService.scheduleBusinessUpgradeNotification(
+                                  business.id,
+                                  business.name,
+                                  remainingTime,
+                                );
+                              }
+                            } catch (e) {
+                              print("Error updating notification after speed up: $e");
+                            }
+                            
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
                                 content: Text('Speed up successful! 15 minutes reduced.'),

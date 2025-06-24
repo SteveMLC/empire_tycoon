@@ -30,12 +30,26 @@ extension BusinessLogic on GameState {
       // If timer is 0, complete instantly (like original behavior)
       if (timerSeconds <= 0) {
         print("Instant upgrade for ${business.name} (Level ${business.level + 1})");
+        int previousLevel = business.level;
         business.level++; // Direct level up
         _updateBusinessUnlocks(); // Update unlocks based on new level
+        
+        // Check if this is the third business upgrade completion for permission request trigger
+        int totalUpgrades = businesses.fold(0, (sum, b) => sum + b.level);
+        bool isThirdUpgradeCompletion = totalUpgrades == 3;
+        
+        if (isThirdUpgradeCompletion) {
+          print("🔔 Third business upgrade completed (instant) - should request notification permissions");
+          _shouldRequestNotificationPermissions = true;
+        }
       } else {
         // Start the timer
         print("Starting upgrade for ${business.name} (to Level ${business.level + 1}) - Duration: ${timerSeconds}s");
         business.startUpgrade(timerSeconds);
+        
+        // NOTE: Notification scheduling is handled by the UI layer (business_item.dart)
+        // when buyBusiness returns true, ensuring proper GameService access
+        
         // Note: Level increase happens in completeBusinessUpgrade
       }
 
@@ -45,6 +59,9 @@ extension BusinessLogic on GameState {
 
     return false;
   }
+
+  // NOTE: Notification management is handled by the UI layer (business_item.dart)
+  // This ensures proper access to GameService through Provider context
 
   // ADDED: Method to complete a finished business upgrade
   void completeBusinessUpgrade(String businessId) {
@@ -59,6 +76,10 @@ extension BusinessLogic on GameState {
       int previousLevel = business.level;
       business.completeUpgrade(); // This increments the level internally
 
+      // Check if this is the third business upgrade completion for permission request trigger
+      int totalUpgrades = businesses.fold(0, (sum, b) => sum + b.level);
+      bool isThirdUpgradeCompletion = totalUpgrades == 3;
+      
       // Play sound only if the upgrade wasn't completed instantly offline during load
       // (We might need a more robust way to track if sound should play)
       if (previousLevel < business.level) { 
@@ -66,6 +87,13 @@ extension BusinessLogic on GameState {
          // Example placeholder:
          // Provider.of<GameService>(context, listen: false).soundManager.playBusinessUpgradeSound();
          print("🔊 (Placeholder) Play upgrade completion sound for ${business.name}");
+         
+         // TODO: Trigger notification permission request on third upgrade completion
+         if (isThirdUpgradeCompletion) {
+           print("🔔 Third business upgrade completed - should request notification permissions");
+           // This will be triggered from UI layer when context is available
+           _shouldRequestNotificationPermissions = true;
+         }
       }
 
       _updateBusinessUnlocks(); // Check if new unlocks are triggered
@@ -98,6 +126,10 @@ extension BusinessLogic on GameState {
       print("⏩ Premium speed up for ${business.name} by ${reduction.inMinutes} minutes.");
       
       business.reduceUpgradeTime(reduction);
+      
+      // NOTE: Notification updates are handled by the UI layer (business_item.dart)
+      // in the speed-up callbacks to ensure proper GameService access
+      
       // Check if the upgrade is now complete after reduction
       if (business.getRemainingUpgradeTime() <= Duration.zero) {
         completeBusinessUpgrade(businessId);
@@ -114,6 +146,10 @@ extension BusinessLogic on GameState {
     print("⏩ Ad-based speed up for ${business.name} by ${reduction.inMinutes} minutes.");
 
     business.reduceUpgradeTime(reduction);
+    
+    // NOTE: Notification updates are handled by the UI layer (business_item.dart)
+    // in the speed-up callbacks to ensure proper GameService access
+    
     // Check if the upgrade is now complete after reduction
     if (business.getRemainingUpgradeTime() <= Duration.zero) {
       completeBusinessUpgrade(businessId);
@@ -122,6 +158,9 @@ extension BusinessLogic on GameState {
     }
     onAdCompleted();
   }
+
+  // NOTE: All notification management (scheduling, updating, cancelling) is handled
+  // by the UI layer (business_item.dart) which has proper access to GameService
 
   // Update which businesses are unlocked based on money
   void _updateBusinessUnlocks() {

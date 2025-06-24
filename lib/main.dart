@@ -121,6 +121,10 @@ class _GameInitializerState extends State<GameInitializer> {
       await adMobService.initialize();
       print('Game initializer: Finished AdMob initialization');
       
+      // Debug offline income ad specifically  
+      print('Game initializer: Testing offline income ad status');
+      adMobService.debugOfflineIncomeAd();
+      
       // ADDED: Check if user has previously purchased premium
       print('Game initializer: Checking premium ownership');
       final hasPremium = await _gameService!.checkPremiumOwnership();

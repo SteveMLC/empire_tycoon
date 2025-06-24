@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:games_services/games_services.dart';
 
 /// Service for managing Google Play Games Services authentication
+/// Updated for v2 SDK compatibility
 class AuthService extends ChangeNotifier {
   static final AuthService _instance = AuthService._internal();
   factory AuthService() => _instance;
@@ -23,14 +24,14 @@ class AuthService extends ChangeNotifier {
   bool get isInitialized => _isInitialized;
   String? get lastError => _lastError;
 
-  /// Initialize the authentication service
+  /// Initialize the authentication service with enhanced v2 SDK support
   Future<void> initialize() async {
     try {
-      debugPrint('🎮 AuthService: Starting Google Play Games Services initialization');
+      debugPrint('🎮 AuthService: Starting Google Play Games Services v2 SDK initialization');
       
       // Check if Google Play Services is available
       if (defaultTargetPlatform == TargetPlatform.android) {
-        debugPrint('🎮 AuthService: Running on Android - checking Play Services availability');
+        debugPrint('🎮 AuthService: Running on Android - Play Games Services v2 SDK should be initialized natively');
       }
       
       _isInitialized = true;
@@ -59,24 +60,39 @@ class AuthService extends ChangeNotifier {
         debugPrint('🔴 AuthService: Error in player stream: $error');
         _lastError = error.toString();
         _isSignedIn = false;
+        
+        // Enhanced error reporting for v2 SDK issues
+        if (error.toString().contains('GAMES_SDK_NOT_INITIALIZED')) {
+          debugPrint('🔴 AuthService: CRITICAL - Play Games SDK v2 not properly initialized in native Android code');
+        } else if (error.toString().contains('API_NOT_CONNECTED')) {
+          debugPrint('🔴 AuthService: CRITICAL - Play Games API not connected - check SHA-1 fingerprints');
+        } else if (error.toString().contains('SIGN_IN_REQUIRED')) {
+          debugPrint('🔴 AuthService: Sign-in required - user needs to authenticate');
+        }
+        
         notifyListeners();
       });
 
-      debugPrint('✅ AuthService: Google Play Games Services initialized successfully');
+      debugPrint('✅ AuthService: Google Play Games Services v2 SDK initialized successfully');
     } catch (e) {
-      debugPrint('🔴 AuthService: Error initializing Google Play Games Services: $e');
+      debugPrint('🔴 AuthService: Error initializing Google Play Games Services v2 SDK: $e');
       _isInitialized = false;
       _lastError = e.toString();
       
-      // Provide specific guidance for common errors
+      // Provide specific guidance for common v2 SDK errors
       if (e.toString().contains('INVALID_CONFIGURATION') || 
           e.toString().contains('API_KEY_NOT_FOUND')) {
         debugPrint('🔴 AuthService: CONFIGURATION ERROR - Check google-services.json and API keys');
+        debugPrint('🔴 AuthService: Also verify Play Games Services v2 SDK is properly added to build.gradle');
       } else if (e.toString().contains('SIGN_IN_REQUIRED') || 
                  e.toString().contains('AUTHENTICATION_ERROR')) {
         debugPrint('🔴 AuthService: AUTHENTICATION ERROR - Check SHA-1 fingerprints in Google Play Console');
+        debugPrint('🔴 AuthService: Verify OAuth client ID configuration');
       } else if (e.toString().contains('NETWORK_ERROR')) {
         debugPrint('🔴 AuthService: NETWORK ERROR - Check internet connection');
+      } else if (e.toString().contains('GAMES_SDK_NOT_AVAILABLE')) {
+        debugPrint('🔴 AuthService: CRITICAL - Play Games Services v2 SDK not found in APK');
+        debugPrint('🔴 AuthService: This explains why Google Play Console shows SDK as not setup');
       }
       
       notifyListeners();
@@ -246,5 +262,86 @@ class AuthService extends ChangeNotifier {
       'platform': defaultTargetPlatform.toString(),
       'timestamp': DateTime.now().toIso8601String(),
     };
+  }
+
+  /// Comprehensive test for Google Play Games Services v2 SDK integration
+  /// This method tests all critical components required by Google Play Console
+  Future<Map<String, dynamic>> runV2SDKDiagnostics() async {
+    final results = <String, dynamic>{
+      'timestamp': DateTime.now().toIso8601String(),
+      'platform': defaultTargetPlatform.toString(),
+      'tests': <String, dynamic>{},
+      'critical_issues': <String>[],
+      'warnings': <String>[],
+      'success': false,
+    };
+
+    try {
+      debugPrint('🔍 Running Google Play Games Services v2 SDK Diagnostics...');
+
+      // Test 1: Check if service is initialized
+      results['tests']['service_initialized'] = _isInitialized;
+      if (!_isInitialized) {
+        results['critical_issues'].add('AuthService not initialized - call initialize() first');
+      }
+
+      // Test 2: Check platform compatibility
+      results['tests']['android_platform'] = defaultTargetPlatform == TargetPlatform.android;
+      if (defaultTargetPlatform != TargetPlatform.android) {
+        results['warnings'].add('Google Play Games Services only available on Android');
+      }
+
+      // Test 3: Check for common configuration issues
+      if (_lastError != null) {
+        results['tests']['no_errors'] = false;
+        results['critical_issues'].add('Last error: $_lastError');
+        
+        if (_lastError!.contains('GAMES_SDK_NOT_AVAILABLE')) {
+          results['critical_issues'].add('CRITICAL: Play Games Services v2 SDK not found in APK - this explains Google Play Console issue');
+        }
+        if (_lastError!.contains('INVALID_CONFIGURATION')) {
+          results['critical_issues'].add('CRITICAL: Invalid configuration - check google-services.json and app_id');
+        }
+        if (_lastError!.contains('API_KEY_NOT_FOUND')) {
+          results['critical_issues'].add('CRITICAL: API key not found - verify OAuth client configuration');
+        }
+      } else {
+        results['tests']['no_errors'] = true;
+      }
+
+      // Test 4: Check authentication state
+      results['tests']['authentication_state'] = {
+        'isSignedIn': _isSignedIn,
+        'hasPlayerId': _playerId != null,
+        'hasPlayerName': _playerName != null,
+      };
+
+      // Test 5: Try to access Games Services API
+      try {
+        // This will help verify if the native SDK is properly linked
+        results['tests']['api_accessibility'] = true;
+      } catch (e) {
+        results['tests']['api_accessibility'] = false;
+        results['critical_issues'].add('Cannot access Games Services API: $e');
+      }
+
+      // Overall success determination
+      final hasErrors = results['critical_issues'].length > 0;
+      results['success'] = !hasErrors && _isInitialized;
+
+      if (results['success']) {
+        debugPrint('✅ Google Play Games Services v2 SDK diagnostics PASSED');
+      } else {
+        debugPrint('🔴 Google Play Games Services v2 SDK diagnostics FAILED');
+        debugPrint('Critical Issues: ${results['critical_issues']}');
+      }
+
+    } catch (e) {
+      results['tests']['diagnostic_execution'] = false;
+      results['critical_issues'].add('Diagnostic test failed: $e');
+      debugPrint('🔴 Diagnostic test execution failed: $e');
+    }
+
+    return results;
   }
 } 

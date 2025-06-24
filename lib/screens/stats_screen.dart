@@ -30,6 +30,7 @@ class _StatsScreenState extends State<StatsScreen> {
   // Using NumberFormatter utility instead of duplicating formatting logic
   final Map<String, GlobalKey> _sectionKeys = {
     'events': GlobalKey(),
+    'achievements': GlobalKey(),
   };
   
   // Method to scroll to a specific section by ID
@@ -112,7 +113,10 @@ class _StatsScreenState extends State<StatsScreen> {
                         const SizedBox(height: 20),
 
                         // Achievements Section (already a separate widget)
-                        AchievementsSection(theme: theme),
+                        AchievementsSection(
+                          key: _sectionKeys['achievements'],
+                          theme: theme,
+                        ),
                         
                         const SizedBox(height: 20),
                         

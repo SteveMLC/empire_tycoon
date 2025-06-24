@@ -11,6 +11,7 @@ import 'components/persistence_service.dart';
 import 'components/diagnostic_service.dart';
 import 'income_service.dart'; // ADDED: Import IncomeService
 import 'billing_service.dart'; // ADDED: Import BillingService for Google Play purchases
+import 'app_lifecycle_service.dart'; // ADDED: Import AppLifecycleService for notifications
 
 class GameService {
   final SharedPreferences _prefs;
@@ -24,6 +25,7 @@ class GameService {
   late final DiagnosticService _diagnosticService;
   late final IncomeService _incomeService; // ADDED: IncomeService for consistent income calculation
   late final BillingService _billingService; // ADDED: BillingService for Google Play purchases
+  late final AppLifecycleService _appLifecycleService; // ADDED: AppLifecycleService for notifications
   
   // Expose soundManager for backward compatibility
   // This will be removed once all direct soundManager references are updated
@@ -34,6 +36,7 @@ class GameService {
     _soundService = SoundService();
     _incomeService = IncomeService(); // ADDED: Initialize IncomeService
     _billingService = BillingService(); // ADDED: Initialize BillingService
+    _appLifecycleService = AppLifecycleService(); // ADDED: Initialize AppLifecycleService
     _timerService = TimerService(_gameState, _performAutoSave);
     _persistenceService = PersistenceService(_prefs, _gameState, incomeService: _incomeService); // UPDATED: Pass IncomeService
     _diagnosticService = DiagnosticService(
@@ -78,6 +81,9 @@ class GameService {
       
       // Initialize billing service
       await _billingService.initialize();
+      
+      // ADDED: Initialize app lifecycle service (includes notification service)
+      await _appLifecycleService.initialize(_gameState);
       
       // Check game version and clear data if needed
       await _persistenceService.checkVersion();
@@ -157,6 +163,7 @@ class GameService {
     print("🧹 Disposing GameService");
     _cancelAllTimers();
     _billingService.dispose(); // ADDED: Dispose billing service
+    _appLifecycleService.dispose(); // ADDED: Dispose app lifecycle service
   }
 
   // Sound methods delegated to SoundService
@@ -248,8 +255,56 @@ class GameService {
     _timerService.setLastGameUpdateTime(time);
   }
   
-  // ADDED: Billing service methods
-  /// Purchase premium features through Google Play Store
+  // ADDED: Notification methods
+  
+  /// Request notification permissions after user milestone
+  Future<void> requestNotificationPermissions(context, {bool forceRequest = false}) async {
+    await _appLifecycleService.requestNotificationPermissions(context, forceRequest: forceRequest);
+  }
+
+  /// Schedule business upgrade notification
+  Future<void> scheduleBusinessUpgradeNotification(
+    String businessId,
+    String businessName,
+    Duration upgradeTime,
+  ) async {
+    await _appLifecycleService.scheduleBusinessUpgradeNotification(
+      businessId,
+      businessName,
+      upgradeTime,
+    );
+  }
+
+  /// Cancel business upgrade notification
+  Future<void> cancelBusinessUpgradeNotification(String businessId) async {
+    await _appLifecycleService.cancelBusinessUpgradeNotification(businessId);
+  }
+
+  /// Enable/disable offline income notifications
+  Future<void> setOfflineIncomeNotificationsEnabled(bool enabled) async {
+    await _appLifecycleService.setOfflineIncomeNotificationsEnabled(enabled);
+  }
+
+  /// Enable/disable business upgrade notifications
+  Future<void> setBusinessUpgradeNotificationsEnabled(bool enabled) async {
+    await _appLifecycleService.setBusinessUpgradeNotificationsEnabled(enabled);
+  }
+
+  /// Get current notification settings
+  bool get offlineIncomeNotificationsEnabled => 
+      _appLifecycleService.offlineIncomeNotificationsEnabled;
+  
+  bool get businessUpgradeNotificationsEnabled => 
+      _appLifecycleService.businessUpgradeNotificationsEnabled;
+
+  /// Get pending notifications count (for debugging)
+  Future<int> getPendingNotificationsCount() async {
+    return await _appLifecycleService.getPendingNotificationsCount();
+  }
+
+  // Billing methods delegated to BillingService
+  
+  /// Purchase premium features
   Future<void> purchasePremium({required Function(bool success, String? error) onComplete}) async {
     await _billingService.purchasePremium(onComplete: onComplete);
   }

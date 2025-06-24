@@ -1082,6 +1082,109 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
             const SizedBox(height: 16),
 
+            // Notification Settings Section
+            Consumer<GameService>(
+              builder: (context, gameService, child) {
+                return Column(
+                  children: [
+                    // Offline Income Notifications Toggle
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: () async {
+                          bool currentSetting = gameService.offlineIncomeNotificationsEnabled;
+                          bool newSetting = !currentSetting;
+                          
+                          if (newSetting) {
+                            // If enabling notifications, request permission first (force request)
+                            await gameService.requestNotificationPermissions(context, forceRequest: true);
+                          }
+                          
+                          await gameService.setOfflineIncomeNotificationsEnabled(newSetting);
+                          setState(() {}); // Force rebuild to update UI
+                        },
+                        icon: Icon(
+                          gameService.offlineIncomeNotificationsEnabled 
+                              ? Icons.notifications_active 
+                              : Icons.notifications_off,
+                          color: gameService.offlineIncomeNotificationsEnabled 
+                              ? Colors.blue 
+                              : Colors.grey,
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          side: BorderSide(
+                            color: gameService.offlineIncomeNotificationsEnabled 
+                                ? Colors.blue 
+                                : Colors.grey,
+                          ),
+                        ),
+                        label: Text(
+                          gameService.offlineIncomeNotificationsEnabled 
+                              ? 'Offline Income Alerts: ON' 
+                              : 'Offline Income Alerts: OFF',
+                          style: TextStyle(
+                            color: gameService.offlineIncomeNotificationsEnabled 
+                                ? Colors.blue 
+                                : Colors.grey,
+                          ),
+                        ),
+                      ),
+                    ),
+                    
+                    const SizedBox(height: 12),
+                    
+                    // Business Upgrade Notifications Toggle
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: () async {
+                          bool currentSetting = gameService.businessUpgradeNotificationsEnabled;
+                          bool newSetting = !currentSetting;
+                          
+                          if (newSetting) {
+                            // If enabling notifications, request permission first (force request)
+                            await gameService.requestNotificationPermissions(context, forceRequest: true);
+                          }
+                          
+                          await gameService.setBusinessUpgradeNotificationsEnabled(newSetting);
+                          setState(() {}); // Force rebuild to update UI
+                        },
+                        icon: Icon(
+                          gameService.businessUpgradeNotificationsEnabled 
+                              ? Icons.business_center 
+                              : Icons.business_center_outlined,
+                          color: gameService.businessUpgradeNotificationsEnabled 
+                              ? Colors.green 
+                              : Colors.grey,
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          side: BorderSide(
+                            color: gameService.businessUpgradeNotificationsEnabled 
+                                ? Colors.green 
+                                : Colors.grey,
+                          ),
+                        ),
+                        label: Text(
+                          gameService.businessUpgradeNotificationsEnabled 
+                              ? 'Upgrade Alerts: ON' 
+                              : 'Upgrade Alerts: OFF',
+                          style: TextStyle(
+                            color: gameService.businessUpgradeNotificationsEnabled 
+                                ? Colors.green 
+                                : Colors.grey,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+
+            const SizedBox(height: 16),
+
             // Platinum Frame Toggle - only show if unlocked
             if (gameState.isPlatinumFrameUnlocked)
               Column(

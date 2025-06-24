@@ -180,7 +180,7 @@ class _InvestmentScreenState extends State<InvestmentScreen> {
         ],
       ),
       child: ListView.builder(
-        padding: EdgeInsets.zero,
+        padding: const EdgeInsets.only(bottom: 80.0),
         itemCount: investments.length,
         itemBuilder: (context, index) {
           Investment investment = investments[index];

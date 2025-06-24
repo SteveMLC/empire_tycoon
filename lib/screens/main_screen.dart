@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../models/game_state.dart';
 import '../services/income_service.dart';
+import '../services/game_service.dart';
 import 'business_screen.dart';
 import 'investment_screen.dart';
 import 'stats_screen.dart';
@@ -100,6 +101,9 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     
     final gameState = Provider.of<GameState>(context, listen: false);
     _updateBoostTimer(gameState);
+    
+    // ADDED: Check if notification permissions should be requested
+    _checkNotificationPermissionRequest(gameState);
   }
 
   // Start or stop the timer based on GameState
@@ -163,6 +167,26 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
            _boostTimeRemaining = remaining.isNegative ? Duration.zero : remaining;
          });
        }
+    }
+  }
+
+  // ADDED: Check if notification permissions should be requested
+  void _checkNotificationPermissionRequest(GameState gameState) {
+    if (gameState.shouldRequestNotificationPermissions) {
+      // Reset the flag immediately to prevent multiple requests
+      gameState.resetNotificationPermissionRequest();
+      
+      // Request permission through GameService after a brief delay for UI stability
+      Future.delayed(const Duration(milliseconds: 500), () async {
+        if (mounted) {
+          try {
+            final gameService = Provider.of<GameService>(context, listen: false);
+            await gameService.requestNotificationPermissions(context);
+          } catch (e) {
+            print("⚠️ Error requesting notification permissions: $e");
+          }
+        }
+      });
     }
   }
 

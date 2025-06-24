@@ -161,6 +161,19 @@ class OverviewCard extends StatelessWidget {
               ),
             ),
 
+            // Achievements stat with clickable functionality
+            InkWell(
+              onTap: () => scrollToSection?.call('achievements'),
+              child: StatsUtils.buildStatRowWithIcon(
+                'Achievements', 
+                '${gameState.achievementManager.getCompletedAchievements().length} / ${gameState.achievementManager.achievements.length}',
+                Icons.emoji_events, // Trophy icon for achievements
+                isExecutive ? Colors.amber.shade300 : Colors.amber.shade600,
+                theme,
+                showClickIndicator: true
+              ),
+            ),
+
             const SizedBox(height: 20),
 
             Container(

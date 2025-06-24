@@ -25,6 +25,7 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+        isCoreLibraryDesugaringEnabled = true
     }
 
     kotlinOptions {
@@ -79,6 +80,10 @@ flutter {
 // Add Google Mobile Ads dependency for AdMob integration
 dependencies {
     implementation("com.google.android.gms:play-services-ads:24.2.0")
-    // Note: play-services-games and play-services-auth are already included by the games_services plugin
-    // Do not add them manually to avoid duplicate class conflicts
+    // Google Play Games Services v2 SDK - REQUIRED for Google Play Console recognition
+    implementation("com.google.android.gms:play-services-games-v2:+")
+    // Note: games_services plugin provides Flutter bindings, but native v2 SDK is required for Play Console
+    
+    // Add core library desugaring for flutter_local_notifications compatibility
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
 }

@@ -190,6 +190,14 @@ class GameState with ChangeNotifier {
   bool get isSteadyBoostActive => platinumSteadyBoostRemainingSeconds > 0;
   // >> END: Derived Active Flags for Boosters <<
 
+  // ADDED: Notification permission request tracking
+  bool _shouldRequestNotificationPermissions = false;
+  bool get shouldRequestNotificationPermissions => _shouldRequestNotificationPermissions;
+  
+  void resetNotificationPermissionRequest() {
+    _shouldRequestNotificationPermissions = false;
+  }
+
   // >> START: Add Achievement Tracking Fields Declaration <<
   // These fields are explicitly marked as needed for achievement tracking
   double totalUpgradeSpending = 0.0;
