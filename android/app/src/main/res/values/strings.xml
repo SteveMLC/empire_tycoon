@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Google Play Games Services App ID -->
-    <string name="app_id" translatable="false">400590136347</string>
+    <string name="app_id" translatable="false">716473238772</string>
+    
+    <!-- Default Web Client ID for Firebase Authentication -->
+    <string name="default_web_client_id" translatable="false">716473238772-mn9sh4e5c441ovk16l7oqc48le35bm9e.apps.googleusercontent.com</string>
 </resources> 

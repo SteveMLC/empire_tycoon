@@ -139,7 +139,28 @@ extension GameStateEvents on GameState {
 
     // Only add the event if it's not a disaster while the shield is active (or if we failed to find a non-disaster)
     if (!(isDisasterShieldActive && newEvent.type == EventType.disaster)) {
-      activeEvents.add(newEvent);
+      // NEW SAFEGUARD: Double-check ad event limits before adding
+      bool canAddEvent = true;
+      
+      if (newEvent.resolution.type == EventResolutionType.adBased && !isPremium) {
+        // For non-premium users, count existing ad events again as a final safeguard
+        int currentAdEvents = activeEvents.where((event) => 
+          !event.isResolved && event.resolution.type == EventResolutionType.adBased
+        ).length;
+        
+        if (currentAdEvents >= 1) {
+          canAddEvent = false;
+          print("INFO: Prevented adding ad event - non-premium user already has ${currentAdEvents} ad events");
+        }
+      }
+      
+      if (canAddEvent) {
+        activeEvents.add(newEvent);
+        print("INFO: Added new ${newEvent.resolution.type.name} event: ${newEvent.name}");
+      } else {
+        print("INFO: Event generation blocked by ad limit policy");
+      }
+      
       notifyListeners();
     } else {
       print("INFO: Disaster event blocked by shield.");
@@ -150,19 +171,31 @@ extension GameStateEvents on GameState {
   // Create a random event with the given affected targets
   GameEvent _createRandomEvent(List<String> businessIds, List<String> localeIds, {required bool isResilienceActive}) {
     final eventTypes = EventType.values;
-    final resolutionTypes = EventResolutionType.values;
     
-    // Pick random type and resolution
+    // Pick random event type
     final eventType = eventTypes[Random().nextInt(eventTypes.length)];
     
-    // Random single resolution type (one of three: tap, fee, or ad-based)
-    // Note: We exclude time-based resolutions as they don't require user interaction
-    final activeResolutionTypes = [
+    // NEW LOGIC: Intelligently select resolution type based on premium status and existing events
+    // Count how many active ad-based events currently exist
+    int existingAdEvents = activeEvents.where((event) => 
+      !event.isResolved && event.resolution.type == EventResolutionType.adBased
+    ).length;
+    
+    // Available resolution types based on premium status and existing events
+    List<EventResolutionType> availableResolutionTypes = [
       EventResolutionType.tapChallenge,
       EventResolutionType.feeBased,
-      EventResolutionType.adBased
     ];
-    final resolutionType = activeResolutionTypes[Random().nextInt(activeResolutionTypes.length)];
+    
+    // Add ad-based resolution only if:
+    // 1. User has premium (no limit), OR
+    // 2. User doesn't have premium but there are no existing ad events (max 1)
+    if (isPremium || existingAdEvents == 0) {
+      availableResolutionTypes.add(EventResolutionType.adBased);
+    }
+    
+    // Select resolution type from available options
+    final resolutionType = availableResolutionTypes[Random().nextInt(availableResolutionTypes.length)];
     
     // Determine resolution value based on type
     dynamic resolutionValue;
@@ -525,9 +558,22 @@ extension GameStateEvents on GameState {
   void eventsFromJson(Map<String, dynamic> json) {
     if (json.containsKey('activeEvents')) {
       final List<dynamic> eventsList = json['activeEvents'] as List<dynamic>;
-      activeEvents = eventsList
+      List<GameEvent> loadedEvents = eventsList
           .map((e) => GameEvent.fromJson(e as Map<String, dynamic>))
           .toList();
+      
+      // NEW LOGIC: Limit events on load to prevent overwhelming players
+      // Keep only unresolved events and limit to 3 maximum
+      List<GameEvent> unresolvedEvents = loadedEvents.where((event) => !event.isResolved).toList();
+      
+      if (unresolvedEvents.length > 3) {
+        // Sort by start time (oldest first) and keep the 3 oldest events
+        unresolvedEvents.sort((a, b) => a.startTime.compareTo(b.startTime));
+        unresolvedEvents = unresolvedEvents.take(3).toList();
+        print("INFO: Limited loaded events to 3 (was ${loadedEvents.length})");
+      }
+      
+      activeEvents = unresolvedEvents;
     }
     
     if (json.containsKey('lastEventTime') && json['lastEventTime'] != null) {

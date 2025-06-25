@@ -5,7 +5,7 @@ description: "Build your global business empire! A sophisticated idle tycoon gam
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' 
 
-version: 1.0.1+111
+version: 1.0.1+114
 # Version format: [major].[minor].[patch]+[build-number]
 # The build number (100) is used by Android as versionCode
 
@@ -38,6 +38,11 @@ dependencies:
   fl_chart: ^0.62.0
   flutter_svg: ^2.0.0
   google_fonts: ^4.0.0
+  
+  # Firebase Authentication - REQUIRED for Google Play Games Services
+  firebase_core: ^2.24.2
+  firebase_auth: ^4.15.3
+  google_sign_in: ^6.1.6
   
   # Google Play Games Services
   games_services: ^4.1.1

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'models/game_state.dart';
 import 'screens/main_screen.dart';
 import 'services/game_service.dart';
@@ -13,6 +14,10 @@ import 'widgets/empire_loading_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize Firebase
+  await Firebase.initializeApp();
+  
   final prefs = await SharedPreferences.getInstance();
   runApp(MyApp(prefs: prefs));
 }
@@ -120,10 +125,6 @@ class _GameInitializerState extends State<GameInitializer> {
       print('Game initializer: Starting AdMob initialization');
       await adMobService.initialize();
       print('Game initializer: Finished AdMob initialization');
-      
-      // Debug offline income ad specifically  
-      print('Game initializer: Testing offline income ad status');
-      adMobService.debugOfflineIncomeAd();
       
       // ADDED: Check if user has previously purchased premium
       print('Game initializer: Checking premium ownership');

@@ -1,20 +1,29 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:games_services/games_services.dart';
 
-/// Service for managing Google Play Games Services authentication
-/// Updated for v2 SDK compatibility
+/// Service for managing Firebase Authentication with Google Play Games Services
+/// Following Firebase Google Play Games Services documentation
 class AuthService extends ChangeNotifier {
   static final AuthService _instance = AuthService._internal();
   factory AuthService() => _instance;
   AuthService._internal();
 
+  // Firebase Auth instance
+  final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
+  
+  // Google Sign In configuration for Play Games
+  late GoogleSignIn _googleSignIn;
+  
   bool _isSignedIn = false;
   String? _playerId;
   String? _playerName;
   String? _playerAvatarUrl;
   bool _isInitialized = false;
   String? _lastError;
+  User? _firebaseUser;
 
   // Getters
   bool get isSignedIn => _isSignedIn;
@@ -23,86 +32,73 @@ class AuthService extends ChangeNotifier {
   String? get playerAvatarUrl => _playerAvatarUrl;
   bool get isInitialized => _isInitialized;
   String? get lastError => _lastError;
+  User? get firebaseUser => _firebaseUser;
 
-  /// Initialize the authentication service with enhanced v2 SDK support
+  /// Initialize the authentication service with Firebase and Google Play Games Services
   Future<void> initialize() async {
     try {
-      debugPrint('🎮 AuthService: Starting Google Play Games Services v2 SDK initialization');
+      debugPrint('🎮 AuthService: Starting Firebase + Google Play Games Services initialization');
       
-      // Check if Google Play Services is available
-      if (defaultTargetPlatform == TargetPlatform.android) {
-        debugPrint('🎮 AuthService: Running on Android - Play Games Services v2 SDK should be initialized natively');
-      }
+      // Initialize Google Sign In with Play Games configuration
+      _googleSignIn = GoogleSignIn(
+        scopes: [
+          'email',
+          'profile',
+          'https://www.googleapis.com/auth/games',
+        ],
+        // Use default web client ID from strings.xml
+        serverClientId: '716473238772-mn9sh4e5c441ovk16l7oqc48le35bm9e.apps.googleusercontent.com',
+      );
       
       _isInitialized = true;
       _lastError = null;
       
-      // Listen to player changes with enhanced error handling
-      GameAuth.player.listen((PlayerData? player) {
-        debugPrint('🎮 AuthService: Player state changed - Player: ${player != null ? 'authenticated' : 'not authenticated'}');
-        
-        if (player != null) {
-          _isSignedIn = true;
-          _playerId = player.playerID;
-          _playerName = player.displayName;
-          _playerAvatarUrl = player.iconImage; // This is base64 encoded
-          _lastError = null;
-          debugPrint('🎮 AuthService: User signed in - ID: $_playerId, Name: $_playerName');
+      // Listen to Firebase auth state changes
+      _firebaseAuth.authStateChanges().listen((User? user) {
+        _firebaseUser = user;
+        if (user != null) {
+          debugPrint('🔥 AuthService: Firebase user signed in - UID: ${user.uid}');
+          // Update local state based on Firebase user
+          _updateUserState(user);
         } else {
-          _isSignedIn = false;
-          _playerId = null;
-          _playerName = null;
-          _playerAvatarUrl = null;
-          debugPrint('🎮 AuthService: User signed out or authentication lost');
+          debugPrint('🔥 AuthService: Firebase user signed out');
+          _clearUserState();
         }
-        notifyListeners();
-      }, onError: (error) {
-        debugPrint('🔴 AuthService: Error in player stream: $error');
-        _lastError = error.toString();
-        _isSignedIn = false;
-        
-        // Enhanced error reporting for v2 SDK issues
-        if (error.toString().contains('GAMES_SDK_NOT_INITIALIZED')) {
-          debugPrint('🔴 AuthService: CRITICAL - Play Games SDK v2 not properly initialized in native Android code');
-        } else if (error.toString().contains('API_NOT_CONNECTED')) {
-          debugPrint('🔴 AuthService: CRITICAL - Play Games API not connected - check SHA-1 fingerprints');
-        } else if (error.toString().contains('SIGN_IN_REQUIRED')) {
-          debugPrint('🔴 AuthService: Sign-in required - user needs to authenticate');
-        }
-        
         notifyListeners();
       });
 
-      debugPrint('✅ AuthService: Google Play Games Services v2 SDK initialized successfully');
+      // Listen to Google Play Games player changes
+      GameAuth.player.listen((PlayerData? player) {
+        debugPrint('🎮 AuthService: Google Play Games player state changed');
+        
+        if (player != null) {
+          _playerId = player.playerID;
+          _playerName = player.displayName;
+          _playerAvatarUrl = player.iconImage;
+          debugPrint('🎮 AuthService: Play Games player data - ID: $_playerId, Name: $_playerName');
+        } else {
+          debugPrint('🎮 AuthService: Play Games player data cleared');
+        }
+        notifyListeners();
+      }, onError: (error) {
+        debugPrint('🔴 AuthService: Error in Google Play Games player stream: $error');
+        _lastError = error.toString();
+        notifyListeners();
+      });
+
+      debugPrint('✅ AuthService: Firebase + Google Play Games Services initialized successfully');
     } catch (e) {
-      debugPrint('🔴 AuthService: Error initializing Google Play Games Services v2 SDK: $e');
+      debugPrint('🔴 AuthService: Error initializing authentication services: $e');
       _isInitialized = false;
       _lastError = e.toString();
-      
-      // Provide specific guidance for common v2 SDK errors
-      if (e.toString().contains('INVALID_CONFIGURATION') || 
-          e.toString().contains('API_KEY_NOT_FOUND')) {
-        debugPrint('🔴 AuthService: CONFIGURATION ERROR - Check google-services.json and API keys');
-        debugPrint('🔴 AuthService: Also verify Play Games Services v2 SDK is properly added to build.gradle');
-      } else if (e.toString().contains('SIGN_IN_REQUIRED') || 
-                 e.toString().contains('AUTHENTICATION_ERROR')) {
-        debugPrint('🔴 AuthService: AUTHENTICATION ERROR - Check SHA-1 fingerprints in Google Play Console');
-        debugPrint('🔴 AuthService: Verify OAuth client ID configuration');
-      } else if (e.toString().contains('NETWORK_ERROR')) {
-        debugPrint('🔴 AuthService: NETWORK ERROR - Check internet connection');
-      } else if (e.toString().contains('GAMES_SDK_NOT_AVAILABLE')) {
-        debugPrint('🔴 AuthService: CRITICAL - Play Games Services v2 SDK not found in APK');
-        debugPrint('🔴 AuthService: This explains why Google Play Console shows SDK as not setup');
-      }
-      
       notifyListeners();
     }
   }
 
-  /// Sign in to Google Play Games Services with enhanced error handling
+  /// Sign in using Firebase with Google Play Games Services
   Future<bool> signIn() async {
     try {
-      debugPrint('🎮 AuthService: Starting sign-in process');
+      debugPrint('🎮 AuthService: Starting Firebase + Google Play Games sign-in process');
       
       if (!_isInitialized) {
         debugPrint('🔴 AuthService: Service not initialized, initializing now');
@@ -117,49 +113,106 @@ class AuthService extends ChangeNotifier {
       _lastError = null;
       notifyListeners();
       
-      debugPrint('🎮 AuthService: Calling GameAuth.signIn()');
-      final result = await GameAuth.signIn();
-      debugPrint('🎮 AuthService: Sign in result: $result');
+      // Step 1: Sign in to Google Play Games Services first
+      debugPrint('🎮 AuthService: Step 1 - Signing in to Google Play Games Services');
       
-      // The result is just a string, the authentication state will be updated through the stream listener
-      if (result != null) {
-        debugPrint('✅ AuthService: Sign-in request successful, waiting for player data');
-        return true;
-      } else {
-        debugPrint('🔴 AuthService: Sign-in returned null result');
-        _lastError = 'Sign-in returned null result';
+      // Configure Google Sign In for Play Games
+      final GoogleSignIn googleSignIn = GoogleSignIn(
+        scopes: [
+          'email',
+          'profile',
+          'https://www.googleapis.com/auth/games',
+        ],
+        serverClientId: '716473238772-mn9sh4e5c441ovk16l7oqc48le35bm9e.apps.googleusercontent.com',
+      );
+      
+      // Sign in with Google Play Games
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+      
+      if (googleUser == null) {
+        debugPrint('🔴 AuthService: Google Sign In was cancelled by user');
+        _lastError = 'Sign-in was cancelled by user';
         notifyListeners();
         return false;
       }
-    } catch (e) {
-      debugPrint('🔴 AuthService: Error signing in: $e');
-      _lastError = e.toString();
       
-      // Provide specific error guidance
+      debugPrint('🎮 AuthService: Step 2 - Getting authentication details');
+      
+      // Get authentication details from the request
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      
+      if (googleAuth.accessToken == null) {
+        debugPrint('🔴 AuthService: Failed to get access token');
+        _lastError = 'Failed to get access token';
+        notifyListeners();
+        return false;
+      }
+      
+      debugPrint('🎮 AuthService: Step 3 - Creating Firebase credential');
+      
+      // Create a new credential using the token
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+      
+      debugPrint('🎮 AuthService: Step 4 - Signing in to Firebase');
+      
+      // Sign in to Firebase with the Google credentials
+      final UserCredential userCredential = await _firebaseAuth.signInWithCredential(credential);
+      
+      if (userCredential.user != null) {
+        debugPrint('✅ AuthService: Successfully signed in to Firebase');
+        debugPrint('🔥 Firebase User: ${userCredential.user!.uid}');
+        debugPrint('🔥 Display Name: ${userCredential.user!.displayName}');
+        debugPrint('🔥 Email: ${userCredential.user!.email}');
+        
+        // Step 5: Initialize Google Play Games Services
+        debugPrint('🎮 AuthService: Step 5 - Initializing Google Play Games Services');
+        try {
+          final gameAuthResult = await GameAuth.signIn();
+          debugPrint('🎮 AuthService: Google Play Games sign-in result: $gameAuthResult');
+        } catch (gameError) {
+          debugPrint('⚠️ AuthService: Google Play Games Services sign-in failed: $gameError');
+          // Continue anyway - Firebase authentication succeeded
+        }
+        
+        _isSignedIn = true;
+        _lastError = null;
+        notifyListeners();
+        return true;
+      } else {
+        debugPrint('🔴 AuthService: Firebase sign-in failed - no user returned');
+        _lastError = 'Firebase authentication failed';
+        notifyListeners();
+        return false;
+      }
+      
+    } catch (e) {
+      debugPrint('🔴 AuthService: Error during sign-in: $e');
+      debugPrint('🔴 AuthService: Exception type: ${e.runtimeType}');
+      
       if (e is PlatformException) {
         final code = e.code;
         final message = e.message;
         debugPrint('🔴 AuthService: Platform Exception - Code: $code, Message: $message');
         
         switch (code) {
-          case 'SIGN_IN_CANCELLED':
+          case 'sign_in_canceled':
             _lastError = 'Sign-in was cancelled by user';
             break;
-          case 'SIGN_IN_FAILED':
-            _lastError = 'Sign-in failed - Check Google Play Games configuration';
+          case 'sign_in_failed':
+            _lastError = 'Sign-in failed - Check configuration';
             break;
-          case 'NETWORK_ERROR':
+          case 'network_error':
             _lastError = 'Network error - Check internet connection';
             break;
-          case 'API_NOT_AVAILABLE':
-            _lastError = 'Google Play Games API not available - Update Google Play Services';
-            break;
-          case 'INVALID_ACCOUNT':
-            _lastError = 'Invalid account - Try signing in with a different account';
-            break;
           default:
-            _lastError = 'Sign-in error: $message';
+            _lastError = 'Sign-in error: $message (Code: $code)';
         }
+      } else if (e is FirebaseAuthException) {
+        debugPrint('🔴 AuthService: Firebase Auth Exception - Code: ${e.code}, Message: ${e.message}');
+        _lastError = 'Firebase authentication error: ${e.message}';
       } else {
         _lastError = e.toString();
       }
@@ -169,21 +222,21 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  /// Sign out from Google Play Games Services
+  /// Sign out from both Firebase and Google Play Games Services
   Future<void> signOut() async {
     try {
-      debugPrint('🎮 AuthService: Signing out from Google Play Games Services...');
+      debugPrint('🎮 AuthService: Starting sign-out process');
       
-      // Note: games_services 4.1.1 doesn't have a direct signOut method
-      // The sign out is typically handled by the system or by clearing local state
-      _isSignedIn = false;
-      _playerId = null;
-      _playerName = null;
-      _playerAvatarUrl = null;
-      _lastError = null;
+      // Sign out from Firebase
+      await _firebaseAuth.signOut();
       
-      notifyListeners();
-      debugPrint('✅ AuthService: Successfully signed out');
+      // Sign out from Google Sign In
+      await _googleSignIn.signOut();
+      
+      // Clear local state
+      _clearUserState();
+      
+      debugPrint('✅ AuthService: Successfully signed out from all services');
     } catch (e) {
       debugPrint('🔴 AuthService: Error during sign-out: $e');
       _lastError = e.toString();
@@ -191,32 +244,38 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  /// Check if user is currently signed in with enhanced diagnostics
-  Future<bool> checkSignInStatus() async {
-    try {
-      debugPrint('🎮 AuthService: Checking sign-in status');
-      
-      // The current player status is available through the stream
-      // We can also call GameAuth.player.value to get the current value
-      if (_isSignedIn) {
-        debugPrint('✅ AuthService: User is signed in');
-      } else {
-        debugPrint('ℹ️ AuthService: User is not signed in');
-      }
-      
-      return _isSignedIn;
-    } catch (e) {
-      debugPrint('🔴 AuthService: Error checking sign in status: $e');
-      _lastError = e.toString();
-      notifyListeners();
-      return false;
+  /// Update user state based on Firebase user
+  void _updateUserState(User user) {
+    _isSignedIn = true;
+    // Use Firebase user data as primary, Play Games data as secondary
+    if (_playerName == null) {
+      _playerName = user.displayName;
+    }
+    if (_playerAvatarUrl == null) {
+      _playerAvatarUrl = user.photoURL;
     }
   }
 
-  /// Get current player data
-  PlayerData? getCurrentPlayer() {
-    // This would be available through the GameAuth.player stream
-    return null; // We'd need to store the current player data
+  /// Clear all user state
+  void _clearUserState() {
+    _isSignedIn = false;
+    _playerId = null;
+    _playerName = null;
+    _playerAvatarUrl = null;
+    _firebaseUser = null;
+    _lastError = null;
+  }
+
+  /// Get current authentication status
+  Map<String, dynamic> getAuthStatus() {
+    return {
+      'isSignedIn': _isSignedIn,
+      'isInitialized': _isInitialized,
+      'firebaseUser': _firebaseUser?.uid,
+      'playerId': _playerId,
+      'playerName': _playerName,
+      'lastError': _lastError,
+    };
   }
 
   /// Show the achievements UI
@@ -340,6 +399,77 @@ class AuthService extends ChangeNotifier {
       results['tests']['diagnostic_execution'] = false;
       results['critical_issues'].add('Diagnostic test failed: $e');
       debugPrint('🔴 Diagnostic test execution failed: $e');
+    }
+
+    return results;
+  }
+
+  /// Test specifically for the missing Web client issue
+  Future<Map<String, dynamic>> testWebClientConfiguration() async {
+    final results = <String, dynamic>{
+      'timestamp': DateTime.now().toIso8601String(),
+      'test_name': 'Web Client Configuration Test',
+      'issues_found': <String>[],
+      'recommendations': <String>[],
+      'success': false,
+    };
+
+    try {
+      debugPrint('🔍 Testing Web Client Configuration...');
+      
+      // Test 1: Try to sign in and capture exact error
+      results['test_signin_attempt'] = true;
+      
+      try {
+        final result = await GameAuth.signIn();
+        if (result != null) {
+          results['signin_result'] = 'SUCCESS';
+          results['success'] = true;
+        } else {
+          results['signin_result'] = 'NULL_RESULT';
+          results['issues_found'].add('GameAuth.signIn() returned null - likely configuration issue');
+        }
+      } catch (e) {
+        results['signin_result'] = 'EXCEPTION';
+        results['signin_exception'] = e.toString();
+        results['exception_type'] = e.runtimeType.toString();
+        
+        if (e is PlatformException) {
+          results['platform_exception_code'] = e.code;
+          results['platform_exception_message'] = e.message;
+          results['platform_exception_details'] = e.details;
+          
+          // Specific diagnosis for common issues
+          if (e.code == 'failed_to_authenticate') {
+            results['issues_found'].add('CRITICAL: failed_to_authenticate - Missing Web OAuth client in google-services.json');
+            results['recommendations'].add('Add Web OAuth client in Google Cloud Console');
+            results['recommendations'].add('Download updated google-services.json from Firebase Console');
+            results['recommendations'].add('Ensure Play Games Services API is enabled');
+          }
+        }
+      }
+      
+      // Test 2: Check current error state
+      if (_lastError != null) {
+        results['current_error'] = _lastError;
+        if (_lastError!.contains('Sign-in error:')) {
+          results['issues_found'].add('Error message truncated - need full error details');
+        }
+      }
+      
+      // Test 3: Configuration validation
+      results['configuration_check'] = {
+        'service_initialized': _isInitialized,
+        'platform': defaultTargetPlatform.toString(),
+        'app_id_configured': '400590136347', // From strings.xml
+        'package_name': 'com.go7studio.empire_tycoon',
+      };
+      
+      debugPrint('🔍 Web Client Test Results: $results');
+      
+    } catch (e) {
+      results['test_execution_error'] = e.toString();
+      debugPrint('🔴 Error running web client test: $e');
     }
 
     return results;

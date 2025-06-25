@@ -20,6 +20,10 @@
             "package_name": "com.go7studio.empire_tycoon",
             "certificate_hash": "ce7c41572e9d2231904cc9fcea2d7f73a1785168"
           }
+        },
+        {
+          "client_id": "716473238772-mn9sh4e5c441ovk16l7oqc48le35bm9e.apps.googleusercontent.com",
+          "client_type": 3
         }
       ],
       "api_key": [
@@ -29,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "716473238772-mn9sh4e5c441ovk16l7oqc48le35bm9e.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

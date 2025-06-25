@@ -9,7 +9,7 @@ import 'dart:async';
 /// 1. HustleBoost (10x earnings for 60 seconds) - Reward: 'HustleBoost'
 /// 2. BuildingUpgradeBoost (reduce upgrade time by 15 minutes) - Reward: 'BuildingUpgradeBoost'
 /// 3. EventAdSkip (resolve events immediately) - Reward: 'EventAdSkip'
-/// 4. OfflineIncomeBoost (2x offline income) - Reward: 'OfflineIncomeBoost'
+/// 4. Offlineincome2x (2x offline income) - Reward: 'Offlineincome2x'
 /// 
 /// Each reward ad provides the adtype and rewardtype matching the ad name.
 /// The reward for watching an ad is the adname itself.
@@ -31,7 +31,7 @@ class AdMobService {
   static const String _prodHustleBoostAdUnitId = 'ca-app-pub-1738655803893663/5010660196';
   static const String _prodBuildSkipAdUnitId = 'ca-app-pub-1738655803893663/3789077869';
   static const String _prodEventClearAdUnitId = 'ca-app-pub-1738655803893663/4305735571';
-  static const String _prodOfflineIncomeBoostAdUnitId = 'ca-app-pub-1738655803893663/2711799918';
+  static const String _prodOfflineincome2xAdUnitId = 'ca-app-pub-1738655803893663/2319744212';
 
   // Test device IDs for development (add your device IDs here)
   static const List<String> _testDeviceIds = [
@@ -43,13 +43,13 @@ class AdMobService {
   RewardedAd? _hustleBoostAd;
   RewardedAd? _buildSkipAd;
   RewardedAd? _eventClearAd;
-  RewardedAd? _offlineIncomeBoostAd;
+  RewardedAd? _offlineincome2xAd;
 
   // Simple loading states
   bool _isHustleBoostAdLoading = false;
   bool _isBuildSkipAdLoading = false;
   bool _isEventClearAdLoading = false;
-  bool _isOfflineIncomeBoostAdLoading = false;
+  bool _isOfflineincome2xAdLoading = false;
 
   // Error tracking for better debugging
   String? _lastAdError;
@@ -65,7 +65,7 @@ class AdMobService {
   bool get isHustleBoostAdReady => _adsEnabled ? _hustleBoostAd != null : true;
   bool get isBuildSkipAdReady => _adsEnabled ? _buildSkipAd != null : true;
   bool get isEventClearAdReady => _adsEnabled ? _eventClearAd != null : true;
-  bool get isOfflineIncomeBoostAdReady => _adsEnabled ? _offlineIncomeBoostAd != null : true;
+  bool get isOfflineincome2xAdReady => _adsEnabled ? _offlineincome2xAd != null : true;
 
   // Get last error for debugging
   String? get lastAdError => _lastAdError;
@@ -124,7 +124,7 @@ class AdMobService {
       _loadEventClearAd();
       await Future.delayed(const Duration(seconds: 2));
       
-      _loadOfflineIncomeBoostAd();
+      _loadOfflineincome2xAd();
       
       if (kDebugMode) {
         print('🎯 AdMob initialization complete');
@@ -132,7 +132,7 @@ class AdMobService {
         print('   - Hustle Boost: ${isHustleBoostAdReady}');
         print('   - Build Skip: ${isBuildSkipAdReady}');
         print('   - Event Clear: ${isEventClearAdReady}');
-        print('   - Offline Income Boost: ${isOfflineIncomeBoostAdReady}');
+        print('   - Offlineincome2x: ${isOfflineincome2xAdReady}');
       }
       
     } catch (e, stackTrace) {
@@ -176,7 +176,7 @@ class AdMobService {
         isHustleBoostAdReady,
         isBuildSkipAdReady,
         isEventClearAdReady,
-        isOfflineIncomeBoostAdReady,
+        isOfflineincome2xAdReady,
       ].where((ready) => ready).length,
       'lastError': _lastAdError,
       'lastErrorTime': _lastErrorTime?.toIso8601String(),
@@ -196,8 +196,8 @@ class AdMobService {
         return _prodBuildSkipAdUnitId;
       case AdType.eventClear:
         return _prodEventClearAdUnitId;
-      case AdType.offlineIncomeBoost:
-        return _prodOfflineIncomeBoostAdUnitId;
+      case AdType.offlineincome2x:
+        return _prodOfflineincome2xAdUnitId;
     }
   }
 
@@ -278,42 +278,24 @@ class AdMobService {
     );
   }
 
-  Future<void> _loadOfflineIncomeBoostAd() async {
+  Future<void> _loadOfflineincome2xAd() async {
     if (!_adsEnabled) return; // Skip loading if ads are disabled
-    if (_isOfflineIncomeBoostAdLoading || _offlineIncomeBoostAd != null) return;
-    _isOfflineIncomeBoostAdLoading = true;
-    
-    if (kDebugMode) {
-      print('🎯 Loading Offline Income Boost Ad...');
-      print('🎯 Ad Unit ID: ${_getAdUnitId(AdType.offlineIncomeBoost)}');
-    }
+    if (_isOfflineincome2xAdLoading || _offlineincome2xAd != null) return;
+    _isOfflineincome2xAdLoading = true;
     
     await RewardedAd.load(
-      adUnitId: _getAdUnitId(AdType.offlineIncomeBoost),
+      adUnitId: _getAdUnitId(AdType.offlineincome2x),
       request: const AdRequest(),
       rewardedAdLoadCallback: RewardedAdLoadCallback(
         onAdLoaded: (RewardedAd ad) {
-          if (kDebugMode) {
-            print('✅ Offline Income Boost Ad loaded successfully');
-          }
-          _offlineIncomeBoostAd = ad;
-          _isOfflineIncomeBoostAdLoading = false;
+          _offlineincome2xAd = ad;
+          _isOfflineincome2xAdLoading = false;
         },
         onAdFailedToLoad: (LoadAdError error) {
-          if (kDebugMode) {
-            print('❌ Offline Income Boost Ad failed to load:');
-            print('   Error Code: ${error.code}');
-            print('   Error Message: ${error.message}');
-            print('   Error Domain: ${error.domain}');
-          }
-          _logError('Offline Income Boost Ad Load Failed: ${error.message} (Code: ${error.code})');
-          _isOfflineIncomeBoostAdLoading = false;
+          _isOfflineincome2xAdLoading = false;
           Future.delayed(const Duration(seconds: 30), () {
-            if (!_isOfflineIncomeBoostAdLoading && _offlineIncomeBoostAd == null) {
-              if (kDebugMode) {
-                print('🔄 Retrying Offline Income Boost Ad load after 30 seconds...');
-              }
-              _loadOfflineIncomeBoostAd();
+            if (!_isOfflineincome2xAdLoading && _offlineincome2xAd == null) {
+              _loadOfflineincome2xAd();
             }
           });
         },
@@ -503,90 +485,51 @@ class AdMobService {
     }
   }
 
-  Future<void> showOfflineIncomeBoostAd({
+  Future<void> showOfflineincome2xAd({
     required Function(String rewardType) onRewardEarned,
     Function()? onAdFailure,
   }) async {
-    if (kDebugMode) {
-      print('🎯 === OfflineIncomeBoost Ad Request ===');
-      print('🎯 Ads Enabled: $_adsEnabled');
-      print('🎯 Offline Income Boost Ad Ready: $_offlineIncomeBoostAd != null');
-    }
-    
     // If ads are disabled, immediately grant reward (for Play Store submission)
     if (!_adsEnabled) {
       if (kDebugMode) {
-        print('🎯 Ads disabled - granting OfflineIncomeBoost reward directly');
+        print('🎯 Ads disabled - granting Offlineincome2x reward directly');
       }
-      onRewardEarned('OfflineIncomeBoost');
+      onRewardEarned('Offlineincome2x');
       return;
     }
     
-    if (_offlineIncomeBoostAd == null) {
-      if (kDebugMode) {
-        print('🎯 Offline Income Boost Ad not loaded, attempting to load...');
-      }
-      await _loadOfflineIncomeBoostAd();
-      if (_offlineIncomeBoostAd == null) {
-        if (kDebugMode) {
-          print('❌ Offline Income Boost Ad failed to load');
-        }
+    if (_offlineincome2xAd == null) {
+      await _loadOfflineincome2xAd();
+      if (_offlineincome2xAd == null) {
         onAdFailure?.call();
         return;
       }
     }
 
-    if (kDebugMode) {
-      print('🎯 Offline Income Boost Ad loaded successfully, setting up callbacks...');
-    }
-
-    _offlineIncomeBoostAd!.fullScreenContentCallback = FullScreenContentCallback(
+    _offlineincome2xAd!.fullScreenContentCallback = FullScreenContentCallback(
       onAdDismissedFullScreenContent: (RewardedAd ad) {
-        if (kDebugMode) {
-          print('🎯 Offline Income Boost Ad dismissed (user closed ad)');
-        }
         ad.dispose();
-        _offlineIncomeBoostAd = null;
-        Future.delayed(const Duration(seconds: 1), () => _loadOfflineIncomeBoostAd());
+        _offlineincome2xAd = null;
+        Future.delayed(const Duration(seconds: 1), () => _loadOfflineincome2xAd());
       },
       onAdFailedToShowFullScreenContent: (RewardedAd ad, AdError error) {
-        if (kDebugMode) {
-          print('❌ Offline Income Boost Ad failed to show: ${error.message}');
-        }
         ad.dispose();
-        _offlineIncomeBoostAd = null;
-        Future.delayed(const Duration(seconds: 1), () => _loadOfflineIncomeBoostAd());
+        _offlineincome2xAd = null;
+        Future.delayed(const Duration(seconds: 1), () => _loadOfflineincome2xAd());
         onAdFailure?.call();
       },
     );
 
-    if (kDebugMode) {
-      print('🎯 Showing Offline Income Boost Ad...');
-    }
-
-    await _offlineIncomeBoostAd!.show(
+    await _offlineincome2xAd!.show(
       onUserEarnedReward: (AdWithoutView ad, RewardItem reward) {
-        _trackAdShown('OfflineIncomeBoost');
+        _trackAdShown('Offlineincome2x');
         if (kDebugMode) {
-          print('🎁 === OFFLINE INCOME BOOST AD REWARD EARNED ===');
-          print('🎁 Reward Amount: ${reward.amount}');
-          print('🎁 Reward Type: ${reward.type}');
-          print('🎁 Calling onRewardEarned with OfflineIncomeBoost...');
+          print('🎁 User earned Offlineincome2x reward: ${reward.amount} ${reward.type}');
         }
-        
-        // Use a delayed callback to ensure UI has time to process
-        Future.microtask(() {
-          if (kDebugMode) {
-            print('🎁 Executing OfflineIncomeBoost reward callback NOW');
-          }
-          onRewardEarned('OfflineIncomeBoost');
-        });
+        // Provide Offlineincome2x as the reward type
+        onRewardEarned('Offlineincome2x');
       },
     );
-    
-    if (kDebugMode) {
-      print('🎯 Offline Income Boost Ad show() method completed');
-    }
   }
 
   // Debug status for troubleshooting
@@ -599,7 +542,7 @@ class AdMobService {
       print('🎯 Hustle Boost Ad: ${isHustleBoostAdReady ? "✅ Ready" : "❌ Not Ready"} (Loading: $_isHustleBoostAdLoading)');
       print('🎯 Build Skip Ad: ${isBuildSkipAdReady ? "✅ Ready" : "❌ Not Ready"} (Loading: $_isBuildSkipAdLoading)');
       print('🎯 Event Clear Ad: ${isEventClearAdReady ? "✅ Ready" : "❌ Not Ready"} (Loading: $_isEventClearAdLoading)');
-      print('🎯 Offline Income Boost Ad: ${isOfflineIncomeBoostAdReady ? "✅ Ready" : "❌ Not Ready"} (Loading: $_isOfflineIncomeBoostAdLoading)');
+      print('🎯 Offlineincome2x Ad: ${isOfflineincome2xAdReady ? "✅ Ready" : "❌ Not Ready"} (Loading: $_isOfflineincome2xAdLoading)');
       print('🎯 Ready Ads Count: ${report['adsReadyCount']}/4');
       print('🎯 Test Ad Unit ID: $_testRewardedAdUnitId');
       print('🎯 Debug Mode: ${kDebugMode}');
@@ -610,32 +553,17 @@ class AdMobService {
     }
   }
 
-  // Debug method specifically for offline income ads
-  void debugOfflineIncomeAd() {
-    if (kDebugMode) {
-      print('🔍 === OFFLINE INCOME AD DEBUG ===');
-      print('🔍 Ads Enabled: $_adsEnabled');
-      print('🔍 Ad Instance: $_offlineIncomeBoostAd');
-      print('🔍 Is Loading: $_isOfflineIncomeBoostAdLoading');
-      print('🔍 Is Ready: $isOfflineIncomeBoostAdReady');
-      print('🔍 Ad Unit ID: ${_getAdUnitId(AdType.offlineIncomeBoost)}');
-      print('🔍 Last Error: $_lastAdError');
-      print('🔍 Last Error Time: $_lastErrorTime');
-      print('🔍 === END OFFLINE INCOME AD DEBUG ===');
-    }
-  }
-
   // Dispose all ads
   void dispose() {
     _hustleBoostAd?.dispose();
     _buildSkipAd?.dispose();
     _eventClearAd?.dispose();
-    _offlineIncomeBoostAd?.dispose();
+    _offlineincome2xAd?.dispose();
     
     _hustleBoostAd = null;
     _buildSkipAd = null;
     _eventClearAd = null;
-    _offlineIncomeBoostAd = null;
+    _offlineincome2xAd = null;
     
     if (kDebugMode) {
       print('🧹 AdMob service disposed');
@@ -648,5 +576,5 @@ enum AdType {
   hustleBoost,
   buildSkip,
   eventClear,
-  offlineIncomeBoost,
+  offlineincome2x,
 } 
