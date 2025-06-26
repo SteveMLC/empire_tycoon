@@ -22,7 +22,7 @@ ca-app-pub-1738655803893663~8254619251
 | **HustleBoost** | `ca-app-pub-1738655803893663/5010660196` | `'HustleBoost'` | Hustle Screen - 10x earnings boost |
 | **BuildingUpgradeBoost** | `ca-app-pub-1738655803893663/3789077869` | `'BuildingUpgradeBoost'` | Business Item - Speed up upgrades |
 | **EventAdSkip** | `ca-app-pub-1738655803893663/4305735571` | `'EventAdSkip'` | Event Notification - Skip events |
-| **OfflineIncomeBoost** | `ca-app-pub-1738655803893663/2711799918` | `'OfflineIncomeBoost'` | Offline Income - 2x income multiplier |
+| **Offlineincome2x** | `ca-app-pub-1738655803893663/2319744212` | `'Offlineincome2x'` | Offline Income - 2x income multiplier |
 
 ## 🛠 **Files Modified**
 
@@ -40,7 +40,7 @@ ca-app-pub-1738655803893663~8254619251
 
 ### 3. Offline Income Implementation
 **File:** `lib/widgets/offline_income_notification.dart`
-- ✅ Updated `showOfflineIncomeBoostAd` callback to validate `'OfflineIncomeBoost'` reward
+- ✅ Updated `showOfflineincome2xAd` callback to validate `'Offlineincome2x'` reward
 - ✅ Added proper reward type verification
 
 ### 4. Event System Implementation
@@ -76,7 +76,7 @@ adMobService.showHustleBoostAd(
 - **HustleBoost** ad → Provides `'HustleBoost'` reward
 - **BuildingUpgradeBoost** ad → Provides `'BuildingUpgradeBoost'` reward  
 - **EventAdSkip** ad → Provides `'EventAdSkip'` reward
-- **OfflineIncomeBoost** ad → Provides `'OfflineIncomeBoost'` reward
+- **Offlineincome2x** ad → Provides `'Offlineincome2x'` reward
 
 ## 🚀 **Testing Instructions**
 
@@ -94,7 +94,7 @@ adMobService.showHustleBoostAd(
 1. **HustleBoost**: Go to Hustle screen → Tap "Start Ad Boost" → Watch ad → Verify 10x earnings
 2. **BuildingUpgradeBoost**: Start building upgrade → Tap "Speed Up" → Watch ad → Verify 15min reduction
 3. **EventAdSkip**: Wait for event → Tap "Watch AD" → Watch ad → Verify event resolves
-4. **OfflineIncomeBoost**: Return after being offline → Tap "Watch Ad" → Watch ad → Verify 2x income
+4. **Offlineincome2x**: Return after being offline → Tap "Watch Ad" → Watch ad → Verify 2x income
 
 ## 📋 **AdMob Console Configuration**
 
@@ -105,7 +105,7 @@ adMobService.showHustleBoostAd(
    - `HustleBoost` → Rewarded ad
    - `BuildingUpgradeBoost` → Rewarded ad  
    - `EventAdSkip` → Rewarded ad
-   - `OfflineIncomeBoost` → Rewarded ad
+   - `Offlineincome2x` → Rewarded ad
 
 ## ⚠️ **Important Notes**
 

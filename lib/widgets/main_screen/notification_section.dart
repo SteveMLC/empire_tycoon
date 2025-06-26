@@ -70,7 +70,6 @@ class NotificationSection extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           _buildAchievementNotifications(gameState, context),
-          _buildEventNotifications(gameState),
           _buildChallengeNotification(gameState),
           _buildOfflineIncomeNotification(gameState),
           AnimatedSize(
@@ -108,44 +107,7 @@ class NotificationSection extends StatelessWidget {
     );
   }
   
-  Widget _buildEventNotifications(GameState gameState) {
-    // If no active events, return empty widget
-    if (gameState.activeEvents.isEmpty) {
-      return const SizedBox();
-    }
-    
-    // Create a list for event notifications
-    List<Widget> eventNotifications = [];
-    
-    // Only show up to 3 active events at a time
-    for (var event in gameState.activeEvents) {
-      if (event.isResolved) continue;
-      
-      eventNotifications.add(EventNotification(
-        event: event,
-        gameState: gameState,
-        onResolved: () {
-          // Called when the event is resolved
-          // No need for setState as GameState's notifyListeners will trigger rebuild
-        },
-        onTap: event.resolution.type == EventResolutionType.tapChallenge ? () {
-          // Process tap for tap challenge events
-          gameState.processTapForEvent(event);
-        } : null,
-      ));
-      
-      // Limit to 3 notifications max
-      if (eventNotifications.length >= 3) break;
-    }
-    
-    if (eventNotifications.isEmpty) {
-      return const SizedBox();
-    }
-    
-    return Column(
-      children: eventNotifications,
-    );
-  }
+
   
   Widget _buildChallengeNotification(GameState gameState) {
     // If no active challenge, return empty widget
@@ -182,7 +144,6 @@ class NotificationSection extends StatelessWidget {
   // Helper method to check if there are any active notifications
   bool _hasActiveNotifications(GameState gameState) {
     return gameState.currentAchievementNotification != null || 
-           !gameState.activeEvents.where((e) => !e.isResolved).isEmpty ||
            gameState.activeChallenge != null ||
            gameState.showPremiumPurchaseNotification ||
            gameState.showOfflineIncomeNotification;

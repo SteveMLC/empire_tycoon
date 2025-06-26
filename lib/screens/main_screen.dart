@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../models/game_state.dart';
-import '../services/income_service.dart';
 import '../services/game_service.dart';
 import 'business_screen.dart';
 import 'investment_screen.dart';
@@ -15,6 +14,7 @@ import 'user_profile_screen.dart';
 import '../widgets/main_screen/top_panel.dart';
 import '../widgets/main_screen/main_tab_bar.dart';
 import '../widgets/main_screen/notification_section.dart';
+import '../widgets/main_screen/event_corner_badge.dart';
 import '../widgets/empire_loading_screen.dart';
 
 /// Main screen of the app, refactored to use smaller, more maintainable component files.
@@ -220,32 +220,40 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
         }
         
         return Scaffold(
-          body: Column(
+          body: Stack(
             children: [
-              // Top Panel always at the top - no longer passing functions
-              // The TopPanel will access IncomeService directly through Provider
-              const TopPanel(),
+              // Main content
+              Column(
+                children: [
+                  // Top Panel always at the top - no longer passing functions
+                  // The TopPanel will access IncomeService directly through Provider
+                  const TopPanel(),
 
-              // Notification section - pushes down the menu
-              const NotificationSection(),
+                  // Notification section - pushes down the menu
+                  const NotificationSection(),
 
-              // TabBar below notifications
-              MainTabBar(tabController: _tabController),
+                  // TabBar below notifications
+                  MainTabBar(tabController: _tabController),
 
-              // TabView for main content
-              Expanded(
-                child: TabBarView(
-                  controller: _tabController,
-                  children: const [
-                    HustleScreen(),
-                    BusinessScreen(),
-                    InvestmentScreen(),
-                    RealEstateScreen(),
-                    StatsScreen(),
-                    UserProfileScreen(),
-                  ],
-                ),
+                  // TabView for main content
+                  Expanded(
+                    child: TabBarView(
+                      controller: _tabController,
+                      children: const [
+                        HustleScreen(),
+                        BusinessScreen(),
+                        InvestmentScreen(),
+                        RealEstateScreen(),
+                        StatsScreen(),
+                        UserProfileScreen(),
+                      ],
+                    ),
+                  ),
+                ],
               ),
+              
+              // Ultra-minimal corner badge for events
+              const EventCornerBadge(),
             ],
           ),
         );

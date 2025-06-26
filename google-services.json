@@ -22,6 +22,14 @@
           }
         },
         {
+          "client_id": "716473238772-eu4mkr1pn6lh0i3o5umpgqfr2mma79a6.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.go7studio.empire_tycoon",
+            "certificate_hash": "7fa7454938bc4a0e75c152c84e828866124aca5e"
+          }
+        },
+        {
           "client_id": "716473238772-mn9sh4e5c441ovk16l7oqc48le35bm9e.apps.googleusercontent.com",
           "client_type": 3
         }

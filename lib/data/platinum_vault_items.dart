@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart'; // Import for IconData and Icons
 
 enum VaultItemCategory {
-  upgrades,
-  unlockables,
-  eventsAndChallenges,
+  boosters,
   cosmetics,
-  boosters
+  eventsAndChallenges,
+  unlockables,
+  upgrades
 }
 
 enum VaultItemType {

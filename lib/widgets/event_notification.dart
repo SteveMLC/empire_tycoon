@@ -138,7 +138,7 @@ class _EventNotificationState extends State<EventNotification> {
                           maxLines: 3,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        // Add affected entities information
+                        // Add affected entities information with financial impact
                         const SizedBox(height: 4),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -146,13 +146,27 @@ class _EventNotificationState extends State<EventNotification> {
                             color: Colors.white.withOpacity(0.2),
                             borderRadius: BorderRadius.circular(4),
                           ),
-                          child: Text(
-                            _getAffectedEntitiesDescription(),
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: Colors.white,
-                              fontWeight: FontWeight.w500,
-                            ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _getAffectedEntitiesDescription(),
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                                                             Text(
+                                 _getFinancialImpactDescription(),
+                                 style: TextStyle(
+                                   fontSize: 11,
+                                   color: Colors.red.shade100,
+                                   fontWeight: FontWeight.w400,
+                                 ),
+                               ),
+                            ],
                           ),
                         ),
                       ],
@@ -632,7 +646,9 @@ class _EventNotificationState extends State<EventNotification> {
         );
         
       case EventResolutionType.timeBased:
-        // For time-based events - normally we'd show a timer, but the requirement is to not show timer UI
+        // Show timer for time-based events
+        final timeRemaining = _getTimeRemainingFormatted();
+        
         return ElevatedButton.icon(
           onPressed: null, // Not user-controllable
           style: ElevatedButton.styleFrom(
@@ -640,8 +656,8 @@ class _EventNotificationState extends State<EventNotification> {
             foregroundColor: Colors.white,
             minimumSize: const Size(100, 36),
           ),
-          icon: const Icon(Icons.access_time, size: 18),
-          label: const Text('RESOLVING...'),
+          icon: const Icon(Icons.timer, size: 18),
+          label: Text(timeRemaining.isNotEmpty ? timeRemaining : 'RESOLVING...'),
         );
         
       default:
@@ -757,15 +773,47 @@ class _EventNotificationState extends State<EventNotification> {
         );
         
       case EventResolutionType.timeBased:
-        return const Row(
+        final timeRemaining = _getTimeRemainingFormatted();
+        
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(Icons.access_time, size: 16, color: Colors.grey),
-            SizedBox(width: 4),
-            Expanded(
-              child: Text(
-                'This issue will resolve automatically over time.',
-              ),
+            Row(
+              children: [
+                const Icon(Icons.access_time, size: 16, color: Colors.grey),
+                const SizedBox(width: 4),
+                const Expanded(
+                  child: Text(
+                    'This issue will resolve automatically over time.',
+                  ),
+                ),
+              ],
             ),
+            if (timeRemaining.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade200,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.timer, size: 14, color: Colors.grey),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Time remaining: $timeRemaining',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ],
         );
         
@@ -821,5 +869,61 @@ class _EventNotificationState extends State<EventNotification> {
       default:
         return Colors.grey[700]!; // Fallback color
     }
+  }
+
+  /// Get detailed financial impact description showing income loss
+  String _getFinancialImpactDescription() {
+    List<String> impacts = [];
+    
+    // Calculate business impact
+    for (String businessId in widget.event.affectedBusinessIds) {
+      try {
+        final business = widget.gameState.businesses
+            .firstWhere((b) => b.id == businessId);
+        
+        if (business.level > 0) {
+          double normalIncome = business.levels[business.level - 1].incomePerSecond;
+          double lostIncome = normalIncome * 0.25; // 25% loss
+          impacts.add('Business: -\$${lostIncome.toStringAsFixed(2)}/s');
+        }
+      } catch (e) {
+        print('Error calculating business impact for $businessId: $e');
+      }
+    }
+    
+    // Calculate real estate impact
+    for (String localeId in widget.event.affectedLocaleIds) {
+      try {
+        final locale = widget.gameState.realEstateLocales
+            .firstWhere((l) => l.id == localeId);
+        
+        double normalIncome = locale.getTotalIncomePerSecond();
+        double lostIncome = normalIncome * 0.25; // 25% loss
+        impacts.add('Location: -\$${lostIncome.toStringAsFixed(2)}/s');
+      } catch (e) {
+        print('Error calculating locale impact for $localeId: $e');
+      }
+    }
+    
+    return impacts.isNotEmpty 
+        ? 'Income Impact: ${impacts.join(' • ')}'
+        : 'Income reduced by 25%';
+  }
+
+  /// Get time remaining for time-based events formatted as MM:SS
+  String _getTimeRemainingFormatted() {
+    if (widget.event.resolution.type != EventResolutionType.timeBased) {
+      return '';
+    }
+    
+    final int secondsRemaining = widget.event.timeRemaining;
+    if (secondsRemaining <= 0) {
+      return 'Resolving...';
+    }
+    
+    final minutes = secondsRemaining ~/ 60;
+    final seconds = secondsRemaining % 60;
+    
+    return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
   }
 }
