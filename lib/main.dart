@@ -126,6 +126,10 @@ class _GameInitializerState extends State<GameInitializer> {
       await adMobService.initialize();
       print('Game initializer: Finished AdMob initialization');
       
+      // DISABLED: Automatic premium check to prevent false activation
+      // Users can manually restore purchases using the "Restore Purchases" button
+      // TODO: Re-enable once proper ownership checking is implemented
+      /*
       // ADDED: Check if user has previously purchased premium
       print('Game initializer: Checking premium ownership');
       final hasPremium = await _gameService!.checkPremiumOwnership();
@@ -137,6 +141,8 @@ class _GameInitializerState extends State<GameInitializer> {
         }
       }
       print('Game initializer: Finished premium ownership check');
+      */
+      print('Game initializer: Skipped automatic premium check to prevent false activation');
       
       setState(() {
         _isInitialized = true;

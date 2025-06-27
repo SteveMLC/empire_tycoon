@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import '../utils/sound_manager.dart';
 import '../services/auth_service.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../models/game_state.dart';
 import '../services/game_service.dart';
@@ -123,6 +124,10 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 const SizedBox(height: 20),
                 
                 _buildPremiumSection(gameState),
+                
+                const SizedBox(height: 30),
+                
+                _buildFeedbackSection(),
                 
                 const SizedBox(height: 50),
               ],
@@ -261,6 +266,90 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                             color: gameState.isPlatinumCrestUnlocked 
                               ? Colors.grey.shade900
                               : Colors.grey.shade500,
+                          ),
+                        ),
+                      ),
+                      
+                    // EMERGENCY PREMIUM ACTIVATION (Debug Mode Only)
+                    if (kDebugMode && !gameState.isPremium)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 8),
+                        child: GestureDetector(
+                          onTap: () {
+                            // Show confirmation dialog
+                            showDialog(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: const Text('Emergency Premium Activation'),
+                                content: const Text(
+                                  'This will manually activate Premium features. '
+                                  'Only use this if you have already purchased Premium '
+                                  'but it was not activated due to a technical issue.\n\n'
+                                  'Are you sure you want to proceed?'
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.of(context).pop(),
+                                    child: const Text('Cancel'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.of(context).pop();
+                                      
+                                      // Manually enable premium
+                                      gameState.enablePremium();
+                                      
+                                      // Save the game
+                                      Provider.of<GameService>(context, listen: false).saveGame();
+                                      
+                                      // Show confirmation
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(
+                                          backgroundColor: Colors.green,
+                                          content: Row(
+                                            children: [
+                                              Icon(Icons.check_circle, color: Colors.white),
+                                              SizedBox(width: 8),
+                                              Text('Premium manually activated! +1500 Platinum!'),
+                                            ],
+                                          ),
+                                          duration: Duration(seconds: 4),
+                                        ),
+                                      );
+                                    },
+                                    style: TextButton.styleFrom(foregroundColor: Colors.red),
+                                    child: const Text('Activate Premium'),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.red.shade100,
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(color: Colors.red.shade300),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.emergency,
+                                  size: 14,
+                                  color: Colors.red.shade700,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'Fix Premium',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.red.shade700,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
@@ -800,6 +889,18 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             // Google Play Games Services login button
             Consumer<AuthService>(
               builder: (context, authService, child) {
+                // Sync AuthService state with GameState on each build
+                if (authService.isSignedIn && !gameState.isGooglePlayConnected) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    gameState.isGooglePlayConnected = true;
+                    gameState.googlePlayPlayerId = authService.playerId;
+                    gameState.googlePlayDisplayName = authService.playerName;
+                    gameState.googlePlayAvatarUrl = authService.playerAvatarUrl;
+                    gameState.lastCloudSync = DateTime.now();
+                    Provider.of<GameService>(context, listen: false).saveGame();
+                  });
+                }
+                
                 return Column(
                   children: [
                     SizedBox(
@@ -926,12 +1027,70 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                         label: Text(
                           authService.isInitialized 
                               ? (authService.isSignedIn 
-                                  ? 'Sign out from Google Play Games'
+                                  ? 'Sign out from Google Play Games${authService.playerName != null ? ' (${authService.playerName})' : ''}'
                                   : 'Sign in with Google Play Games')
                               : 'Initializing...',
                         ),
                       ),
                     ),
+                    
+                    // Show signed-in user info if authenticated
+                    if (authService.isSignedIn) ...[
+                      const SizedBox(height: 12),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.green.shade50,
+                          border: Border.all(color: Colors.green.shade200),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(Icons.check_circle, color: Colors.green.shade700, size: 20),
+                                const SizedBox(width: 8),
+                                const Text(
+                                  'Google Play Games Connected',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.green,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (authService.playerName != null) ...[
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  const Icon(Icons.person, size: 16, color: Colors.grey),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Player: ${authService.playerName}',
+                                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                  ),
+                                ],
+                              ),
+                            ],
+                            if (authService.playerId != null) ...[
+                              const SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  const Icon(Icons.tag, size: 16, color: Colors.grey),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'ID: ${authService.playerId}',
+                                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ],
                     
                     // Show error message if there's one
                     if (authService.lastError != null && !authService.isSignedIn) ...[
@@ -1723,75 +1882,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
                     const SizedBox(height: 16),
 
-                    // Restore Purchases Button
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        onPressed: () async {
-                          final gameService = Provider.of<GameService>(context, listen: false);
-                          
-                          // Show loading
-                          showDialog(
-                            context: context,
-                            barrierDismissible: false,
-                            builder: (context) => const AlertDialog(
-                              content: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  CircularProgressIndicator(),
-                                  SizedBox(height: 16),
-                                  Text('Restoring purchases...'),
-                                ],
-                              ),
-                            ),
-                          );
-                          
-                          await gameService.restorePurchases(
-                            onComplete: (bool success, String? error) {
-                              Navigator.of(context).pop(); // Close loading
-                              
-                              if (success) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    backgroundColor: Colors.green,
-                                    content: Row(
-                                      children: [
-                                        Icon(Icons.check_circle, color: Colors.white),
-                                        SizedBox(width: 8),
-                                        Text('Purchases restored successfully'),
-                                      ],
-                                    ),
-                                    duration: Duration(seconds: 3),
-                                  ),
-                                );
-                              } else {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    backgroundColor: Colors.orange,
-                                    content: Row(
-                                      children: [
-                                        const Icon(Icons.info_outline, color: Colors.white),
-                                        const SizedBox(width: 8),
-                                        Expanded(child: Text(error ?? 'No purchases found to restore')),
-                                      ],
-                                    ),
-                                    duration: const Duration(seconds: 3),
-                                  ),
-                                );
-                              }
-                            },
-                          );
-                        },
-                        icon: const Icon(Icons.restore),
-                        label: const Text('Restore Purchases'),
-                        style: OutlinedButton.styleFrom(
-                          side: BorderSide(color: Colors.purple.shade300),
-                          foregroundColor: Colors.purple.shade700,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                        ),
-                      ),
-                    ),
-
                     const SizedBox(height: 16),
 
                     // Enhanced Purchase Button with Better Call-to-Action
@@ -2185,5 +2275,44 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     } else {
       return '${lastSaved.month}/${lastSaved.day}/${lastSaved.year}';
     }
+  }
+
+    Widget _buildFeedbackSection() {
+    return Center(
+      child: TextButton.icon(
+        onPressed: () async {
+          final url = 'https://docs.google.com/forms/d/e/1FAIpQLSdYhNSpYb0_Vrly1WXardU0tILBC8sGpmGVKF2-h1HllZAVGA/viewform?usp=header';
+          try {
+            if (await canLaunchUrl(Uri.parse(url))) {
+              await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+            } else {
+              throw Exception('Could not launch URL');
+            }
+          } catch (e) {
+            // Show error message if can't launch
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Could not open feedback form. Please try again later.'),
+                  backgroundColor: Colors.orange,
+                ),
+              );
+            }
+          }
+        },
+        icon: Icon(
+          Icons.feedback_outlined,
+          size: 18,
+          color: Colors.grey.shade600,
+        ),
+        label: Text(
+          'Submit Feedback',
+          style: TextStyle(
+            color: Colors.grey.shade600,
+            fontSize: 14,
+          ),
+        ),
+      ),
+    );
   }
 } 

@@ -863,24 +863,7 @@ class GameState with ChangeNotifier {
     super.dispose();
   }
 
-  // Method to enable premium features
-  void enablePremium() {
-    if (isPremium) return; // Already premium
-    
-    isPremium = true;
-    // Award bonus platinum points
-    platinumPoints += 1500;
-    // Show premium purchase notification
-    showPremiumPurchaseNotification = true;
-    
-    // After short delay, hide notification
-    Timer(const Duration(seconds: 5), () {
-      showPremiumPurchaseNotification = false;
-      notifyListeners();
-    });
-    
-    notifyListeners();
-  }
+  // enablePremium method moved to utility_logic.dart extension to avoid conflicts
 
   // ADDED: Method to spend Platinum Points, now with optional context
   // TODO: Needs robust handling of item effects and limits

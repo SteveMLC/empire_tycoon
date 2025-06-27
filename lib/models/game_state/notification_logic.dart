@@ -7,27 +7,6 @@ extension NotificationLogic on GameState {
     notifyListeners();
   }
 
-  // Method to enable premium features
-  void enablePremium() {
-    if (isPremium) return; // Already premium
-    
-    isPremium = true;
-    // Award bonus platinum points
-    platinumPoints += 1500;
-    // Unlock premium avatars
-    isPremiumAvatarsUnlocked = true;
-    // Show premium purchase notification
-    showPremiumPurchaseNotification = true;
-    
-    // After short delay, hide notification
-    Timer(const Duration(seconds: 5), () {
-      showPremiumPurchaseNotification = false;
-      notifyListeners();
-    });
-    
-    notifyListeners();
-  }
-
   // Function to select a stats theme
   void selectStatsTheme(String? theme) {
     print("DEBUG: Selecting stats theme: $theme, Current unlock status: isExecutiveStatsThemeUnlocked=$isExecutiveStatsThemeUnlocked");

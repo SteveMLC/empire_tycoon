@@ -27,10 +27,12 @@ class BillingService {
   
   /// Purchase state callbacks
   Function(bool success, String? error)? _onPurchaseComplete;
+  Function(bool success, String? error)? _onRestoreComplete;
   
   /// Service initialization state
   bool _isInitialized = false;
   bool _isStoreAvailable = false;
+  bool _isRestoringPurchases = false;
   
   /// Initialize the billing service
   Future<bool> initialize() async {
@@ -211,7 +213,7 @@ class BillingService {
       
       if (purchaseDetails.status == PurchaseStatus.restored) {
         print('🟢 Purchase restored: ${purchaseDetails.productID}');
-        _handlePurchaseSuccess(purchaseDetails);
+        _handlePurchaseSuccess(purchaseDetails, isRestore: true);
         continue;
       }
       
@@ -229,16 +231,28 @@ class BillingService {
   }
   
   /// Handle successful purchase
-  void _handlePurchaseSuccess(PurchaseDetails purchaseDetails) {
+  void _handlePurchaseSuccess(PurchaseDetails purchaseDetails, {bool isRestore = false}) {
     if (purchaseDetails.productID == premiumProductId) {
-      print('🟢 Premium purchase successful - activating features');
+      print('🟢 Premium ${isRestore ? 'restored' : 'purchase'} successful - activating features');
       
       // Verify the purchase (important for security)
       if (_verifyPurchase(purchaseDetails)) {
-        _onPurchaseComplete?.call(true, null);
+        // Call the appropriate callback based on whether this is a restore or new purchase
+        if (isRestore && _onRestoreComplete != null) {
+          _onRestoreComplete?.call(true, null);
+        } else if (!isRestore && _onPurchaseComplete != null) {
+          _onPurchaseComplete?.call(true, null);
+        } else if (_onPurchaseComplete != null) {
+          // Fallback to purchase callback if restore callback not set
+          _onPurchaseComplete?.call(true, null);
+        }
       } else {
         print('🔴 Purchase verification failed');
-        _onPurchaseComplete?.call(false, 'Purchase verification failed');
+        if (isRestore && _onRestoreComplete != null) {
+          _onRestoreComplete?.call(false, 'Purchase verification failed');
+        } else {
+          _onPurchaseComplete?.call(false, 'Purchase verification failed');
+        }
       }
     }
     
@@ -247,7 +261,10 @@ class BillingService {
       _inAppPurchase.completePurchase(purchaseDetails);
     }
     
-    _onPurchaseComplete = null;
+    // Clear callbacks after use
+    if (!isRestore) {
+      _onPurchaseComplete = null;
+    }
   }
   
   /// Handle purchase error
@@ -317,44 +334,103 @@ class BillingService {
            purchaseDetails.productID == premiumProductId;
   }
   
-  /// Restore previous purchases
+  /// Restore previous purchases - DISABLED DUE TO CRITICAL BUG
+  /// This method was giving free premium to users who never purchased
+  /// TODO: Implement proper purchase verification before re-enabling
   Future<void> restorePurchases({required Function(bool success, String? error) onComplete}) async {
+    print('🔴 Billing Service: Restore purchases DISABLED due to critical bug');
+    print('🔴 Billing Service: This feature was giving free premium to non-purchasers');
+    print('🔴 Billing Service: Users must contact support for purchase issues');
+    
+    // Always return failure to prevent any premium activation
+    onComplete(false, 'Restore purchases temporarily disabled. Please contact support if you have a legitimate purchase issue.');
+    return;
+    
+    /* ORIGINAL CODE DISABLED - WAS GIVING FREE PREMIUM
     if (!_isInitialized) {
       onComplete(false, 'Billing service not initialized');
       return;
     }
     
+    if (_isRestoringPurchases) {
+      onComplete(false, 'Restore already in progress');
+      return;
+    }
+    
     try {
-      print('🟡 Billing Service: Restoring purchases');
+      print('🟡 Billing Service: Starting purchase restoration');
+      _isRestoringPurchases = true;
+      
+      // Set up restore callback to track when premium is found
+      bool premiumRestored = false;
+      _onRestoreComplete = (bool success, String? error) {
+        print('🟡 Billing Service: Restore callback - success: $success, error: $error');
+        if (success) {
+          premiumRestored = true;
+        }
+      };
+      
       if (Platform.isIOS) {
         // Use restorePurchases for iOS
         await _inAppPurchase.restorePurchases();
       } else {
         // For Android, purchases are automatically restored when the app starts
-        // We just need to check the purchase stream
-        print('🟡 Billing Service: Android purchases restored automatically');
+        // But we can explicitly trigger it
+        await _inAppPurchase.restorePurchases();
       }
-      print('🟢 Billing Service: Restore purchases completed');
-      onComplete(true, null);
+      
+      // Wait for any restored purchases to be processed
+      await Future.delayed(const Duration(seconds: 3));
+      
+      _isRestoringPurchases = false;
+      _onRestoreComplete = null;
+      
+      if (premiumRestored) {
+        print('🟢 Billing Service: Premium purchase successfully restored');
+        onComplete(true, null);
+      } else {
+        print('🟡 Billing Service: No premium purchases found to restore');
+        onComplete(false, 'No purchases found to restore');
+      }
+      
     } catch (e) {
       print('🔴 Billing Service: Restore purchases failed: $e');
+      _isRestoringPurchases = false;
+      _onRestoreComplete = null;
       onComplete(false, 'Failed to restore purchases: $e');
     }
+    */
   }
   
   /// Check if user has purchased premium (for app startup)
   Future<bool> checkPremiumOwnership() async {
-    if (!_isInitialized) return false;
+    if (!_isInitialized) {
+      print('🔴 Billing Service: Cannot check premium ownership - not initialized');
+      return false;
+    }
+    
+    if (!_isStoreAvailable) {
+      print('🔴 Billing Service: Cannot check premium ownership - store not available');
+      return false;
+    }
     
     try {
-      // Query current purchases (replaces queryPastPurchases in newer versions)
-      final Stream<List<PurchaseDetails>> purchaseStream = _inAppPurchase.purchaseStream;
+      print('🟡 Billing Service: Checking for existing premium ownership');
       
-      // Check for existing non-consumable purchases
-      // Note: For production, you should also check with your server
-      // for now, we'll return false and let restore purchases handle this
-      print('🟡 Billing Service: Premium ownership check completed (use Restore Purchases)');
+      // IMPORTANT: DO NOT call restorePurchases() here as it can trigger false positives
+      // Instead, we should rely on the normal purchase stream that's already set up
+      
+      // For now, return false and let the manual "Restore Purchases" button handle restoration
+      // This prevents automatic false premium activation on app startup
+      print('🟡 Billing Service: Skipping automatic ownership check to prevent false positives');
+      print('🟡 Billing Service: Users can manually restore purchases if needed');
+      
+      // TODO: Implement proper ownership checking using platform-specific methods
+      // For Android: Use queryPurchases() when available  
+      // For iOS: Use proper StoreKit queries
+      
       return false;
+      
     } catch (e) {
       print('🔴 Billing Service: Error checking premium ownership: $e');
       return false;

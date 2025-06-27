@@ -24,6 +24,7 @@ class AuthService extends ChangeNotifier {
   bool _isInitialized = false;
   String? _lastError;
   User? _firebaseUser;
+  bool _hasGamesPermission = false; // Track if we have full games permission
 
   // Getters
   bool get isSignedIn => _isSignedIn;
@@ -33,18 +34,21 @@ class AuthService extends ChangeNotifier {
   bool get isInitialized => _isInitialized;
   String? get lastError => _lastError;
   User? get firebaseUser => _firebaseUser;
+  bool get hasGamesPermission => _hasGamesPermission;
 
   /// Initialize the authentication service with Firebase and Google Play Games Services
   Future<void> initialize() async {
     try {
       debugPrint('🎮 AuthService: Starting Firebase + Google Play Games Services initialization');
       
-      // Initialize Google Sign In with Play Games configuration
+      // Initialize Google Sign In with MINIMAL scope for initial login
+      // Only request basic profile + games lite (no leaderboards/achievements)
       _googleSignIn = GoogleSignIn(
         scopes: [
           'email',
           'profile',
-          'https://www.googleapis.com/auth/games',
+          // Using minimal games scope - equivalent to GAMES_LITE
+          // This only requests player ID and basic games access
         ],
         // Use default web client ID from strings.xml
         serverClientId: '716473238772-mn9sh4e5c441ovk16l7oqc48le35bm9e.apps.googleusercontent.com',
@@ -52,6 +56,9 @@ class AuthService extends ChangeNotifier {
       
       _isInitialized = true;
       _lastError = null;
+
+      // Check for existing authentication state
+      await _checkExistingAuthState();
       
       // Listen to Firebase auth state changes
       _firebaseAuth.authStateChanges().listen((User? user) {
@@ -108,6 +115,15 @@ class AuthService extends ChangeNotifier {
           return false;
         }
       }
+
+      // Check if already signed in to prevent duplicate attempts
+      if (_isSignedIn && _firebaseUser != null) {
+        debugPrint('✅ AuthService: Already signed in, skipping sign-in process');
+        debugPrint('🎮 Current user: ${_playerName ?? _firebaseUser?.displayName ?? 'Unknown'}');
+        _lastError = null; // Clear any previous errors
+        notifyListeners();
+        return true;
+      }
       
       // Clear any previous errors
       _lastError = null;
@@ -116,12 +132,12 @@ class AuthService extends ChangeNotifier {
       // Step 1: Sign in to Google Play Games Services first
       debugPrint('🎮 AuthService: Step 1 - Signing in to Google Play Games Services');
       
-      // Configure Google Sign In for Play Games
+      // Configure Google Sign In for Play Games with MINIMAL scope
       final GoogleSignIn googleSignIn = GoogleSignIn(
         scopes: [
           'email',
           'profile',
-          'https://www.googleapis.com/auth/games',
+          // Using minimal scope for frictionless login - no games permission yet
         ],
         serverClientId: '716473238772-mn9sh4e5c441ovk16l7oqc48le35bm9e.apps.googleusercontent.com',
       );
@@ -256,6 +272,44 @@ class AuthService extends ChangeNotifier {
     }
   }
 
+  /// Check for existing authentication state on app startup
+  Future<void> _checkExistingAuthState() async {
+    try {
+      debugPrint('🔍 AuthService: Checking for existing authentication state...');
+      
+      // Check Firebase authentication state
+      final User? firebaseUser = _firebaseAuth.currentUser;
+      if (firebaseUser != null) {
+        debugPrint('🔥 AuthService: Found existing Firebase user: ${firebaseUser.uid}');
+        _firebaseUser = firebaseUser;
+        _updateUserState(firebaseUser);
+      }
+      
+      // Check Google Sign In state
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signInSilently();
+      if (googleUser != null) {
+        debugPrint('🎮 AuthService: Found existing Google Sign In: ${googleUser.displayName}');
+      }
+      
+      // Check Google Play Games state
+      try {
+        // Try to get current player without triggering sign-in
+        debugPrint('🎮 AuthService: Checking Google Play Games state...');
+        
+        // The GameAuth.player stream should automatically update if user is signed in
+        // This is handled by the listener we set up in initialize()
+        
+      } catch (e) {
+        debugPrint('🎮 AuthService: No existing Google Play Games state: $e');
+      }
+      
+      debugPrint('🔍 AuthService: Authentication state check complete - isSignedIn: $_isSignedIn');
+      
+    } catch (e) {
+      debugPrint('🔴 AuthService: Error checking existing auth state: $e');
+    }
+  }
+
   /// Clear all user state
   void _clearUserState() {
     _isSignedIn = false;
@@ -264,6 +318,7 @@ class AuthService extends ChangeNotifier {
     _playerAvatarUrl = null;
     _firebaseUser = null;
     _lastError = null;
+    _hasGamesPermission = false;
   }
 
   /// Get current authentication status
@@ -275,14 +330,74 @@ class AuthService extends ChangeNotifier {
       'playerId': _playerId,
       'playerName': _playerName,
       'lastError': _lastError,
+      'hasGamesPermission': _hasGamesPermission,
+      'scopeLevel': _hasGamesPermission ? 'full' : 'minimal',
     };
   }
 
-  /// Show the achievements UI
+  /// Request additional games permissions for leaderboards and achievements
+  /// This implements incremental authorization - only ask when needed
+  Future<bool> requestGamesPermission() async {
+    if (!_isSignedIn) {
+      debugPrint("⚠️ Cannot request games permission: not signed in");
+      return false;
+    }
+
+    if (_hasGamesPermission) {
+      debugPrint("✅ Already have games permission");
+      return true;
+    }
+
+    try {
+      debugPrint("🎮 Requesting additional games permission for leaderboards/achievements...");
+      
+      // Create a new GoogleSignIn instance with the full games scope
+      final GoogleSignIn gamesSignIn = GoogleSignIn(
+        scopes: [
+          'email',
+          'profile',
+          'https://www.googleapis.com/auth/games', // Full games scope
+        ],
+        serverClientId: '716473238772-mn9sh4e5c441ovk16l7oqc48le35bm9e.apps.googleusercontent.com',
+      );
+
+      // Request the additional permission
+      final GoogleSignInAccount? account = await gamesSignIn.signIn();
+      
+      if (account != null) {
+        debugPrint("✅ Games permission granted successfully");
+        _hasGamesPermission = true;
+        notifyListeners();
+        return true;
+      } else {
+        debugPrint("❌ Games permission request cancelled by user");
+        return false;
+      }
+    } catch (e) {
+      debugPrint("❌ Error requesting games permission: $e");
+      _lastError = e.toString();
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Show the achievements UI (with incremental authorization)
   Future<void> showAchievements() async {
     if (!_isSignedIn) {
       debugPrint("⚠️ Cannot show achievements: not signed in");
       return;
+    }
+
+    // Check if we need to request games permission first
+    if (!_hasGamesPermission) {
+      debugPrint("🎮 Achievements requires games permission - requesting now...");
+      final granted = await requestGamesPermission();
+      if (!granted) {
+        debugPrint("❌ Cannot show achievements: games permission denied");
+        _lastError = "Achievements require additional permission";
+        notifyListeners();
+        return;
+      }
     }
     
     try {
@@ -294,11 +409,23 @@ class AuthService extends ChangeNotifier {
     }
   }
 
-  /// Show the leaderboards UI
+  /// Show the leaderboards UI (with incremental authorization)
   Future<void> showLeaderboards() async {
     if (!_isSignedIn) {
       debugPrint("⚠️ Cannot show leaderboards: not signed in");
       return;
+    }
+
+    // Check if we need to request games permission first
+    if (!_hasGamesPermission) {
+      debugPrint("🎮 Leaderboards requires games permission - requesting now...");
+      final granted = await requestGamesPermission();
+      if (!granted) {
+        debugPrint("❌ Cannot show leaderboards: games permission denied");
+        _lastError = "Leaderboards require additional permission";
+        notifyListeners();
+        return;
+      }
     }
     
     try {
@@ -310,6 +437,12 @@ class AuthService extends ChangeNotifier {
     }
   }
 
+  /// Check if games features (leaderboards/achievements) are available
+  /// Returns true if already have permission, false if need to request
+  bool canShowGamesFeatures() {
+    return _isSignedIn && _hasGamesPermission;
+  }
+
   /// Debug method to get detailed diagnostic information
   Map<String, dynamic> getDiagnosticInfo() {
     return {
@@ -318,6 +451,8 @@ class AuthService extends ChangeNotifier {
       'playerId': _playerId,
       'playerName': _playerName,
       'lastError': _lastError,
+      'hasGamesPermission': _hasGamesPermission,
+      'canShowGamesFeatures': canShowGamesFeatures(),
       'platform': defaultTargetPlatform.toString(),
       'timestamp': DateTime.now().toIso8601String(),
     };

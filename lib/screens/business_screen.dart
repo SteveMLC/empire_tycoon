@@ -33,36 +33,103 @@ class _BusinessScreenState extends State<BusinessScreen> {
         // Get list of businesses and sort based on selection
         List<Business> businesses = _getSortedBusinesses(gameState.businesses);
 
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+        return Scaffold(
+          body: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            child: businesses.isEmpty
+                ? const Center(child: Text('No businesses available yet'))
+                : ListView.builder(
+                    itemCount: businesses.length,
+                    padding: const EdgeInsets.only(top: 8.0, bottom: 80.0), // Add bottom padding to prevent Android UI overlap
+                    itemBuilder: (context, index) {
+                      Business business = businesses[index];
+
+                      // Only show unlocked businesses
+                      if (!business.unlocked) return const SizedBox.shrink();
+
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 8.0), // Reduced from 12.0 to 8.0 for more compact layout
+                        child: BusinessItem(
+                          business: business,
+                        ),
+                      );
+                    },
+                  ),
+          ),
+          // Compact floating action button for sorting
+          floatingActionButton: _buildSortFAB(),
+          floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+        );
+      },
+    );
+  }
+
+  Widget _buildSortFAB() {
+    return FloatingActionButton.small(
+      onPressed: _showSortBottomSheet,
+      backgroundColor: Colors.white,
+      foregroundColor: Colors.blue,
+      elevation: 4,
+      child: Stack(
+        children: [
+          const Icon(Icons.sort, size: 20),
+          // Small indicator dot if not on default sort
+          if (_currentSort != 'Default')
+            Positioned(
+              right: 0,
+              top: 0,
+                             child: Container(
+                 width: 8,
+                 height: 8,
+                 decoration: const BoxDecoration(
+                   color: Colors.orange,
+                   shape: BoxShape.circle,
+                 ),
+               ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  void _showSortBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (BuildContext context) {
+        return Container(
+          padding: const EdgeInsets.all(20),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Sort dropdown with improved styling
-              _buildSortDropdown(),
-              
-              // Businesses list
-              Expanded(
-                child: businesses.isEmpty
-                    ? const Center(child: Text('No businesses available yet'))
-                    : ListView.builder(
-                        itemCount: businesses.length,
-                        padding: const EdgeInsets.only(top: 8.0, bottom: 80.0), // Add bottom padding to prevent Android UI overlap
-                        itemBuilder: (context, index) {
-                          Business business = businesses[index];
-
-                          // Only show unlocked businesses
-                          if (!business.unlocked) return const SizedBox.shrink();
-
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 8.0), // Reduced from 12.0 to 8.0 for more compact layout
-                            child: BusinessItem(
-                              business: business,
-                            ),
-                          );
-                        },
-                      ),
+              // Header
+              Row(
+                children: [
+                  const Icon(Icons.sort, color: Colors.blue),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'Sort Businesses',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close, color: Colors.grey),
+                  ),
+                ],
               ),
+              const SizedBox(height: 16),
+              
+              // Sort options
+              ..._sortOptions.map((option) => _buildSortOption(option)),
+              
+              const SizedBox(height: 10),
             ],
           ),
         );
@@ -70,49 +137,80 @@ class _BusinessScreenState extends State<BusinessScreen> {
     );
   }
 
-  Widget _buildSortDropdown() {
+  Widget _buildSortOption(String option) {
+    final isSelected = _currentSort == option;
+    
     return Container(
-      margin: const EdgeInsets.only(bottom: 8.0), // Reduced bottom margin
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(10),
-        color: Colors.white,  // Add background color
-        boxShadow: [  // Add subtle shadow
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            spreadRadius: 1,
-            blurRadius: 2,
-            offset: const Offset(0, 1),
-          ),
-        ],
-      ),
-      child: DropdownButton<String>(
-        value: _currentSort,
-        isExpanded: true,
-        underline: const SizedBox(),
-        icon: const Icon(Icons.sort, color: Colors.blue),  // Changed icon color to match theme
-        onChanged: (String? newValue) {
-          if (newValue != null) {
+      margin: const EdgeInsets.only(bottom: 8),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
             setState(() {
-              _currentSort = newValue;
+              _currentSort = option;
             });
-          }
-        },
-        items: _sortOptions.map<DropdownMenuItem<String>>((String value) {
-          return DropdownMenuItem<String>(
-            value: value,
-            child: Text(
-              value,
-              style: const TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w500,
+            Navigator.pop(context);
+          },
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: isSelected ? Colors.blue.shade50 : Colors.transparent,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isSelected ? Colors.blue.shade300 : Colors.grey.shade300,
+                width: 1,
               ),
             ),
-          );
-        }).toList(),
+            child: Row(
+              children: [
+                Icon(
+                  _getSortIcon(option),
+                  color: isSelected ? Colors.blue : Colors.grey.shade600,
+                  size: 20,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    option,
+                    style: TextStyle(
+                      color: isSelected ? Colors.blue : Colors.grey.shade800,
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                      fontSize: 15,
+                    ),
+                  ),
+                ),
+                if (isSelected)
+                  Icon(
+                    Icons.check_circle,
+                    color: Colors.blue,
+                    size: 20,
+                  ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
+  }
+
+  IconData _getSortIcon(String option) {
+    switch (option) {
+      case 'Default':
+        return Icons.list;
+      case 'Price (Low to High)':
+        return Icons.arrow_upward;
+      case 'Price (High to Low)':
+        return Icons.arrow_downward;
+      case 'ROI (High to Low)':
+        return Icons.trending_up;
+      case 'Income (High to Low)':
+        return Icons.attach_money;
+      case 'Level (High to Low)':
+        return Icons.bar_chart;
+      default:
+        return Icons.sort;
+    }
   }
 
   List<Business> _getSortedBusinesses(List<Business> businesses) {

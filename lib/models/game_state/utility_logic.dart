@@ -27,9 +27,20 @@ extension UtilityLogic on GameState {
     if (!isPremium) {
       isPremium = true;
       print("🟢 isPremium set to true.");
+      
+      // Award bonus platinum points using proper method
       awardPlatinumPoints(1500); // Handles points, animation flag, AND notifyListeners
+      
+      // Unlock premium avatars
+      isPremiumAvatarsUnlocked = true;
+      print("🟢 isPremiumAvatarsUnlocked set to true.");
+      
+      // Show premium purchase notification
       showPremiumPurchaseNotification = true; // SET flag for the notification widget
-      print("💎 Premium Enabled. Called awardPlatinumPoints(1500) and set showPremiumPurchaseNotification=true.");
+      print("💎 Premium Enabled. Called awardPlatinumPoints(1500), unlocked premium avatars, and set showPremiumPurchaseNotification=true.");
+      
+      // Additional notification to ensure UI updates
+      notifyListeners();
     } else {
       print("🟡 enablePremium: Already premium.");
     }

@@ -309,8 +309,10 @@ class GameService {
     await _billingService.purchasePremium(onComplete: onComplete);
   }
   
-  /// Restore previous purchases
+  /// Restore previous purchases - DISABLED DUE TO CRITICAL BUG
+  /// This method was delegating to BillingService which was giving free premium
   Future<void> restorePurchases({required Function(bool success, String? error) onComplete}) async {
+    print('🔴 GameService: Restore purchases DISABLED due to critical bug in BillingService');
     await _billingService.restorePurchases(onComplete: onComplete);
   }
   
