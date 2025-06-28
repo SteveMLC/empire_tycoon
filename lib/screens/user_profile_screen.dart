@@ -1884,6 +1884,84 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
                     const SizedBox(height: 16),
 
+                    // Show restore premium button if eligible and not already used
+                    if (gameState.isEligibleForPremiumRestore && !gameState.hasUsedPremiumRestore) ...[
+                      Container(
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.orange.shade600,
+                              Colors.orange.shade700,
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(14),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.orange.shade400.withOpacity(0.4),
+                              blurRadius: 8,
+                              spreadRadius: 1,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () => _showRestorePremiumDialog(context, gameState),
+                            borderRadius: BorderRadius.circular(14),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withOpacity(0.2),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.restore,
+                                      color: Colors.white,
+                                      size: 24,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  const Column(
+                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        'Restore Premium',
+                                        style: TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                          letterSpacing: 0.5,
+                                        ),
+                                      ),
+                                      Text(
+                                        'You already own premium',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: Colors.white70,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      
+                      const SizedBox(height: 16),
+                    ],
+
                     // Enhanced Purchase Button with Better Call-to-Action
                     Container(
                       width: double.infinity,
@@ -2250,10 +2328,162 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                     );
                   }
                 },
+                onOwnershipDetected: () {
+                  // User already owns premium but app doesn't recognize it
+                  final gameState = Provider.of<GameState>(context, listen: false);
+                  gameState.isEligibleForPremiumRestore = true;
+                  // Save immediately to persist the eligibility
+                  Provider.of<GameService>(context, listen: false).saveGame();
+                  print("🟡 User marked as eligible for premium restore");
+                },
               );
             },
             style: TextButton.styleFrom(foregroundColor: Colors.purple),
             child: const Text('Purchase \$4.99'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showRestorePremiumDialog(BuildContext context, GameState gameState) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Restore Premium'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'It looks like you already own premium but it\'s not activated in your game.',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            const Text('We can restore your premium features:'),
+            const SizedBox(height: 8),
+            const Text('• Remove all ads from the game'),
+            const Text('• Bonus +✦1500 Platinum'),
+            const Text('• Exclusive profile customizations'),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.orange.shade50,
+                border: Border.all(color: Colors.orange.shade200),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, color: Colors.orange.shade600, size: 20),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text(
+                      'This is a one-time restore option for users who purchased premium but didn\'t receive their benefits.',
+                      style: TextStyle(fontSize: 12),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              print("🔄 Premium Restore Button Pressed.");
+              
+              final gameService = Provider.of<GameService>(context, listen: false);
+              
+              // Close dialog first
+              Navigator.of(context).pop();
+              
+              // Show loading indicator
+              showDialog(
+                context: context,
+                barrierDismissible: false,
+                builder: (context) => const AlertDialog(
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      CircularProgressIndicator(),
+                      SizedBox(height: 16),
+                      Text('Restoring premium...'),
+                    ],
+                  ),
+                ),
+              );
+              
+              // Attempt to restore premium
+              await gameService.restorePremiumForVerifiedOwner(
+                onComplete: (bool success, String? error) {
+                  // Close loading dialog
+                  Navigator.of(context).pop();
+                  
+                  if (success) {
+                    print("🟢 Premium restore successful!");
+                    
+                    final gameState = Provider.of<GameState>(context, listen: false);
+                    
+                    // Enable premium features
+                    gameState.enablePremium();
+                    
+                    // Mark restore as used to prevent future use
+                    gameState.hasUsedPremiumRestore = true;
+                    gameState.isEligibleForPremiumRestore = false;
+                    
+                    // Save the changes
+                    gameService.saveGame();
+                    
+                    // Play success sound
+                    gameService.playAchievementMilestoneSound();
+                    
+                    // Show success message
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        backgroundColor: Colors.green,
+                        content: const Row(
+                          children: [
+                            Icon(Icons.check_circle, color: Colors.white),
+                            SizedBox(width: 8),
+                            Text('Premium features restored! +1500 Platinum!'),
+                          ],
+                        ),
+                        duration: const Duration(seconds: 4),
+                      ),
+                    );
+                  } else {
+                    print("🔴 Premium restore failed: $error");
+                    
+                    // Play error sound
+                    gameService.playFeedbackErrorSound();
+                    
+                    // Show error message
+                    String displayError = error ?? 'Failed to restore premium';
+                    
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        backgroundColor: Colors.red,
+                        content: Row(
+                          children: [
+                            const Icon(Icons.error_outline, color: Colors.white),
+                            const SizedBox(width: 8),
+                            Expanded(child: Text(displayError)),
+                          ],
+                        ),
+                        duration: const Duration(seconds: 4),
+                      ),
+                    );
+                  }
+                },
+              );
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.orange),
+            child: const Text('Restore Premium'),
           ),
         ],
       ),

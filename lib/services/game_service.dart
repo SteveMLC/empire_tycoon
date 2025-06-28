@@ -305,15 +305,25 @@ class GameService {
   // Billing methods delegated to BillingService
   
   /// Purchase premium features
-  Future<void> purchasePremium({required Function(bool success, String? error) onComplete}) async {
-    await _billingService.purchasePremium(onComplete: onComplete);
+  Future<void> purchasePremium({
+    required Function(bool success, String? error) onComplete,
+    Function()? onOwnershipDetected,
+  }) async {
+    await _billingService.purchasePremium(
+      onComplete: onComplete,
+      onOwnershipDetected: onOwnershipDetected,
+    );
   }
   
-  /// Restore previous purchases - DISABLED DUE TO CRITICAL BUG
-  /// This method was delegating to BillingService which was giving free premium
+  /// Restore previous purchases with proper verification
   Future<void> restorePurchases({required Function(bool success, String? error) onComplete}) async {
-    print('🔴 GameService: Restore purchases DISABLED due to critical bug in BillingService');
     await _billingService.restorePurchases(onComplete: onComplete);
+  }
+  
+  /// Restore premium for verified owners only - one-time use feature
+  Future<void> restorePremiumForVerifiedOwner({required Function(bool success, String? error) onComplete}) async {
+    print('🟡 GameService: Starting verified premium restoration');
+    await _billingService.restorePremiumForVerifiedOwner(onComplete: onComplete);
   }
   
   /// Check if user has purchased premium (for app startup)

@@ -215,6 +215,10 @@ class GameState with ChangeNotifier {
   Map<int, double> persistentNetWorthHistory = {};
 
   bool isPremium = false;
+  
+  // Premium restoration tracking
+  bool hasUsedPremiumRestore = false; // Track if user has used their one-time restore
+  bool isEligibleForPremiumRestore = false; // Track if user is eligible for restore (owns premium)
 
   // Lifetime stats (persist across reincorporation)
   int lifetimeTaps = 0;

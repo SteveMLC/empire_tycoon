@@ -29,6 +29,8 @@ extension SerializationLogic on GameState {
       // << END NEW
 
       'isPremium': isPremium,
+    'hasUsedPremiumRestore': hasUsedPremiumRestore,
+    'isEligibleForPremiumRestore': isEligibleForPremiumRestore,
       'lifetimeTaps': lifetimeTaps,
       'gameStartTime': gameStartTime.toIso8601String(),
       'currentDay': currentDay,
@@ -196,6 +198,8 @@ extension SerializationLogic on GameState {
     manualEarnings = (json['manualEarnings'] as num?)?.toDouble() ?? 0.0;
     passiveEarnings = (json['passiveEarnings'] as num?)?.toDouble() ?? 0.0;
     isPremium = json['isPremium'] ?? false;
+    hasUsedPremiumRestore = json['hasUsedPremiumRestore'] ?? false;
+    isEligibleForPremiumRestore = json['isEligibleForPremiumRestore'] ?? false;
     investmentEarnings = (json['investmentEarnings'] as num?)?.toDouble() ?? 0.0;
     investmentDividendEarnings = (json['investmentDividendEarnings'] as num?)?.toDouble() ?? 0.0;
     realEstateEarnings = (json['realEstateEarnings'] as num?)?.toDouble() ?? 0.0;
