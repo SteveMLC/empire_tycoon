@@ -344,58 +344,231 @@ class BillingService {
     }
   }
   
-  /// Verify purchase (basic client-side verification)
+  /// Verify purchase (enhanced client-side verification with deep validation)
   /// For production, implement server-side verification
   bool _verifyPurchase(PurchaseDetails purchaseDetails) {
-    // Basic verification - in production, verify with your server
-    return purchaseDetails.verificationData.localVerificationData.isNotEmpty &&
-           purchaseDetails.verificationData.serverVerificationData.isNotEmpty &&
-           purchaseDetails.productID == premiumProductId;
+    print('🔍 SECURITY: Starting comprehensive purchase verification');
+    
+    // Check 1: Basic validation
+    if (purchaseDetails.productID != premiumProductId) {
+      print('🔴 SECURITY: Product ID mismatch in verification');
+      return false;
+    }
+    
+    // Check 2: Verify billing is available (prevent phantom purchases)
+    if (!_isStoreAvailable) {
+      print('🔴 SECURITY: Store not available - rejecting purchase verification');
+      return false;
+    }
+    
+    // Check 3: Verify verification data exists
+    if (purchaseDetails.verificationData.localVerificationData.isEmpty ||
+        purchaseDetails.verificationData.serverVerificationData.isEmpty) {
+      print('🔴 SECURITY: Missing verification data - rejecting purchase');
+      return false;
+    }
+    
+    // Check 4: Verify purchase is not null or empty
+    if (purchaseDetails.purchaseID == null || purchaseDetails.purchaseID!.isEmpty) {
+      print('🔴 SECURITY: Invalid purchase ID - rejecting purchase');
+      return false;
+    }
+    
+    // Check 5: DEEP VALIDATION - Detect mock/test/cached purchase data
+    if (!_deepValidatePurchaseData(purchaseDetails)) {
+      print('🔴 SECURITY: Deep validation failed - purchase data appears to be mock/test/cached');
+      return false;
+    }
+    
+    print('🟢 SECURITY: Purchase verification passed all security checks');
+    return true;
   }
+  
+  /// Deep validation to detect mock/test/cached purchase data
+  bool _deepValidatePurchaseData(PurchaseDetails purchaseDetails) {
+    try {
+      // CRITICAL: Check if purchase token looks like real Google Play token
+      final String localData = purchaseDetails.verificationData.localVerificationData;
+      final String serverData = purchaseDetails.verificationData.serverVerificationData;
+      
+      // Real Google Play tokens have specific characteristics
+      if (Platform.isAndroid) {
+        // Android Google Play purchase tokens are typically long base64-encoded strings
+        // Test/mock tokens often have simple patterns or are too short
+        if (localData.length < 20 || serverData.length < 20) {
+          print('🔴 SECURITY: Verification data too short - likely mock data');
+          return false;
+        }
+        
+        // Check for obvious test patterns
+        if (localData.contains('test') || localData.contains('mock') || localData.contains('fake') ||
+            serverData.contains('test') || serverData.contains('mock') || serverData.contains('fake')) {
+          print('🔴 SECURITY: Verification data contains test patterns');
+          return false;
+        }
+        
+        // Real Google Play tokens are typically base64 encoded
+        // Simple validation: check if it looks like base64
+        final RegExp base64Pattern = RegExp(r'^[A-Za-z0-9+/]*={0,2}$');
+        if (!base64Pattern.hasMatch(localData) || !base64Pattern.hasMatch(serverData)) {
+          print('🔴 SECURITY: Verification data does not match expected format');
+          return false;
+        }
+      }
+      
+      // Check purchase timestamp if available
+      if (purchaseDetails.transactionDate != null) {
+        final DateTime purchaseTime = DateTime.fromMillisecondsSinceEpoch(
+          int.parse(purchaseDetails.transactionDate!)
+        );
+        final DateTime now = DateTime.now();
+        
+        // Check if purchase is from the future (invalid)
+        if (purchaseTime.isAfter(now)) {
+          print('🔴 SECURITY: Purchase timestamp is in the future - invalid data');
+          return false;
+        }
+        
+        // Check if purchase is extremely old (possibly cached test data)
+        final Duration age = now.difference(purchaseTime);
+        if (age.inDays > 365) {
+          print('🔴 SECURITY: Purchase timestamp is over 1 year old - possibly cached test data');
+          return false;
+        }
+      }
+      
+      // Additional check: Verify purchase ID format
+      final String purchaseId = purchaseDetails.purchaseID!;
+      if (Platform.isAndroid) {
+        // Google Play order IDs have specific format: GPA.xxxx-xxxx-xxxx-xxxxx
+        if (!purchaseId.startsWith('GPA.') && !purchaseId.contains('.')) {
+          print('🔴 SECURITY: Purchase ID format does not match Google Play pattern');
+          return false;
+        }
+      }
+      
+      print('🟢 SECURITY: Deep validation passed - purchase data appears legitimate');
+      return true;
+      
+         } catch (e) {
+       print('🔴 SECURITY: Error during deep validation: $e');
+       return false;
+     }
+   }
+   
+   /// Test real billing capability by attempting a safe operation
+   /// This detects if we're in a mock/test environment vs real billing
+   Future<bool> _testRealBillingCapability() async {
+     try {
+       print('🔍 SECURITY: Testing real billing capability');
+       
+       // For Android, try to query the connection state
+       if (Platform.isAndroid) {
+         // Attempt to query product details again with a timeout
+         // Real Google Play will respond, mock systems often fail or timeout
+         final Future<ProductDetailsResponse> queryFuture = _inAppPurchase.queryProductDetails(_productIds);
+         
+         // Add a short timeout - real Google Play responds quickly
+         final ProductDetailsResponse response = await queryFuture.timeout(
+           const Duration(seconds: 3),
+           onTimeout: () {
+             print('🔴 SECURITY: Product query timed out - likely no real billing access');
+             throw TimeoutException('Product query timeout', const Duration(seconds: 3));
+           },
+         );
+         
+         // Check if the response indicates real billing access
+         if (response.error != null) {
+           print('🔴 SECURITY: Product query returned error: ${response.error}');
+           // Check for specific errors that indicate no real billing
+           final String errorMessage = response.error!.message.toLowerCase();
+           if (errorMessage.contains('not configured') || 
+               errorMessage.contains('not available') ||
+               errorMessage.contains('billing') ||
+               errorMessage.contains('play store')) {
+             print('🔴 SECURITY: Error message indicates no real billing capability');
+             return false;
+           }
+         }
+         
+         // Additional check: Verify products match what we loaded initially
+         if (response.productDetails.length != _products.length) {
+           print('🔴 SECURITY: Product count mismatch - inconsistent billing state');
+           return false;
+         }
+       }
+       
+       print('🟢 SECURITY: Real billing capability test passed');
+       return true;
+       
+     } catch (e) {
+       print('🔴 SECURITY: Billing capability test failed: $e');
+       // If we get any errors during the test, assume no real billing access
+       return false;
+     }
+   }
   
   /// Restore previous purchases with proper ownership verification
   /// This method now properly verifies the user actually owns premium before activating
-  Future<void> restorePremiumForVerifiedOwner({required Function(bool success, String? error) onComplete}) async {
+  /// Returns true if premium was found and restored, false otherwise
+  Future<bool> restorePremiumForVerifiedOwner() async {
+    // CRITICAL SECURITY: Enhanced validation before attempting restore
+    
     if (!_isInitialized) {
-      onComplete(false, 'Billing service not initialized');
-      return;
+      print('🔴 SECURITY: Billing service not initialized - cannot restore');
+      return false;
     }
     
     if (!_isStoreAvailable) {
-      onComplete(false, 'Store not available');
-      return;
+      print('🔴 SECURITY: Store not available - cannot restore purchases');
+      print('🔴 SECURITY: This prevents false positive premium restoration');
+      return false;
     }
     
     if (_isRestoringPurchases) {
-      onComplete(false, 'Restore already in progress');
-      return;
+      print('🔴 SECURITY: Restore already in progress - preventing duplicate');
+      return false;
     }
+    
+    // Additional security check: Verify premium product is available
+    final premiumProduct = getPremiumProduct();
+    if (premiumProduct == null) {
+      print('🔴 SECURITY: Premium product not available in store');
+      print('🔴 SECURITY: Cannot verify legitimate ownership without product access');
+      return false;
+    }
+    
+    print('🟢 SECURITY: All pre-restore security checks passed');
     
     try {
       print('🟡 Billing Service: Starting VERIFIED premium restoration');
       _isRestoringPurchases = true;
       
       // Use queryPurchases to check what the user actually owns
+      bool result;
       if (Platform.isAndroid) {
         // For Android, we'll use the purchaseStream which already handles ownership verification
-        await _checkAndroidPurchaseHistory(onComplete);
+        result = await _checkAndroidPurchaseHistorySync();
       } else if (Platform.isIOS) {
         // For iOS, use restorePurchases
-        await _checkiOSPurchaseHistory(onComplete);
+        result = await _checkiOSPurchaseHistorySync();
       } else {
         _isRestoringPurchases = false;
-        onComplete(false, 'Platform not supported for restore');
-        return;
+        print('🔴 Platform not supported for restore');
+        return false;
       }
+      
+      _isRestoringPurchases = false;
+      return result;
       
     } catch (e) {
       print('🔴 Billing Service: Restore purchases failed: $e');
       _isRestoringPurchases = false;
-      onComplete(false, 'Failed to restore purchases: $e');
+      return false;
     }
   }
   
-  /// Check Android purchase history using purchase stream
+  /// Check Android purchase history using purchase stream (callback version)
   Future<void> _checkAndroidPurchaseHistory(Function(bool success, String? error) onComplete) async {
     print('🟡 Billing Service: Checking Android purchase history');
     
@@ -414,8 +587,8 @@ class BillingService {
       // Trigger a restore to activate the purchase stream
       await _inAppPurchase.restorePurchases();
       
-      // Wait a bit for any purchases to be processed
-      await Future.delayed(const Duration(seconds: 5));
+      // Wait a brief moment for any purchases to be processed
+      await Future.delayed(const Duration(milliseconds: 500));
       
       // Clean up
       _onRestoreComplete = originalCallback;
@@ -437,7 +610,70 @@ class BillingService {
     }
   }
   
-  /// Check iOS purchase history
+  /// Check Android purchase history synchronously (returns boolean)
+  Future<bool> _checkAndroidPurchaseHistorySync() async {
+    print('🟡 Billing Service: Checking Android purchase history (sync)');
+    
+    // CRITICAL SECURITY CHECK: Verify billing is actually available
+    if (!_isStoreAvailable) {
+      print('🔴 SECURITY: Billing not available - cannot restore purchases');
+      print('🔴 SECURITY: Preventing false positive premium restoration');
+      return false;
+    }
+    
+    // Additional check: Verify we can actually access premium product
+    final premiumProduct = getPremiumProduct();
+    if (premiumProduct == null) {
+      print('🔴 SECURITY: Premium product not available - cannot verify ownership');
+      print('🔴 SECURITY: Preventing false positive premium restoration'); 
+      return false;
+    }
+    
+    // ULTRA-CRITICAL: Test real billing capability before proceeding
+    if (!await _testRealBillingCapability()) {
+      print('🔴 SECURITY: Real billing capability test failed - preventing false restoration');
+      return false;
+    }
+    
+    print('🟢 SECURITY: All security checks passed, proceeding with legitimate restore check');
+    
+    // Set up temporary callback to catch restore events
+    bool premiumFound = false;
+    Function(bool, String?)? originalCallback = _onRestoreComplete;
+    
+    _onRestoreComplete = (bool success, String? error) {
+      if (success) {
+        premiumFound = true;
+        print('🟢 Billing Service: Premium ownership verified on Android');
+      }
+    };
+    
+    try {
+      // Trigger a restore to activate the purchase stream
+      await _inAppPurchase.restorePurchases();
+      
+      // Wait a brief moment for any purchases to be processed
+      await Future.delayed(const Duration(milliseconds: 500));
+      
+      // Clean up
+      _onRestoreComplete = originalCallback;
+      
+      if (premiumFound) {
+        print('🟢 Billing Service: Android premium restoration successful');
+        return true;
+      } else {
+        print('🟡 Billing Service: No premium purchases found on Android');
+        return false;
+      }
+      
+    } catch (e) {
+      _onRestoreComplete = originalCallback;
+      print('🔴 Billing Service: Android restore failed: $e');
+      return false;
+    }
+  }
+  
+  /// Check iOS purchase history (callback version)
   Future<void> _checkiOSPurchaseHistory(Function(bool success, String? error) onComplete) async {
     print('🟡 Billing Service: Checking iOS purchase history');
     
@@ -456,8 +692,8 @@ class BillingService {
       // Use iOS restore purchases
       await _inAppPurchase.restorePurchases();
       
-      // Wait for any purchases to be processed
-      await Future.delayed(const Duration(seconds: 5));
+      // Wait a brief moment for any purchases to be processed
+      await Future.delayed(const Duration(milliseconds: 500));
       
       // Clean up
       _onRestoreComplete = originalCallback;
@@ -479,10 +715,78 @@ class BillingService {
     }
   }
   
+  /// Check iOS purchase history synchronously (returns boolean)
+  Future<bool> _checkiOSPurchaseHistorySync() async {
+    print('🟡 Billing Service: Checking iOS purchase history (sync)');
+    
+    // CRITICAL SECURITY CHECK: Verify billing is actually available
+    if (!_isStoreAvailable) {
+      print('🔴 SECURITY: Billing not available - cannot restore purchases');
+      print('🔴 SECURITY: Preventing false positive premium restoration');
+      return false;
+    }
+    
+    // Additional check: Verify we can actually access premium product
+    final premiumProduct = getPremiumProduct();
+    if (premiumProduct == null) {
+      print('🔴 SECURITY: Premium product not available - cannot verify ownership');
+      print('🔴 SECURITY: Preventing false positive premium restoration'); 
+      return false;
+    }
+    
+    // ULTRA-CRITICAL: Test real billing capability before proceeding
+    if (!await _testRealBillingCapability()) {
+      print('🔴 SECURITY: Real billing capability test failed - preventing false restoration');
+      return false;
+    }
+    
+    print('🟢 SECURITY: All security checks passed, proceeding with legitimate restore check');
+    
+    // Set up temporary callback to catch restore events
+    bool premiumFound = false;
+    Function(bool, String?)? originalCallback = _onRestoreComplete;
+    
+    _onRestoreComplete = (bool success, String? error) {
+      if (success) {
+        premiumFound = true;
+        print('🟢 Billing Service: Premium ownership verified on iOS');
+      }
+    };
+    
+    try {
+      // Use iOS restore purchases
+      await _inAppPurchase.restorePurchases();
+      
+      // Wait a brief moment for any purchases to be processed
+      await Future.delayed(const Duration(milliseconds: 500));
+      
+      // Clean up
+      _onRestoreComplete = originalCallback;
+      
+      if (premiumFound) {
+        print('🟢 Billing Service: iOS premium restoration successful');
+        return true;
+      } else {
+        print('🟡 Billing Service: No premium purchases found on iOS');
+        return false;
+      }
+      
+    } catch (e) {
+      _onRestoreComplete = originalCallback;
+      print('🔴 Billing Service: iOS restore failed: $e');
+      return false;
+    }
+  }
+  
   /// Legacy restore method - now redirects to verified restore
   Future<void> restorePurchases({required Function(bool success, String? error) onComplete}) async {
     print('🟡 Billing Service: Legacy restorePurchases called - redirecting to verified restore');
-    await restorePremiumForVerifiedOwner(onComplete: onComplete);
+    bool success = await restorePremiumForVerifiedOwner();
+    if (success) {
+      onComplete(true, null);
+    } else {
+      onComplete(false, 'No premium purchase found or verification failed');
+    }
   }
   
   /// Check if user has purchased premium (for app startup)

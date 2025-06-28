@@ -321,9 +321,10 @@ class GameService {
   }
   
   /// Restore premium for verified owners only - one-time use feature
-  Future<void> restorePremiumForVerifiedOwner({required Function(bool success, String? error) onComplete}) async {
+  /// Returns true if premium was successfully restored, false otherwise
+  Future<bool> restorePremiumForVerifiedOwner() async {
     print('🟡 GameService: Starting verified premium restoration');
-    await _billingService.restorePremiumForVerifiedOwner(onComplete: onComplete);
+    return await _billingService.restorePremiumForVerifiedOwner();
   }
   
   /// Check if user has purchased premium (for app startup)

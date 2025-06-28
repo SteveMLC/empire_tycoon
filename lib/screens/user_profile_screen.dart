@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:math';
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import '../utils/sound_manager.dart';
 import '../services/auth_service.dart';
@@ -1884,8 +1885,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
                     const SizedBox(height: 16),
 
-                    // Show restore premium button if eligible and not already used
-                    if (gameState.isEligibleForPremiumRestore && !gameState.hasUsedPremiumRestore) ...[
+                    // Show restore premium button (always available, unless already used)
+                    if (!gameState.hasUsedPremiumRestore) ...[
                       Container(
                         width: double.infinity,
                         decoration: BoxDecoration(
@@ -1913,7 +1914,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                             onTap: () => _showRestorePremiumDialog(context, gameState),
                             borderRadius: BorderRadius.circular(14),
                             child: Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 24),
+                              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
@@ -1936,16 +1937,16 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                                       Text(
                                         'Restore Premium',
                                         style: TextStyle(
-                                          fontSize: 20,
+                                          fontSize: 18,
                                           fontWeight: FontWeight.bold,
                                           color: Colors.white,
                                           letterSpacing: 0.5,
                                         ),
                                       ),
                                       Text(
-                                        'You already own premium',
+                                        'Already purchased? Restore here',
                                         style: TextStyle(
-                                          fontSize: 14,
+                                          fontSize: 13,
                                           color: Colors.white70,
                                           fontWeight: FontWeight.w500,
                                         ),
@@ -2346,21 +2347,185 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     );
   }
 
+  /// Handle premium restore with robust context management
+  Future<void> _handlePremiumRestore(GameService gameService, GameState gameState) async {
+    try {
+      print("🟡 Starting premium restore process");
+      
+      // Use a timer to auto-close dialog if something goes wrong
+      Timer? timeoutTimer;
+      bool dialogClosed = false;
+      
+      // Set up timeout to prevent permanent stuck dialogs
+      timeoutTimer = Timer(const Duration(seconds: 15), () {
+        if (!dialogClosed && mounted) {
+          print("🔴 Premium restore timed out - force closing dialog");
+          try {
+            if (Navigator.canPop(context)) {
+              Navigator.of(context).pop();
+            }
+          } catch (e) {
+            print("🔴 Error closing dialog on timeout: $e");
+          }
+          dialogClosed = true;
+          
+          // Show timeout message
+          if (mounted) {
+            try {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  backgroundColor: Colors.orange,
+                  content: Row(
+                    children: [
+                      Icon(Icons.info_outline, color: Colors.white),
+                      SizedBox(width: 8),
+                      Text('Premium restore timed out. Please try again.'),
+                    ],
+                  ),
+                  duration: Duration(seconds: 4),
+                ),
+              );
+            } catch (e) {
+              print("🔴 Error showing timeout message: $e");
+            }
+          }
+        }
+      });
+      
+      // Perform the premium restore
+      bool success = await gameService.restorePremiumForVerifiedOwner();
+      
+      // Cancel the timeout timer
+      timeoutTimer?.cancel();
+      
+      // Close loading dialog if not already closed
+      if (!dialogClosed && mounted) {
+        try {
+          if (Navigator.canPop(context)) {
+            Navigator.of(context).pop();
+          }
+        } catch (e) {
+          print("🔴 Error closing dialog after restore: $e");
+        }
+        dialogClosed = true;
+      }
+      
+      // Handle the result
+      if (success) {
+        print("🟢 Premium restore successful!");
+        
+        // Enable premium features
+        gameState.enablePremium();
+        
+        // Mark restore as used to prevent future use
+        gameState.hasUsedPremiumRestore = true;
+        gameState.isEligibleForPremiumRestore = false;
+        
+        // Save the changes
+        gameService.saveGame();
+        
+        // Play success sound
+        gameService.playAchievementMilestoneSound();
+        
+        // Show success message only if widget still mounted
+        if (mounted) {
+          try {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                backgroundColor: Colors.green,
+                content: Row(
+                  children: [
+                    Icon(Icons.check_circle, color: Colors.white),
+                    SizedBox(width: 8),
+                    Text('Premium features restored! +1500 Platinum!'),
+                  ],
+                ),
+                duration: Duration(seconds: 4),
+              ),
+            );
+          } catch (e) {
+            print("🔴 Error showing success message: $e");
+          }
+        }
+      } else {
+        print("🔴 Premium restore failed");
+        
+        // Play error sound
+        gameService.playFeedbackErrorSound();
+        
+        // Show error message only if widget still mounted
+        if (mounted) {
+          try {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                backgroundColor: Colors.orange,
+                content: Row(
+                  children: [
+                    Icon(Icons.info_outline, color: Colors.white),
+                    SizedBox(width: 8),
+                    Expanded(child: Text('No premium purchase found. You can purchase premium below, or contact support if you believe this is an error.')),
+                  ],
+                ),
+                duration: Duration(seconds: 6),
+              ),
+            );
+          } catch (e) {
+            print("🔴 Error showing error message: $e");
+          }
+        }
+      }
+    } catch (e) {
+      print("🔴 Error during premium restore: $e");
+      
+      // Ensure dialog is closed on any error
+      if (mounted) {
+        try {
+          if (Navigator.canPop(context)) {
+            Navigator.of(context).pop();
+          }
+        } catch (dialogError) {
+          print("🔴 Error closing dialog on exception: $dialogError");
+        }
+      }
+      
+      // Show error message
+      if (mounted) {
+        try {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              backgroundColor: Colors.red,
+              content: Row(
+                children: [
+                  const Icon(Icons.error_outline, color: Colors.white),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text('Failed to restore premium: ${e.toString().split('\n').first}')),
+                ],
+              ),
+              duration: const Duration(seconds: 4),
+            ),
+          );
+        } catch (messageError) {
+          print("🔴 Error showing error message: $messageError");
+        }
+      }
+    }
+  }
+
   void _showRestorePremiumDialog(BuildContext context, GameState gameState) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Restore Premium'),
+        title: const Text('Restore Premium Purchase'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'It looks like you already own premium but it\'s not activated in your game.',
+              'We\'ll check if you have a valid premium purchase and restore your features if found.',
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
-            const Text('We can restore your premium features:'),
+            const Text('Premium features include:'),
             const SizedBox(height: 8),
             const Text('• Remove all ads from the game'),
             const Text('• Bonus +✦1500 Platinum'),
@@ -2369,17 +2534,17 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.orange.shade50,
-                border: Border.all(color: Colors.orange.shade200),
+                color: Colors.blue.shade50,
+                border: Border.all(color: Colors.blue.shade200),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.info_outline, color: Colors.orange.shade600, size: 20),
+                  Icon(Icons.security, color: Colors.blue.shade600, size: 20),
                   const SizedBox(width: 8),
                   const Expanded(
                     child: Text(
-                      'This is a one-time restore option for users who purchased premium but didn\'t receive their benefits.',
+                      'This restore will only work if you have actually purchased premium. Each account can only use restore once.',
                       style: TextStyle(fontSize: 12),
                     ),
                   ),
@@ -2398,92 +2563,58 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               print("🔄 Premium Restore Button Pressed.");
               
               final gameService = Provider.of<GameService>(context, listen: false);
+              final gameState = Provider.of<GameState>(context, listen: false);
+              
+              // Capture context references early
+              final navigator = Navigator.of(context);
+              final scaffoldMessenger = ScaffoldMessenger.of(context);
+              
+              // Double-check that user hasn't already used restore
+              if (gameState.hasUsedPremiumRestore) {
+                navigator.pop();
+                scaffoldMessenger.showSnackBar(
+                  const SnackBar(
+                    backgroundColor: Colors.orange,
+                    content: Row(
+                      children: [
+                        Icon(Icons.info_outline, color: Colors.white),
+                        SizedBox(width: 8),
+                        Text('You have already used your one-time premium restore.'),
+                      ],
+                    ),
+                    duration: Duration(seconds: 4),
+                  ),
+                );
+                return;
+              }
               
               // Close dialog first
-              Navigator.of(context).pop();
+              navigator.pop();
               
-              // Show loading indicator
+              // Show loading indicator - use root context for stability
               showDialog(
                 context: context,
                 barrierDismissible: false,
-                builder: (context) => const AlertDialog(
-                  content: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      CircularProgressIndicator(),
-                      SizedBox(height: 16),
-                      Text('Restoring premium...'),
-                    ],
+                builder: (dialogContext) => WillPopScope(
+                  onWillPop: () async => false,
+                  child: const AlertDialog(
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        CircularProgressIndicator(),
+                        SizedBox(height: 16),
+                        Text('Checking premium ownership...'),
+                      ],
+                    ),
                   ),
                 ),
               );
               
-              // Attempt to restore premium
-              await gameService.restorePremiumForVerifiedOwner(
-                onComplete: (bool success, String? error) {
-                  // Close loading dialog
-                  Navigator.of(context).pop();
-                  
-                  if (success) {
-                    print("🟢 Premium restore successful!");
-                    
-                    final gameState = Provider.of<GameState>(context, listen: false);
-                    
-                    // Enable premium features
-                    gameState.enablePremium();
-                    
-                    // Mark restore as used to prevent future use
-                    gameState.hasUsedPremiumRestore = true;
-                    gameState.isEligibleForPremiumRestore = false;
-                    
-                    // Save the changes
-                    gameService.saveGame();
-                    
-                    // Play success sound
-                    gameService.playAchievementMilestoneSound();
-                    
-                    // Show success message
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        backgroundColor: Colors.green,
-                        content: const Row(
-                          children: [
-                            Icon(Icons.check_circle, color: Colors.white),
-                            SizedBox(width: 8),
-                            Text('Premium features restored! +1500 Platinum!'),
-                          ],
-                        ),
-                        duration: const Duration(seconds: 4),
-                      ),
-                    );
-                  } else {
-                    print("🔴 Premium restore failed: $error");
-                    
-                    // Play error sound
-                    gameService.playFeedbackErrorSound();
-                    
-                    // Show error message
-                    String displayError = error ?? 'Failed to restore premium';
-                    
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        backgroundColor: Colors.red,
-                        content: Row(
-                          children: [
-                            const Icon(Icons.error_outline, color: Colors.white),
-                            const SizedBox(width: 8),
-                            Expanded(child: Text(displayError)),
-                          ],
-                        ),
-                        duration: const Duration(seconds: 4),
-                      ),
-                    );
-                  }
-                },
-              );
+              // Use a more robust approach with proper context management
+              _handlePremiumRestore(gameService, gameState);
             },
-            style: TextButton.styleFrom(foregroundColor: Colors.orange),
-            child: const Text('Restore Premium'),
+            style: TextButton.styleFrom(foregroundColor: Colors.blue),
+            child: const Text('Check & Restore'),
           ),
         ],
       ),
