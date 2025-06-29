@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:math';
@@ -64,6 +65,16 @@ class UserProfileScreen extends StatefulWidget {
 }
 
 class _UserProfileScreenState extends State<UserProfileScreen> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  bool _showAdvancedSettings = false;
+  
+  // Add cancellation support for async operations
+  final Map<String, bool> _operationCancelled = {};
+  
+  // Track dialog state independently of widget lifecycle
+  bool _isProcessingDialogShown = false;
+  OverlayEntry? _currentOverlayEntry;
+
   // User avatar options
   final List<String> _avatarOptions = [
     '👨‍💼', '👩‍💼', '👨‍💻', '👩‍💻', '👨‍🚀', '👩‍🚀', '👨‍🔧', '👩‍🔧',
@@ -88,11 +99,444 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   
   @override
   void dispose() {
+    // Cancel all ongoing operations
+    _operationCancelled.forEach((key, value) {
+      _operationCancelled[key] = true;
+    });
+    
+    // Force close any remaining dialogs
+    _forceCloseDialog();
+    
     // Dispose the controller when the widget is disposed
     _usernameController.dispose();
+    
     super.dispose();
   }
-  
+
+  /// Force close dialog using overlay instead of navigator
+  void _forceCloseDialog() {
+    if (_currentOverlayEntry != null) {
+      try {
+        _currentOverlayEntry!.remove();
+        _currentOverlayEntry = null;
+        _isProcessingDialogShown = false;
+        print('✅ Dialog force closed via overlay');
+      } catch (e) {
+        print('🔴 Error force closing dialog: $e');
+      }
+    }
+  }
+
+  /// Show processing dialog using overlay to avoid context issues
+  void _showProcessingDialog(String message) {
+    if (_isProcessingDialogShown) {
+      _forceCloseDialog(); // Close any existing dialog first
+    }
+    
+    try {
+      _currentOverlayEntry = OverlayEntry(
+        builder: (context) => Material(
+          color: Colors.black54,
+          child: Center(
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const CircularProgressIndicator(),
+                  const SizedBox(height: 16),
+                  Text(message),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+      
+      if (mounted) {
+        Overlay.of(context).insert(_currentOverlayEntry!);
+        _isProcessingDialogShown = true;
+        print('✅ Processing dialog shown via overlay');
+      }
+    } catch (e) {
+      print('🔴 Error showing processing dialog: $e');
+    }
+  }
+
+  /// Close processing dialog safely
+  void _closeProcessingDialog() {
+    if (_currentOverlayEntry != null && _isProcessingDialogShown) {
+      try {
+        _currentOverlayEntry!.remove();
+        _currentOverlayEntry = null;
+        _isProcessingDialogShown = false;
+        print('✅ Processing dialog closed successfully');
+      } catch (e) {
+        print('🔴 Error closing processing dialog: $e');
+      }
+    }
+  }
+
+  /// Show result message using overlay to avoid context issues
+  void _showResultMessage(String message, bool isSuccess) {
+    if (!mounted) return;
+    
+    try {
+      final resultOverlay = OverlayEntry(
+        builder: (context) => Positioned(
+          top: 100,
+          left: 20,
+          right: 20,
+          child: Material(
+            color: Colors.transparent,
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: isSuccess ? Colors.green : Colors.red,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    isSuccess ? Icons.check_circle : Icons.error,
+                    color: Colors.white,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      message,
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+      
+      Overlay.of(context).insert(resultOverlay);
+      
+      // Auto-remove after 4 seconds
+      Timer(const Duration(seconds: 4), () {
+        try {
+          resultOverlay.remove();
+        } catch (e) {
+          print('🔴 Error removing result overlay: $e');
+        }
+      });
+      
+      print('✅ Result message shown via overlay');
+    } catch (e) {
+      print('🔴 Error showing result message: $e');
+    }
+  }
+
+  /// Test a successful purchase scenario with overlay-based UI
+  void _testSuccessfulPurchase(BuildContext context, GameState gameState) async {
+    // Create unique operation ID
+    final operationId = 'test_success_${DateTime.now().millisecondsSinceEpoch}';
+    _operationCancelled[operationId] = false;
+    
+    try {
+      // Early exit if widget is disposed
+      if (!mounted) return;
+      
+      final gameService = Provider.of<GameService>(context, listen: false);
+      
+      // Close any existing dialogs first
+      try {
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        }
+      } catch (e) {
+        print('🔴 Error closing initial dialog: $e');
+      }
+      
+      // Show processing dialog using overlay
+      _showProcessingDialog('Simulating successful purchase...');
+      
+      // Check cancellation before async operation
+      if (_operationCancelled[operationId]!) {
+        _closeProcessingDialog();
+        return;
+      }
+      
+      // Simulate the purchase
+      final result = await gameService.debugSimulatePremiumPurchase(
+        shouldFail: false,
+      );
+      
+      // Check if operation was cancelled while running
+      if (_operationCancelled[operationId]!) {
+        _closeProcessingDialog();
+        return;
+      }
+      
+      // Always close processing dialog first
+      _closeProcessingDialog();
+      
+      // Wait a brief moment for dialog to close
+      await Future.delayed(const Duration(milliseconds: 100));
+      
+      // Check cancellation before UI updates
+      if (_operationCancelled[operationId]!) return;
+      
+             if (mounted) {
+         if (result['success'] == true) {
+           // CRITICAL: Enable premium features first
+           gameState.enablePremium();
+           
+           // Save the game immediately to persist premium status
+           gameService.saveGame();
+           
+           // Show success message using overlay
+           _showResultMessage(
+             '✅ Test Purchase Successful! Premium Activated!',
+             true,
+           );
+        } else {
+          // Show error message using overlay
+          _showResultMessage(
+            '❌ Test Purchase Failed: ${result['error']}',
+            false,
+          );
+        }
+      }
+    } catch (e) {
+      print('🔴 Error in _testSuccessfulPurchase: $e');
+      
+      // Always ensure dialog is closed
+      _closeProcessingDialog();
+      
+      if (mounted && !_operationCancelled[operationId]!) {
+        _showResultMessage('❌ Debug test failed: $e', false);
+      }
+    } finally {
+      // Clean up operation tracking
+      _operationCancelled.remove(operationId);
+    }
+  }
+
+  /// Test a failed purchase scenario with overlay-based UI
+  void _testFailedPurchase(BuildContext context, GameState gameState) async {
+    // Create unique operation ID
+    final operationId = 'test_failure_${DateTime.now().millisecondsSinceEpoch}';
+    _operationCancelled[operationId] = false;
+    
+    try {
+      // Early exit if widget is disposed
+      if (!mounted) return;
+      
+      final gameService = Provider.of<GameService>(context, listen: false);
+      
+      // Close any existing dialogs first
+      try {
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        }
+      } catch (e) {
+        print('🔴 Error closing initial dialog: $e');
+      }
+      
+      // Show processing dialog using overlay
+      _showProcessingDialog('Simulating failed purchase...');
+      
+      // Check cancellation before async operation
+      if (_operationCancelled[operationId]!) {
+        _closeProcessingDialog();
+        return;
+      }
+      
+      // Simulate a failed purchase
+      final result = await gameService.debugSimulatePremiumPurchase(
+        shouldFail: true,
+      );
+      
+      // Check if operation was cancelled while running
+      if (_operationCancelled[operationId]!) {
+        _closeProcessingDialog();
+        return;
+      }
+      
+      // Always close processing dialog first
+      _closeProcessingDialog();
+      
+      // Wait a brief moment for dialog to close
+      await Future.delayed(const Duration(milliseconds: 100));
+      
+      // Check cancellation before UI updates
+      if (_operationCancelled[operationId]!) return;
+      
+      if (mounted) {
+        final success = result['success'] == true;
+        final message = success 
+          ? '❌ Expected Failure Test Failed (this is bad!)' 
+          : '✅ Failure Test Passed: ${result['error']}';
+        
+        _showResultMessage(message, !success);
+      }
+    } catch (e) {
+      print('🔴 Error in _testFailedPurchase: $e');
+      
+      // Always ensure dialog is closed
+      _closeProcessingDialog();
+      
+      if (mounted && !_operationCancelled[operationId]!) {
+        _showResultMessage('❌ Debug test error: $e', false);
+      }
+    } finally {
+      // Clean up operation tracking
+      _operationCancelled.remove(operationId);
+    }
+  }
+
+  /// Test the verification logic with overlay-based UI
+  void _testVerificationLogic(BuildContext context) async {
+    // Create unique operation ID
+    final operationId = 'test_verification_${DateTime.now().millisecondsSinceEpoch}';
+    _operationCancelled[operationId] = false;
+    
+    try {
+      // Early exit if widget is disposed
+      if (!mounted) return;
+      
+      final gameService = Provider.of<GameService>(context, listen: false);
+      
+      // Close any existing dialogs first
+      try {
+        if (Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        }
+      } catch (e) {
+        print('🔴 Error closing initial dialog: $e');
+      }
+      
+      // Show processing dialog using overlay
+      _showProcessingDialog('Running verification tests...');
+      
+      // Check cancellation before async operation
+      if (_operationCancelled[operationId]!) {
+        _closeProcessingDialog();
+        return;
+      }
+      
+      final results = await gameService.debugTestPurchaseVerification();
+      
+      // Check if operation was cancelled while running
+      if (_operationCancelled[operationId]!) {
+        _closeProcessingDialog();
+        return;
+      }
+      
+      // Always close processing dialog first
+      _closeProcessingDialog();
+      
+      // Wait a brief moment for dialog to close
+      await Future.delayed(const Duration(milliseconds: 100));
+      
+      // Check cancellation before UI updates
+      if (_operationCancelled[operationId]!) return;
+      
+      // Show results in a proper dialog (not overlay for this complex content)
+      if (mounted) {
+        try {
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Row(
+                children: [
+                  Icon(Icons.security, color: Colors.blue),
+                  SizedBox(width: 8),
+                  Text('Verification Test Results'),
+                ],
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (results.containsKey('error'))
+                      Text(
+                        'Error: ${results['error']}',
+                        style: const TextStyle(color: Colors.red),
+                      )
+                    else ...[
+                      Text(
+                        'Overall Result: ${results['all_tests_passed'] == true ? '✅ ALL PASSED' : '❌ SOME FAILED'}',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: results['all_tests_passed'] == true ? Colors.green : Colors.red,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text('Individual Tests:', style: TextStyle(fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 8),
+                      ...results.entries.where((e) => e.key != 'all_tests_passed' && e.key != 'error').map((entry) =>
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 2),
+                          child: Row(
+                            children: [
+                              Icon(
+                                entry.value == true ? Icons.check : Icons.close,
+                                color: entry.value == true ? Colors.green : Colors.red,
+                                size: 16,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  entry.key.replaceAll('_', ' ').toUpperCase(),
+                                  style: TextStyle(fontSize: 12),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    try {
+                      if (Navigator.of(context).canPop()) {
+                        Navigator.of(context).pop();
+                      }
+                    } catch (e) {
+                      print('🔴 Error closing results dialog: $e');
+                    }
+                  },
+                  child: const Text('Close'),
+                ),
+              ],
+            ),
+          );
+        } catch (e) {
+          print('🔴 Error showing results dialog: $e');
+          _showResultMessage('Verification tests completed - check logs', true);
+        }
+      }
+    } catch (e) {
+      print('🔴 Error in _testVerificationLogic: $e');
+      
+      // Always ensure dialog is closed
+      _closeProcessingDialog();
+      
+      if (mounted && !_operationCancelled[operationId]!) {
+        _showResultMessage('Test failed: $e', false);
+      }
+    } finally {
+      // Clean up operation tracking
+      _operationCancelled.remove(operationId);
+    }
+  }
+
   // Add method to update controller if username changes elsewhere
   void _updateUsernameIfNeeded(GameState gameState) {
     final username = gameState.username ?? 'Tycoon';
@@ -232,16 +676,23 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                         ),
                       ],
                     ),
-                    
-                    // Add the crest toggle button here but only in debug mode
-                    if (kDebugMode)
+                  ],
+                ),
+              ),
+              
+              // DEBUG TOOLBAR (Debug Mode Only) - Separate row to prevent overflow
+              if (kDebugMode)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: Wrap(
+                    spacing: 8.0,
+                    runSpacing: 8.0,
+                    children: [
+                      // Platinum Crest Toggle
                       GestureDetector(
                         onTap: () {
-                          // Toggle the platinum crest for testing
                           gameState.isPlatinumCrestUnlocked = !gameState.isPlatinumCrestUnlocked;
-                          // Save the game to persist the change
                           Provider.of<GameService>(context, listen: false).saveGame();
-                          // Show a message
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(
@@ -261,23 +712,36 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                               : Colors.grey.shade200,
                             borderRadius: BorderRadius.circular(4),
                           ),
-                          child: Icon(
-                            Icons.shield_moon,
-                            size: 16,
-                            color: gameState.isPlatinumCrestUnlocked 
-                              ? Colors.grey.shade900
-                              : Colors.grey.shade500,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.shield_moon,
+                                size: 14,
+                                color: gameState.isPlatinumCrestUnlocked 
+                                  ? Colors.grey.shade900
+                                  : Colors.grey.shade500,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Crest',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: gameState.isPlatinumCrestUnlocked 
+                                    ? Colors.grey.shade900
+                                    : Colors.grey.shade500,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
                       
-                    // EMERGENCY PREMIUM ACTIVATION (Debug Mode Only)
-                    if (kDebugMode && !gameState.isPremium)
-                      Padding(
-                        padding: const EdgeInsets.only(left: 8),
-                        child: GestureDetector(
+                      // Emergency Premium Activation
+                      if (!gameState.isPremium)
+                        GestureDetector(
                           onTap: () {
-                            // Show confirmation dialog
                             showDialog(
                               context: context,
                               builder: (context) => AlertDialog(
@@ -296,14 +760,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                                   TextButton(
                                     onPressed: () {
                                       Navigator.of(context).pop();
-                                      
-                                      // Manually enable premium
                                       gameState.enablePremium();
-                                      
-                                      // Save the game
                                       Provider.of<GameService>(context, listen: false).saveGame();
-                                      
-                                      // Show confirmation
                                       ScaffoldMessenger.of(context).showSnackBar(
                                         const SnackBar(
                                           backgroundColor: Colors.green,
@@ -353,10 +811,111 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                             ),
                           ),
                         ),
+                      
+                      // Billing Debug
+                      GestureDetector(
+                        onTap: () {
+                          final gameService = Provider.of<GameService>(context, listen: false);
+                          final billingService = gameService;
+                          
+                          showDialog(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: const Text('Billing Debug Info'),
+                              content: SingleChildScrollView(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text('Premium Available: ${billingService.isPremiumAvailable()}'),
+                                    Text('Premium Price: ${billingService.getPremiumPrice()}'),
+                                    Text('Current Premium Status: ${gameState.isPremium}'),
+                                    const SizedBox(height: 16),
+                                    const Text(
+                                      'Recent changes:\n'
+                                      '• Relaxed purchase verification\n'
+                                      '• Removed overly strict security checks\n'
+                                      '• Added immediate game saving after purchase\n'
+                                      '• Enhanced debug logging',
+                                      style: TextStyle(fontSize: 12),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.of(context).pop(),
+                                  child: const Text('Close'),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.shade100,
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(color: Colors.blue.shade300),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.bug_report,
+                                size: 14,
+                                color: Colors.blue.shade700,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Billing Debug',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.blue.shade700,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                  ],
+                      
+                      // Test Purchase
+                      GestureDetector(
+                        onTap: () {
+                          _showDebugPurchaseTestDialog(context, gameState);
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.green.shade100,
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(color: Colors.green.shade300),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.shopping_cart,
+                                size: 14,
+                                color: Colors.green.shade700,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Test Purchase',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.green.shade700,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
               
               const SizedBox(height: 20),
               
@@ -2276,66 +2835,120 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               // Initiate actual Google Play purchase
               await gameService.purchasePremium(
                 onComplete: (bool success, String? error) {
-                  // Close loading dialog
-                  Navigator.of(context).pop();
+                  // Create unique operation ID for this callback
+                  final operationId = 'purchase_callback_${DateTime.now().millisecondsSinceEpoch}';
+                  _operationCancelled[operationId] = false;
                   
-                  if (success) {
-                    print("🟢 Premium purchase successful!");
-                    
-                    // Enable premium features
-                    Provider.of<GameState>(context, listen: false).enablePremium();
-                    
-                    // Play success sound
-                    gameService.playAchievementMilestoneSound();
-                    
-                    // Show success message
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        backgroundColor: Colors.green,
-                        content: const Row(
-                          children: [
-                            Icon(Icons.check_circle, color: Colors.white),
-                            SizedBox(width: 8),
-                            Text('Premium features activated! +1500 Platinum!'),
-                          ],
-                        ),
-                        duration: const Duration(seconds: 4),
-                      ),
-                    );
-                  } else {
-                    print("🔴 Premium purchase failed: $error");
-                    
-                    // Play error sound
-                    gameService.playFeedbackErrorSound();
-                    
-                    // Show error message
-                    String displayError = error ?? 'Purchase failed';
-                    if (displayError.toLowerCase().contains('cancel')) {
-                      displayError = 'Purchase was cancelled';
+                  try {
+                    // Close loading dialog safely
+                    if (mounted && !_operationCancelled[operationId]!) {
+                      try {
+                        if (Navigator.of(context).canPop()) {
+                          Navigator.of(context).pop();
+                        }
+                      } catch (e) {
+                        print('🔴 Error closing purchase dialog: $e');
+                      }
                     }
                     
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        backgroundColor: Colors.red,
-                        content: Row(
-                          children: [
-                            const Icon(Icons.error_outline, color: Colors.white),
-                            const SizedBox(width: 8),
-                            Expanded(child: Text(displayError)),
-                          ],
-                        ),
-                        duration: const Duration(seconds: 4),
-                      ),
-                    );
+                    // Check if operation was cancelled
+                    if (_operationCancelled[operationId]!) return;
+                    
+                    if (success) {
+                      print("🟢 Premium purchase successful!");
+                      
+                      // Enable premium features safely
+                      if (mounted && !_operationCancelled[operationId]!) {
+                        try {
+                          Provider.of<GameState>(context, listen: false).enablePremium();
+                          
+                          // CRITICAL: Save the game immediately to persist premium status
+                          Provider.of<GameService>(context, listen: false).saveGame();
+                          
+                          // Play success sound
+                          gameService.playAchievementMilestoneSound();
+                          
+                          // Show success message
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              backgroundColor: Colors.green,
+                              content: const Row(
+                                children: [
+                                  Icon(Icons.check_circle, color: Colors.white),
+                                  SizedBox(width: 8),
+                                  Text('Premium features activated! +1500 Platinum!'),
+                                ],
+                              ),
+                              duration: const Duration(seconds: 4),
+                            ),
+                          );
+                        } catch (e) {
+                          print('🔴 Error in purchase success handler: $e');
+                        }
+                      }
+                    } else {
+                      print("🔴 Premium purchase failed: $error");
+                      
+                      // Play error sound
+                      gameService.playFeedbackErrorSound();
+                      
+                      // Show error message safely
+                      if (mounted && !_operationCancelled[operationId]!) {
+                        try {
+                          String displayError = error ?? 'Purchase failed';
+                          if (displayError.toLowerCase().contains('cancel')) {
+                            displayError = 'Purchase was cancelled';
+                          }
+                          
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              backgroundColor: Colors.red,
+                              content: Row(
+                                children: [
+                                  const Icon(Icons.error_outline, color: Colors.white),
+                                  const SizedBox(width: 8),
+                                  Expanded(child: Text(displayError)),
+                                ],
+                              ),
+                              duration: const Duration(seconds: 4),
+                            ),
+                          );
+                        } catch (e) {
+                          print('🔴 Error in purchase error handler: $e');
+                        }
+                      }
+                    }
+                  } catch (e) {
+                    print('🔴 Error in purchase callback: $e');
+                  } finally {
+                    // Clean up operation tracking
+                    _operationCancelled.remove(operationId);
                   }
                 },
                 onOwnershipDetected: () {
-                  // User already owns premium but app doesn't recognize it
-                  final gameState = Provider.of<GameState>(context, listen: false);
-                  gameState.isEligibleForPremiumRestore = true;
-                  // Save immediately to persist the eligibility
-                  Provider.of<GameService>(context, listen: false).saveGame();
-                  print("🟡 User marked as eligible for premium restore");
+                  // Create unique operation ID for this callback
+                  final operationId = 'ownership_callback_${DateTime.now().millisecondsSinceEpoch}';
+                  _operationCancelled[operationId] = false;
+                  
+                  try {
+                    // User already owns premium but app doesn't recognize it - handle safely
+                    if (mounted && !_operationCancelled[operationId]!) {
+                      try {
+                        final gameState = Provider.of<GameState>(context, listen: false);
+                        gameState.isEligibleForPremiumRestore = true;
+                        // Save immediately to persist the eligibility
+                        Provider.of<GameService>(context, listen: false).saveGame();
+                        print("🟡 User marked as eligible for premium restore");
+                      } catch (e) {
+                        print('🔴 Error in ownership detection handler: $e');
+                      }
+                    }
+                  } catch (e) {
+                    print('🔴 Error in ownership callback: $e');
+                  } finally {
+                    // Clean up operation tracking
+                    _operationCancelled.remove(operationId);
+                  }
                 },
               );
             },
@@ -2421,7 +3034,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         gameState.hasUsedPremiumRestore = true;
         gameState.isEligibleForPremiumRestore = false;
         
-        // Save the changes
+        // CRITICAL: Save the changes immediately to persist premium status
         gameService.saveGame();
         
         // Play success sound
@@ -2673,6 +3286,218 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             fontSize: 14,
           ),
         ),
+      ),
+    );
+  }
+
+  /// [DEBUG ONLY] Show dialog for testing different purchase scenarios
+  void _showDebugPurchaseTestDialog(BuildContext context, GameState gameState) {
+    if (!kDebugMode) return;
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.shopping_cart, color: Colors.green),
+            SizedBox(width: 8),
+            Text('Purchase Flow Testing'),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Test different purchase scenarios to validate the billing flow:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              
+              // Test successful purchase
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () => _testSuccessfulPurchase(context, gameState),
+                  icon: const Icon(Icons.check_circle, color: Colors.green),
+                  label: const Text('Test Successful Purchase'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green.shade50,
+                    foregroundColor: Colors.green.shade700,
+                  ),
+                ),
+              ),
+              
+              const SizedBox(height: 8),
+              
+              // Test failed purchase
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () => _testFailedPurchase(context, gameState),
+                  icon: const Icon(Icons.error, color: Colors.red),
+                  label: const Text('Test Failed Purchase'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red.shade50,
+                    foregroundColor: Colors.red.shade700,
+                  ),
+                ),
+              ),
+              
+              const SizedBox(height: 8),
+              
+              // Test verification logic
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () => _testVerificationLogic(context),
+                  icon: const Icon(Icons.security, color: Colors.blue),
+                  label: const Text('Test Verification Logic'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue.shade50,
+                    foregroundColor: Colors.blue.shade700,
+                  ),
+                ),
+              ),
+              
+              const SizedBox(height: 8),
+              
+              // Check billing status
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () => _showBillingStatus(context),
+                  icon: const Icon(Icons.info, color: Colors.orange),
+                  label: const Text('Check Billing Status'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange.shade50,
+                    foregroundColor: Colors.orange.shade700,
+                  ),
+                ),
+              ),
+              
+              const SizedBox(height: 16),
+              
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  border: Border.all(color: Colors.blue.shade200),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.info_outline, color: Colors.blue.shade600, size: 16),
+                        const SizedBox(width: 4),
+                        const Text(
+                          'Debug Testing Notes:',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      '• These tests simulate the complete purchase flow\n'
+                      '• Test data goes through the same verification as real purchases\n'
+                      '• Success tests will activate premium features\n'
+                      '• Only available in debug builds',
+                      style: TextStyle(fontSize: 11),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Show detailed billing service status
+  void _showBillingStatus(BuildContext context) {
+    // Early exit if widget is disposed
+    if (!mounted) return;
+    
+    final gameService = Provider.of<GameService>(context, listen: false);
+    
+    // Safely close dialog with mounted check
+    if (mounted && Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    }
+    
+    final status = gameService.debugGetBillingStatus();
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.info, color: Colors.blue),
+            SizedBox(width: 8),
+            Text('Billing Service Status'),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (status.containsKey('error'))
+                Text(
+                  'Error: ${status['error']}',
+                  style: const TextStyle(color: Colors.red),
+                )
+              else ...[
+                ...status.entries.map((entry) =>
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 2),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(
+                          width: 120,
+                          child: Text(
+                            '${entry.key.replaceAll(RegExp(r'([A-Z])'), ' \$1').trim()}:',
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                          ),
+                        ),
+                        Expanded(
+                          child: Text(
+                            '${entry.value}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: entry.value == true 
+                                ? Colors.green 
+                                : entry.value == false 
+                                  ? Colors.red 
+                                  : Colors.black,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Close'),
+          ),
+        ],
       ),
     );
   }

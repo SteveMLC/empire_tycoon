@@ -31,6 +31,9 @@ class _PremiumAvatarSelectorState extends State<PremiumAvatarSelector> with Sing
   // Group avatars by category
   final Map<PremiumAvatarCategory, List<PremiumAvatar>> _groupedAvatars = {};
   
+  // Add cancellation support for async operations  
+  final Map<String, bool> _operationCancelled = {};
+  
   @override
   void initState() {
     super.initState();
@@ -53,6 +56,10 @@ class _PremiumAvatarSelectorState extends State<PremiumAvatarSelector> with Sing
   
   @override
   void dispose() {
+    // Cancel all ongoing operations
+    _operationCancelled.forEach((key, value) {
+      _operationCancelled[key] = true;
+    });
     _controller.dispose();
     super.dispose();
   }
@@ -337,86 +344,145 @@ class _PremiumAvatarSelectorState extends State<PremiumAvatarSelector> with Sing
               
               // Check if billing is available
               if (!gameService.isPremiumAvailable()) {
-                Navigator.of(context).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Purchase not available. Please try again later.'),
-                    backgroundColor: Colors.red,
-                    duration: Duration(seconds: 3),
-                  ),
-                );
+                try {
+                  if (mounted && Navigator.of(context).canPop()) {
+                    Navigator.of(context).pop();
+                  }
+                  
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Purchase not available. Please try again later.'),
+                        backgroundColor: Colors.red,
+                        duration: Duration(seconds: 3),
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  print('🔴 Error handling billing unavailable: $e');
+                }
                 return;
               }
               
-              // Close dialog first
-              Navigator.of(context).pop();
+              // Close dialog first safely
+              try {
+                if (mounted && Navigator.of(context).canPop()) {
+                  Navigator.of(context).pop();
+                }
+              } catch (e) {
+                print('🔴 Error closing dialog: $e');
+              }
               
-              // Show loading indicator
-              showDialog(
-                context: context,
-                barrierDismissible: false,
-                builder: (context) => const AlertDialog(
-                  content: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      CircularProgressIndicator(),
-                      SizedBox(height: 16),
-                      Text('Processing purchase...'),
-                    ],
-                  ),
-                ),
-              );
+              // Show loading indicator safely
+              if (mounted) {
+                try {
+                  showDialog(
+                    context: context,
+                    barrierDismissible: false,
+                    builder: (context) => const AlertDialog(
+                      content: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          CircularProgressIndicator(),
+                          SizedBox(height: 16),
+                          Text('Processing purchase...'),
+                        ],
+                      ),
+                    ),
+                  );
+                } catch (e) {
+                  print('🔴 Error showing loading dialog: $e');
+                  return;
+                }
+              }
               
               // Initiate Google Play purchase
               await gameService.purchasePremium(
                 onComplete: (bool success, String? error) {
-                  // Close loading dialog
-                  Navigator.of(context).pop();
+                  // Create unique operation ID for this callback
+                  final operationId = 'avatar_purchase_callback_${DateTime.now().millisecondsSinceEpoch}';
+                  _operationCancelled[operationId] = false;
                   
-                  if (success) {
-                    // Enable premium features
-                    Provider.of<GameState>(context, listen: false).enablePremium();
-                    
-                    // Play success sound
-                    gameService.playAchievementMilestoneSound();
-                    
-                    // Show success message
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        backgroundColor: Colors.green,
-                        content: const Row(
-                          children: [
-                            Icon(Icons.check_circle, color: Colors.white),
-                            SizedBox(width: 8),
-                            Text('Premium features activated! +1500 Platinum!'),
-                          ],
-                        ),
-                        duration: const Duration(seconds: 4),
-                      ),
-                    );
-                  } else {
-                    // Play error sound
-                    gameService.playFeedbackErrorSound();
-                    
-                    // Show error message
-                    String displayError = error ?? 'Purchase failed';
-                    if (displayError.toLowerCase().contains('cancel')) {
-                      displayError = 'Purchase was cancelled';
+                  try {
+                    // Close loading dialog safely
+                                          if (mounted && !_operationCancelled[operationId]!) {
+                        try {
+                          if (Navigator.of(context).canPop()) {
+                            Navigator.of(context).pop();
+                          }
+                      } catch (e) {
+                        print('🔴 Error closing avatar purchase dialog: $e');
+                      }
                     }
                     
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        backgroundColor: Colors.red,
-                        content: Row(
-                          children: [
-                            const Icon(Icons.error_outline, color: Colors.white),
-                            const SizedBox(width: 8),
-                            Expanded(child: Text(displayError)),
-                          ],
-                        ),
-                        duration: const Duration(seconds: 4),
-                      ),
-                    );
+                    // Check if operation was cancelled
+                    if (_operationCancelled[operationId]!) return;
+                    
+                    if (success) {
+                      if (mounted && !_operationCancelled[operationId]!) {
+                        try {
+                          // Enable premium features
+                          Provider.of<GameState>(context, listen: false).enablePremium();
+                          
+                          // CRITICAL: Save the game immediately to persist premium status
+                          Provider.of<GameService>(context, listen: false).saveGame();
+                          
+                          // Play success sound
+                          gameService.playAchievementMilestoneSound();
+                          
+                          // Show success message
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              backgroundColor: Colors.green,
+                              content: const Row(
+                                children: [
+                                  Icon(Icons.check_circle, color: Colors.white),
+                                  SizedBox(width: 8),
+                                  Text('Premium features activated! +1500 Platinum!'),
+                                ],
+                              ),
+                              duration: const Duration(seconds: 4),
+                            ),
+                          );
+                        } catch (e) {
+                          print('🔴 Error in avatar purchase success handler: $e');
+                        }
+                      }
+                    } else {
+                      if (mounted && !_operationCancelled[operationId]!) {
+                        try {
+                          // Play error sound
+                          gameService.playFeedbackErrorSound();
+                          
+                          // Show error message
+                          String displayError = error ?? 'Purchase failed';
+                          if (displayError.toLowerCase().contains('cancel')) {
+                            displayError = 'Purchase was cancelled';
+                          }
+                          
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              backgroundColor: Colors.red,
+                              content: Row(
+                                children: [
+                                  const Icon(Icons.error_outline, color: Colors.white),
+                                  const SizedBox(width: 8),
+                                  Expanded(child: Text(displayError)),
+                                ],
+                              ),
+                              duration: const Duration(seconds: 4),
+                            ),
+                          );
+                        } catch (e) {
+                          print('🔴 Error in avatar purchase error handler: $e');
+                        }
+                      }
+                    }
+                  } catch (e) {
+                    print('🔴 Error in avatar purchase callback: $e');
+                  } finally {
+                    // Clean up operation tracking
+                    _operationCancelled.remove(operationId);
                   }
                 },
               );

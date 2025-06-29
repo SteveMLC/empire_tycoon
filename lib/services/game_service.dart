@@ -83,7 +83,8 @@ class GameService {
       await _billingService.initialize();
       
       // ADDED: Initialize app lifecycle service (includes notification service)
-      await _appLifecycleService.initialize(_gameState);
+      // ENHANCED: Pass IncomeService for consistent background offline income calculations
+      await _appLifecycleService.initialize(_gameState, incomeService: _incomeService);
       
       // Check game version and clear data if needed
       await _persistenceService.checkVersion();
@@ -340,5 +341,26 @@ class GameService {
   /// Get localized price for premium
   String getPremiumPrice() {
     return _billingService.getPremiumPrice();
+  }
+  
+  // Debug methods delegated to BillingService (only available in debug builds)
+  
+  /// [DEBUG ONLY] Simulate a premium purchase for testing
+  Future<Map<String, dynamic>> debugSimulatePremiumPurchase({
+    bool shouldFail = false,
+  }) async {
+    return await _billingService.debugSimulatePremiumPurchase(
+      shouldFail: shouldFail,
+    );
+  }
+  
+  /// [DEBUG ONLY] Test the purchase verification logic with various scenarios
+  Future<Map<String, dynamic>> debugTestPurchaseVerification() async {
+    return await _billingService.debugTestPurchaseVerification();
+  }
+  
+  /// [DEBUG ONLY] Get detailed billing service status for troubleshooting
+  Map<String, dynamic> debugGetBillingStatus() {
+    return _billingService.debugGetBillingStatus();
   }
 }

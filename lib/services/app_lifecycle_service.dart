@@ -2,9 +2,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../models/game_state.dart';
 import 'notification_service.dart';
+import 'income_service.dart';
 
 /// Service that handles app lifecycle changes and coordinates notifications
 /// Integrates with existing SoundManager lifecycle handling
+/// ENHANCED: Now handles background time as offline time for better user experience
 class AppLifecycleService with WidgetsBindingObserver {
   static final AppLifecycleService _instance = AppLifecycleService._internal();
   factory AppLifecycleService() => _instance;
@@ -12,14 +14,20 @@ class AppLifecycleService with WidgetsBindingObserver {
 
   final NotificationService _notificationService = NotificationService();
   GameState? _gameState;
+  IncomeService? _incomeService;
   bool _isInitialized = false;
   bool _hasRequestedPermission = false;
+  
+  DateTime? _backgroundStartTime;
+  static const int _minimumBackgroundSecondsForOfflineIncome = 30;
 
   /// Initialize the lifecycle service
-  Future<void> initialize(GameState gameState) async {
+  /// ENHANCED: Now accepts IncomeService for consistent income calculations
+  Future<void> initialize(GameState gameState, {IncomeService? incomeService}) async {
     if (_isInitialized) return;
     
     _gameState = gameState;
+    _incomeService = incomeService;
     
     // Initialize notification service
     await _notificationService.initialize();
@@ -28,7 +36,7 @@ class AppLifecycleService with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     
     _isInitialized = true;
-    debugPrint('✅ AppLifecycleService initialized');
+    debugPrint('✅ AppLifecycleService initialized with background offline income support');
   }
 
   @override
@@ -53,8 +61,12 @@ class AppLifecycleService with WidgetsBindingObserver {
   }
 
   /// Handle app going to background
+  /// ENHANCED: Now records background start time for offline income calculation
   void _handleAppGoingToBackground() {
-    debugPrint('📱 App going to background - scheduling notifications');
+    debugPrint('📱 App going to background - recording time and scheduling notifications');
+    
+    _backgroundStartTime = DateTime.now();
+    debugPrint('🕒 Background start time recorded: $_backgroundStartTime');
     
     // Schedule offline income notification if enabled
     if (_notificationService.offlineIncomeNotificationsEnabled) {
@@ -63,11 +75,33 @@ class AppLifecycleService with WidgetsBindingObserver {
   }
 
   /// Handle app returning to foreground
+  /// ENHANCED: Now calculates offline income for background time if significant
   void _handleAppReturningToForeground() {
-    debugPrint('📱 App returning to foreground - cancelling offline income notification');
+    debugPrint('📱 App returning to foreground');
     
-    // Cancel offline income notification since user is back
     _notificationService.cancelOfflineIncomeNotification();
+    
+    if (_backgroundStartTime != null && _gameState != null) {
+      final DateTime now = DateTime.now();
+      final Duration backgroundDuration = now.difference(_backgroundStartTime!);
+      final int backgroundSeconds = backgroundDuration.inSeconds;
+      
+      debugPrint('🕒 App was in background for $backgroundSeconds seconds');
+      
+      if (backgroundSeconds >= _minimumBackgroundSecondsForOfflineIncome) {
+        debugPrint('💰 Processing offline income for background time: ${backgroundSeconds}s');
+        
+        _gameState!.processOfflineIncome(_backgroundStartTime!, incomeService: _incomeService);
+        
+        debugPrint('✅ Background offline income processed successfully');
+      } else {
+        debugPrint('⏭️ Background time too short for offline income (${backgroundSeconds}s < ${_minimumBackgroundSecondsForOfflineIncome}s)');
+      }
+    } else {
+      debugPrint('ℹ️ No background start time recorded or game state unavailable');
+    }
+    
+    _backgroundStartTime = null;
   }
 
   /// Request notification permissions after user milestone
