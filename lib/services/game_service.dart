@@ -12,6 +12,7 @@ import 'components/diagnostic_service.dart';
 import 'income_service.dart'; // ADDED: Import IncomeService
 import 'billing_service.dart'; // ADDED: Import BillingService for Google Play purchases
 import 'app_lifecycle_service.dart'; // ADDED: Import AppLifecycleService for notifications
+import 'admob_service.dart'; // ADDED: Import AdMobService for predictive ad loading integration
 
 class GameService {
   final SharedPreferences _prefs;
@@ -26,10 +27,15 @@ class GameService {
   late final IncomeService _incomeService; // ADDED: IncomeService for consistent income calculation
   late final BillingService _billingService; // ADDED: BillingService for Google Play purchases
   late final AppLifecycleService _appLifecycleService; // ADDED: AppLifecycleService for notifications
+  final AdMobService _adMobService = AdMobService(); // ADDED: AdMobService for predictive ad loading integration
   
   // Expose soundManager for backward compatibility
   // This will be removed once all direct soundManager references are updated
   SoundManager get soundManager => SoundManager();
+  BillingService get billingService => _billingService; // Getter for billing service
+  IncomeService get incomeService => _incomeService; // Getter for income service
+  AppLifecycleService get appLifecycleService => _appLifecycleService; // Getter for app lifecycle service
+  DiagnosticService get diagnosticService => _diagnosticService; // Getter for diagnostic service
 
   GameService(this._prefs, this._gameState) {
     // Initialize component services
@@ -83,8 +89,8 @@ class GameService {
       await _billingService.initialize();
       
       // ADDED: Initialize app lifecycle service (includes notification service)
-      // ENHANCED: Pass IncomeService for consistent background offline income calculations
-      await _appLifecycleService.initialize(_gameState, incomeService: _incomeService);
+      // ENHANCED: Pass IncomeService and AdMobService for consistent background offline income calculations and predictive ad loading
+      await _appLifecycleService.initialize(_gameState, incomeService: _incomeService, adMobService: AdMobService());
       
       // Check game version and clear data if needed
       await _persistenceService.checkVersion();

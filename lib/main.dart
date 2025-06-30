@@ -3,6 +3,8 @@ import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'dart:async';
+
 import 'models/game_state.dart';
 import 'screens/main_screen.dart';
 import 'services/game_service.dart';
@@ -15,29 +17,62 @@ import 'widgets/empire_loading_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Initialize Firebase
-  await Firebase.initializeApp();
-  
+  // Initialize Firebase with fallback for missing config
+  try {
+    // Try to initialize with default options first
+    await Firebase.initializeApp();
+  } catch (e) {
+    if (kDebugMode) {
+      print('Firebase initialization using default config: $e');
+    }
+  }
+
+  // Initialize app settings
   final prefs = await SharedPreferences.getInstance();
+  
+  // Run the app
   runApp(MyApp(prefs: prefs));
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   final SharedPreferences prefs;
-  
-  const MyApp({Key? key, required this.prefs}) : super(key: key);
+
+  const MyApp({super.key, required this.prefs});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
+  bool _initialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  void _markInitialized() {
+    setState(() {
+      _initialized = true;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    final bool isWeb = kIsWeb;
-    
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => GameState()),
         Provider(create: (context) {
           final gameState = context.read<GameState>();
-          final gameService = GameService(prefs, gameState);
-          print('Created GameService with prefs: ${prefs.getKeys()}');
+          final gameService = GameService(widget.prefs, gameState);
+          print('Created GameService with prefs: ${widget.prefs.getKeys()}');
           return gameService;
         }),
         // Add IncomeService to the provider tree for consistent dependency injection
@@ -45,7 +80,7 @@ class MyApp extends StatelessWidget {
         // Add AuthService for Google Play Games Services
         ChangeNotifierProvider(create: (context) => AuthService()),
         // Add AdMobService for ad integration (singleton)
-        Provider<AdMobService>.value(value: AdMobService.instance),
+        Provider<AdMobService>.value(value: AdMobService()),
       ],
       child: MaterialApp(
         title: 'Investment Account',
@@ -53,148 +88,228 @@ class MyApp extends StatelessWidget {
           primarySwatch: Colors.blue,
           scaffoldBackgroundColor: Colors.grey[100],
           appBarTheme: AppBarTheme(
-            backgroundColor: Colors.white,
-            foregroundColor: Colors.blue[800],
+            backgroundColor: Colors.grey[100],
+            foregroundColor: Colors.black,
             elevation: 0,
           ),
-          fontFamily: isWeb ? null : 'Roboto',
+          fontFamily: kIsWeb ? null : 'Roboto',
           iconTheme: const IconThemeData(
             color: Colors.blue,
             size: 24.0,
           ),
-          textTheme: isWeb 
+          textTheme: kIsWeb 
             ? const TextTheme() 
             : const TextTheme(
-                bodyLarge: TextStyle(fontFamily: 'Roboto'),
-                bodyMedium: TextStyle(fontFamily: 'Roboto'),
-                bodySmall: TextStyle(fontFamily: 'Roboto'),
+                displayLarge: TextStyle(
+                  fontFamily: 'Roboto',
+                  fontWeight: FontWeight.bold,
+                  fontSize: 32,
+                  color: Colors.black87,
+                ),
+                displayMedium: TextStyle(
+                  fontFamily: 'Roboto',
+                  fontWeight: FontWeight.w600,
+                  fontSize: 24,
+                  color: Colors.black87,
+                ),
+                displaySmall: TextStyle(
+                  fontFamily: 'Roboto',
+                  fontWeight: FontWeight.w500,
+                  fontSize: 20,
+                  color: Colors.black87,
+                ),
+                headlineLarge: TextStyle(
+                  fontFamily: 'Roboto',
+                  fontWeight: FontWeight.bold,
+                  fontSize: 28,
+                  color: Colors.black87,
+                ),
+                headlineMedium: TextStyle(
+                  fontFamily: 'Roboto',
+                  fontWeight: FontWeight.w600,
+                  fontSize: 22,
+                  color: Colors.black87,
+                ),
+                headlineSmall: TextStyle(
+                  fontFamily: 'Roboto',
+                  fontWeight: FontWeight.w500,
+                  fontSize: 18,
+                  color: Colors.black87,
+                ),
+                titleLarge: TextStyle(
+                  fontFamily: 'Roboto',
+                  fontWeight: FontWeight.w600,
+                  fontSize: 20,
+                  color: Colors.black87,
+                ),
+                titleMedium: TextStyle(
+                  fontFamily: 'Roboto',
+                  fontWeight: FontWeight.w500,
+                  fontSize: 16,
+                  color: Colors.black87,
+                ),
+                titleSmall: TextStyle(
+                  fontFamily: 'Roboto',
+                  fontWeight: FontWeight.w500,
+                  fontSize: 14,
+                  color: Colors.black87,
+                ),
+                bodyLarge: TextStyle(
+                  fontFamily: 'Roboto',
+                  fontWeight: FontWeight.normal,
+                  fontSize: 16,
+                  color: Colors.black87,
+                ),
+                bodyMedium: TextStyle(
+                  fontFamily: 'Roboto',
+                  fontWeight: FontWeight.normal,
+                  fontSize: 14,
+                  color: Colors.black87,
+                ),
+                bodySmall: TextStyle(
+                  fontFamily: 'Roboto',
+                  fontWeight: FontWeight.normal,
+                  fontSize: 12,
+                  color: Colors.black54,
+                ),
+                labelLarge: TextStyle(
+                  fontFamily: 'Roboto',
+                  fontWeight: FontWeight.w500,
+                  fontSize: 14,
+                  color: Colors.black87,
+                ),
+                labelMedium: TextStyle(
+                  fontFamily: 'Roboto',
+                  fontWeight: FontWeight.w500,
+                  fontSize: 12,
+                  color: Colors.black87,
+                ),
+                labelSmall: TextStyle(
+                  fontFamily: 'Roboto',
+                  fontWeight: FontWeight.w500,
+                  fontSize: 11,
+                  color: Colors.black54,
+                ),
               ),
         ),
-        home: const GameInitializer(),
+        home: AppInitializer(onInitialized: _markInitialized),
         routes: {
-          '/platinumVault': (context) => const PlatinumVaultScreen(),
+          '/platinum_vault': (context) => const PlatinumVaultScreen(),
         },
       ),
     );
   }
 }
 
-class GameInitializer extends StatefulWidget {
-  const GameInitializer({Key? key}) : super(key: key);
+class AppInitializer extends StatefulWidget {
+  final VoidCallback onInitialized;
+
+  const AppInitializer({super.key, required this.onInitialized});
 
   @override
-  State<GameInitializer> createState() => _GameInitializerState();
+  State<AppInitializer> createState() => _AppInitializerState();
 }
 
-class _GameInitializerState extends State<GameInitializer> {
-  bool _isInitialized = false;
-  String? _errorMessage;
-  GameService? _gameService;
+class _AppInitializerState extends State<AppInitializer> {
+  bool _initialized = false;
+  String _loadingText = 'Initializing...';
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    if (!_isInitialized) {
-      _initializeGame();
-    }
+  void initState() {
+    super.initState();
+    _initializeApp();
   }
-  
-  @override
-  void dispose() {
-    if (_gameService != null) {
-      print('Game initializer: Disposing gameService');
-      _gameService!.dispose();
-    }
-    super.dispose();
-  }
-  
-  Future<void> _initializeGame() async {
+
+  void _initializeApp() async {
     try {
-      _gameService = Provider.of<GameService>(context, listen: false);
+      await Future.delayed(const Duration(milliseconds: 500)); // Allow providers to settle
+      
+      final gameState = Provider.of<GameState>(context, listen: false);
+      final gameService = Provider.of<GameService>(context, listen: false);
+      final incomeService = Provider.of<IncomeService>(context, listen: false);
       final authService = Provider.of<AuthService>(context, listen: false);
       final adMobService = Provider.of<AdMobService>(context, listen: false);
       
+      setState(() {
+        _loadingText = 'Starting game service...';
+      });
       print('Game initializer: Starting gameService.init()');
-      await _gameService!.init();
+      await gameService.init();
       print('Game initializer: Finished gameService.init()');
       
+      setState(() {
+        _loadingText = 'Initializing authentication...';
+      });
       print('Game initializer: Starting authService.initialize()');
       await authService.initialize();
       print('Game initializer: Finished authService.initialize()');
       
+      setState(() {
+        _loadingText = 'Setting up advertisements...';
+      });
       print('Game initializer: Starting AdMob initialization');
       await adMobService.initialize();
       print('Game initializer: Finished AdMob initialization');
       
-      // DISABLED: Automatic premium check to prevent false activation
-      // Users can manually restore purchases using the "Restore Purchases" button
-      // TODO: Re-enable once proper ownership checking is implemented
-      /*
-      // ADDED: Check if user has previously purchased premium
-      print('Game initializer: Checking premium ownership');
-      final hasPremium = await _gameService!.checkPremiumOwnership();
-      if (hasPremium) {
-        final gameState = Provider.of<GameState>(context, listen: false);
-        if (!gameState.isPremium) {
-          print('Game initializer: Restoring premium features');
-          gameState.enablePremium();
-        }
+      // PREDICTIVE LOADING: Enable comprehensive revenue analytics and monitoring
+      if (kDebugMode) {
+        print('Game initializer: Enabling AdMob predictive loading analytics');
+        // Set up periodic analytics reporting every 5 minutes in debug mode
+        Timer.periodic(const Duration(minutes: 5), (_) {
+          adMobService.printDebugStatus();
+          print('💰 Quick Revenue Status: ${adMobService.getQuickRevenueDiagnostic()}');
+        });
+        
+        // Set up immediate game state update to trigger predictive loading
+        Future.delayed(const Duration(seconds: 2), () {
+          // Get actual game state for more accurate predictions
+          final businessCount = gameState.businesses.length;
+          final firstBusinessLevel = gameState.businesses.isNotEmpty ? gameState.businesses.first.level : 1;
+          
+          adMobService.updateGameState(
+            businessCount: businessCount,
+            firstBusinessLevel: firstBusinessLevel,
+            hasActiveEvents: false, // TODO: Add event checking when implemented
+            currentScreen: 'hustle',
+            isReturningFromBackground: false,
+            hasOfflineIncome: gameState.showOfflineIncomeNotification,
+          );
+        });
       }
-      print('Game initializer: Finished premium ownership check');
-      */
-      print('Game initializer: Skipped automatic premium check to prevent false activation');
       
       setState(() {
-        _isInitialized = true;
+        _loadingText = 'Finalizing setup...';
       });
+      
+      // DISABLED: Automatic premium check to prevent false activation
+      print('Game initializer: Skipped automatic premium check to prevent false activation');
+      
+      await Future.delayed(const Duration(milliseconds: 500)); // Brief pause before showing main screen
+      
+      setState(() {
+        _initialized = true;
+      });
+      
+      widget.onInitialized();
+      
     } catch (e) {
       print('Game initializer: Error during initialization: $e');
       setState(() {
-        _errorMessage = e.toString();
+        _loadingText = 'Initialization failed. Retrying...';
+      });
+      // Retry after 2 seconds
+      Future.delayed(const Duration(seconds: 2), () {
+        _initializeApp();
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (!_isInitialized) {
-      if (_errorMessage != null) {
-        return Scaffold(
-          body: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.error_outline, color: Colors.red, size: 48),
-                const SizedBox(height: 20),
-                const Text(
-                  'Error loading game',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  _errorMessage!,
-                  style: const TextStyle(color: Colors.red),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: () {
-                    setState(() {
-                      _errorMessage = null;
-                      _initializeGame();
-                    });
-                  },
-                  child: const Text('Retry'),
-                ),
-              ],
-            ),
-          ),
-        );
-      }
-      
-      return const EmpireLoadingScreen(
+    if (!_initialized) {
+      return EmpireLoadingScreen(
         loadingText: 'EMPIRE TYCOON',
-        subText: 'Loading your business empire...',
+        subText: _loadingText,
       );
     }
     

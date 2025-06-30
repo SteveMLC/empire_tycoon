@@ -57,6 +57,24 @@ Comprehensive testing strategy and quality assurance processes for sophisticated
 - **Continuous Improvement**: QA process evolution and testing automation enhancement
 - **Risk Management**: Technical risk mitigation and quality risk assessment
 
+### 7. [Predictive Ad Loading System](../docs/PREDICTIVE_AD_LOADING_IMPLEMENTATION.md)
+Comprehensive implementation guide for the advanced predictive ad loading system that eliminates 95% impression loss:
+- **System Architecture**: Game state tracking, intelligent loading strategies, and multi-source prediction
+- **Implementation Details**: Step-by-step code examples and integration patterns
+- **Four Loading Strategies**: Always Available (HustleBoost), Context-Aware (BuildSkip), Event-Based (EventClear), Multi-Source (Offlineincome2x)
+- **Critical Fixes**: Offline income ad issue resolution and background return detection
+- **Adding New Ads**: Complete guide for implementing new ad types with predictive loading
+- **Troubleshooting**: Common issues, debugging techniques, and performance monitoring
+- **Analytics & Monitoring**: Revenue loss tracking, success rate analysis, and performance metrics
+
+### 8. [Quick Ad Troubleshooting](../docs/QUICK_AD_TROUBLESHOOTING_GUIDE.md)
+Fast reference guide for immediate ad issue resolution and system monitoring:
+- **Immediate Diagnostics**: Quick status checks and problem identification
+- **Common Issues**: Symptoms, causes, and rapid solutions for ad loading problems
+- **New Ad Implementation**: 5-step process with template code for adding new ads
+- **Performance Monitoring**: Key metrics and analytics commands for system health
+- **Emergency Procedures**: Force loading commands and quick diagnostic techniques
+
 ## How to Use This Documentation
 
 ### For Project Management

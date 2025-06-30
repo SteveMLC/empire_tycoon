@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 import '../models/game_state.dart';
 import 'notification_service.dart';
 import 'income_service.dart';
+import 'admob_service.dart';
 
 /// Service that handles app lifecycle changes and coordinates notifications
 /// Integrates with existing SoundManager lifecycle handling
 /// ENHANCED: Now handles background time as offline time for better user experience
+/// ENHANCED: Integrated with AdMobService for predictive ad loading
 class AppLifecycleService with WidgetsBindingObserver {
   static final AppLifecycleService _instance = AppLifecycleService._internal();
   factory AppLifecycleService() => _instance;
@@ -15,6 +17,7 @@ class AppLifecycleService with WidgetsBindingObserver {
   final NotificationService _notificationService = NotificationService();
   GameState? _gameState;
   IncomeService? _incomeService;
+  AdMobService? _adMobService;
   bool _isInitialized = false;
   bool _hasRequestedPermission = false;
   
@@ -22,12 +25,13 @@ class AppLifecycleService with WidgetsBindingObserver {
   static const int _minimumBackgroundSecondsForOfflineIncome = 30;
 
   /// Initialize the lifecycle service
-  /// ENHANCED: Now accepts IncomeService for consistent income calculations
-  Future<void> initialize(GameState gameState, {IncomeService? incomeService}) async {
+  /// ENHANCED: Now accepts IncomeService and AdMobService for consistent coordination
+  Future<void> initialize(GameState gameState, {IncomeService? incomeService, AdMobService? adMobService}) async {
     if (_isInitialized) return;
     
     _gameState = gameState;
     _incomeService = incomeService;
+    _adMobService = adMobService;
     
     // Initialize notification service
     await _notificationService.initialize();
@@ -36,7 +40,7 @@ class AppLifecycleService with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     
     _isInitialized = true;
-    debugPrint('✅ AppLifecycleService initialized with background offline income support');
+    debugPrint('✅ AppLifecycleService initialized with AdMobService integration');
   }
 
   @override
@@ -76,6 +80,7 @@ class AppLifecycleService with WidgetsBindingObserver {
 
   /// Handle app returning to foreground
   /// ENHANCED: Now calculates offline income for background time if significant
+  /// ENHANCED: Notifies AdMobService for predictive ad loading
   void _handleAppReturningToForeground() {
     debugPrint('📱 App returning to foreground');
     
@@ -91,14 +96,50 @@ class AppLifecycleService with WidgetsBindingObserver {
       if (backgroundSeconds >= _minimumBackgroundSecondsForOfflineIncome) {
         debugPrint('💰 Processing offline income for background time: ${backgroundSeconds}s');
         
+        // ENHANCED: Notify AdMobService BEFORE processing offline income
+        // This ensures the 2x ad is preloaded when the offline income notification appears
+        if (_adMobService != null) {
+          debugPrint('🎯 Notifying AdMobService of background return for predictive ad loading');
+          _adMobService!.updateGameState(
+            isReturningFromBackground: true,
+            currentScreen: 'hustle', // User returning to main screen
+            hasOfflineIncome: true, // About to create offline income
+          );
+        }
+        
         _gameState!.processOfflineIncome(_backgroundStartTime!, incomeService: _incomeService);
         
-        debugPrint('✅ Background offline income processed successfully');
+        // ENHANCED: Notify AdMobService again after processing offline income to confirm availability
+        if (_adMobService != null && _gameState!.showOfflineIncomeNotification) {
+          _adMobService!.updateGameState(
+            hasOfflineIncome: true, // Offline income now available
+          );
+        }
+        
+        debugPrint('✅ Background offline income processed with predictive ad loading');
       } else {
         debugPrint('⏭️ Background time too short for offline income (${backgroundSeconds}s < ${_minimumBackgroundSecondsForOfflineIncome}s)');
+        
+        // Still notify AdMobService of background return (without offline income context)
+        if (_adMobService != null) {
+          _adMobService!.updateGameState(
+            isReturningFromBackground: false, // No offline income this time
+            currentScreen: 'hustle',
+            hasOfflineIncome: _gameState?.showOfflineIncomeNotification ?? false,
+          );
+        }
       }
     } else {
       debugPrint('ℹ️ No background start time recorded or game state unavailable');
+      
+      // Reset AdMobService background state if available
+      if (_adMobService != null) {
+        _adMobService!.updateGameState(
+          isReturningFromBackground: false,
+          currentScreen: 'hustle',
+          hasOfflineIncome: _gameState?.showOfflineIncomeNotification ?? false,
+        );
+      }
     }
     
     _backgroundStartTime = null;
