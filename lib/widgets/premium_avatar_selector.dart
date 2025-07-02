@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:math';
+import 'dart:async';
 
 import '../models/premium_avatar.dart';
 import '../models/game_state.dart';
@@ -34,6 +35,10 @@ class _PremiumAvatarSelectorState extends State<PremiumAvatarSelector> with Sing
   // Add cancellation support for async operations  
   final Map<String, bool> _operationCancelled = {};
   
+  // CLASS-LEVEL VARIABLES for purchase dialog management
+  Timer? _purchaseProcessingTimeout;
+  bool _purchaseDialogClosed = false;
+  
   @override
   void initState() {
     super.initState();
@@ -60,8 +65,63 @@ class _PremiumAvatarSelectorState extends State<PremiumAvatarSelector> with Sing
     _operationCancelled.forEach((key, value) {
       _operationCancelled[key] = true;
     });
+    
+    // Cancel purchase processing timeout
+    _purchaseProcessingTimeout?.cancel();
+    
     _controller.dispose();
     super.dispose();
+  }
+  
+  /// Force close purchase processing dialog with multiple fallback methods
+  void _forceClosePurchaseDialog() {
+    if (_purchaseDialogClosed) {
+      print('🟡 Avatar Purchase dialog already marked as closed');
+      return;
+    }
+    
+    print('🔴 AVATAR FORCE CLOSE: Attempting to close purchase dialog');
+    _purchaseDialogClosed = true;
+    _purchaseProcessingTimeout?.cancel();
+    
+    // Try multiple methods to close the dialog
+    bool dialogClosed = false;
+    
+    // Method 1: Try Navigator.pop()
+    if (!dialogClosed && mounted) {
+      try {
+        if (Navigator.canPop(context)) {
+          Navigator.of(context).pop();
+          dialogClosed = true;
+          print('✅ AVATAR FORCE CLOSE: Dialog closed via Navigator.pop()');
+        }
+      } catch (e) {
+        print('🔴 AVATAR FORCE CLOSE: Navigator.pop() failed: $e');
+      }
+    }
+    
+    // Method 2: Try Navigator.popUntil() as fallback
+    if (!dialogClosed && mounted) {
+      try {
+        Navigator.of(context).popUntil((route) => route.isFirst);
+        dialogClosed = true;
+        print('✅ AVATAR FORCE CLOSE: Dialog closed via Navigator.popUntil()');
+      } catch (e) {
+        print('🔴 AVATAR FORCE CLOSE: Navigator.popUntil() failed: $e');
+      }
+    }
+    
+    // Method 3: Try maybePop() as final fallback
+    if (!dialogClosed && mounted) {
+      try {
+        Navigator.of(context).maybePop();
+        print('✅ AVATAR FORCE CLOSE: Attempted Navigator.maybePop() as final fallback');
+      } catch (e) {
+        print('🔴 AVATAR FORCE CLOSE: Navigator.maybePop() failed: $e');
+      }
+    }
+    
+    print('🟢 AVATAR FORCE CLOSE: Purchase dialog cleanup completed');
   }
   
   void _groupAvatars() {
@@ -373,14 +433,17 @@ class _PremiumAvatarSelectorState extends State<PremiumAvatarSelector> with Sing
                 print('🔴 Error closing dialog: $e');
               }
               
-              // Show loading indicator safely
+              // Reset class-level dialog state
+              _purchaseDialogClosed = false;
+              _purchaseProcessingTimeout?.cancel();
+              
               if (mounted) {
                 try {
                   showDialog(
                     context: context,
                     barrierDismissible: false,
-                    builder: (context) => const AlertDialog(
-                      content: Column(
+                    builder: (context) => AlertDialog(
+                      content: const Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           CircularProgressIndicator(),
@@ -388,10 +451,52 @@ class _PremiumAvatarSelectorState extends State<PremiumAvatarSelector> with Sing
                           Text('Processing purchase...'),
                         ],
                       ),
+                      // Add manual close button as emergency exit
+                      actions: [
+                        TextButton(
+                          onPressed: () {
+                            print('🔴 AVATAR USER: Manual dialog close requested');
+                            _forceClosePurchaseDialog();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                backgroundColor: Colors.orange,
+                                content: Text('Avatar purchase dialog closed manually. If payment was successful, premium features should activate automatically.'),
+                                duration: Duration(seconds: 5),
+                              ),
+                            );
+                          },
+                          child: const Text('Cancel'),
+                        ),
+                      ],
                     ),
                   );
+                  
+                  // Set up robust timeout using class-level variables
+                  _purchaseProcessingTimeout = Timer(const Duration(seconds: 30), () {
+                    if (!_purchaseDialogClosed && mounted) {
+                      print('🔴 TIMEOUT: Avatar purchase dialog has been open for 30 seconds - force closing');
+                      _forceClosePurchaseDialog();
+                      
+                      // Show timeout error message
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            backgroundColor: Colors.orange,
+                            content: Row(
+                              children: [
+                                Icon(Icons.warning, color: Colors.white),
+                                SizedBox(width: 8),
+                                Expanded(child: Text('Avatar purchase processing timed out. If payment was successful, premium features should activate automatically.')),
+                              ],
+                            ),
+                            duration: Duration(seconds: 6),
+                          ),
+                        );
+                      }
+                    }
+                  });
                 } catch (e) {
-                  print('🔴 Error showing loading dialog: $e');
+                  print('🔴 Error showing avatar loading dialog: $e');
                   return;
                 }
               }
@@ -404,15 +509,14 @@ class _PremiumAvatarSelectorState extends State<PremiumAvatarSelector> with Sing
                   _operationCancelled[operationId] = false;
                   
                   try {
-                    // Close loading dialog safely
-                                          if (mounted && !_operationCancelled[operationId]!) {
-                        try {
-                          if (Navigator.of(context).canPop()) {
-                            Navigator.of(context).pop();
-                          }
-                      } catch (e) {
-                        print('🔴 Error closing avatar purchase dialog: $e');
-                      }
+                    // ROBUST DIALOG CLEANUP - Always attempt to close dialog
+                    print('🟡 AVATAR CALLBACK: Purchase callback received - success: $success, error: $error');
+                    
+                    // Force close the dialog using robust method
+                    if (!_purchaseDialogClosed) {
+                      _forceClosePurchaseDialog();
+                    } else {
+                      print('🟡 AVATAR CALLBACK: Dialog already marked as closed');
                     }
                     
                     // Check if operation was cancelled

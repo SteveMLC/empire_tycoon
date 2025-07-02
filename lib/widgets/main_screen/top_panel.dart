@@ -603,7 +603,7 @@ class TopPanel extends StatelessWidget {
     return InkWell(
       onTap: () {
         // TODO: Add check if vault is unlocked (e.g., gameState.platinumPoints > 0 || gameState.vaultUnlocked)
-        Navigator.pushNamed(context, '/platinumVault');
+        Navigator.pushNamed(context, '/platinum_vault');
       },
       borderRadius: BorderRadius.circular(12),
       child: Container(

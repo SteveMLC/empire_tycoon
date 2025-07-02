@@ -74,6 +74,10 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   // Track dialog state independently of widget lifecycle
   bool _isProcessingDialogShown = false;
   OverlayEntry? _currentOverlayEntry;
+  
+  // CLASS-LEVEL VARIABLES for purchase dialog management
+  Timer? _purchaseProcessingTimeout;
+  bool _purchaseDialogClosed = false;
 
   // User avatar options
   final List<String> _avatarOptions = [
@@ -104,8 +108,12 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       _operationCancelled[key] = true;
     });
     
+    // Cancel purchase processing timeout
+    _purchaseProcessingTimeout?.cancel();
+    
     // Force close any remaining dialogs
     _forceCloseDialog();
+    _forceClosePurchaseDialog();
     
     // Dispose the controller when the widget is disposed
     _usernameController.dispose();
@@ -125,6 +133,57 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         print('🔴 Error force closing dialog: $e');
       }
     }
+  }
+  
+  /// Force close purchase processing dialog with multiple fallback methods
+  void _forceClosePurchaseDialog() {
+    if (_purchaseDialogClosed) {
+      print('🟡 Purchase dialog already marked as closed');
+      return;
+    }
+    
+    print('🔴 FORCE CLOSE: Attempting to close purchase dialog');
+    _purchaseDialogClosed = true;
+    _purchaseProcessingTimeout?.cancel();
+    
+    // Try multiple methods to close the dialog
+    bool dialogClosed = false;
+    
+    // Method 1: Try Navigator.pop()
+    if (!dialogClosed && mounted) {
+      try {
+        if (Navigator.canPop(context)) {
+          Navigator.of(context).pop();
+          dialogClosed = true;
+          print('✅ FORCE CLOSE: Dialog closed via Navigator.pop()');
+        }
+      } catch (e) {
+        print('🔴 FORCE CLOSE: Navigator.pop() failed: $e');
+      }
+    }
+    
+    // Method 2: Try Navigator.popUntil() as fallback
+    if (!dialogClosed && mounted) {
+      try {
+        Navigator.of(context).popUntil((route) => route.isFirst);
+        dialogClosed = true;
+        print('✅ FORCE CLOSE: Dialog closed via Navigator.popUntil()');
+      } catch (e) {
+        print('🔴 FORCE CLOSE: Navigator.popUntil() failed: $e');
+      }
+    }
+    
+    // Method 3: Try maybePop() as final fallback
+    if (!dialogClosed && mounted) {
+      try {
+        Navigator.of(context).maybePop();
+        print('✅ FORCE CLOSE: Attempted Navigator.maybePop() as final fallback');
+      } catch (e) {
+        print('🔴 FORCE CLOSE: Navigator.maybePop() failed: $e');
+      }
+    }
+    
+    print('🟢 FORCE CLOSE: Purchase dialog cleanup completed');
   }
 
   /// Show processing dialog using overlay to avoid context issues
@@ -2209,7 +2268,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               child: ElevatedButton.icon(
                 onPressed: () {
                     // TODO: Add check if vault is unlocked?
-                    Navigator.pushNamed(context, '/platinumVault');
+                    Navigator.pushNamed(context, '/platinum_vault');
                 },
                 icon: Container(
                   width: 20,
@@ -2816,12 +2875,16 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               // Close dialog first to avoid UI conflicts
               Navigator.of(context).pop();
               
-              // Show loading indicator
+              // Reset class-level dialog state
+              _purchaseDialogClosed = false;
+              _purchaseProcessingTimeout?.cancel();
+              
+              // Show loading indicator with robust timeout protection
               showDialog(
                 context: context,
                 barrierDismissible: false,
-                builder: (context) => const AlertDialog(
-                  content: Column(
+                builder: (context) => AlertDialog(
+                  content: const Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       CircularProgressIndicator(),
@@ -2829,8 +2892,50 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                       Text('Processing purchase...'),
                     ],
                   ),
+                  // Add manual close button as emergency exit
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        print('🔴 USER: Manual dialog close requested');
+                        _forceClosePurchaseDialog();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            backgroundColor: Colors.orange,
+                            content: Text('Purchase dialog closed manually. If payment was successful, premium features should activate automatically.'),
+                            duration: Duration(seconds: 5),
+                          ),
+                        );
+                      },
+                      child: const Text('Cancel'),
+                    ),
+                  ],
                 ),
               );
+              
+              // Set up robust timeout using class-level variables
+              _purchaseProcessingTimeout = Timer(const Duration(seconds: 30), () {
+                if (!_purchaseDialogClosed && mounted) {
+                  print('🔴 TIMEOUT: Processing dialog has been open for 30 seconds - force closing');
+                  _forceClosePurchaseDialog();
+                  
+                  // Show timeout error message
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        backgroundColor: Colors.orange,
+                        content: Row(
+                          children: [
+                            Icon(Icons.warning, color: Colors.white),
+                            SizedBox(width: 8),
+                            Expanded(child: Text('Purchase processing timed out. If payment was successful, premium features should activate automatically or you can use "Restore Premium".')),
+                          ],
+                        ),
+                        duration: Duration(seconds: 6),
+                      ),
+                    );
+                  }
+                }
+              });
               
               // Initiate actual Google Play purchase
               await gameService.purchasePremium(
@@ -2840,15 +2945,14 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                   _operationCancelled[operationId] = false;
                   
                   try {
-                    // Close loading dialog safely
-                    if (mounted && !_operationCancelled[operationId]!) {
-                      try {
-                        if (Navigator.of(context).canPop()) {
-                          Navigator.of(context).pop();
-                        }
-                      } catch (e) {
-                        print('🔴 Error closing purchase dialog: $e');
-                      }
+                    // ROBUST DIALOG CLEANUP - Always attempt to close dialog
+                    print('🟡 CALLBACK: Purchase callback received - success: $success, error: $error');
+                    
+                    // Force close the dialog using robust method
+                    if (!_purchaseDialogClosed) {
+                      _forceClosePurchaseDialog();
+                    } else {
+                      print('🟡 CALLBACK: Dialog already marked as closed');
                     }
                     
                     // Check if operation was cancelled
