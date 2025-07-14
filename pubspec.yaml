@@ -5,7 +5,7 @@ description: "Build your global business empire! A sophisticated idle tycoon gam
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' 
 
-version: 1.0.1+124
+version: 1.0.1+125
 # Version format: [major].[minor].[patch]+[build-number]
 # The build number (100) is used by Android as versionCode
 
@@ -58,6 +58,8 @@ dependencies:
   
   # Timezone for notifications
   timezone: ^0.9.0
+  
+  # NOTE: Using flutter_local_notifications with approximate scheduling (industry standard for games)
   
   # URL launcher for external links
   url_launcher: ^6.2.4

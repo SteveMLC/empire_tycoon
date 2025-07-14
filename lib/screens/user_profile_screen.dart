@@ -1961,6 +1961,179 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               },
             ),
 
+            // NOTIFICATION DEBUG SECTION (only in debug mode)
+            if (kDebugMode) ...[
+              const SizedBox(height: 16),
+              
+              // Debug Section Header
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.bug_report, color: Colors.orange, size: 20),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'NOTIFICATION DEBUG',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.orange,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              
+              const SizedBox(height: 8),
+              
+              // Debug Buttons
+              Consumer<GameService>(
+                builder: (context, gameService, child) {
+                  return Column(
+                    children: [
+                      // Notification Diagnostics Button
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: () async {
+                            debugPrint('🔍 User requested notification diagnostics');
+                            await gameService.printNotificationDiagnostics();
+                            
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Notification diagnostics printed to console'),
+                                  duration: Duration(seconds: 2),
+                                ),
+                              );
+                            }
+                          },
+                          icon: const Icon(Icons.info_outline, color: Colors.blue),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            side: const BorderSide(color: Colors.blue),
+                          ),
+                          label: const Text(
+                            'Print Notification Status',
+                            style: TextStyle(color: Colors.blue, fontSize: 12),
+                          ),
+                        ),
+                      ),
+                      
+                      const SizedBox(height: 8),
+                      
+                      // Test Notification Button  
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: () async {
+                            debugPrint('🔍 User requested test notification schedule');
+                            
+                            // Force request permissions and schedule notification
+                            await gameService.requestNotificationPermissions(context, forceRequest: true);
+                            
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Test notification permissions requested - check console for details'),
+                                  duration: Duration(seconds: 3),
+                                ),
+                              );
+                            }
+                          },
+                          icon: const Icon(Icons.notification_add, color: Colors.green),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            side: const BorderSide(color: Colors.green),
+                          ),
+                          label: const Text(
+                            'Test Permission Request',
+                            style: TextStyle(color: Colors.green, fontSize: 12),
+                          ),
+                        ),
+                      ),
+                      
+                      const SizedBox(height: 8),
+                      
+                      // Audio System Diagnostic Button
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: () async {
+                            debugPrint('🔍 User requested audio system diagnostic');
+                            
+                            final soundManager = SoundManager();
+                            final isHealthy = await soundManager.performAudioDiagnostic(verbose: true);
+                            
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(isHealthy 
+                                    ? 'Audio system is healthy ✅ - check console for details'
+                                    : 'Audio system needs recovery ⚠️ - check console for details'),
+                                  duration: const Duration(seconds: 3),
+                                  backgroundColor: isHealthy ? Colors.green : Colors.orange,
+                                ),
+                              );
+                            }
+                          },
+                          icon: const Icon(Icons.volume_up, color: Colors.purple),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            side: const BorderSide(color: Colors.purple),
+                          ),
+                          label: const Text(
+                            'Audio System Diagnostic',
+                            style: TextStyle(color: Colors.purple, fontSize: 12),
+                          ),
+                        ),
+                      ),
+                      
+                      const SizedBox(height: 8),
+                      
+                      // Emergency Audio Recovery Button
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: () async {
+                            debugPrint('🚨 User requested emergency audio recovery');
+                            
+                            final soundManager = SoundManager();
+                            await soundManager.emergencyAudioRecovery();
+                            
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Emergency audio recovery completed 🔧'),
+                                  duration: Duration(seconds: 3),
+                                  backgroundColor: Colors.orange,
+                                ),
+                              );
+                            }
+                          },
+                          icon: const Icon(Icons.healing, color: Colors.red),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            side: const BorderSide(color: Colors.red),
+                          ),
+                          label: const Text(
+                            'Emergency Audio Recovery',
+                            style: TextStyle(color: Colors.red, fontSize: 12),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ],
+
             const SizedBox(height: 16),
 
             // Platinum Frame Toggle - only show if unlocked

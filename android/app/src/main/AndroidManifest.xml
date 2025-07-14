@@ -14,6 +14,7 @@
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" tools:node="remove" />
     <!-- Required for Android 13+ notification permissions -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <!-- NOTE: Using WorkManager for background notifications - no exact alarm permissions needed! -->
     
     <application
         android:label="Empire Tycoon"

@@ -50,6 +50,7 @@ class SoundManager with WidgetsBindingObserver {
   bool _isProcessingQueue = false;
   bool _isInitialized = false;
   bool _isAppInBackground = false; // Track app state
+  bool _needsReinitialize = false; // Track if we need to reinitialize after errors
 
   // Sound settings
   bool _isSoundEnabled = true;
@@ -67,6 +68,70 @@ class SoundManager with WidgetsBindingObserver {
   final int _maxTapPlayerPoolSize = 6; // Allow up to 6 overlapping tap sounds
   int _currentTapPlayerIndex = 0;
 
+  // --- Helper Methods for Player State Management ---
+
+  /// Safely checks if a player is in a usable state
+  bool _isPlayerUsable(AudioPlayer player) {
+    try {
+      // Check if player is disposed or in an error state
+      return player.state != PlayerState.disposed;
+    } catch (e) {
+      // If we can't even check the state, the player is unusable
+      return false;
+    }
+  }
+
+  /// Safely sets volume on a player with error handling
+  Future<bool> _safeSetVolume(AudioPlayer player, double volume) async {
+    try {
+      if (!_isPlayerUsable(player)) return false;
+      await player.setVolume(volume);
+      return true;
+    } catch (e) {
+      debugPrint('⚠️ Failed to set volume on player: $e');
+      return false;
+    }
+  }
+
+  /// Safely stops a player with error handling
+  Future<bool> _safeStopPlayer(AudioPlayer player) async {
+    try {
+      if (!_isPlayerUsable(player)) return false;
+      if (player.state != PlayerState.stopped && player.state != PlayerState.disposed) {
+        await player.stop();
+      }
+      return true;
+    } catch (e) {
+      debugPrint('⚠️ Failed to stop player: $e');
+      return false;
+    }
+  }
+
+  /// Safely disposes a player with error handling
+  void _safeDisposePlayer(AudioPlayer player) {
+    try {
+      if (player.state != PlayerState.disposed) {
+        player.dispose();
+      }
+    } catch (e) {
+      debugPrint('⚠️ Error disposing player: $e');
+      // Continue anyway - we can't do much more
+    }
+  }
+
+  /// Creates a new player with proper configuration
+  AudioPlayer _createNewPlayer() {
+    try {
+      final player = AudioPlayer();
+      player.setReleaseMode(ReleaseMode.stop);
+      _safeSetVolume(player, _soundVolume); // Use safe method
+      return player;
+    } catch (e) {
+      debugPrint('❌ Failed to create new player: $e');
+      rethrow;
+    }
+  }
+
   // --- Initialization & Disposal ---
 
   Future<void> init() async {
@@ -75,13 +140,14 @@ class SoundManager with WidgetsBindingObserver {
     try {
       _prefs = await SharedPreferences.getInstance();
       await _loadSettings();
-      _initPlayerPool();
-      _initDedicatedTapPlayer();
+      await _initPlayerPool();
+      await _initDedicatedTapPlayer();
       
       // Register for app lifecycle changes
       WidgetsBinding.instance.addObserver(this);
       
       _isInitialized = true;
+      _needsReinitialize = false;
       debugPrint('🔊 SoundManager Initialized Successfully.');
       debugPrint('   Sound Enabled: $_isSoundEnabled, Volume: $_soundVolume');
     } catch (e) {
@@ -93,20 +159,40 @@ class SoundManager with WidgetsBindingObserver {
   }
 
   // Initialize dedicated tap player for better performance
-  void _initDedicatedTapPlayer() {
+  Future<void> _initDedicatedTapPlayer() async {
+    // Safely dispose existing players
+    for (final player in _tapPlayerPool) {
+      _safeDisposePlayer(player);
+    }
     _tapPlayerPool.clear();
+    
     for (int i = 0; i < _maxTapPlayerPoolSize; i++) {
-      AudioPlayer player = AudioPlayer()..setReleaseMode(ReleaseMode.stop);
-      player.setVolume(_soundVolume);
-      _tapPlayerPool.add(player);
+      try {
+        final player = _createNewPlayer();
+        _tapPlayerPool.add(player);
+      } catch (e) {
+        debugPrint('⚠️ Failed to create tap player $i: $e');
+        // Continue with fewer players if needed
+      }
     }
     debugPrint('🔊 Dedicated tap player pool initialized with ${_tapPlayerPool.length} players.');
   }
 
-  void _initPlayerPool() {
-    _playerPool.clear(); // Ensure pool is empty
+  Future<void> _initPlayerPool() async {
+    // Safely dispose existing players
+    for (final player in _playerPool) {
+      _safeDisposePlayer(player);
+    }
+    _playerPool.clear();
+    
     for (int i = 0; i < _maxPoolSize; i++) {
-      _playerPool.add(AudioPlayer()..setReleaseMode(ReleaseMode.stop)); // Use STOP for faster reuse
+      try {
+        final player = _createNewPlayer();
+        _playerPool.add(player);
+      } catch (e) {
+        debugPrint('⚠️ Failed to create player $i: $e');
+        // Continue with fewer players if needed
+      }
     }
     debugPrint('🔊 AudioPlayer pool initialized with ${_playerPool.length} players.');
   }
@@ -124,6 +210,8 @@ class SoundManager with WidgetsBindingObserver {
         break;
       case AppLifecycleState.resumed:
         _isAppInBackground = false;
+        // Always check audio system health on resume (ads can break audio)
+        _checkAndRecoverAudioSystem();
         debugPrint('🔊 App resumed - sounds re-enabled');
         break;
       case AppLifecycleState.inactive:
@@ -132,7 +220,224 @@ class SoundManager with WidgetsBindingObserver {
     }
   }
 
-  void dispose() {
+  /// Checks audio system health and recovers if needed
+  Future<void> _checkAndRecoverAudioSystem() async {
+    if (!_isInitialized) {
+      debugPrint('🔊 Audio system not initialized, skipping health check');
+      return;
+    }
+
+    try {
+      // Check if we need full reinitialize
+      if (_needsReinitialize) {
+        await _reinitializeAudioSystem();
+        return;
+      }
+
+      // Quick health check - test a player from each pool
+      bool needsRecovery = false;
+
+      // Check tap player pool health
+      if (_tapPlayerPool.isNotEmpty) {
+        final testPlayer = _tapPlayerPool.first;
+        if (!_isPlayerUsable(testPlayer)) {
+          debugPrint('🔊 Tap player pool unhealthy, marking for recovery');
+          needsRecovery = true;
+        }
+      }
+
+      // Check main player pool health
+      if (_playerPool.isNotEmpty) {
+        final testPlayer = _playerPool.first;
+        if (!_isPlayerUsable(testPlayer)) {
+          debugPrint('🔊 Main player pool unhealthy, marking for recovery');
+          needsRecovery = true;
+        }
+      }
+
+      // Check if pools are empty (they shouldn't be)
+      if (_playerPool.isEmpty || _tapPlayerPool.isEmpty) {
+        debugPrint('🔊 Player pools empty, marking for recovery');
+        needsRecovery = true;
+      }
+
+      if (needsRecovery) {
+        debugPrint('🔄 Audio system needs recovery after app resume');
+        await _reinitializeAudioSystem();
+      } else {
+        debugPrint('✅ Audio system healthy after app resume');
+      }
+
+    } catch (e) {
+      debugPrint('❌ Error during audio system health check: $e');
+      _needsReinitialize = true;
+    }
+  }
+
+  /// Reinitializes the entire audio system after critical errors
+  Future<void> _reinitializeAudioSystem() async {
+    debugPrint('🔄 Reinitializing audio system due to errors...');
+    
+    try {
+      // Stop and clear everything
+      _soundQueue.clear();
+      _isProcessingQueue = false;
+      _activePlayers.clear();
+      
+      // Reinitialize player pools
+      await _initPlayerPool();
+      await _initDedicatedTapPlayer();
+      
+      _needsReinitialize = false;
+      debugPrint('✅ Audio system reinitialized successfully');
+    } catch (e) {
+      debugPrint('❌ Failed to reinitialize audio system: $e');
+      // Mark for retry on next lifecycle change
+      _needsReinitialize = true;
+    }
+  }
+
+  /// Public method to recover audio system after ads or other interruptions
+  /// Call this when returning from ad display or other audio interruptions
+  Future<void> recoverFromAudioInterruption() async {
+    debugPrint('🔊 Recovering audio system after interruption (ad/etc)...');
+    await _checkAndRecoverAudioSystem();
+  }
+
+  /// Emergency recovery method for when multiple audio errors occur
+  /// This completely rebuilds the audio system from scratch
+  Future<void> emergencyAudioRecovery() async {
+    debugPrint('🚨 EMERGENCY: Performing complete audio system recovery...');
+    
+    try {
+      // Stop all current operations
+      _isProcessingQueue = false;
+      _soundQueue.clear();
+      
+      // Dispose all existing players safely
+      for (final player in List.from(_playerPool)) {
+        _safeDisposePlayer(player);
+      }
+      _playerPool.clear();
+      
+      for (final player in List.from(_tapPlayerPool)) {
+        _safeDisposePlayer(player);
+      }
+      _tapPlayerPool.clear();
+      
+      for (final player in List.from(_activePlayers.keys)) {
+        final completer = _activePlayers[player];
+        if (completer != null && !completer.isCompleted) {
+          completer.completeError('Emergency audio recovery');
+        }
+        _safeDisposePlayer(player);
+      }
+      _activePlayers.clear();
+      
+      // Wait a moment for disposal to complete
+      await Future.delayed(const Duration(milliseconds: 100));
+      
+      // Rebuild everything from scratch
+      await _initPlayerPool();
+      await _initDedicatedTapPlayer();
+      
+      _needsReinitialize = false;
+      debugPrint('✅ Emergency audio recovery completed successfully');
+      
+    } catch (e) {
+      debugPrint('❌ Emergency audio recovery failed: $e');
+      // Mark for retry on next app resume
+      _needsReinitialize = true;
+         }
+   }
+
+  /// Comprehensive audio system diagnostic method
+  /// Returns true if system is healthy, false if emergency recovery is needed
+  Future<bool> performAudioDiagnostic({bool verbose = false}) async {
+    if (!_isInitialized) {
+      debugPrint('🔊 Audio system not initialized');
+      return false;
+    }
+
+    debugPrint('🔍 === AUDIO SYSTEM DIAGNOSTIC ===');
+    
+    int healthyPlayers = 0;
+    int unhealthyPlayers = 0;
+    int healthyTapPlayers = 0;
+    int unhealthyTapPlayers = 0;
+    
+    // Check main player pool
+    debugPrint('🔍 Main Player Pool: ${_playerPool.length}/${_maxPoolSize}');
+    for (int i = 0; i < _playerPool.length; i++) {
+      final player = _playerPool[i];
+      if (_isPlayerUsable(player)) {
+        healthyPlayers++;
+        if (verbose) debugPrint('  Player $i: ✅ Healthy');
+      } else {
+        unhealthyPlayers++;
+        if (verbose) debugPrint('  Player $i: ❌ Unhealthy');
+      }
+    }
+    
+    // Check tap player pool
+    debugPrint('🔍 Tap Player Pool: ${_tapPlayerPool.length}/${_maxTapPlayerPoolSize}');
+    for (int i = 0; i < _tapPlayerPool.length; i++) {
+      final player = _tapPlayerPool[i];
+      if (_isPlayerUsable(player)) {
+        healthyTapPlayers++;
+        if (verbose) debugPrint('  Tap Player $i: ✅ Healthy');
+      } else {
+        unhealthyTapPlayers++;
+        if (verbose) debugPrint('  Tap Player $i: ❌ Unhealthy');
+      }
+    }
+    
+    // Check active players
+    debugPrint('🔍 Active Players: ${_activePlayers.length}');
+    int healthyActivePlayer = 0;
+    int unhealthyActivePlayer = 0;
+    for (final player in _activePlayers.keys) {
+      if (_isPlayerUsable(player)) {
+        healthyActivePlayer++;
+      } else {
+        unhealthyActivePlayer++;
+      }
+    }
+    
+    debugPrint('🔍 Queue Status: ${_soundQueue.length} sounds queued, processing: $_isProcessingQueue');
+    debugPrint('🔍 App Background: $_isAppInBackground, Needs Reinit: $_needsReinitialize');
+    debugPrint('🔍 Settings: Enabled=$_isSoundEnabled, Volume=$_soundVolume');
+    
+    // Health summary
+    final totalPlayers = _playerPool.length + _tapPlayerPool.length;
+    final totalHealthy = healthyPlayers + healthyTapPlayers;
+    final totalUnhealthy = unhealthyPlayers + unhealthyTapPlayers;
+    final healthPercentage = totalPlayers > 0 ? (totalHealthy / totalPlayers * 100) : 0;
+    
+    debugPrint('🔍 === HEALTH SUMMARY ===');
+    debugPrint('🔍 Total Players: $totalPlayers');
+    debugPrint('🔍 Healthy: $totalHealthy (${healthPercentage.toStringAsFixed(1)}%)');
+    debugPrint('🔍 Unhealthy: $totalUnhealthy');
+    debugPrint('🔍 Active Healthy: $healthyActivePlayer');
+    debugPrint('🔍 Active Unhealthy: $unhealthyActivePlayer');
+    
+    // Determine if emergency recovery is needed
+    final needsEmergencyRecovery = 
+        (_playerPool.isEmpty && _tapPlayerPool.isEmpty) || // No players at all
+        (healthPercentage < 50) || // Less than 50% healthy
+        (_needsReinitialize) || // Marked for reinit
+        (unhealthyActivePlayer > 0); // Active players are unhealthy
+    
+    if (needsEmergencyRecovery) {
+      debugPrint('🚨 Audio system needs EMERGENCY RECOVERY');
+      return false;
+    } else {
+      debugPrint('✅ Audio system is healthy');
+      return true;
+    }
+  }
+  
+    void dispose() {
     debugPrint('🔊 Disposing SoundManager...');
     
     // Remove app lifecycle observer
@@ -143,33 +448,22 @@ class SoundManager with WidgetsBindingObserver {
     
     // Dispose dedicated tap players
     for (var player in _tapPlayerPool) {
-      try {
-        player.dispose();
-      } catch (e) {
-        debugPrint('Error disposing tap player: $e');
-      }
+      _safeDisposePlayer(player);
     }
     _tapPlayerPool.clear();
     
     // Release all players in the pool
     for (var player in _playerPool) {
-      try {
-        player.dispose();
-      } catch (e) {
-        debugPrint('Error disposing player: $e');
-      }
+      _safeDisposePlayer(player);
     }
     _playerPool.clear();
-    // Cancel any active playback completers
+    
+    // Cancel any active playback completers and dispose active players
     _activePlayers.forEach((player, completer) {
       if (!completer.isCompleted) {
         completer.completeError('SoundManager disposed during playback');
       }
-      try {
-         player.dispose(); // Ensure active players are also disposed
-      } catch (e) {
-         debugPrint('Error disposing active player: $e');
-      }
+      _safeDisposePlayer(player);
     });
     _activePlayers.clear();
     _isInitialized = false;
@@ -188,17 +482,14 @@ class SoundManager with WidgetsBindingObserver {
     _isRealEstateSoundsEnabled = _prefs.getBool(_realEstateSoundsEnabledPrefsKey) ?? true;
     _isEventSoundsEnabled = _prefs.getBool(_eventSoundsEnabledPrefsKey) ?? true;
     _isFeedbackSoundsEnabled = _prefs.getBool(_feedbackSoundsEnabledPrefsKey) ?? true;
-    // Apply initial volume to pool (new players might need volume set)
+    
+    // Apply initial volume to pool (using safe method)
     for (var player in _playerPool) {
-        try {
-            await player.setVolume(_soundVolume);
-        } catch (e) { debugPrint("Error setting initial volume: $e"); }
+      _safeSetVolume(player, _soundVolume);
     }
     // Set volume on dedicated tap players
     for (var player in _tapPlayerPool) {
-      try {
-        player.setVolume(_soundVolume);
-      } catch (e) { debugPrint("Error setting initial tap player volume: $e"); }
+      _safeSetVolume(player, _soundVolume);
     }
   }
 
@@ -239,20 +530,17 @@ class SoundManager with WidgetsBindingObserver {
     final clampedVolume = volume.clamp(0.0, 1.0);
     if (_soundVolume == clampedVolume) return;
     _soundVolume = clampedVolume;
-    // Apply volume to all current and future players
+    
+    // Apply volume to all current and future players (using safe method)
     for (var player in _playerPool) {
-      try {
-          await player.setVolume(_soundVolume);
-      } catch (e) { debugPrint("Error setting volume on pooled player: $e"); }
+      await _safeSetVolume(player, _soundVolume);
     }
     for (var player in _activePlayers.keys) {
-       try {
-          await player.setVolume(_soundVolume);
-      } catch (e) { debugPrint("Error setting volume on active player: $e"); }
+      await _safeSetVolume(player, _soundVolume);
     }
     // Update dedicated tap players
     for (var player in _tapPlayerPool) {
-      player.setVolume(_soundVolume);
+      await _safeSetVolume(player, _soundVolume);
     }
     await _saveSettings();
   }
@@ -360,9 +648,21 @@ class SoundManager with WidgetsBindingObserver {
     AudioPlayer player = _tapPlayerPool[_currentTapPlayerIndex];
     _currentTapPlayerIndex = (_currentTapPlayerIndex + 1) % _maxTapPlayerPoolSize;
 
+    // Check if player is usable
+    if (!_isPlayerUsable(player)) {
+      debugPrint('🔊 Tap player unusable, attempting to recreate...');
+      _recreateTapPlayer(_currentTapPlayerIndex - 1);
+      return; // Skip this attempt, next call will use new player
+    }
+
     try {
-      // Ensure volume is set correctly
-      await player.setVolume(_soundVolume);
+      // Ensure volume is set correctly using safe method
+      final volumeSet = await _safeSetVolume(player, _soundVolume);
+      if (!volumeSet) {
+        debugPrint('🔊 Failed to set volume on tap player, recreating...');
+        _recreateTapPlayer(_currentTapPlayerIndex - 1);
+        return;
+      }
       
       String processedPath = path.replaceFirst('assets/', '');
       Source source = AssetSource(processedPath);
@@ -375,16 +675,30 @@ class SoundManager with WidgetsBindingObserver {
       
     } catch (e) {
       debugPrint('❌ Error playing overlapping tap sound: $e');
-      // If there's an error, try to reinitialize this player
-      try {
-        player.dispose();
-        _tapPlayerPool[(_currentTapPlayerIndex - 1) % _maxTapPlayerPoolSize] = AudioPlayer()
-          ..setReleaseMode(ReleaseMode.stop)
-          ..setVolume(_soundVolume);
-        debugPrint('🔊 Reinitializeed tap player due to error');
-      } catch (reinitError) {
-        debugPrint('❌ Failed to reinitialize tap player: $reinitError');
-      }
+      // Mark for potential system reinitialize if errors persist
+      _needsReinitialize = true;
+      // Recreate this specific player
+      _recreateTapPlayer(_currentTapPlayerIndex - 1);
+    }
+  }
+
+  /// Safely recreates a tap player at the given index
+  void _recreateTapPlayer(int index) {
+    try {
+      final validIndex = index % _maxTapPlayerPoolSize;
+      final oldPlayer = _tapPlayerPool[validIndex];
+      
+      // Safely dispose old player
+      _safeDisposePlayer(oldPlayer);
+      
+      // Create new player
+      final newPlayer = _createNewPlayer();
+      _tapPlayerPool[validIndex] = newPlayer;
+      
+      debugPrint('🔊 Recreated tap player at index $validIndex');
+    } catch (e) {
+      debugPrint('❌ Failed to recreate tap player: $e');
+      _needsReinitialize = true;
     }
   }
 
@@ -419,7 +733,18 @@ class SoundManager with WidgetsBindingObserver {
 
         // --- Play the sound with robust error handling ---
         try {
-            await player.setVolume(_soundVolume);
+            // Check if player is still usable before operations
+            if (!_isPlayerUsable(player)) {
+                debugPrint('❌ Player unusable before playback: ${soundToPlay.path}');
+                throw Exception('Player not usable');
+            }
+
+            // Set volume using safe method
+            final volumeSet = await _safeSetVolume(player, _soundVolume);
+            if (!volumeSet) {
+                debugPrint('❌ Failed to set volume for: ${soundToPlay.path}');
+                throw Exception('Failed to set volume');
+            }
             
             String processedPath = soundToPlay.path.replaceFirst('assets/', '');
             debugPrint('🔊 Attempting to play sound: ${soundToPlay.path} (processed as $processedPath)');
@@ -432,6 +757,10 @@ class SoundManager with WidgetsBindingObserver {
 
         } catch (e) {
             debugPrint('❌ Error playing sound ${soundToPlay.path}: $e');
+            
+            // Mark for potential system reinitialize if errors persist
+            _needsReinitialize = true;
+            
             if (!soundToPlay.completer.isCompleted) {
                 soundToPlay.completer.completeError(e);
             }
@@ -477,15 +806,24 @@ class SoundManager with WidgetsBindingObserver {
 
   /// Gets an available player from the pool with better fallback handling.
   AudioPlayer? _getAvailablePlayer() {
+    // Clean up any unusable players from the pool first
+    _playerPool.removeWhere((player) => !_isPlayerUsable(player));
+    
     if (_playerPool.isEmpty) {
         debugPrint('🔊 Player pool empty!');
         // Check for finished players that can be released
-         var finishedPlayers = _activePlayers.entries.where((entry) => 
-           entry.key.state == PlayerState.completed || 
-           entry.key.state == PlayerState.stopped).toList();
+        var finishedPlayers = _activePlayers.entries.where((entry) {
+          try {
+            return entry.key.state == PlayerState.completed || 
+                   entry.key.state == PlayerState.stopped ||
+                   !_isPlayerUsable(entry.key);
+          } catch (e) {
+            return true; // If we can't check state, consider it finished
+          }
+        }).toList();
          
          for(var entry in finishedPlayers) {
-             debugPrint("🔊 Found finished player, releasing.");
+             debugPrint("🔊 Found finished/unusable player, releasing.");
              _releasePlayer(entry.key);
          }
          
@@ -495,9 +833,14 @@ class SoundManager with WidgetsBindingObserver {
          // Create temporary player if absolutely necessary
          if (_activePlayers.length < _maxPoolSize * 2) {
            debugPrint("🔊 Creating temporary player due to high demand.");
-           var tempPlayer = AudioPlayer()..setReleaseMode(ReleaseMode.stop);
-           tempPlayer.setVolume(_soundVolume);
-           return tempPlayer;
+           try {
+             var tempPlayer = _createNewPlayer();
+             return tempPlayer;
+           } catch (e) {
+             debugPrint('❌ Failed to create temporary player: $e');
+             _needsReinitialize = true;
+             return null;
+           }
          }
          
          return null;
@@ -507,23 +850,34 @@ class SoundManager with WidgetsBindingObserver {
 
   /// Returns a player to the pool and triggers queue processing.
   void _releasePlayer(AudioPlayer player) {
-     if (_playerPool.length < _maxPoolSize) {
+     // First remove from active players
+     _activePlayers.remove(player);
+     
+     if (_playerPool.length < _maxPoolSize && _isPlayerUsable(player)) {
          try {
-             // Quick reset without complex operations
+             // Try to safely stop the player before returning to pool
+             _safeStopPlayer(player);
+             _playerPool.add(player);
+             debugPrint("🔊 Player returned to pool");
          } catch (e) {
-             debugPrint("Error resetting player: $e");
-              try { player.dispose(); } catch (_) {}
-              player = AudioPlayer()..setReleaseMode(ReleaseMode.stop)..setVolume(_soundVolume);
+             debugPrint("❌ Error resetting player for pool: $e");
+             // If we can't reset it, dispose it and create a new one
+             _safeDisposePlayer(player);
+             try {
+               final newPlayer = _createNewPlayer();
+               _playerPool.add(newPlayer);
+               debugPrint("🔊 Created replacement player for pool");
+             } catch (createError) {
+               debugPrint("❌ Failed to create replacement player: $createError");
+               _needsReinitialize = true;
+             }
          }
-         _playerPool.add(player);
      } else {
-         // Pool is full, dispose extra player
-         try {
-             player.dispose();
-         } catch (e) { debugPrint("Error disposing extra player: $e"); }
+         // Pool is full or player is unusable, dispose it
+         debugPrint("🔊 Disposing player (pool full or player unusable)");
+         _safeDisposePlayer(player);
      }
 
-      _activePlayers.remove(player);
       // Only trigger queue processing if not in background
       if (!_isAppInBackground) {
         _triggerQueueProcessing();
@@ -535,31 +889,22 @@ class SoundManager with WidgetsBindingObserver {
     debugPrint('🔊 Stopping all sounds...');
     _soundQueue.clear();
 
-    // Stop all dedicated tap players
+    // Stop all dedicated tap players using safe method
     for (var player in _tapPlayerPool) {
-      try {
-        if (player.state != PlayerState.stopped && player.state != PlayerState.disposed) {
-          player.stop();
-        }
-      } catch (e) {
-        debugPrint('Error stopping tap player: $e');
-      }
+      _safeStopPlayer(player);
     }
 
-    // Stop active players
+    // Stop active players using safe method
     final List<AudioPlayer> playersToStop = _activePlayers.keys.toList();
     for (var player in playersToStop) {
-      try {
-          if (player.state != PlayerState.stopped && player.state != PlayerState.disposed) {
-             player.stop();
-          }
-        final completer = _activePlayers[player];
-        if (completer != null && !completer.isCompleted) {
-           completer.completeError('Playback stopped by user/system');
-        }
-      } catch (e) {
-        debugPrint('Error stopping player: $e');
+      // Complete any pending operations first
+      final completer = _activePlayers[player];
+      if (completer != null && !completer.isCompleted) {
+         completer.completeError('Playback stopped by user/system');
       }
+      
+      // Safely stop the player
+      _safeStopPlayer(player);
        _releasePlayer(player);
     }
      _activePlayers.clear();

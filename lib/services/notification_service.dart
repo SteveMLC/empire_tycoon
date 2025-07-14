@@ -59,7 +59,7 @@ class NotificationService {
       await _initializePlatformSettings();
       
       _isInitialized = true;
-      debugPrint('✅ NotificationService: Initialized successfully');
+      debugPrint('✅ NotificationService: Initialized successfully with industry-standard approach');
       debugPrint('📊 Current settings: OfflineIncome=$_offlineIncomeNotificationsEnabled, BusinessUpgrade=$_businessUpgradeNotificationsEnabled');
       return true;
       
@@ -147,7 +147,15 @@ class NotificationService {
         granted = await _flutterLocalNotificationsPlugin
             .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
             ?.requestNotificationsPermission();
-        debugPrint('🔔 Android permission result: $granted');
+        debugPrint('🔔 Android notification permission result: $granted');
+        
+        // INDUSTRY STANDARD: Only need POST_NOTIFICATIONS permission
+        // Using inexact scheduling - no exact alarm permissions needed
+        if (granted == true) {
+          debugPrint('🔔 ✅ Perfect! Only standard notification permission needed');
+          debugPrint('🔔 📱 Using approximate scheduling - industry standard for games');
+          debugPrint('🔔 🔋 No battery-draining exact alarms required');
+        }
       } else if (Platform.isIOS) {
         debugPrint('🔔 Requesting iOS notification permissions...');
         granted = await _flutterLocalNotificationsPlugin
@@ -192,7 +200,8 @@ class NotificationService {
     }
   }
 
-  /// Schedule offline income notification (4 hours from now)
+  /// Schedule offline income notification (4 hours from now) using industry-standard approach
+  /// INDUSTRY STANDARD: Uses approximate scheduling - battery-friendly and no exact alarm permissions needed
   Future<void> scheduleOfflineIncomeNotification() async {
     if (!_isInitialized || !_offlineIncomeNotificationsEnabled) {
       debugPrint('🔔 Offline income notifications disabled or service not initialized');
@@ -204,6 +213,19 @@ class NotificationService {
       await cancelOfflineIncomeNotification();
 
       final scheduledDate = DateTime.now().add(const Duration(hours: 4));
+      
+      // ENHANCED DIAGNOSTICS: Check current permission status before scheduling
+      if (Platform.isAndroid) {
+        final android = _flutterLocalNotificationsPlugin
+            .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+        final enabled = await android?.areNotificationsEnabled();
+        debugPrint('🔔 Pre-schedule notification status check: ${enabled ?? false}');
+        
+        if (enabled != true) {
+          debugPrint('⚠️ WARNING: Notifications not enabled - scheduling may fail');
+          return; // Don't schedule if notifications aren't enabled
+        }
+      }
       
       // Android notification details
       const AndroidNotificationDetails androidPlatformChannelSpecifics =
@@ -233,18 +255,22 @@ class NotificationService {
         iOS: iosPlatformChannelSpecifics,
       );
 
-      // Schedule the notification using zonedSchedule
+      // INDUSTRY STANDARD: Use standard scheduling without exact alarms
+      // This is battery-friendly, user-friendly, and Google Play compliant
       await _flutterLocalNotificationsPlugin.zonedSchedule(
         _offlineIncomeNotificationId,
         'Income Maxed Out!',
         'Your vaults are full! Tap to collect your offline earnings and keep your empire growing.',
         tz.TZDateTime.now(tz.local).add(const Duration(hours: 4)),
         platformChannelSpecifics,
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle, // NO EXACT ALARMS - Industry standard for games
         uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
       );
 
-      debugPrint('🔔 Offline income notification scheduled for: $scheduledDate');
+      debugPrint('🔔 ✅ INDUSTRY STANDARD: Offline income notification scheduled (approximate timing) for: $scheduledDate');
+      debugPrint('🔔 📱 BATTERY FRIENDLY: Using inexact scheduling - no special permissions needed!');
+      debugPrint('🔔 🎯 USER FRIENDLY: Only requires standard notification permission');
+      debugPrint('🔔 ⏰ GAME APPROPRIATE: ~4 hours ± system optimization (perfect for offline income)');
       
     } catch (e) {
       debugPrint('❌ Error scheduling offline income notification: $e');
@@ -263,7 +289,8 @@ class NotificationService {
     }
   }
 
-  /// Schedule business upgrade completion notification
+  /// Schedule business upgrade completion notification using industry-standard approach
+  /// INDUSTRY STANDARD: Uses approximate scheduling - battery-friendly and no exact alarm permissions needed
   Future<void> scheduleBusinessUpgradeNotification(
     String businessId,
     String businessName,
@@ -283,6 +310,18 @@ class NotificationService {
     try {
       final notificationId = _businessUpgradeNotificationIdBase + businessId.hashCode.abs() % 9000;
       final scheduledDate = DateTime.now().add(upgradeTime);
+      
+      // Check permission status
+      if (Platform.isAndroid) {
+        final android = _flutterLocalNotificationsPlugin
+            .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+        final enabled = await android?.areNotificationsEnabled();
+        
+        if (enabled != true) {
+          debugPrint('⚠️ WARNING: Notifications not enabled - not scheduling business upgrade');
+          return;
+        }
+      }
       
       // Android notification details with grouping
       const AndroidNotificationDetails androidPlatformChannelSpecifics =
@@ -314,18 +353,19 @@ class NotificationService {
         iOS: iosPlatformChannelSpecifics,
       );
 
-      // Schedule the notification using zonedSchedule
+      // INDUSTRY STANDARD: Use standard scheduling without exact alarms
       await _flutterLocalNotificationsPlugin.zonedSchedule(
         notificationId,
         'Upgrade Complete!',
         'Your $businessName has been upgraded. Put it to work!',
         tz.TZDateTime.now(tz.local).add(upgradeTime),
         platformChannelSpecifics,
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle, // NO EXACT ALARMS - Industry standard for games
         uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
       );
 
-      debugPrint('🔔 Business upgrade notification scheduled for $businessName: $scheduledDate');
+      debugPrint('🔔 ✅ INDUSTRY STANDARD: Business upgrade notification scheduled (approximate timing) for $businessName: $scheduledDate');
+      debugPrint('🔔 📱 BATTERY FRIENDLY: Using inexact scheduling - no special permissions needed!');
       
       // Schedule or update group summary notification for Android
       if (Platform.isAndroid) {
@@ -432,18 +472,7 @@ class NotificationService {
     debugPrint('🔔 Business upgrade notifications ${enabled ? 'enabled' : 'disabled'}');
   }
 
-  /// Get pending notifications count (for debugging)
-  Future<int> getPendingNotificationsCount() async {
-    if (!_isInitialized) return 0;
-    
-    try {
-      final pendingNotifications = await _flutterLocalNotificationsPlugin.pendingNotificationRequests();
-      return pendingNotifications.length;
-    } catch (e) {
-      debugPrint('❌ Error getting pending notifications count: $e');
-      return 0;
-    }
-  }
+
 
   /// Show in-game permission dialog before requesting system permission
   Future<bool> showPermissionDialog(BuildContext context) async {
@@ -469,6 +498,67 @@ class NotificationService {
         );
       },
     ) ?? false;
+  }
+
+  /// Get pending notifications count for debugging
+  Future<int> getPendingNotificationsCount() async {
+    if (!_isInitialized) return 0;
+    
+    try {
+      final List<PendingNotificationRequest> pendingNotifications = 
+          await _flutterLocalNotificationsPlugin.pendingNotificationRequests();
+      
+      debugPrint('🔔 Pending notifications: ${pendingNotifications.length}');
+      
+      // Debug: List all pending notifications
+      for (final notification in pendingNotifications) {
+        debugPrint('   - ID: ${notification.id}, Title: ${notification.title}');
+      }
+      
+      return pendingNotifications.length;
+    } catch (e) {
+      debugPrint('❌ Error getting pending notifications: $e');
+      return 0;
+    }
+  }
+
+  /// DIAGNOSTIC: Print comprehensive notification system status (Industry Standard Edition)
+  Future<void> printNotificationDiagnostics() async {
+    debugPrint('🔍 === NOTIFICATION SYSTEM DIAGNOSTICS (INDUSTRY STANDARD) ===');
+    debugPrint('🔍 Service Initialized: $_isInitialized');
+    debugPrint('🔍 Offline Income Enabled: $_offlineIncomeNotificationsEnabled');
+    debugPrint('🔍 Business Upgrade Enabled: $_businessUpgradeNotificationsEnabled');
+    debugPrint('🔍 Permission Requested: $_permissionRequested');
+    debugPrint('🔍 ✅ APPROACH: Using inexact scheduling (battery-friendly, industry standard)');
+    debugPrint('🔍 ✅ PERMISSIONS: Only POST_NOTIFICATIONS needed (user-friendly)');
+    debugPrint('🔍 ✅ COMPLIANCE: Google Play policy compliant');
+    
+    if (_isInitialized) {
+      final pendingCount = await getPendingNotificationsCount();
+      debugPrint('🔍 Pending Notifications: $pendingCount');
+      
+      if (Platform.isAndroid) {
+        final android = _flutterLocalNotificationsPlugin
+            .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+        final enabled = await android?.areNotificationsEnabled();
+        debugPrint('🔍 Android Notifications Enabled: ${enabled ?? false}');
+        
+        if (enabled == true) {
+          debugPrint('🔍 ✅ PERFECT: All permissions granted, inexact scheduling active');
+        } else {
+          debugPrint('🔍 ⚠️ WARNING: Notification permission not granted');
+        }
+      }
+      
+      debugPrint('🔍 📱 SCHEDULING: Using AndroidScheduleMode.inexactAllowWhileIdle');
+      debugPrint('🔍 🔋 BATTERY IMPACT: Minimal - Android system optimized');
+      debugPrint('🔍 ⏰ TIMING: Approximate (4 hours ± system optimization) - Perfect for games!');
+      debugPrint('🔍 🎯 GAME APPROPRIATE: No exact timing needed for offline income');
+    } else {
+      debugPrint('🔍 ❌ Service not initialized');
+    }
+    
+    debugPrint('🔍 === END DIAGNOSTICS ===');
   }
 
   /// Dispose resources

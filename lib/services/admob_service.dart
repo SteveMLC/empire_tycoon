@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'dart:async';
+import '../utils/sound_manager.dart';
 
 // Ad type enumeration - moved outside class
 enum AdType {
@@ -23,6 +24,13 @@ enum AdType {
 /// - Anticipates user behavior based on game state and context
 /// - Loads ads before users need them for instant availability
 /// - Eliminates loading delays and failures during user interactions
+/// 
+/// DELAYED REWARD SYSTEM:
+/// - Fixes issue where multi-video ads (e.g., 2x 60-second videos) grant rewards too early
+/// - AdMob calls onUserEarnedReward after first video, but there's still a second video
+/// - Solution: Store reward info but only grant when onAdDismissedFullScreenContent fires
+/// - Ensures rewards are only given after ALL ad content is completely finished
+/// - Prevents boost timers from expiring before user finishes watching all videos
 class AdMobService {
   // Singleton instance
   static final AdMobService _instance = AdMobService._internal();
@@ -35,11 +43,11 @@ class AdMobService {
   // Test ad unit ID (works for all ad types in debug)
   static const String _testRewardedAdUnitId = 'ca-app-pub-3940256099942544/5224354917';
   
-  // Production ad unit IDs
-  static const String _prodHustleBoostAdUnitId = 'ca-app-pub-6244589384499050/6240031806';
-  static const String _prodBuildSkipAdUnitId = 'ca-app-pub-6244589384499050/5369509827';
-  static const String _prodEventClearAdUnitId = 'ca-app-pub-6244589384499050/4905753152';
-  static const String _prodOfflineincome2xAdUnitId = 'ca-app-pub-6244589384499050/4433996478';
+  // Production ad unit IDs - FIXED: Using correct AdMob account ca-app-pub-1738655803893663
+  static const String _prodHustleBoostAdUnitId = 'ca-app-pub-1738655803893663/5010660196';
+  static const String _prodBuildSkipAdUnitId = 'ca-app-pub-1738655803893663/3789077869';
+  static const String _prodEventClearAdUnitId = 'ca-app-pub-1738655803893663/4305735571';
+  static const String _prodOfflineincome2xAdUnitId = 'ca-app-pub-1738655803893663/2319744212';
   
   // Test device IDs for debug mode
   static const List<String> _testDeviceIds = [
@@ -54,6 +62,16 @@ class AdMobService {
   bool _isReturningFromBackground = false;
   bool _hasOfflineIncome = false;
   String _currentScreen = 'hustle'; // Default to hustle screen
+  
+  // DELAYED REWARD SYSTEM: Prevent early reward granting during multi-video ads
+  bool _hustleBoostRewardEarned = false;
+  bool _buildSkipRewardEarned = false;
+  bool _eventClearRewardEarned = false;
+  bool _offlineincome2xRewardEarned = false;
+  Function(String)? _pendingHustleBoostCallback;
+  Function(String)? _pendingBuildSkipCallback;
+  Function(String)? _pendingEventClearCallback;
+  Function(String)? _pendingOfflineincome2xCallback;
   
   // Ad instances and loading states
   RewardedAd? _hustleBoostAd;
@@ -227,57 +245,59 @@ class AdMobService {
     return ageInMinutes < 50; // 10-minute safety buffer before 1-hour expiration
   }
 
-  // ENHANCED: Debug status with comprehensive revenue analytics
+  // ENHANCED: Debug status with comprehensive revenue analytics (works in release mode)
   void printDebugStatus() {
-    if (kDebugMode) {
-      final analytics = getRevenueAnalytics();
-      print('🎯 === AdMob Predictive Loading Analytics ===');
-      print('🎯 Session Duration: ${analytics['sessionDurationMinutes']} minutes');
-      print('🎯 Total Requests: ${analytics['totalRequests']}');
-      print('🎯 Total Successes: ${analytics['totalShowSuccesses']}');
-      print('🎯 Total Failures: ${analytics['totalShowFailures']}');
-      print('🎯 Impression Loss Rate: ${analytics['impressionLossRate'].toStringAsFixed(1)}%');
-      
-      print('🎯 Predictive Loading Status:');
-      
-      // HustleBoost - Always ready
-      final hustleReady = isHustleBoostAdReady;
-      final hustleAge = _hustleBoostAdLoadTime != null 
-          ? DateTime.now().difference(_hustleBoostAdLoadTime!).inMinutes 
-          : null;
-      print('   ✨ HustleBoost: ${hustleReady ? "✅ Ready" : "❌ Not Ready"} (Loading: $_isHustleBoostAdLoading)');
-      if (hustleAge != null) {
-        print('     Strategy: ALWAYS READY (Age: ${hustleAge}min, ${hustleAge < 50 ? "Fresh" : "Near Expiry"})');
-      }
-      
-      // BuildSkip - Context-aware
-      final buildReady = isBuildSkipAdReady;
-      final shouldLoad = _shouldLoadBuildSkipAd();
-      print('   🏢 BuildSkip: ${buildReady ? "✅ Ready" : "❌ Not Ready"} (Loading: $_isBuildSkipAdLoading)');
-      print('     Strategy: CONTEXT-AWARE (Should load: $shouldLoad)');
-      print('     Context: $_userBusinessCount businesses, level $_firstBusinessLevel, screen: $_currentScreen');
-      
-      // EventClear - Event-based
-      print('   ⚡ EventClear: ${isEventClearAdReady ? "✅ Ready" : "❌ Not Ready"} (Loading: $_isEventClearAdLoading)');
-      print('     Strategy: EVENT-BASED (Events active: $_hasActiveEvents)');
-      
-      // Offlineincome2x - Lifecycle-based
-      print('   💰 Offlineincome2x: ${isOfflineincome2xAdReady ? "✅ Ready" : "❌ Not Ready"} (Loading: $_isOfflineincome2xAdLoading)');
-      print('     Strategy: LIFECYCLE-BASED (Background return: $_isReturningFromBackground)');
-      
-      // Show recent errors for each ad type
-      for (String adType in ['hustleBoost', 'buildSkip', 'eventClear', 'offlineincome2x']) {
-        final errors = analytics['byAdType'][adType]['errors'] as List;
-        if (errors.isNotEmpty) {
-          print('🎯 Recent $adType errors: ${errors.take(2).join(', ')}');
-        }
-      }
-      
-      if (_lastAdError != null) {
-        print('🎯 Last Error: $_lastAdError (${_lastErrorTime})');
-      }
-      print('🎯 === End Predictive Analytics ===');
+    final analytics = getRevenueAnalytics();
+    
+    // Core analytics (always available)
+    debugPrint('🎯 === AdMob Production Diagnostics ===');
+    debugPrint('🎯 Build Mode: ${kDebugMode ? "DEBUG" : "RELEASE"}');
+    debugPrint('🎯 Ad Unit Account: ${_prodHustleBoostAdUnitId.substring(0, 30)}...');
+    debugPrint('🎯 Session Duration: ${analytics['sessionDurationMinutes']} minutes');
+    debugPrint('🎯 Total Requests: ${analytics['totalRequests']}');
+    debugPrint('🎯 Total Successes: ${analytics['totalShowSuccesses']}');
+    debugPrint('🎯 Total Failures: ${analytics['totalShowFailures']}');
+    debugPrint('🎯 Impression Loss Rate: ${analytics['impressionLossRate'].toStringAsFixed(1)}%');
+    
+    debugPrint('🎯 Predictive Loading Status:');
+    
+    // HustleBoost - Always ready
+    final hustleReady = isHustleBoostAdReady;
+    final hustleAge = _hustleBoostAdLoadTime != null 
+        ? DateTime.now().difference(_hustleBoostAdLoadTime!).inMinutes 
+        : null;
+    debugPrint('   ✨ HustleBoost: ${hustleReady ? "✅ Ready" : "❌ Not Ready"} (Loading: $_isHustleBoostAdLoading)');
+    if (hustleAge != null) {
+      debugPrint('     Strategy: ALWAYS READY (Age: ${hustleAge}min, ${hustleAge < 50 ? "Fresh" : "Near Expiry"})');
     }
+    
+    // BuildSkip - Context-aware
+    final buildReady = isBuildSkipAdReady;
+    final shouldLoad = _shouldLoadBuildSkipAd();
+    debugPrint('   🏢 BuildSkip: ${buildReady ? "✅ Ready" : "❌ Not Ready"} (Loading: $_isBuildSkipAdLoading)');
+    debugPrint('     Strategy: CONTEXT-AWARE (Should load: $shouldLoad)');
+    debugPrint('     Context: $_userBusinessCount businesses, level $_firstBusinessLevel, screen: $_currentScreen');
+    
+    // EventClear - Event-based
+    debugPrint('   ⚡ EventClear: ${isEventClearAdReady ? "✅ Ready" : "❌ Not Ready"} (Loading: $_isEventClearAdLoading)');
+    debugPrint('     Strategy: EVENT-BASED (Events active: $_hasActiveEvents)');
+    
+    // Offlineincome2x - Lifecycle-based
+    debugPrint('   💰 Offlineincome2x: ${isOfflineincome2xAdReady ? "✅ Ready" : "❌ Not Ready"} (Loading: $_isOfflineincome2xAdLoading)');
+    debugPrint('     Strategy: LIFECYCLE-BASED (Background return: $_isReturningFromBackground)');
+    
+    // Show recent errors for each ad type
+    for (String adType in ['hustleBoost', 'buildSkip', 'eventClear', 'offlineincome2x']) {
+      final errors = analytics['byAdType'][adType]['errors'] as List;
+      if (errors.isNotEmpty) {
+        debugPrint('🎯 Recent $adType errors: ${errors.take(2).join(', ')}');
+      }
+    }
+    
+    if (_lastAdError != null) {
+      debugPrint('🎯 Last Error: $_lastAdError (${_lastErrorTime})');
+    }
+    debugPrint('🎯 === End Production Diagnostics ===');
   }
 
   // ENHANCED: Revenue analytics with predictive loading insights
@@ -522,12 +542,17 @@ class AdMobService {
         onAdFailedToLoad: (LoadAdError error) {
           _isHustleBoostAdLoading = false;
           _logAdError('hustleBoost', 'Load failed: ${error.code} - ${error.message}');
-          if (kDebugMode) {
-            print('❌ HustleBoost ad load failed: ${error.code} - ${error.message}');
-          }
+          // PRODUCTION DEBUG: Enhanced error logging for release mode
+          debugPrint('❌ HustleBoost ad load failed:');
+          debugPrint('   Error Code: ${error.code}');
+          debugPrint('   Error Message: ${error.message}');
+          debugPrint('   Error Domain: ${error.domain}');
+          debugPrint('   Build Mode: ${kDebugMode ? "DEBUG" : "RELEASE"}');
+          debugPrint('   Ad Unit: ${_getAdUnitId(AdType.hustleBoost)}');
           // Retry after delay
           Future.delayed(const Duration(seconds: 30), () {
             if (!_isHustleBoostAdLoading && !_isAdValid(_hustleBoostAd, _hustleBoostAdLoadTime)) {
+              debugPrint('🔄 Retrying HustleBoost ad load after failure...');
               _loadHustleBoostAd();
             }
           });
@@ -688,6 +713,10 @@ class AdMobService {
       return;
     }
 
+    // Reset delayed reward state for this ad session
+    _hustleBoostRewardEarned = false;
+    _pendingHustleBoostCallback = null;
+
     _adShowSuccesses['hustleBoost'] = (_adShowSuccesses['hustleBoost'] ?? 0) + 1;
     final totalRequests = (_adRequestCounts['hustleBoost'] ?? 0);
     final successRate = totalRequests > 0 ? ((_adShowSuccesses['hustleBoost'] ?? 0) / totalRequests * 100) : 0;
@@ -702,9 +731,25 @@ class AdMobService {
       },
       onAdDismissedFullScreenContent: (RewardedAd ad) {
         if (kDebugMode) print('🎯 HustleBoost ad dismissed (user closed ad)');
+        
+        // DELAYED REWARD: Only grant reward when ad is fully dismissed (all videos completed)
+        if (_hustleBoostRewardEarned && _pendingHustleBoostCallback != null) {
+          if (kDebugMode) print('🎁 Granting delayed HustleBoost reward after full ad completion');
+          _pendingHustleBoostCallback!('HustleBoost');
+        } else if (kDebugMode) {
+          print('⚠️ HustleBoost ad dismissed but no reward was earned (user closed early)');
+        }
+        
+        // Clean up delayed reward state
+        _hustleBoostRewardEarned = false;
+        _pendingHustleBoostCallback = null;
+        
         ad.dispose();
         _hustleBoostAd = null;
         _hustleBoostAdLoadTime = null;
+        
+        // Recover audio system after ad interruption
+        SoundManager().recoverFromAudioInterruption();
         
         // Immediately reload for next use (predictive)
         _loadHustleBoostAd();
@@ -712,6 +757,11 @@ class AdMobService {
       onAdFailedToShowFullScreenContent: (RewardedAd ad, AdError error) {
         _logAdError('hustleBoost', 'Show failed: ${error.code} - ${error.message}');
         if (kDebugMode) print('❌ HustleBoost ad failed to show: ${error.code} - ${error.message}');
+        
+        // Clean up delayed reward state on failure
+        _hustleBoostRewardEarned = false;
+        _pendingHustleBoostCallback = null;
+        
         ad.dispose();
         _hustleBoostAd = null;
         _hustleBoostAdLoadTime = null;
@@ -724,8 +774,11 @@ class AdMobService {
     );
 
     await _hustleBoostAd!.show(onUserEarnedReward: (AdWithoutView ad, RewardItem reward) {
-      if (kDebugMode) print('🎁 User earned HustleBoost reward: ${reward.amount} ${reward.type}');
-      onRewardEarned('HustleBoost');
+      if (kDebugMode) print('🎁 User earned HustleBoost reward: ${reward.amount} ${reward.type} - DELAYING until ad fully completes');
+      
+      // DELAYED REWARD: Store reward info but don't grant yet (prevents multi-video early rewards)
+      _hustleBoostRewardEarned = true;
+      _pendingHustleBoostCallback = onRewardEarned;
     });
   }
 
@@ -770,15 +823,35 @@ class AdMobService {
       print('📊 Ad shown: buildSkip (Total: $totalRequests, Success Rate: ${successRate.toStringAsFixed(1)}%)');
     }
 
+    // Reset delayed reward state for this ad session
+    _buildSkipRewardEarned = false;
+    _pendingBuildSkipCallback = null;
+
     _buildSkipAd!.fullScreenContentCallback = FullScreenContentCallback(
       onAdShowedFullScreenContent: (RewardedAd ad) {
         if (kDebugMode) print('🎯 BuildSkip ad displayed');
       },
       onAdDismissedFullScreenContent: (RewardedAd ad) {
         if (kDebugMode) print('🎯 BuildSkip ad dismissed (user closed ad)');
+        
+        // DELAYED REWARD: Only grant reward when ad is fully dismissed (all videos completed)
+        if (_buildSkipRewardEarned && _pendingBuildSkipCallback != null) {
+          if (kDebugMode) print('🎁 Granting delayed BuildingUpgradeBoost reward after full ad completion');
+          _pendingBuildSkipCallback!('BuildingUpgradeBoost');
+        } else if (kDebugMode) {
+          print('⚠️ BuildSkip ad dismissed but no reward was earned (user closed early)');
+        }
+        
+        // Clean up delayed reward state
+        _buildSkipRewardEarned = false;
+        _pendingBuildSkipCallback = null;
+        
         ad.dispose();
         _buildSkipAd = null;
         _buildSkipAdLoadTime = null;
+        
+        // Recover audio system after ad interruption
+        SoundManager().recoverFromAudioInterruption();
         
         // Intelligently reload based on context
         if (_shouldLoadBuildSkipAd()) {
@@ -788,6 +861,11 @@ class AdMobService {
       onAdFailedToShowFullScreenContent: (RewardedAd ad, AdError error) {
         _logAdError('buildSkip', 'Show failed: ${error.code} - ${error.message}');
         if (kDebugMode) print('❌ BuildSkip ad failed to show: ${error.code} - ${error.message}');
+        
+        // Clean up delayed reward state on failure
+        _buildSkipRewardEarned = false;
+        _pendingBuildSkipCallback = null;
+        
         ad.dispose();
         _buildSkipAd = null;
         _buildSkipAdLoadTime = null;
@@ -802,8 +880,11 @@ class AdMobService {
     );
 
     await _buildSkipAd!.show(onUserEarnedReward: (AdWithoutView ad, RewardItem reward) {
-      if (kDebugMode) print('🎁 User earned BuildingUpgradeBoost reward: ${reward.amount} ${reward.type}');
-      onRewardEarned('BuildingUpgradeBoost');
+      if (kDebugMode) print('🎁 User earned BuildingUpgradeBoost reward: ${reward.amount} ${reward.type} - DELAYING until ad fully completes');
+      
+      // DELAYED REWARD: Store reward info but don't grant yet (prevents multi-video early rewards)
+      _buildSkipRewardEarned = true;
+      _pendingBuildSkipCallback = onRewardEarned;
     });
   }
 
@@ -845,15 +926,35 @@ class AdMobService {
       print('📊 Ad shown: eventClear (Total: $totalRequests, Success Rate: ${successRate.toStringAsFixed(1)}%)');
     }
 
+    // Reset delayed reward state for this ad session
+    _eventClearRewardEarned = false;
+    _pendingEventClearCallback = null;
+
     _eventClearAd!.fullScreenContentCallback = FullScreenContentCallback(
       onAdShowedFullScreenContent: (RewardedAd ad) {
         if (kDebugMode) print('🎯 EventClear ad displayed');
       },
       onAdDismissedFullScreenContent: (RewardedAd ad) {
         if (kDebugMode) print('🎯 EventClear ad dismissed (user closed ad)');
+        
+        // DELAYED REWARD: Only grant reward when ad is fully dismissed (all videos completed)
+        if (_eventClearRewardEarned && _pendingEventClearCallback != null) {
+          if (kDebugMode) print('🎁 Granting delayed EventAdSkip reward after full ad completion');
+          _pendingEventClearCallback!('EventAdSkip');
+        } else if (kDebugMode) {
+          print('⚠️ EventClear ad dismissed but no reward was earned (user closed early)');
+        }
+        
+        // Clean up delayed reward state
+        _eventClearRewardEarned = false;
+        _pendingEventClearCallback = null;
+        
         ad.dispose();
         _eventClearAd = null;
         _eventClearAdLoadTime = null;
+        
+        // Recover audio system after ad interruption
+        SoundManager().recoverFromAudioInterruption();
         
         // Reload if events are still active
         if (_hasActiveEvents) {
@@ -863,6 +964,11 @@ class AdMobService {
       onAdFailedToShowFullScreenContent: (RewardedAd ad, AdError error) {
         _logAdError('eventClear', 'Show failed: ${error.code} - ${error.message}');
         if (kDebugMode) print('❌ EventClear ad failed to show: ${error.code} - ${error.message}');
+        
+        // Clean up delayed reward state on failure
+        _eventClearRewardEarned = false;
+        _pendingEventClearCallback = null;
+        
         ad.dispose();
         _eventClearAd = null;
         _eventClearAdLoadTime = null;
@@ -877,8 +983,11 @@ class AdMobService {
     );
 
     await _eventClearAd!.show(onUserEarnedReward: (AdWithoutView ad, RewardItem reward) {
-      if (kDebugMode) print('🎁 User earned EventAdSkip reward: ${reward.amount} ${reward.type}');
-      onRewardEarned('EventAdSkip');
+      if (kDebugMode) print('🎁 User earned EventAdSkip reward: ${reward.amount} ${reward.type} - DELAYING until ad fully completes');
+      
+      // DELAYED REWARD: Store reward info but don't grant yet (prevents multi-video early rewards)
+      _eventClearRewardEarned = true;
+      _pendingEventClearCallback = onRewardEarned;
     });
   }
 
@@ -920,15 +1029,35 @@ class AdMobService {
       print('📊 Ad shown: offlineincome2x (Total: $totalRequests, Success Rate: ${successRate.toStringAsFixed(1)}%)');
     }
 
+    // Reset delayed reward state for this ad session
+    _offlineincome2xRewardEarned = false;
+    _pendingOfflineincome2xCallback = null;
+
     _offlineincome2xAd!.fullScreenContentCallback = FullScreenContentCallback(
       onAdShowedFullScreenContent: (RewardedAd ad) {
         if (kDebugMode) print('🎯 Offlineincome2x ad displayed');
       },
       onAdDismissedFullScreenContent: (RewardedAd ad) {
         if (kDebugMode) print('🎯 Offlineincome2x ad dismissed (user closed ad)');
+        
+        // DELAYED REWARD: Only grant reward when ad is fully dismissed (all videos completed)
+        if (_offlineincome2xRewardEarned && _pendingOfflineincome2xCallback != null) {
+          if (kDebugMode) print('🎁 Granting delayed Offlineincome2x reward after full ad completion');
+          _pendingOfflineincome2xCallback!('Offlineincome2x');
+        } else if (kDebugMode) {
+          print('⚠️ Offlineincome2x ad dismissed but no reward was earned (user closed early)');
+        }
+        
+        // Clean up delayed reward state
+        _offlineincome2xRewardEarned = false;
+        _pendingOfflineincome2xCallback = null;
+        
         ad.dispose();
         _offlineincome2xAd = null;
         _offlineincome2xAdLoadTime = null;
+        
+        // Recover audio system after ad interruption
+        SoundManager().recoverFromAudioInterruption();
         
         // Reset background return flag and don't immediately reload
         // (user may not need another offline income boost soon)
@@ -937,6 +1066,11 @@ class AdMobService {
       onAdFailedToShowFullScreenContent: (RewardedAd ad, AdError error) {
         _logAdError('offlineincome2x', 'Show failed: ${error.code} - ${error.message}');
         if (kDebugMode) print('❌ Offlineincome2x ad failed to show: ${error.code} - ${error.message}');
+        
+        // Clean up delayed reward state on failure
+        _offlineincome2xRewardEarned = false;
+        _pendingOfflineincome2xCallback = null;
+        
         ad.dispose();
         _offlineincome2xAd = null;
         _offlineincome2xAdLoadTime = null;
@@ -949,9 +1083,35 @@ class AdMobService {
     );
 
     await _offlineincome2xAd!.show(onUserEarnedReward: (AdWithoutView ad, RewardItem reward) {
-      if (kDebugMode) print('🎁 User earned Offlineincome2x reward: ${reward.amount} ${reward.type}');
-      onRewardEarned('Offlineincome2x');
+      if (kDebugMode) print('🎁 User earned Offlineincome2x reward: ${reward.amount} ${reward.type} - DELAYING until ad fully completes');
+      
+      // DELAYED REWARD: Store reward info but don't grant yet (prevents multi-video early rewards)
+      _offlineincome2xRewardEarned = true;
+      _pendingOfflineincome2xCallback = onRewardEarned;
     });
+  }
+
+  // PRODUCTION DIAGNOSTIC: Quick status check for immediate debugging
+  String getQuickDiagnostic() {
+    final analytics = getRevenueAnalytics();
+    final buildMode = kDebugMode ? "DEBUG" : "RELEASE";
+    final accountId = _prodHustleBoostAdUnitId.substring(11, 27); // Extract account ID
+    
+    String status = "🎯 AdMob Quick Status ($buildMode)\n";
+    status += "Account: ca-app-pub-$accountId\n";
+    status += "Requests: ${analytics['totalRequests']} | ";
+    status += "Success: ${analytics['totalShowSuccesses']} | ";
+    status += "Failures: ${analytics['totalShowFailures']}\n";
+    status += "HustleBoost: ${isHustleBoostAdReady ? "✅" : "❌"} | ";
+    status += "BuildSkip: ${isBuildSkipAdReady ? "✅" : "❌"} | ";
+    status += "EventClear: ${isEventClearAdReady ? "✅" : "❌"} | ";
+    status += "OfflineIncome: ${isOfflineincome2xAdReady ? "✅" : "❌"}\n";
+    
+    if (_lastAdError != null) {
+      status += "Last Error: $_lastAdError\n";
+    }
+    
+    return status;
   }
 
   // Dispose all ads
@@ -966,8 +1126,16 @@ class AdMobService {
     _eventClearAd = null;
     _offlineincome2xAd = null;
     
-    if (kDebugMode) {
-      print('🧹 AdMob service disposed');
-    }
+    // Clean up delayed reward state
+    _hustleBoostRewardEarned = false;
+    _buildSkipRewardEarned = false;
+    _eventClearRewardEarned = false;
+    _offlineincome2xRewardEarned = false;
+    _pendingHustleBoostCallback = null;
+    _pendingBuildSkipCallback = null;
+    _pendingEventClearCallback = null;
+    _pendingOfflineincome2xCallback = null;
+    
+    debugPrint('🧹 AdMob service disposed');
   }
 } 
