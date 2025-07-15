@@ -187,12 +187,12 @@ class PropertyGalleryDialog extends StatelessWidget {
                   showEmergenceAnimation: true,
                   username: "TYCOON",
                   onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text("The Platinum Spire Trophy gleams with prestige!"),
-                        duration: Duration(seconds: 2),
-                      ),
-                    );
+                    // ScaffoldMessenger.of(context).showSnackBar(
+                    //   const SnackBar(
+                    //     content: Text("The Platinum Spire Trophy gleams with prestige!"),
+                    //     duration: Duration(seconds: 2),
+                    //   ),
+                    // );
                   },
                 ),
               ),

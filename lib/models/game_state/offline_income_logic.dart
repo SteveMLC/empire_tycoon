@@ -44,10 +44,12 @@ extension GameStateOfflineIncome on GameState {
       // Use the same income calculation as the top panel
       incomePerSecond = incomeService.calculateIncomePerSecond(this);
       print("💰 Using IncomeService for offline income calculation");
+      print("🔍 DEBUG: IncomeService returned: ${NumberFormatter.formatCompact(incomePerSecond)}/sec");
     } else {
       // Fall back to direct calculation if service not provided
       incomePerSecond = calculateTotalIncomePerSecond();
       print("⚠️ Falling back to direct income calculation (not using IncomeService)");
+      print("🔍 DEBUG: Direct calculation returned: ${NumberFormatter.formatCompact(incomePerSecond)}/sec");
     }
     
     print("🔍 DEBUG: Income breakdown for offline calculation:");

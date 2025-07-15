@@ -211,22 +211,7 @@ class AppLifecycleService with WidgetsBindingObserver {
     return await _notificationService.getPendingNotificationsCount();
   }
 
-  /// DIAGNOSTIC: Print comprehensive notification system status
-  /// Use this to debug notification issues
-  Future<void> printNotificationDiagnostics() async {
-    if (!_isInitialized) {
-      debugPrint('❌ AppLifecycleService not initialized');
-      return;
-    }
-    
-    debugPrint('🔍 === APP LIFECYCLE SERVICE DIAGNOSTICS ===');
-    debugPrint('🔍 Service Initialized: $_isInitialized');
-    debugPrint('🔍 Permission Requested: $_hasRequestedPermission');
-    debugPrint('🔍 Background Start Time: $_backgroundStartTime');
-    
-    // Get notification service diagnostics
-    await _notificationService.printNotificationDiagnostics();
-  }
+
 
   /// Dispose resources
   void dispose() {

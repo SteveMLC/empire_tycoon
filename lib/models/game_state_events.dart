@@ -162,6 +162,8 @@ extension GameStateEvents on GameState {
       }
       
       notifyListeners();
+      // ADDED: Notify AdMobService of event state change for predictive ad loading
+      notifyAdMobServiceOfEventStateChange();
     } else {
       print("INFO: Disaster event blocked by shield.");
       // Optionally trigger a different, less impactful event?
@@ -477,6 +479,8 @@ extension GameStateEvents on GameState {
     
     if (hasChanges) {
       notifyListeners();
+      // ADDED: Notify AdMobService of event state change for predictive ad loading
+      notifyAdMobServiceOfEventStateChange();
     }
   }
   

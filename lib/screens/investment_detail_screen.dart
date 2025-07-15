@@ -618,16 +618,16 @@ class _InvestmentDetailScreenState extends State<InvestmentDetailScreen> {
                                     
                                     if (!mounted) return; 
 
-                                    scaffoldMessenger.showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          _isBuying
-                                              ? 'Successfully purchased $_quantity shares of ${investment.name}'
-                                              : 'Successfully sold $_quantity shares of ${investment.name}',
-                                        ),
-                                        backgroundColor: _isBuying ? Colors.green : Colors.blue,
-                                      ),
-                                    );
+                                    // scaffoldMessenger.showSnackBar(
+                                    //   SnackBar(
+                                    //     content: Text(
+                                    //       _isBuying
+                                    //           ? 'Successfully purchased $_quantity shares of ${investment.name}'
+                                    //           : 'Successfully sold $_quantity shares of ${investment.name}',
+                                    //     ),
+                                    //     backgroundColor: _isBuying ? Colors.green : Colors.blue,
+                                    //   ),
+                                    // );
                                     
                                     if (!mounted) return; 
                                     setState(() {
@@ -652,16 +652,16 @@ class _InvestmentDetailScreenState extends State<InvestmentDetailScreen> {
                                     
                                     if (!mounted) return;
 
-                                    scaffoldMessenger.showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          _isBuying
-                                              ? 'Failed to purchase shares!'
-                                              : 'Failed to sell shares!',
-                                        ),
-                                        backgroundColor: Colors.red,
-                                      ),
-                                    );
+                                    // scaffoldMessenger.showSnackBar(
+                                    //   SnackBar(
+                                    //     content: Text(
+                                    //       _isBuying
+                                    //           ? 'Failed to purchase shares!'
+                                    //           : 'Failed to sell shares!',
+                                    //     ),
+                                    //     backgroundColor: Colors.red,
+                                    //   ),
+                                    // );
                                   }
                                 }
                               : null,

@@ -178,21 +178,21 @@ class CategoryContent extends StatelessWidget {
           onBuy: () {
             // Pre-purchase check for instant feedback
             if (isActive) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text("${item.name} is already active."), backgroundColor: Colors.orange),
-              );
+              // ScaffoldMessenger.of(context).showSnackBar(
+              //   SnackBar(content: Text("${item.name} is already active."), backgroundColor: Colors.orange),
+              // );
               return;
             }
             if (onCooldown) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text("${item.name} is on cooldown."), backgroundColor: Colors.orange),
-              );
+              // ScaffoldMessenger.of(context).showSnackBar(
+              //   SnackBar(content: Text("${item.name} is on cooldown."), backgroundColor: Colors.orange),
+              // );
               return;
             }
             if (item.id == 'platinum_warp' && usesLeft <= 0) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text("${item.name} weekly limit reached."), backgroundColor: Colors.orange),
-              );
+              // ScaffoldMessenger.of(context).showSnackBar(
+              //   SnackBar(content: Text("${item.name} weekly limit reached."), backgroundColor: Colors.orange),
+              // );
               return;
             }
             

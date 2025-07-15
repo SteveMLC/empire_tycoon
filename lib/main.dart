@@ -251,6 +251,10 @@ class _AppInitializerState extends State<AppInitializer> {
       await adMobService.initialize();
       print('Game initializer: Finished AdMob initialization');
       
+      // ENHANCED: Set up AdMobService integration with GameState for predictive ad loading
+      gameState.setAdMobService(adMobService);
+      print('Game initializer: AdMobService integrated with GameState');
+      
       // PREDICTIVE LOADING: Enable comprehensive revenue analytics and monitoring
       if (kDebugMode) {
         print('Game initializer: Enabling AdMob predictive loading analytics');
@@ -265,15 +269,22 @@ class _AppInitializerState extends State<AppInitializer> {
           // Get actual game state for more accurate predictions
           final businessCount = gameState.businesses.length;
           final firstBusinessLevel = gameState.businesses.isNotEmpty ? gameState.businesses.first.level : 1;
+          final hasActiveEvents = gameState.activeEvents.isNotEmpty;
           
           adMobService.updateGameState(
             businessCount: businessCount,
             firstBusinessLevel: firstBusinessLevel,
-            hasActiveEvents: false, // TODO: Add event checking when implemented
+            hasActiveEvents: hasActiveEvents,
             currentScreen: 'hustle',
             isReturningFromBackground: false,
             hasOfflineIncome: gameState.showOfflineIncomeNotification,
           );
+          
+          if (hasActiveEvents) {
+            print('Game initializer: ✅ Found ${gameState.activeEvents.length} active events - EventClear ads will be preloaded');
+          } else {
+            print('Game initializer: ℹ️ No active events found - EventClear ads will not be preloaded');
+          }
         });
       }
       

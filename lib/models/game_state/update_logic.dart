@@ -106,6 +106,14 @@ extension UpdateLogic on GameState {
       // --- [1] Event System --- 
       checkAndTriggerEvents(); // From game_state_events.dart extension
 
+      // --- ADDED [1.6]: Periodic Event State Tracking for AdMobService ---
+      // Check every 30 seconds to ensure AdMobService has correct event state
+      if (_lastEventStateCheckTime == null || now.difference(_lastEventStateCheckTime!).inSeconds >= 30) {
+        notifyAdMobServiceOfEventStateChange();
+        _lastEventStateCheckTime = now;
+      }
+      // --- END ADDED [1.6] ---
+
       // --- ADDED [1.5]: Check for Completed Business Upgrades ---
       for (var business in List.from(businesses)) { // Iterate over a copy in case list changes
           if (business.isUpgrading && business.upgradeEndTime != null && now.isAfter(business.upgradeEndTime!)) {

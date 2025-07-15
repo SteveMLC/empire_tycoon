@@ -260,12 +260,12 @@ class _StatsScreenState extends State<StatsScreen> {
                     gameState.selectStatsTheme('executive');
                     Navigator.of(dialogContext).pop();
                   } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('This theme is locked. Purchase it from the Platinum Vault.'),
-                        backgroundColor: Colors.orange,
-                      ),
-                    );
+                    // ScaffoldMessenger.of(context).showSnackBar(
+                    //   const SnackBar(
+                    //     content: Text('This theme is locked. Purchase it from the Platinum Vault.'),
+                    //     backgroundColor: Colors.orange,
+                    //   ),
+                    // );
                     Navigator.of(dialogContext).pop();
                   }
                 },
@@ -1367,12 +1367,12 @@ class _StatsScreenState extends State<StatsScreen> {
               Navigator.of(context).pop();
 
               if (success) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Successfully re-incorporated! New passive bonus: ${gameState.incomeMultiplier.toStringAsFixed(2)}x'),
-                    backgroundColor: Colors.green,
-                  ),
-                );
+                // ScaffoldMessenger.of(context).showSnackBar(
+                //   SnackBar(
+                //     content: Text('Successfully re-incorporated! New passive bonus: ${gameState.incomeMultiplier.toStringAsFixed(2)}x'),
+                //     backgroundColor: Colors.green,
+                //   ),
+                // );
 
                 Provider.of<GameService>(context, listen: false).playSound(() => Provider.of<GameService>(context, listen: false).soundManager.playEventReincorporationSound());
               }

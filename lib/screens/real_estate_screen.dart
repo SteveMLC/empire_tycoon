@@ -966,23 +966,23 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
                                   }
                                 }
 
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text('Purchased ${property.name}'),
-                                    duration: const Duration(seconds: 2),
-                                  ),
-                                );
+                                // ScaffoldMessenger.of(context).showSnackBar(
+                                //   SnackBar(
+                                //     content: Text('Purchased ${property.name}'),
+                                //     duration: const Duration(seconds: 2),
+                                //   ),
+                                // );
                               } else {
                                 final gameService = Provider.of<GameService>(context, listen: false);
                                 // Use generic playSound for error
                                 gameService.playSound(() => gameService.soundManager.playFeedbackErrorSound());
 
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Not enough money!'),
-                                    duration: Duration(seconds: 2),
-                                  ),
-                                );
+                                // ScaffoldMessenger.of(context).showSnackBar(
+                                //   const SnackBar(
+                                //     content: Text('Not enough money!'),
+                                //     duration: Duration(seconds: 2),
+                                //   ),
+                                // );
                               }
                             }
                           : null,
@@ -1039,22 +1039,22 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
                 }
                 // Continue with the upgrade process even if sound fails
               }
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Upgrade purchased: ${upgrade.description}'),
-                  duration: const Duration(seconds: 2),
-                  backgroundColor: Colors.green,
-                ),
-              );
+              // ScaffoldMessenger.of(context).showSnackBar(
+              //   SnackBar(
+              //     content: Text('Upgrade purchased: ${upgrade.description}'),
+              //     duration: const Duration(seconds: 2),
+              //     backgroundColor: Colors.green,
+              //   ),
+              // );
             } else {
               gameService.soundManager.playSound(SoundAssets.feedbackError, priority: SoundPriority.normal);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Upgrade failed. Please try again.'),
-                  duration: Duration(seconds: 2),
-                  backgroundColor: Colors.red,
-                ),
-              );
+              // ScaffoldMessenger.of(context).showSnackBar(
+              //   const SnackBar(
+              //     content: Text('Upgrade failed. Please try again.'),
+              //     duration: Duration(seconds: 2),
+              //     backgroundColor: Colors.red,
+              //   ),
+              // );
             }
           }
         : null,

@@ -410,13 +410,13 @@ class _PremiumAvatarSelectorState extends State<PremiumAvatarSelector> with Sing
                   }
                   
                   if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Purchase not available. Please try again later.'),
-                        backgroundColor: Colors.red,
-                        duration: Duration(seconds: 3),
-                      ),
-                    );
+                    // ScaffoldMessenger.of(context).showSnackBar(
+                    //   const SnackBar(
+                    //     content: Text('Purchase not available. Please try again later.'),
+                    //     backgroundColor: Colors.red,
+                    //     duration: Duration(seconds: 3),
+                    //   ),
+                    // );
                   }
                 } catch (e) {
                   print('🔴 Error handling billing unavailable: $e');
@@ -457,13 +457,13 @@ class _PremiumAvatarSelectorState extends State<PremiumAvatarSelector> with Sing
                           onPressed: () {
                             print('🔴 AVATAR USER: Manual dialog close requested');
                             _forceClosePurchaseDialog();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                backgroundColor: Colors.orange,
-                                content: Text('Avatar purchase dialog closed manually. If payment was successful, premium features should activate automatically.'),
-                                duration: Duration(seconds: 5),
-                              ),
-                            );
+                            // ScaffoldMessenger.of(context).showSnackBar(
+                            //   const SnackBar(
+                            //     backgroundColor: Colors.orange,
+                            //     content: Text('Avatar purchase dialog closed manually. If payment was successful, premium features should activate automatically.'),
+                            //     duration: Duration(seconds: 5),
+                            //   ),
+                            // );
                           },
                           child: const Text('Cancel'),
                         ),
@@ -479,19 +479,19 @@ class _PremiumAvatarSelectorState extends State<PremiumAvatarSelector> with Sing
                       
                       // Show timeout error message
                       if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            backgroundColor: Colors.orange,
-                            content: Row(
-                              children: [
-                                Icon(Icons.warning, color: Colors.white),
-                                SizedBox(width: 8),
-                                Expanded(child: Text('Avatar purchase processing timed out. If payment was successful, premium features should activate automatically.')),
-                              ],
-                            ),
-                            duration: Duration(seconds: 6),
-                          ),
-                        );
+                        // ScaffoldMessenger.of(context).showSnackBar(
+                        //   const SnackBar(
+                        //     backgroundColor: Colors.orange,
+                        //     content: Row(
+                        //       children: [
+                        //         Icon(Icons.warning, color: Colors.white),
+                        //         SizedBox(width: 8),
+                        //         Expanded(child: Text('Avatar purchase processing timed out. If payment was successful, premium features should activate automatically.')),
+                        //       ],
+                        //     ),
+                        //     duration: Duration(seconds: 6),
+                        //   ),
+                        // );
                       }
                     }
                   });
@@ -535,19 +535,19 @@ class _PremiumAvatarSelectorState extends State<PremiumAvatarSelector> with Sing
                           gameService.playAchievementMilestoneSound();
                           
                           // Show success message
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              backgroundColor: Colors.green,
-                              content: const Row(
-                                children: [
-                                  Icon(Icons.check_circle, color: Colors.white),
-                                  SizedBox(width: 8),
-                                  Text('Premium features activated! +1500 Platinum!'),
-                                ],
-                              ),
-                              duration: const Duration(seconds: 4),
-                            ),
-                          );
+                          // ScaffoldMessenger.of(context).showSnackBar(
+                          //   SnackBar(
+                          //     backgroundColor: Colors.green,
+                          //     content: const Row(
+                          //       children: [
+                          //         Icon(Icons.check_circle, color: Colors.white),
+                          //         SizedBox(width: 8),
+                          //         Text('Premium features activated! +1500 Platinum!'),
+                          //       ],
+                          //     ),
+                          //     duration: const Duration(seconds: 4),
+                          //   ),
+                          // );
                         } catch (e) {
                           print('🔴 Error in avatar purchase success handler: $e');
                         }
@@ -564,19 +564,19 @@ class _PremiumAvatarSelectorState extends State<PremiumAvatarSelector> with Sing
                             displayError = 'Purchase was cancelled';
                           }
                           
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              backgroundColor: Colors.red,
-                              content: Row(
-                                children: [
-                                  const Icon(Icons.error_outline, color: Colors.white),
-                                  const SizedBox(width: 8),
-                                  Expanded(child: Text(displayError)),
-                                ],
-                              ),
-                              duration: const Duration(seconds: 4),
-                            ),
-                          );
+                          // ScaffoldMessenger.of(context).showSnackBar(
+                          //   SnackBar(
+                          //     backgroundColor: Colors.red,
+                          //     content: Row(
+                          //       children: [
+                          //         const Icon(Icons.error_outline, color: Colors.white),
+                          //         const SizedBox(width: 8),
+                          //         Expanded(child: Text(displayError)),
+                          //       ],
+                          //     ),
+                          //     duration: const Duration(seconds: 4),
+                          //   ),
+                          // );
                         } catch (e) {
                           print('🔴 Error in avatar purchase error handler: $e');
                         }

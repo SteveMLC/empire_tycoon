@@ -70,13 +70,13 @@ final List<Investment> defaultInvestments = [
   Investment(
     id: 'btf', name: 'BioTech Innovators Fund', description: 'Fund for biotech startups in gene therapy and vaccines.',
     currentPrice: 500.0, basePrice: 500.0, volatility: 0.20, trend: 0.01, owned: 0,
-    icon: Icons.healing, color: Colors.lightBlue.shade700, category: 'Healthcare', dividendPerSecond: 0.95, marketCap: 12.5,
+    icon: Icons.healing, color: Colors.lightBlue.shade700, category: 'Healthcare', dividendPerSecond: 0.475, marketCap: 12.5,
     priceHistory: List.generate(30, (i) => 500.0 * (0.98 + (Random().nextDouble() * 0.04))),
   ),
   Investment(
     id: 'sme', name: 'Streaming Media ETF', description: 'ETF of streaming platforms and content creators.',
     currentPrice: 2000.0, basePrice: 2000.0, volatility: 0.20, trend: 0.015, owned: 0,
-    icon: Icons.live_tv, color: Colors.red.shade700, category: 'Entertainment', dividendPerSecond: 3.78, marketCap: 35.8,
+    icon: Icons.live_tv, color: Colors.red.shade700, category: 'Entertainment', dividendPerSecond: 1.89, marketCap: 35.8,
     priceHistory: List.generate(30, (i) => 2000.0 * (0.98 + (Random().nextDouble() * 0.04))),
   ),
   Investment(
@@ -88,43 +88,43 @@ final List<Investment> defaultInvestments = [
   Investment(
     id: 'gti', name: 'Global Tourism Index', description: 'Index fund of major tourism companies.',
     currentPrice: 50000.0, basePrice: 50000.0, volatility: 0.20, trend: -0.01, owned: 0,
-    icon: Icons.flight, color: Colors.amber.shade800, category: 'Tourism', dividendPerSecond: 95.5, marketCap: 86.5,
+    icon: Icons.flight, color: Colors.amber.shade800, category: 'Tourism', dividendPerSecond: 47.75, marketCap: 86.5,
     priceHistory: List.generate(30, (i) => 50000.0 * (0.98 + (Random().nextDouble() * 0.04))),
   ),
   Investment(
     id: 'urt', name: 'Urban REIT', description: 'REIT for urban commercial properties.',
     currentPrice: 200000.0, basePrice: 200000.0, volatility: 0.10, trend: 0.01, owned: 0,
-    icon: Icons.business, color: Colors.brown.shade600, category: 'REITs', dividendPerSecond: 381, marketCap: 125.8,
+    icon: Icons.business, color: Colors.brown.shade600, category: 'REITs', dividendPerSecond: 190.5, marketCap: 125.8,
     priceHistory: List.generate(30, (i) => 200000.0 * (0.98 + (Random().nextDouble() * 0.04))),
   ),
   Investment(
     id: 'vrv', name: 'Virtual Reality Ventures', description: 'Stocks in VR gaming and entertainment companies.',
     currentPrice: 1000000.0, basePrice: 1000000.0, volatility: 0.30, trend: 0.02, owned: 0,
-    icon: Icons.vrpano, color: Colors.deepPurple.shade600, category: 'Entertainment', dividendPerSecond: 1950, marketCap: 75.2,
+    icon: Icons.vrpano, color: Colors.deepPurple.shade600, category: 'Entertainment', dividendPerSecond: 975, marketCap: 75.2,
     priceHistory: List.generate(30, (i) => 1000000.0 * (0.98 + (Random().nextDouble() * 0.04))),
   ),
   Investment(
     id: 'mrc', name: 'Medical Robotics Corp', description: 'Company producing robotic surgery and AI diagnostics.',
     currentPrice: 5000000.0, basePrice: 5000000.0, volatility: 0.20, trend: 0.015, owned: 0,
-    icon: Icons.biotech, color: Colors.blue.shade800, category: 'Healthcare', dividendPerSecond: 9750.0, marketCap: 120.7,
+    icon: Icons.biotech, color: Colors.blue.shade800, category: 'Healthcare', dividendPerSecond: 4875.0, marketCap: 120.7,
     priceHistory: List.generate(30, (i) => 5000000.0 * (0.98 + (Random().nextDouble() * 0.04))),
   ),
   Investment(
     id: 'atf', name: 'AgroTech Futures', description: 'Futures on agrotech firms in vertical farming.',
     currentPrice: 20000000.0, basePrice: 20000000.0, volatility: 0.30, trend: 0.01, owned: 0,
-    icon: Icons.eco, color: Colors.lightGreen.shade800, category: 'Agriculture', dividendPerSecond: 41500.0, marketCap: 195.3,
+    icon: Icons.eco, color: Colors.lightGreen.shade800, category: 'Agriculture', dividendPerSecond: 20750.0, marketCap: 195.3,
     priceHistory: List.generate(30, (i) => 20000000.0 * (0.98 + (Random().nextDouble() * 0.04))),
   ),
   Investment(
     id: 'lrr', name: 'Luxury Resort REIT', description: 'REIT for luxury resorts and vacation properties.',
     currentPrice: 100000000.0, basePrice: 100000000.0, volatility: 0.10, trend: 0.005, owned: 0,
-    icon: Icons.beach_access, color: Colors.teal.shade600, category: 'REITs', dividendPerSecond: 96250.0, marketCap: 580.6,
+    icon: Icons.beach_access, color: Colors.teal.shade600, category: 'REITs', dividendPerSecond: 48125.0, marketCap: 580.6,
     priceHistory: List.generate(30, (i) => 100000000.0 * (0.98 + (Random().nextDouble() * 0.04))),
   ),
   Investment(
     id: 'ath', name: 'Adventure Travel Holdings', description: 'Holdings in adventure travel and eco-tourism operators.',
     currentPrice: 500000000.0, basePrice: 500000000.0, volatility: 0.20, trend: -0.005, owned: 0,
-    icon: Icons.terrain, color: Colors.orange.shade800, category: 'Tourism', dividendPerSecond: 475000.0, marketCap: 1250.0,
+    icon: Icons.terrain, color: Colors.orange.shade800, category: 'Tourism', dividendPerSecond: 237500.0, marketCap: 1250.0,
     priceHistory: List.generate(30, (i) => 500000000.0 * (0.98 + (Random().nextDouble() * 0.04))),
   ),
 ]; 

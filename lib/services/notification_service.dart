@@ -200,7 +200,7 @@ class NotificationService {
     }
   }
 
-  /// Schedule offline income notification (4 hours from now) using industry-standard approach
+  /// Schedule offline income notification (4 hours) using industry-standard approach
   /// INDUSTRY STANDARD: Uses approximate scheduling - battery-friendly and no exact alarm permissions needed
   Future<void> scheduleOfflineIncomeNotification() async {
     if (!_isInitialized || !_offlineIncomeNotificationsEnabled) {
@@ -212,7 +212,7 @@ class NotificationService {
       // Cancel any existing offline income notification
       await cancelOfflineIncomeNotification();
 
-      final scheduledDate = DateTime.now().add(const Duration(hours: 4));
+      final scheduledDate = DateTime.now().add(const Duration(hours: 4)); // PRODUCTION: 4 hours for offline income
       
       // ENHANCED DIAGNOSTICS: Check current permission status before scheduling
       if (Platform.isAndroid) {
@@ -261,16 +261,16 @@ class NotificationService {
         _offlineIncomeNotificationId,
         'Income Maxed Out!',
         'Your vaults are full! Tap to collect your offline earnings and keep your empire growing.',
-        tz.TZDateTime.now(tz.local).add(const Duration(hours: 4)),
+        tz.TZDateTime.now(tz.local).add(const Duration(hours: 4)), // PRODUCTION: 4 hours for offline income
         platformChannelSpecifics,
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle, // NO EXACT ALARMS - Industry standard for games
         uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
       );
 
-      debugPrint('🔔 ✅ INDUSTRY STANDARD: Offline income notification scheduled (approximate timing) for: $scheduledDate');
+      debugPrint('🔔 ✅ PRODUCTION: Offline income notification scheduled (approximate timing) for: $scheduledDate');
       debugPrint('🔔 📱 BATTERY FRIENDLY: Using inexact scheduling - no special permissions needed!');
       debugPrint('🔔 🎯 USER FRIENDLY: Only requires standard notification permission');
-      debugPrint('🔔 ⏰ GAME APPROPRIATE: ~4 hours ± system optimization (perfect for offline income)');
+      debugPrint('🔔 ⏰ PRODUCTION: ~4 hours ± system optimization');
       
     } catch (e) {
       debugPrint('❌ Error scheduling offline income notification: $e');
@@ -301,8 +301,8 @@ class NotificationService {
       return;
     }
 
-    // Only schedule for upgrades longer than 10 minutes
-    if (upgradeTime.inMinutes <= 10) {
+    // Only schedule for upgrades longer than 15 minutes (as requested)
+    if (upgradeTime.inMinutes <= 15) {
       debugPrint('🔔 Upgrade duration too short (${upgradeTime.inMinutes} min), not scheduling notification');
       return;
     }
@@ -522,44 +522,7 @@ class NotificationService {
     }
   }
 
-  /// DIAGNOSTIC: Print comprehensive notification system status (Industry Standard Edition)
-  Future<void> printNotificationDiagnostics() async {
-    debugPrint('🔍 === NOTIFICATION SYSTEM DIAGNOSTICS (INDUSTRY STANDARD) ===');
-    debugPrint('🔍 Service Initialized: $_isInitialized');
-    debugPrint('🔍 Offline Income Enabled: $_offlineIncomeNotificationsEnabled');
-    debugPrint('🔍 Business Upgrade Enabled: $_businessUpgradeNotificationsEnabled');
-    debugPrint('🔍 Permission Requested: $_permissionRequested');
-    debugPrint('🔍 ✅ APPROACH: Using inexact scheduling (battery-friendly, industry standard)');
-    debugPrint('🔍 ✅ PERMISSIONS: Only POST_NOTIFICATIONS needed (user-friendly)');
-    debugPrint('🔍 ✅ COMPLIANCE: Google Play policy compliant');
-    
-    if (_isInitialized) {
-      final pendingCount = await getPendingNotificationsCount();
-      debugPrint('🔍 Pending Notifications: $pendingCount');
-      
-      if (Platform.isAndroid) {
-        final android = _flutterLocalNotificationsPlugin
-            .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
-        final enabled = await android?.areNotificationsEnabled();
-        debugPrint('🔍 Android Notifications Enabled: ${enabled ?? false}');
-        
-        if (enabled == true) {
-          debugPrint('🔍 ✅ PERFECT: All permissions granted, inexact scheduling active');
-        } else {
-          debugPrint('🔍 ⚠️ WARNING: Notification permission not granted');
-        }
-      }
-      
-      debugPrint('🔍 📱 SCHEDULING: Using AndroidScheduleMode.inexactAllowWhileIdle');
-      debugPrint('🔍 🔋 BATTERY IMPACT: Minimal - Android system optimized');
-      debugPrint('🔍 ⏰ TIMING: Approximate (4 hours ± system optimization) - Perfect for games!');
-      debugPrint('🔍 🎯 GAME APPROPRIATE: No exact timing needed for offline income');
-    } else {
-      debugPrint('🔍 ❌ Service not initialized');
-    }
-    
-    debugPrint('🔍 === END DIAGNOSTICS ===');
-  }
+
 
   /// Dispose resources
   void dispose() {

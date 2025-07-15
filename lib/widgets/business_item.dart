@@ -763,7 +763,7 @@ class _BusinessItemState extends State<BusinessItem> {
                         gameService.cancelBusinessUpgradeNotification(business.id);
                         
                         // Schedule new notification if there's still significant time left
-                        if (remainingTime.inMinutes > 10) {
+                        if (remainingTime.inMinutes > 15) {
                           gameService.scheduleBusinessUpgradeNotification(
                             business.id,
                             business.name,
@@ -774,20 +774,20 @@ class _BusinessItemState extends State<BusinessItem> {
                         print("Error updating notification after speed up: $e");
                       }
                       
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Premium speed up applied! 15 minutes reduced.'),
-                          duration: Duration(seconds: 2),
-                        ),
-                      );
+                      // ScaffoldMessenger.of(context).showSnackBar(
+                      //   const SnackBar(
+                      //     content: Text('Premium speed up applied! 15 minutes reduced.'),
+                      //     duration: Duration(seconds: 2),
+                      //   ),
+                      // );
                     },
                     onAdFailed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Speed up failed. Please try again.'),
-                          duration: Duration(seconds: 2),
-                        ),
-                      );
+                      // ScaffoldMessenger.of(context).showSnackBar(
+                      //   const SnackBar(
+                      //     content: Text('Speed up failed. Please try again.'),
+                      //     duration: Duration(seconds: 2),
+                      //   ),
+                      // );
                     },
                   );
                 } else {
@@ -809,7 +809,7 @@ class _BusinessItemState extends State<BusinessItem> {
                               gameService.cancelBusinessUpgradeNotification(business.id);
                               
                               // Schedule new notification if there's still significant time left
-                              if (remainingTime.inMinutes > 10) {
+                              if (remainingTime.inMinutes > 15) {
                                 gameService.scheduleBusinessUpgradeNotification(
                                   business.id,
                                   business.name,
@@ -820,20 +820,20 @@ class _BusinessItemState extends State<BusinessItem> {
                               print("Error updating notification after speed up: $e");
                             }
                             
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Speed up successful! 15 minutes reduced.'),
-                                duration: Duration(seconds: 2),
-                              ),
-                            );
+                            // ScaffoldMessenger.of(context).showSnackBar(
+                            //   const SnackBar(
+                            //     content: Text('Speed up successful! 15 minutes reduced.'),
+                            //     duration: Duration(seconds: 2),
+                            //   ),
+                            // );
                           },
                           onAdFailed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Speed up failed. Please try again.'),
-                                duration: Duration(seconds: 2),
-                              ),
-                            );
+                            // ScaffoldMessenger.of(context).showSnackBar(
+                            //   const SnackBar(
+                            //     content: Text('Speed up failed. Please try again.'),
+                            //     duration: Duration(seconds: 2),
+                            //   ),
+                            // );
                           },
                         );
                       } else {
@@ -842,12 +842,12 @@ class _BusinessItemState extends State<BusinessItem> {
                     },
                     onAdFailure: () {
                       // Ad failed to show
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Ad not available. Please try again later.'),
-                          duration: Duration(seconds: 3),
-                        ),
-                      );
+                      // ScaffoldMessenger.of(context).showSnackBar(
+                      //   const SnackBar(
+                      //     content: Text('Ad not available. Please try again later.'),
+                      //     duration: Duration(seconds: 3),
+                      //   ),
+                      // );
                     },
                   );
                 }

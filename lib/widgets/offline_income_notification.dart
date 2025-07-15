@@ -572,12 +572,12 @@ class _OfflineIncomeNotificationState extends State<OfflineIncomeNotification>
                                                         },
                                                         onAdFailure: () async {
                                                           // Ad failed to show, show error message
-                                                          ScaffoldMessenger.of(context).showSnackBar(
-                                                            const SnackBar(
-                                                              content: Text('Ad not available. Please try again later.'),
-                                                              duration: Duration(seconds: 3),
-                                                            ),
-                                                          );
+                                                          // ScaffoldMessenger.of(context).showSnackBar(
+                                                          //   const SnackBar(
+                                                          //     content: Text('Ad not available. Please try again later.'),
+                                                          //     duration: Duration(seconds: 3),
+                                                          //   ),
+                                                          // );
                                                         },
                                                       );
                                                     },

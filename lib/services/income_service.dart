@@ -28,10 +28,11 @@ class IncomeService extends ChangeNotifier {
     final String timestampKey = "${now.hour}:${now.minute}:${now.second}";
     final bool alreadyProcessedThisSecond = _processedTimestamps.contains(timestampKey);
     
-    // CRITICAL FIX: Only apply optimization in specific cases to ensure income display updates properly
+    // CRITICAL FIX: Only apply optimization if we have a valid cached value (not 0)
     // 1. If we're already calculating, return the cached value to prevent recursion
-    // 2. If we calculated within the last 100ms (for UI smoothness), return cached value
-    if (_isCalculatingIncome || now.difference(_lastCalculationTime).inMilliseconds < 100) {
+    // 2. If we calculated within the last 100ms AND have a valid cached value, return cached value
+    if (_isCalculatingIncome || 
+        (now.difference(_lastCalculationTime).inMilliseconds < 100 && _lastCalculatedIncome != 0.0)) {
       // OPTIMIZED: Reduced logging frequency to prevent spam - only log every 5 seconds
       if (now.difference(_lastCalculationTime).inMilliseconds < 50 && now.second % 5 == 0 && now.millisecond < 100) {
         print("💹 Income calculation optimized, returning cached value: $_lastCalculatedIncome");

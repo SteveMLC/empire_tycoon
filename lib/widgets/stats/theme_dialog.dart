@@ -55,12 +55,12 @@ class ThemeDialogUtils {
                     gameState.selectStatsTheme('executive');
                     Navigator.of(dialogContext).pop();
                   } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('This theme is locked. Purchase it from the Platinum Vault.'),
-                        backgroundColor: Colors.orange,
-                      ),
-                    );
+                    // ScaffoldMessenger.of(context).showSnackBar(
+                    //   const SnackBar(
+                    //     content: Text('This theme is locked. Purchase it from the Platinum Vault.'),
+                    //     backgroundColor: Colors.orange,
+                    //   ),
+                    // );
                     Navigator.of(dialogContext).pop();
                   }
                 },

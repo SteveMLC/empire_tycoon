@@ -752,16 +752,16 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                         onTap: () {
                           gameState.isPlatinumCrestUnlocked = !gameState.isPlatinumCrestUnlocked;
                           Provider.of<GameService>(context, listen: false).saveGame();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                gameState.isPlatinumCrestUnlocked 
-                                  ? 'Platinum Crest: ENABLED' 
-                                  : 'Platinum Crest: DISABLED'
-                              ),
-                              duration: const Duration(seconds: 1),
-                            ),
-                          );
+                          // ScaffoldMessenger.of(context).showSnackBar(
+                          //   SnackBar(
+                          //     content: Text(
+                          //       gameState.isPlatinumCrestUnlocked 
+                          //         ? 'Platinum Crest: ENABLED' 
+                          //         : 'Platinum Crest: DISABLED'
+                          //     ),
+                          //     duration: const Duration(seconds: 1),
+                          //   ),
+                          // );
                         },
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -821,19 +821,19 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                                       Navigator.of(context).pop();
                                       gameState.enablePremium();
                                       Provider.of<GameService>(context, listen: false).saveGame();
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(
-                                          backgroundColor: Colors.green,
-                                          content: Row(
-                                            children: [
-                                              Icon(Icons.check_circle, color: Colors.white),
-                                              SizedBox(width: 8),
-                                              Text('Premium manually activated! +1500 Platinum!'),
-                                            ],
-                                          ),
-                                          duration: Duration(seconds: 4),
-                                        ),
-                                      );
+                                      // ScaffoldMessenger.of(context).showSnackBar(
+                                      //   const SnackBar(
+                                      //     backgroundColor: Colors.green,
+                                      //     content: Row(
+                                      //       children: [
+                                      //         Icon(Icons.check_circle, color: Colors.white),
+                                      //         SizedBox(width: 8),
+                                      //         Text('Premium manually activated! +1500 Platinum!'),
+                                      //       ],
+                                      //     ),
+                                      //     duration: Duration(seconds: 4),
+                                      //   ),
+                                      // );
                                     },
                                     style: TextButton.styleFrom(foregroundColor: Colors.red),
                                     child: const Text('Activate Premium'),
@@ -1540,22 +1540,22 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                                   }
                                 : () async {
                                     // Show loading state
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Row(
-                                          children: [
-                                            SizedBox(
-                                              width: 20,
-                                              height: 20,
-                                              child: CircularProgressIndicator(strokeWidth: 2),
-                                            ),
-                                            SizedBox(width: 16),
-                                            Text('Signing in to Google Play Games...'),
-                                          ],
-                                        ),
-                                        duration: Duration(seconds: 10),
-                                      ),
-                                    );
+                                    // ScaffoldMessenger.of(context).showSnackBar(
+                                    //   const SnackBar(
+                                    //     content: Row(
+                                    //       children: [
+                                    //         SizedBox(
+                                    //           width: 20,
+                                    //           height: 20,
+                                    //           child: CircularProgressIndicator(strokeWidth: 2),
+                                    //         ),
+                                    //         SizedBox(width: 16),
+                                    //         Text('Signing in to Google Play Games...'),
+                                    //       ],
+                                    //     ),
+                                    //     duration: Duration(seconds: 10),
+                                    //   ),
+                                    // );
                                     
                                     // Sign in
                                     final success = await authService.signIn();
@@ -1574,62 +1574,62 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                                       Provider.of<GameService>(context, listen: false).saveGame();
                                       
                                       // Show success message
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          content: Row(
-                                            children: [
-                                              const Icon(Icons.check_circle, color: Colors.white),
-                                              const SizedBox(width: 8),
-                                              Text('Successfully signed in to Google Play Games!${authService.playerName != null ? ' Welcome, ${authService.playerName}!' : ''}'),
-                                            ],
-                                          ),
-                                          backgroundColor: Colors.green,
-                                          duration: const Duration(seconds: 4),
-                                        ),
-                                      );
+                                      // ScaffoldMessenger.of(context).showSnackBar(
+                                      //   SnackBar(
+                                      //     content: Row(
+                                      //       children: [
+                                      //         const Icon(Icons.check_circle, color: Colors.white),
+                                      //         const SizedBox(width: 8),
+                                      //         Text('Successfully signed in to Google Play Games!${authService.playerName != null ? ' Welcome, ${authService.playerName}!' : ''}'),
+                                      //       ],
+                                      //     ),
+                                      //     backgroundColor: Colors.green,
+                                      //     duration: const Duration(seconds: 4),
+                                      //   ),
+                                      // );
                                     } else {
                                       // Show detailed error message
                                       final errorMsg = authService.lastError ?? 'Failed to sign in to Google Play Games';
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          content: Row(
-                                            children: [
-                                              const Icon(Icons.error, color: Colors.white),
-                                              const SizedBox(width: 8),
-                                              Expanded(child: Text(errorMsg)),
-                                            ],
-                                          ),
-                                          backgroundColor: Colors.red,
-                                          duration: const Duration(seconds: 6),
-                                          action: SnackBarAction(
-                                            label: 'Debug Info',
-                                            textColor: Colors.white,
-                                            onPressed: () {
-                                              // Show debug information
-                                              showDialog(
-                                                context: context,
-                                                builder: (context) => AlertDialog(
-                                                  title: const Text('Debug Information'),
-                                                  content: SingleChildScrollView(
-                                                    child: Text(
-                                                      authService.getDiagnosticInfo().entries
-                                                          .map((e) => '${e.key}: ${e.value}')
-                                                          .join('\n'),
-                                                      style: const TextStyle(fontFamily: 'monospace'),
-                                                    ),
-                                                  ),
-                                                  actions: [
-                                                    TextButton(
-                                                      onPressed: () => Navigator.of(context).pop(),
-                                                      child: const Text('Close'),
-                                                    ),
-                                                  ],
-                                                ),
-                                              );
-                                            },
-                                          ),
-                                        ),
-                                      );
+                                      // ScaffoldMessenger.of(context).showSnackBar(
+                                      //   SnackBar(
+                                      //     content: Row(
+                                      //       children: [
+                                      //         const Icon(Icons.error, color: Colors.white),
+                                      //         const SizedBox(width: 8),
+                                      //         Expanded(child: Text(errorMsg)),
+                                      //       ],
+                                      //     ),
+                                      //     backgroundColor: Colors.red,
+                                      //     duration: const Duration(seconds: 6),
+                                      //     action: SnackBarAction(
+                                      //       label: 'Debug Info',
+                                      //       textColor: Colors.white,
+                                      //       onPressed: () {
+                                      //         // Show debug information
+                                      //         showDialog(
+                                      //           context: context,
+                                      //           builder: (context) => AlertDialog(
+                                      //             title: const Text('Debug Information'),
+                                      //             content: SingleChildScrollView(
+                                      //               child: Text(
+                                      //                 authService.getDiagnosticInfo().entries
+                                      //                     .map((e) => '${e.key}: ${e.value}')
+                                      //                     .join('\n'),
+                                      //                 style: const TextStyle(fontFamily: 'monospace'),
+                                      //               ),
+                                      //             ),
+                                      //             actions: [
+                                      //               TextButton(
+                                      //                 onPressed: () => Navigator.of(context).pop(),
+                                      //                 child: const Text('Close'),
+                                      //               ),
+                                      //             ],
+                                      //           ),
+                                      //         );
+                                      //       },
+                                      //     ),
+                                      //   ),
+                                      // );
                                     }
                                   }
                               )
@@ -1961,7 +1961,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               },
             ),
 
-            // NOTIFICATION DEBUG SECTION (only in debug mode)
+            // Debug-only diagnostic tools
             if (kDebugMode) ...[
               const SizedBox(height: 16),
               
@@ -1970,19 +1970,19 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
                 decoration: BoxDecoration(
-                  color: Colors.orange.withOpacity(0.1),
+                  color: Colors.purple.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                  border: Border.all(color: Colors.purple.withOpacity(0.3)),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.bug_report, color: Colors.orange, size: 20),
+                    Icon(Icons.bug_report, color: Colors.purple, size: 20),
                     const SizedBox(width: 8),
                     const Text(
-                      'NOTIFICATION DEBUG',
+                      'DEBUG TOOLS',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: Colors.orange,
+                        color: Colors.purple,
                         fontSize: 12,
                       ),
                     ),
@@ -1992,145 +1992,72 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               
               const SizedBox(height: 8),
               
-              // Debug Buttons
-              Consumer<GameService>(
-                builder: (context, gameService, child) {
-                  return Column(
-                    children: [
-                      // Notification Diagnostics Button
-                      SizedBox(
-                        width: double.infinity,
-                        child: OutlinedButton.icon(
-                          onPressed: () async {
-                            debugPrint('🔍 User requested notification diagnostics');
-                            await gameService.printNotificationDiagnostics();
-                            
-                            if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Notification diagnostics printed to console'),
-                                  duration: Duration(seconds: 2),
-                                ),
-                              );
-                            }
-                          },
-                          icon: const Icon(Icons.info_outline, color: Colors.blue),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            side: const BorderSide(color: Colors.blue),
-                          ),
-                          label: const Text(
-                            'Print Notification Status',
-                            style: TextStyle(color: Colors.blue, fontSize: 12),
-                          ),
-                        ),
-                      ),
-                      
-                      const SizedBox(height: 8),
-                      
-                      // Test Notification Button  
-                      SizedBox(
-                        width: double.infinity,
-                        child: OutlinedButton.icon(
-                          onPressed: () async {
-                            debugPrint('🔍 User requested test notification schedule');
-                            
-                            // Force request permissions and schedule notification
-                            await gameService.requestNotificationPermissions(context, forceRequest: true);
-                            
-                            if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Test notification permissions requested - check console for details'),
-                                  duration: Duration(seconds: 3),
-                                ),
-                              );
-                            }
-                          },
-                          icon: const Icon(Icons.notification_add, color: Colors.green),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            side: const BorderSide(color: Colors.green),
-                          ),
-                          label: const Text(
-                            'Test Permission Request',
-                            style: TextStyle(color: Colors.green, fontSize: 12),
-                          ),
-                        ),
-                      ),
-                      
-                      const SizedBox(height: 8),
-                      
-                      // Audio System Diagnostic Button
-                      SizedBox(
-                        width: double.infinity,
-                        child: OutlinedButton.icon(
-                          onPressed: () async {
-                            debugPrint('🔍 User requested audio system diagnostic');
-                            
-                            final soundManager = SoundManager();
-                            final isHealthy = await soundManager.performAudioDiagnostic(verbose: true);
-                            
-                            if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(isHealthy 
-                                    ? 'Audio system is healthy ✅ - check console for details'
-                                    : 'Audio system needs recovery ⚠️ - check console for details'),
-                                  duration: const Duration(seconds: 3),
-                                  backgroundColor: isHealthy ? Colors.green : Colors.orange,
-                                ),
-                              );
-                            }
-                          },
-                          icon: const Icon(Icons.volume_up, color: Colors.purple),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            side: const BorderSide(color: Colors.purple),
-                          ),
-                          label: const Text(
-                            'Audio System Diagnostic',
-                            style: TextStyle(color: Colors.purple, fontSize: 12),
-                          ),
-                        ),
-                      ),
-                      
-                      const SizedBox(height: 8),
-                      
-                      // Emergency Audio Recovery Button
-                      SizedBox(
-                        width: double.infinity,
-                        child: OutlinedButton.icon(
-                          onPressed: () async {
-                            debugPrint('🚨 User requested emergency audio recovery');
-                            
-                            final soundManager = SoundManager();
-                            await soundManager.emergencyAudioRecovery();
-                            
-                            if (mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Emergency audio recovery completed 🔧'),
-                                  duration: Duration(seconds: 3),
-                                  backgroundColor: Colors.orange,
-                                ),
-                              );
-                            }
-                          },
-                          icon: const Icon(Icons.healing, color: Colors.red),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            side: const BorderSide(color: Colors.red),
-                          ),
-                          label: const Text(
-                            'Emergency Audio Recovery',
-                            style: TextStyle(color: Colors.red, fontSize: 12),
-                          ),
-                        ),
-                      ),
-                    ],
-                  );
-                },
+              // Audio System Diagnostic Button
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () async {
+                    debugPrint('🔍 User requested audio system diagnostic');
+                    
+                    final soundManager = SoundManager();
+                    final isHealthy = await soundManager.performAudioDiagnostic(verbose: true);
+                    
+                    if (mounted) {
+                      // ScaffoldMessenger.of(context).showSnackBar(
+                      //   SnackBar(
+                      //     content: Text(isHealthy 
+                      //       ? 'Audio system is healthy ✅ - check console for details'
+                      //       : 'Audio system needs recovery ⚠️ - check console for details'),
+                      //     duration: const Duration(seconds: 3),
+                      //     backgroundColor: isHealthy ? Colors.green : Colors.orange,
+                      //   ),
+                      // );
+                    }
+                  },
+                  icon: const Icon(Icons.volume_up, color: Colors.purple),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    side: const BorderSide(color: Colors.purple),
+                  ),
+                  label: const Text(
+                    'Audio System Diagnostic',
+                    style: TextStyle(color: Colors.purple, fontSize: 12),
+                  ),
+                ),
+              ),
+              
+              const SizedBox(height: 8),
+              
+              // Emergency Audio Recovery Button
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () async {
+                    debugPrint('🚨 User requested emergency audio recovery');
+                    
+                    final soundManager = SoundManager();
+                    await soundManager.emergencyAudioRecovery();
+                    
+                    if (mounted) {
+                      // ScaffoldMessenger.of(context).showSnackBar(
+                      //   const SnackBar(
+                      //     content: Text('Emergency audio recovery completed 🔧'),
+                      //     duration: Duration(seconds: 3),
+                      //     backgroundColor: Colors.orange,
+                      //   ),
+                      // );
+                    }
+                  },
+                  icon: const Icon(Icons.healing, color: Colors.red),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    side: const BorderSide(color: Colors.red),
+                  ),
+                  label: const Text(
+                    'Emergency Audio Recovery',
+                    style: TextStyle(color: Colors.red, fontSize: 12),
+                  ),
+                ),
               ),
             ],
 
@@ -2387,29 +2314,29 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                   width: double.infinity,
                   child: OutlinedButton.icon(
                     onPressed: () async {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Saving game...'),
-                          duration: Duration(seconds: 1),
-                        ),
-                      );
+                      // ScaffoldMessenger.of(context).showSnackBar(
+                      //   const SnackBar(
+                      //     content: Text('Saving game...'),
+                      //     duration: Duration(seconds: 1),
+                      //   ),
+                      // );
 
                       try {
                         await gameService.saveGame();
                         
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Game saved successfully!'),
-                            backgroundColor: Colors.green,
-                          ),
-                        );
+                        // ScaffoldMessenger.of(context).showSnackBar(
+                        //   const SnackBar(
+                        //     content: Text('Game saved successfully!'),
+                        //     backgroundColor: Colors.green,
+                        //   ),
+                        // );
                       } catch (e) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text('Failed to save game: $e'),
-                            backgroundColor: Colors.red,
-                          ),
-                        );
+                        // ScaffoldMessenger.of(context).showSnackBar(
+                        //   SnackBar(
+                        //     content: Text('Failed to save game: $e'),
+                        //     backgroundColor: Colors.red,
+                        //   ),
+                        // );
                       }
                     },
                     icon: const Icon(
@@ -3035,13 +2962,13 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               // Check if billing is available
               if (!gameService.isPremiumAvailable()) {
                 Navigator.of(context).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Purchase not available. Please try again later.'),
-                    backgroundColor: Colors.red,
-                    duration: Duration(seconds: 3),
-                  ),
-                );
+                // ScaffoldMessenger.of(context).showSnackBar(
+                //   const SnackBar(
+                //     content: Text('Purchase not available. Please try again later.'),
+                //     backgroundColor: Colors.red,
+                //     duration: Duration(seconds: 3),
+                //   ),
+                // );
                 return;
               }
               
@@ -3071,13 +2998,13 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                       onPressed: () {
                         print('🔴 USER: Manual dialog close requested');
                         _forceClosePurchaseDialog();
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            backgroundColor: Colors.orange,
-                            content: Text('Purchase dialog closed manually. If payment was successful, premium features should activate automatically.'),
-                            duration: Duration(seconds: 5),
-                          ),
-                        );
+                        // ScaffoldMessenger.of(context).showSnackBar(
+                        //   const SnackBar(
+                        //     backgroundColor: Colors.orange,
+                        //     content: Text('Purchase dialog closed manually. If payment was successful, premium features should activate automatically.'),
+                        //     duration: Duration(seconds: 5),
+                        //   ),
+                        // );
                       },
                       child: const Text('Cancel'),
                     ),
@@ -3093,19 +3020,19 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                   
                   // Show timeout error message
                   if (mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        backgroundColor: Colors.orange,
-                        content: Row(
-                          children: [
-                            Icon(Icons.warning, color: Colors.white),
-                            SizedBox(width: 8),
-                            Expanded(child: Text('Purchase processing timed out. If payment was successful, premium features should activate automatically or you can use "Restore Premium".')),
-                          ],
-                        ),
-                        duration: Duration(seconds: 6),
-                      ),
-                    );
+                    // ScaffoldMessenger.of(context).showSnackBar(
+                    //   const SnackBar(
+                    //     backgroundColor: Colors.orange,
+                    //     content: Row(
+                    //       children: [
+                    //         Icon(Icons.warning, color: Colors.white),
+                    //         SizedBox(width: 8),
+                    //         Expanded(child: Text('Purchase processing timed out. If payment was successful, premium features should activate automatically or you can use "Restore Premium".')),
+                    //       ],
+                    //     ),
+                    //     duration: Duration(seconds: 6),
+                    //   ),
+                    // );
                   }
                 }
               });
@@ -3146,19 +3073,19 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                           gameService.playAchievementMilestoneSound();
                           
                           // Show success message
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              backgroundColor: Colors.green,
-                              content: const Row(
-                                children: [
-                                  Icon(Icons.check_circle, color: Colors.white),
-                                  SizedBox(width: 8),
-                                  Text('Premium features activated! +1500 Platinum!'),
-                                ],
-                              ),
-                              duration: const Duration(seconds: 4),
-                            ),
-                          );
+                          // ScaffoldMessenger.of(context).showSnackBar(
+                          //   SnackBar(
+                          //     backgroundColor: Colors.green,
+                          //     content: const Row(
+                          //       children: [
+                          //         Icon(Icons.check_circle, color: Colors.white),
+                          //         SizedBox(width: 8),
+                          //         Text('Premium features activated! +1500 Platinum!'),
+                          //       ],
+                          //     ),
+                          //     duration: const Duration(seconds: 4),
+                          //   ),
+                          // );
                         } catch (e) {
                           print('🔴 Error in purchase success handler: $e');
                         }
@@ -3177,19 +3104,19 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                             displayError = 'Purchase was cancelled';
                           }
                           
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              backgroundColor: Colors.red,
-                              content: Row(
-                                children: [
-                                  const Icon(Icons.error_outline, color: Colors.white),
-                                  const SizedBox(width: 8),
-                                  Expanded(child: Text(displayError)),
-                                ],
-                              ),
-                              duration: const Duration(seconds: 4),
-                            ),
-                          );
+                          // ScaffoldMessenger.of(context).showSnackBar(
+                          //   SnackBar(
+                          //     backgroundColor: Colors.red,
+                          //     content: Row(
+                          //       children: [
+                          //         const Icon(Icons.error_outline, color: Colors.white),
+                          //         const SizedBox(width: 8),
+                          //         Expanded(child: Text(displayError)),
+                          //       ],
+                          //     ),
+                          //     duration: const Duration(seconds: 4),
+                          //   ),
+                          // );
                         } catch (e) {
                           print('🔴 Error in purchase error handler: $e');
                         }
@@ -3320,19 +3247,19 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         // Show success message only if widget still mounted
         if (mounted) {
           try {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                backgroundColor: Colors.green,
-                content: Row(
-                  children: [
-                    Icon(Icons.check_circle, color: Colors.white),
-                    SizedBox(width: 8),
-                    Text('Premium features restored! +1500 Platinum!'),
-                  ],
-                ),
-                duration: Duration(seconds: 4),
-              ),
-            );
+            // ScaffoldMessenger.of(context).showSnackBar(
+            //   const SnackBar(
+            //     backgroundColor: Colors.green,
+            //     content: Row(
+            //       children: [
+            //         Icon(Icons.check_circle, color: Colors.white),
+            //         SizedBox(width: 8),
+            //         Text('Premium features restored! +1500 Platinum!'),
+            //       ],
+            //     ),
+            //     duration: Duration(seconds: 4),
+            //   ),
+            // );
           } catch (e) {
             print("🔴 Error showing success message: $e");
           }
@@ -3346,19 +3273,19 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         // Show error message only if widget still mounted
         if (mounted) {
           try {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                backgroundColor: Colors.orange,
-                content: Row(
-                  children: [
-                    Icon(Icons.info_outline, color: Colors.white),
-                    SizedBox(width: 8),
-                    Expanded(child: Text('No premium purchase found. You can purchase premium below, or contact support if you believe this is an error.')),
-                  ],
-                ),
-                duration: Duration(seconds: 6),
-              ),
-            );
+            // ScaffoldMessenger.of(context).showSnackBar(
+            //   const SnackBar(
+            //     backgroundColor: Colors.orange,
+            //     content: Row(
+            //       children: [
+            //         Icon(Icons.info_outline, color: Colors.white),
+            //         SizedBox(width: 8),
+            //         Expanded(child: Text('No premium purchase found. You can purchase premium below, or contact support if you believe this is an error.')),
+            //       ],
+            //     ),
+            //     duration: Duration(seconds: 6),
+            //   ),
+            // );
           } catch (e) {
             print("🔴 Error showing error message: $e");
           }
@@ -3381,19 +3308,19 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       // Show error message
       if (mounted) {
         try {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              backgroundColor: Colors.red,
-              content: Row(
-                children: [
-                  const Icon(Icons.error_outline, color: Colors.white),
-                  const SizedBox(width: 8),
-                  Expanded(child: Text('Failed to restore premium: ${e.toString().split('\n').first}')),
-                ],
-              ),
-              duration: const Duration(seconds: 4),
-            ),
-          );
+          // ScaffoldMessenger.of(context).showSnackBar(
+          //   SnackBar(
+          //     backgroundColor: Colors.red,
+          //     content: Row(
+          //       children: [
+          //         const Icon(Icons.error_outline, color: Colors.white),
+          //         const SizedBox(width: 8),
+          //         Expanded(child: Text('Failed to restore premium: ${e.toString().split('\n').first}')),
+          //       ],
+          //     ),
+          //     duration: const Duration(seconds: 4),
+          //   ),
+          // );
         } catch (messageError) {
           print("🔴 Error showing error message: $messageError");
         }
@@ -3462,19 +3389,19 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               // Double-check that user hasn't already used restore
               if (gameState.hasUsedPremiumRestore) {
                 navigator.pop();
-                scaffoldMessenger.showSnackBar(
-                  const SnackBar(
-                    backgroundColor: Colors.orange,
-                    content: Row(
-                      children: [
-                        Icon(Icons.info_outline, color: Colors.white),
-                        SizedBox(width: 8),
-                        Text('You have already used your one-time premium restore.'),
-                      ],
-                    ),
-                    duration: Duration(seconds: 4),
-                  ),
-                );
+                // scaffoldMessenger.showSnackBar(
+                //   const SnackBar(
+                //     backgroundColor: Colors.orange,
+                //     content: Row(
+                //       children: [
+                //         Icon(Icons.info_outline, color: Colors.white),
+                //         SizedBox(width: 8),
+                //         Text('You have already used your one-time premium restore.'),
+                //       ],
+                //     ),
+                //     duration: Duration(seconds: 4),
+                //   ),
+                // );
                 return;
               }
               
@@ -3542,12 +3469,12 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           } catch (e) {
             // Show error message if can't launch
             if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Could not open feedback form. Please try again later.'),
-                  backgroundColor: Colors.orange,
-                ),
-              );
+              // ScaffoldMessenger.of(context).showSnackBar(
+              //   const SnackBar(
+              //     content: Text('Could not open feedback form. Please try again later.'),
+              //     backgroundColor: Colors.orange,
+              //   ),
+              // );
             }
           }
         },

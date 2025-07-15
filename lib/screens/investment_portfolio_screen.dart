@@ -1291,18 +1291,18 @@ class _InvestmentPortfolioScreenState extends State<InvestmentPortfolioScreen> {
                         
                         Navigator.pop(context);
                         
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              success 
-                                  ? '${isBuying ? 'Bought' : 'Sold'} $quantity shares of ${investment.name}'
-                                  : 'Transaction failed',
-                            ),
-                            backgroundColor: success 
-                                ? (isBuying ? const Color(0xFF4CAF50) : const Color(0xFF2196F3))
-                                : const Color(0xFFE53935),
-                          ),
-                        );
+                        // ScaffoldMessenger.of(context).showSnackBar(
+                        //   SnackBar(
+                        //     content: Text(
+                        //       success 
+                        //           ? '${isBuying ? 'Bought' : 'Sold'} $quantity shares of ${investment.name}'
+                        //           : 'Transaction failed',
+                        //     ),
+                        //     backgroundColor: success 
+                        //         ? (isBuying ? const Color(0xFF4CAF50) : const Color(0xFF2196F3))
+                        //         : const Color(0xFFE53935),
+                        //   ),
+                        // );
                       } : null,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: isBuying ? const Color(0xFF4CAF50) : const Color(0xFFE53935),

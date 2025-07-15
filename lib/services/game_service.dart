@@ -309,11 +309,7 @@ class GameService {
     return await _appLifecycleService.getPendingNotificationsCount();
   }
 
-  /// DIAGNOSTIC: Print comprehensive notification system status
-  /// Use this to debug notification issues - call from UI or console
-  Future<void> printNotificationDiagnostics() async {
-    await _appLifecycleService.printNotificationDiagnostics();
-  }
+
 
   // Billing methods delegated to BillingService
   

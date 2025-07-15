@@ -235,12 +235,12 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
           _isWatchingAd = false;
         });
         
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Ad not available. Please try again later.'),
-            duration: Duration(seconds: 3),
-          ),
-        );
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   const SnackBar(
+        //     content: Text('Ad not available. Please try again later.'),
+        //     duration: Duration(seconds: 3),
+        //   ),
+        // );
       },
     );
   }

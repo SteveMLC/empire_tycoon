@@ -323,12 +323,12 @@ class _EventNotificationState extends State<EventNotification> {
             widget.onResolved();
           } : () {
             // Show cannot afford message
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('You need \$${fee.toStringAsFixed(0)} to resolve this event.'),
-                duration: const Duration(seconds: 2),
-              ),
-            );
+            // ScaffoldMessenger.of(context).showSnackBar(
+            //   SnackBar(
+            //     content: Text('You need \$${fee.toStringAsFixed(0)} to resolve this event.'),
+            //     duration: const Duration(seconds: 2),
+            //   ),
+            // );
           },
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -416,34 +416,34 @@ class _EventNotificationState extends State<EventNotification> {
                         print('❌ Error in event resolution: $e');
                       }
                       // Show error to user
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Error resolving event. Please try again.'),
-                          duration: Duration(seconds: 3),
-                        ),
-                      );
+                      // ScaffoldMessenger.of(context).showSnackBar(
+                      //   const SnackBar(
+                      //     content: Text('Error resolving event. Please try again.'),
+                      //     duration: Duration(seconds: 3),
+                      //   ),
+                      // );
                     }
                   } else {
                     if (kDebugMode) {
                       print('❌ Warning: Expected EventAdSkip reward but received: $rewardType');
                     }
                     // Show warning to user about incorrect reward
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Unexpected reward type: $rewardType. Please try again.'),
-                        duration: const Duration(seconds: 3),
-                      ),
-                    );
+                    // ScaffoldMessenger.of(context).showSnackBar(
+                    //   SnackBar(
+                    //     content: Text('Unexpected reward type: $rewardType. Please try again.'),
+                    //     duration: const Duration(seconds: 3),
+                    //   ),
+                    // );
                   }
                 },
                 onAdFailure: () {
                   // Ad failed to show, show error message
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Ad not available. Please try again later.'),
-                      duration: Duration(seconds: 3),
-                    ),
-                  );
+                  // ScaffoldMessenger.of(context).showSnackBar(
+                  //   const SnackBar(
+                  //     content: Text('Ad not available. Please try again later.'),
+                  //     duration: Duration(seconds: 3),
+                  //   ),
+                  // );
                 },
               );
             }

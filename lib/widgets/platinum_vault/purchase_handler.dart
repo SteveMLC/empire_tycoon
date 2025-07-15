@@ -45,23 +45,23 @@ class PurchaseHandler {
         message += ' $extraMessage';
       }
       
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.check_circle, color: Colors.white),
-              const SizedBox(width: 8),
-              Flexible(child: Text(message)),
-            ],
-          ),
-          backgroundColor: Colors.green.shade600,
-          duration: const Duration(seconds: 3),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-        ),
-      );
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   SnackBar(
+      //     content: Row(
+      //       children: [
+      //         const Icon(Icons.check_circle, color: Colors.white),
+      //         const SizedBox(width: 8),
+      //         Flexible(child: Text(message)),
+      //       ],
+      //     ),
+      //     backgroundColor: Colors.green.shade600,
+      //     duration: const Duration(seconds: 3),
+      //     behavior: SnackBarBehavior.floating,
+      //     shape: RoundedRectangleBorder(
+      //       borderRadius: BorderRadius.circular(10),
+      //     ),
+      //   ),
+      // );
     } else {
       String errorMessage = 'Purchase failed.';
       if (gameState.platinumPoints < item.cost) {
@@ -75,23 +75,23 @@ class PurchaseHandler {
         errorMessage = 'Could not purchase ${item.name}.';
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.error_outline, color: Colors.white),
-              const SizedBox(width: 8),
-              Flexible(child: Text(errorMessage)),
-            ],
-          ),
-          backgroundColor: Colors.red.shade600,
-          duration: const Duration(seconds: 3),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-        ),
-      );
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   SnackBar(
+      //     content: Row(
+      //       children: [
+      //         const Icon(Icons.error_outline, color: Colors.white),
+      //         const SizedBox(width: 8),
+      //         Flexible(child: Text(errorMessage)),
+      //       ],
+      //     ),
+      //     backgroundColor: Colors.red.shade600,
+      //     duration: const Duration(seconds: 3),
+      //     behavior: SnackBarBehavior.floating,
+      //     shape: RoundedRectangleBorder(
+      //       borderRadius: BorderRadius.circular(10),
+      //     ),
+      //   ),
+      // );
     }
   }
 
@@ -103,23 +103,23 @@ class PurchaseHandler {
       _showBusinessSelectionDialog(context, gameState, item);
     } else if (item.id == 'platinum_yacht') {
       if (gameState.isPlatinumYachtUnlocked) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Platinum Yacht already unlocked."),
-            backgroundColor: Colors.orange,
-          ),
-        );
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   const SnackBar(
+        //     content: Text("Platinum Yacht already unlocked."),
+        //     backgroundColor: Colors.orange,
+        //   ),
+        // );
         return;
       }
       _showYachtDockingDialog(context, gameState, item);
     } else if (item.id == 'platinum_spire') {
       if (gameState.platinumSpireLocaleId != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Platinum Spire Trophy already placed."),
-            backgroundColor: Colors.orange,
-          ),
-        );
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   const SnackBar(
+        //     content: Text("Platinum Spire Trophy already placed."),
+        //     backgroundColor: Colors.orange,
+        //   ),
+        // );
         return;
       }
       _showSpireLocaleSelectionDialog(context, gameState, item);
@@ -141,12 +141,12 @@ class PurchaseHandler {
       // Special handling for Platinum Mogul to ensure it ONLY unlocks mogul avatars
       if (gameState.isMogulAvatarsUnlocked) {
         // Already unlocked
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("You already have the Mogul Avatars unlocked!"),
-            backgroundColor: Colors.orange,
-          ),
-        );
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   const SnackBar(
+        //     content: Text("You already have the Mogul Avatars unlocked!"),
+        //     backgroundColor: Colors.orange,
+        //   ),
+        // );
         return;
       }
       
@@ -182,22 +182,22 @@ class PurchaseHandler {
         .toList();
 
     if (gameState.platinumFoundationsApplied.length >= 5) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Maximum number of Foundations (5) already applied."),
-          backgroundColor: Colors.orange,
-        ),
-      );
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   const SnackBar(
+      //     content: Text("Maximum number of Foundations (5) already applied."),
+      //     backgroundColor: Colors.orange,
+      //   ),
+      // );
       return;
     }
 
     if (eligibleLocales.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("No eligible locations available to apply Foundation."),
-          backgroundColor: Colors.orange,
-        ),
-      );
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   const SnackBar(
+      //     content: Text("No eligible locations available to apply Foundation."),
+      //     backgroundColor: Colors.orange,
+      //   ),
+      // );
       return;
     }
 
@@ -246,22 +246,22 @@ class PurchaseHandler {
 
     // Check if yacht already docked (should technically be covered by isPlatinumYachtUnlocked, but good safeguard)
     if (gameState.platinumYachtDockedLocaleId != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Yacht already docked elsewhere."),
-          backgroundColor: Colors.orange,
-        ),
-      );
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   const SnackBar(
+      //     content: Text("Yacht already docked elsewhere."),
+      //     backgroundColor: Colors.orange,
+      //   ),
+      // );
       return;
     }
 
     if (eligibleLocales.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("No eligible mega-locales unlocked to dock the yacht."),
-          backgroundColor: Colors.orange,
-        ),
-      );
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   const SnackBar(
+      //     content: Text("No eligible mega-locales unlocked to dock the yacht."),
+      //     backgroundColor: Colors.orange,
+      //   ),
+      // );
       return;
     }
 
@@ -770,12 +770,12 @@ class PurchaseHandler {
         .toList();
 
     if (eligibleLocales.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("No eligible locations available to place the Spire Trophy."),
-          backgroundColor: Colors.orange,
-        ),
-      );
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   const SnackBar(
+      //     content: Text("No eligible locations available to place the Spire Trophy."),
+      //     backgroundColor: Colors.orange,
+      //   ),
+      // );
       return;
     }
 

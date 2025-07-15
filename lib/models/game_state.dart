@@ -24,6 +24,7 @@ import '../data/platinum_vault_items.dart'; // ADDED: Import for vault items
 import '../utils/number_formatter.dart'; // ADDED: Import for formatting
 import 'mogul_avatar.dart'; // ADDED: Import for mogul avatars
 import '../services/income_service.dart'; // ADDED: Import for IncomeService
+import '../services/admob_service.dart'; // ADDED: Import for AdMobService integration
 
 part 'game_state/initialization_logic.dart';
 part 'game_state/business_logic.dart';
@@ -51,6 +52,7 @@ class GameState with ChangeNotifier {
   DateTime? _lastInvestmentMicroUpdateTime; // Track last investment micro-update time
   DateTime? _lastDailyCheckTime; // Track last daily check time
   DateTime? _lastNetWorthUpdateTime; // Track last net worth update time
+  DateTime? _lastEventStateCheckTime; // Track last event state check time for AdMobService
 
   // Timer state tracking
   bool timersActive = false;
@@ -95,6 +97,9 @@ class GameState with ChangeNotifier {
   // ADDED: Premium avatar tracking
   bool isPremiumAvatarsUnlocked = false;
   String? selectedPremiumAvatarId;
+  
+  // ADDED: AdMobService integration for predictive ad loading
+  AdMobService? _adMobService;
   
   // >> START: Platinum Points System Fields <<
   int platinumPoints = 0;
@@ -1602,5 +1607,34 @@ class GameState with ChangeNotifier {
   void setOfflineIncomeAdWatched(bool value) {
     _offlineIncomeAdWatched = value;
     notifyListeners();
+  }
+  
+  // ADDED: AdMobService integration methods for predictive ad loading
+  void setAdMobService(AdMobService adMobService) {
+    _adMobService = adMobService;
+    // Update initial state when AdMobService is set
+    _updateAdMobServiceGameState();
+  }
+  
+  void _updateAdMobServiceGameState() {
+    if (_adMobService != null) {
+      _adMobService!.updateGameState(
+        businessCount: businesses.length,
+        firstBusinessLevel: businesses.isNotEmpty ? businesses.first.level : 1,
+        hasActiveEvents: activeEvents.isNotEmpty,
+        hasOfflineIncome: showOfflineIncomeNotification,
+      );
+    }
+  }
+  
+  // Call this method whenever event state changes
+  void notifyAdMobServiceOfEventStateChange() {
+    if (_adMobService != null) {
+      final bool hasActiveEvents = activeEvents.isNotEmpty;
+      if (kDebugMode) {
+        print('🎯 Notifying AdMobService: hasActiveEvents = $hasActiveEvents (${activeEvents.length} events)');
+      }
+      _adMobService!.updateGameState(hasActiveEvents: hasActiveEvents);
+    }
   }
 }

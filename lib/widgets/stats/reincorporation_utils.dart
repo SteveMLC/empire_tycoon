@@ -116,12 +116,12 @@ class ReincorporationUtils {
               Navigator.of(context).pop();
 
               if (success) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Successfully re-incorporated! New passive bonus: ${gameState.incomeMultiplier.toStringAsFixed(2)}x'),
-                    backgroundColor: Colors.green,
-                  ),
-                );
+                // ScaffoldMessenger.of(context).showSnackBar(
+                //   SnackBar(
+                //     content: Text('Successfully re-incorporated! New passive bonus: ${gameState.incomeMultiplier.toStringAsFixed(2)}x'),
+                //     backgroundColor: Colors.green,
+                //   ),
+                // );
 
                 Provider.of<GameService>(context, listen: false).playSound(() => Provider.of<GameService>(context, listen: false).soundManager.playEventReincorporationSound());
               }
