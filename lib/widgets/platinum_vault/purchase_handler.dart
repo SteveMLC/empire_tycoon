@@ -103,12 +103,8 @@ class PurchaseHandler {
       _showBusinessSelectionDialog(context, gameState, item);
     } else if (item.id == 'platinum_yacht') {
       if (gameState.isPlatinumYachtUnlocked) {
-        // ScaffoldMessenger.of(context).showSnackBar(
-        //   const SnackBar(
-        //     content: Text("Platinum Yacht already unlocked."),
-        //     backgroundColor: Colors.orange,
-        //   ),
-        // );
+        // Show yacht management dialog instead of blocking
+        _showYachtManagementDialog(context, gameState, item);
         return;
       }
       _showYachtDockingDialog(context, gameState, item);
@@ -223,6 +219,230 @@ class PurchaseHandler {
                 item, 
                 gameState, 
                 selectedLocaleName: selectedLocaleName
+              );
+            }
+          },
+        );
+      },
+    );
+  }
+
+  /// Show yacht management dialog for already owned yacht
+  static void _showYachtManagementDialog(BuildContext context, GameState gameState, VaultItem item) {
+    // Define eligible "mega locales"
+    const List<String> megaLocaleIds = [
+      'dubai_uae', 'hong_kong', 'los_angeles', 'new_york_city', 
+      'platinum_islands', 'miami_florida', 'london_uk', 'singapore'
+    ];
+
+    // Filter eligible locales: must be in megaLocaleIds AND unlocked
+    final eligibleLocales = gameState.realEstateLocales
+        .where((locale) => megaLocaleIds.contains(locale.id) && locale.unlocked)
+        .toList();
+
+    // Find current docking location
+    String currentLocationName = 'Unknown';
+    if (gameState.platinumYachtDockedLocaleId != null) {
+      final currentLocale = gameState.realEstateLocales.firstWhere(
+        (locale) => locale.id == gameState.platinumYachtDockedLocaleId,
+        orElse: () => RealEstateLocale(
+          id: '', 
+          name: 'Unknown', 
+          properties: [], 
+          theme: '', 
+          icon: Icons.error, 
+          unlocked: false
+        ),
+      );
+      currentLocationName = currentLocale.name;
+    }
+
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF1A2332),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: const BorderSide(color: Color(0xFF4A90E2), width: 2),
+          ),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade100,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.sailing,
+                  color: Colors.blue.shade700,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'Platinum Yacht Management',
+                  style: TextStyle(
+                    color: Color(0xFF4A90E2),
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Current Status
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.blue.shade200, width: 1),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.location_on,
+                          color: Colors.blue.shade700,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'Currently Docked At:',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      currentLocationName,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blue.shade800,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.trending_up,
+                          color: Colors.green.shade600,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '+5% Income Boost Active',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.green.shade700,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Would you like to relocate your yacht to a different mega-locale?',
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              style: TextButton.styleFrom(foregroundColor: Colors.white70),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _showYachtRelocationDialog(context, gameState, item, eligibleLocales);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF4A90E2),
+                foregroundColor: Colors.white,
+              ),
+              icon: const Icon(Icons.swap_horiz, size: 18),
+              label: const Text('Relocate Yacht'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// Show dialog for relocating yacht to a different location
+  static void _showYachtRelocationDialog(BuildContext context, GameState gameState, VaultItem item, List<RealEstateLocale> eligibleLocales) {
+    // Remove current location from eligible options to prevent same-location selection
+    final relocateOptions = eligibleLocales
+        .where((locale) => locale.id != gameState.platinumYachtDockedLocaleId)
+        .toList();
+
+    if (relocateOptions.isEmpty) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          backgroundColor: const Color(0xFF1A2332),
+          title: const Text('No Relocation Options', style: TextStyle(color: Colors.white)),
+          content: const Text(
+            'No other mega-locales are available for yacht relocation.',
+            style: TextStyle(color: Colors.white70),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return YachtRelocationDialog(
+          currentLocationId: gameState.platinumYachtDockedLocaleId,
+          eligibleLocales: relocateOptions,
+          onConfirm: (selectedLocaleId) {
+            if (selectedLocaleId != null) {
+              // Update yacht docking location
+              gameState.platinumYachtDockedLocaleId = selectedLocaleId;
+              gameState.notifyListeners();
+              
+              final selectedLocaleName = relocateOptions
+                  .firstWhere((l) => l.id == selectedLocaleId)
+                  .name;
+              
+              // Show success message
+              showPurchaseFeedback(
+                context, 
+                true, 
+                item, 
+                gameState, 
+                selectedLocaleName: selectedLocaleName,
+                extraMessage: 'Yacht successfully relocated!'
               );
             }
           },

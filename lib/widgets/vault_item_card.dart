@@ -186,6 +186,9 @@ class _VaultItemCardState extends State<VaultItemCard> with SingleTickerProvider
     // --- End purchasability logic --- 
 
     bool isBuyButtonEnabled = canAfford && isPurchasable;
+    
+    // Special case: Allow interaction with owned yacht for management
+    bool isInteractionEnabled = isBuyButtonEnabled || (widget.item.id == 'platinum_yacht' && widget.isOwned);
 
     // --- Determine Button Text and Style based on state --- 
     String buttonText = "Purchase"; // Default
@@ -207,11 +210,19 @@ class _VaultItemCardState extends State<VaultItemCard> with SingleTickerProvider
       buttonBorderColor = Colors.grey.shade700;
       buttonShadow = [];
     } else if (isOneTimeOwned) {
-      buttonText = "Owned";
-      buttonColor = const Color(0xFFFFD700); // Gold color for owned
-      buttonTextColor = Colors.black;
-      buttonBorderColor = const Color(0xFFFFD700).withOpacity(0.8);
-       buttonShadow = [BoxShadow(color: const Color(0xFFFFD700).withOpacity(0.3), blurRadius: 8)];
+      if (widget.item.id == 'platinum_yacht') {
+        buttonText = "Manage";
+        buttonColor = const Color(0xFF4A90E2); // Blue color for yacht management
+        buttonTextColor = Colors.white;
+        buttonBorderColor = const Color(0xFF4A90E2).withOpacity(0.8);
+        buttonShadow = [BoxShadow(color: const Color(0xFF4A90E2).withOpacity(0.3), blurRadius: 8)];
+      } else {
+        buttonText = "Owned";
+        buttonColor = const Color(0xFFFFD700); // Gold color for owned
+        buttonTextColor = Colors.black;
+        buttonBorderColor = const Color(0xFFFFD700).withOpacity(0.8);
+        buttonShadow = [BoxShadow(color: const Color(0xFFFFD700).withOpacity(0.3), blurRadius: 8)];
+      }
     } else if (isMaxedOut) {
        buttonText = "Maxed Out";
        buttonColor = Colors.grey.shade700;
@@ -267,7 +278,7 @@ class _VaultItemCardState extends State<VaultItemCard> with SingleTickerProvider
 
     return MouseRegion(
       onEnter: (_) {
-        if (isBuyButtonEnabled) {
+        if (isInteractionEnabled) {
           setState(() => _isHovering = true);
           _animationController.forward();
         }
@@ -280,7 +291,7 @@ class _VaultItemCardState extends State<VaultItemCard> with SingleTickerProvider
         animation: _animationController,
         builder: (context, child) {
           return GestureDetector(
-            onTap: isBuyButtonEnabled ? widget.onBuy : null,
+            onTap: isInteractionEnabled ? widget.onBuy : null,
             child: Transform.scale(
               scale: isBuyButtonEnabled ? _scaleAnimation.value : 1.0,
               child: Container(
@@ -318,13 +329,13 @@ class _VaultItemCardState extends State<VaultItemCard> with SingleTickerProvider
                 child: Material(
                   color: Colors.transparent,
                   child: InkWell(
-                    splashColor: isBuyButtonEnabled 
+                    splashColor: isInteractionEnabled 
                         ? const Color(0xFFFFD700).withOpacity(0.3) 
                         : Colors.transparent,
-                    highlightColor: isBuyButtonEnabled 
+                    highlightColor: isInteractionEnabled 
                         ? const Color(0xFFAA00FF).withOpacity(0.1) 
                         : Colors.transparent,
-                    onTap: isBuyButtonEnabled ? widget.onBuy : null,
+                    onTap: isInteractionEnabled ? widget.onBuy : null,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [

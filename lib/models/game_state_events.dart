@@ -427,7 +427,19 @@ extension GameStateEvents on GameState {
         continue;
       }
       
-      // Check if time-based events have expired
+      // Check if ANY event has auto-expired (all events now have auto-expiry)
+      if (event.hasExpired) {
+        event.resolve(); // Mark as resolved
+        eventsToRemove.add(event);
+        hasChanges = true;
+        print('⏰ Event auto-expired: ${event.name} (${event.timeRemainingFormatted} remaining)');
+        
+        // Track the resolution
+        this.trackEventResolution(event, "auto_expire");
+        continue; // Skip further processing for expired events
+      }
+      
+      // Legacy support: Check if time-based events have expired (for backwards compatibility)
       if (event.resolution.type == EventResolutionType.timeBased) {
         final timeLimit = event.resolution.value as int;
         final elapsed = now.difference(event.startTime).inSeconds;

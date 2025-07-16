@@ -270,7 +270,7 @@ class _EventCornerBadgeState extends State<EventCornerBadge> {
               ),
               SizedBox(height: 12),
               Text(
-                'Complete challenges to fix them or let them expire.',
+                'Complete challenges to fix them or wait 60 minutes for auto-expiry.',
                 style: TextStyle(fontSize: 16, height: 1.4),
               ),
               SizedBox(height: 16),

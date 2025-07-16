@@ -8,6 +8,7 @@ import '../widgets/hustle/upgrade_dialog.dart';
 import '../widgets/hustle/boost_dialog.dart';
 import '../utils/number_formatter.dart';
 import '../utils/matrix4_fallback.dart';
+import '../utils/responsive_utils.dart';
 
 // Helper function to avoid extension conflicts
 void _callTapOnGameState(GameState gameState) {
@@ -247,6 +248,9 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
 
   @override
   Widget build(BuildContext context) {
+    final responsive = context.responsive;
+    final layoutConstraints = responsive.layoutConstraints;
+    
     return Consumer<GameState>(
       builder: (context, gameState, child) {
         final int nextLevel = gameState.clickLevel + 1;
@@ -279,20 +283,27 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
         // Hide boost section ONLY when achievement notification is visible
         final bool showBoost = !gameState.isAchievementNotificationVisible;
         
+        // RESPONSIVE LAYOUT: Optimize for device size and ensure tap zone visibility
         return Column(
           children: [
-            _buildClickInfoCard(gameState, progress, nextClickValue),
+            // Click info card - responsive sizing
+            _buildClickInfoCard(gameState, progress, nextClickValue, responsive),
+            
+            // Boost card - conditionally shown and responsive
             if (showBoost)
-              _buildBoostCard(gameState),
+              _buildBoostCard(gameState, responsive),
+            
+            // CRITICAL FIX: Expanded tap area with guaranteed minimum space
             Expanded(
-              flex: 6,
-              child: Padding(
-                padding: const EdgeInsets.all(12.0),
-                child: _buildClickArea(gameState),
+              flex: responsive.flexValues.content,
+              child: ResponsiveContainer(
+                padding: EdgeInsets.all(layoutConstraints.cardPadding),
+                child: _buildClickArea(gameState, responsive),
               ),
             ),
             
-            const SizedBox(height: 80),
+            // RESPONSIVE BOTTOM SPACING: Ensure safe area for navigation
+            SizedBox(height: responsive.safeAreaBottom),
           ],
         );
       },
@@ -315,19 +326,19 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
     return baseValue * gameState.prestigeMultiplier;
   }
   
-  Widget _buildClickInfoCard(GameState gameState, double progress, double nextClickValue) {
+  Widget _buildClickInfoCard(GameState gameState, double progress, double nextClickValue, ResponsiveUtils responsive) {
     // Calculate effective click value including ALL boosts (permanent, ad, platinum)
     double finalClickValue = _calculateClickValue(gameState);
 
     return Card(
-      margin: const EdgeInsets.all(16.0),
+      margin: responsive.margin(all: 16.0),
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16.0),
+        borderRadius: BorderRadius.circular(responsive.spacing(16.0)),
       ),
       elevation: 4,
       child: Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16.0),
+          borderRadius: BorderRadius.circular(responsive.spacing(16.0)),
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -337,7 +348,7 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
             ],
           ),
         ),
-        padding: const EdgeInsets.all(16.0),
+        padding: responsive.padding(all: 16.0),
         child: Column(
           children: [
             Row(
@@ -348,95 +359,83 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
                     children: [
                       TextSpan(
                         text: '${NumberFormatter.formatCurrency(finalClickValue)} ',
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
+                        style: TextStyle(
                           color: Colors.white,
+                          fontSize: responsive.fontSize(18),
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const TextSpan(
+                      TextSpan(
                         text: 'per click',
                         style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.white70,
+                          color: Colors.white.withOpacity(0.8),
+                          fontSize: responsive.fontSize(14),
                         ),
                       ),
                     ],
                   ),
                 ),
-                
                 if (gameState.clickLevel < 20)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.arrow_upward,
-                          color: Colors.greenAccent,
-                          size: 14,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${NumberFormatter.formatCurrency(nextClickValue)} per click',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.white.withOpacity(0.9),
-                          ),
-                        ),
-                      ],
-                    ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      ResponsiveText(
+                        'Next: ${NumberFormatter.formatCurrency(nextClickValue)}',
+                        baseFontSize: 12,
+                        color: Colors.white.withOpacity(0.8),
+                      ),
+                      ResponsiveText(
+                        'Level ${gameState.clickLevel + 1}',
+                        baseFontSize: 10,
+                        color: Colors.white.withOpacity(0.6),
+                      ),
+                    ],
                   ),
               ],
             ),
             
-            const SizedBox(height: 12),
+            SizedBox(height: responsive.spacing(12)),
             
+            // RESPONSIVE PROGRESS DISPLAY
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: responsive.padding(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(responsive.spacing(12)),
                   ),
-                  child: Text(
+                  child: ResponsiveText(
                     '${gameState.clickLevel} ${gameState.clickLevel >= 20 ? "(MAX)" : ""}',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
+                    baseFontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
                   ),
                 ),
                 
-                const SizedBox(width: 12),
+                SizedBox(width: responsive.spacing(12)),
                 
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(responsive.spacing(8)),
                         child: LinearProgressIndicator(
                           value: progress,
                           backgroundColor: Colors.white.withOpacity(0.2),
                           valueColor: AlwaysStoppedAnimation<Color>(Colors.greenAccent),
-                          minHeight: 8,
+                          minHeight: responsive.spacing(8),
                         ),
                       ),
                       
                       if (gameState.clickLevel < 20)
                         Padding(
-                          padding: const EdgeInsets.only(top: 4.0),
-                          child: Text(
+                          padding: EdgeInsets.only(top: responsive.spacing(4.0)),
+                          child: ResponsiveText(
                             '${gameState.taps} / ${_calculateRequiredTaps(gameState.clickLevel + 1)} taps',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.white.withOpacity(0.8),
-                            ),
+                            baseFontSize: 10,
+                            color: Colors.white.withOpacity(0.8),
                           ),
                         ),
                     ],
@@ -460,12 +459,12 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
     }
   }
   
-  Widget _buildBoostCard(GameState gameState) {
+  Widget _buildBoostCard(GameState gameState, ResponsiveUtils responsive) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      padding: responsive.padding(horizontal: 16.0),
       child: Card(
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12.0),
+          borderRadius: BorderRadius.circular(responsive.spacing(12.0)),
         ),
         color: gameState.isAdBoostActive
             ? Colors.amber.shade100 
@@ -479,84 +478,71 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
                     _startAdBoost(); 
                   }
                 },
-          borderRadius: BorderRadius.circular(12.0),
-          child: Padding(
-            padding: const EdgeInsets.all(12.0),
+          borderRadius: BorderRadius.circular(responsive.spacing(12.0)),
+          child: Container(
+            constraints: BoxConstraints(
+              minHeight: responsive.layoutConstraints.buttonHeight,
+            ),
+            padding: responsive.padding(all: 12.0),
             child: Row(
               children: [
-                Container(
-                  width: 50,
-                  height: 50,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade200,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.grey.shade400),
-                  ),
-                  child: _isWatchingAd
-                      ? const Center(child: CircularProgressIndicator())
-                      : const Icon(
-                          Icons.play_circle_filled,
-                          color: Colors.grey,
-                          size: 30,
-                        ),
+                Icon(
+                  Icons.play_circle_fill,
+                  color: gameState.isAdBoostActive ? Colors.amber.shade600 : Colors.green.shade600,
+                  size: responsive.iconSize(24),
                 ),
-                const SizedBox(width: 16),
+                SizedBox(width: responsive.spacing(12)),
                 Expanded(
                   child: gameState.isAdBoostActive
                       ? Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Text(
-                              'Boost Active!',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                              ),
+                            ResponsiveText(
+                              'Boost Active! (10x earnings)',
+                              baseFontSize: 16,
+                              fontWeight: FontWeight.bold,
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '10x earnings for ${gameState.adBoostRemainingSeconds} more seconds',
-                              style: TextStyle(
-                                color: Colors.grey.shade700,
-                              ),
+                            SizedBox(height: responsive.spacing(4)),
+                            ResponsiveText(
+                              'Time remaining: ${_formatBoostTime(gameState.clickBoostEndTime)}',
+                              baseFontSize: 12,
                             ),
                           ],
                         )
                       : _isWatchingAd
-                          ? const Column(
+                          ? Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
                               children: [
-                                Text(
+                                ResponsiveText(
                                   'Watching Ad...',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                  ),
+                                  baseFontSize: 16,
+                                  fontWeight: FontWeight.bold,
                                 ),
-                                SizedBox(height: 4),
-                                Text(
+                                SizedBox(height: responsive.spacing(4)),
+                                ResponsiveText(
                                   'Please wait to receive your boost',
+                                  baseFontSize: 12,
                                 ),
                               ],
                             )
                           : Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
                               children: [
-                                Text(
+                                ResponsiveText(
                                   gameState.isPremium ? 'Premium Boost (No Ads)' : 'Watch Ad for 10x Boost',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                  ),
+                                  baseFontSize: 16,
+                                  fontWeight: FontWeight.bold,
                                 ),
-                                const SizedBox(height: 4),
-                                Text(
+                                SizedBox(height: responsive.spacing(4)),
+                                ResponsiveText(
                                   gameState.isPremium 
                                     ? 'Get instant 10x click earnings for 60 seconds'
                                     : 'Get 10x click earnings for 60 seconds',
-                                  style: TextStyle(
-                                    color: Colors.grey.shade700,
-                                  ),
+                                  baseFontSize: 12,
+                                  color: Colors.grey.shade700,
                                 ),
                               ],
                             ),
@@ -569,7 +555,7 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
     );
   }
 
-  Widget _buildClickArea(GameState gameState) {
+  Widget _buildClickArea(GameState gameState, ResponsiveUtils responsive) {
     return GestureDetector(
       onTap: () {
         _earnMoney();
@@ -586,11 +572,16 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
             child: Material(
                 color: Colors.transparent,
                 child: Container(
+                  // GUARANTEED MINIMUM TAP TARGET SIZE
+                  constraints: BoxConstraints(
+                    minHeight: responsive.layoutConstraints.minimumTapTarget * 3, // 3x minimum for gaming
+                    minWidth: double.infinity,
+                  ),
                   decoration: BoxDecoration(
                     color: gameState.isAdBoostActive
                         ? Colors.amber.withOpacity(0.1)
                         : Colors.blue.withOpacity(0.05),
-                    borderRadius: BorderRadius.circular(24.0),
+                    borderRadius: BorderRadius.circular(responsive.spacing(24.0)),
                     border: Border.all(
                       color: gameState.isAdBoostActive
                           ? Colors.amber
@@ -602,8 +593,8 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
                         color: gameState.isAdBoostActive
                             ? Colors.amber.withOpacity(0.2)
                             : Colors.blue.withOpacity(0.1),
-                        blurRadius: 10,
-                        spreadRadius: 2,
+                        blurRadius: responsive.spacing(10),
+                        spreadRadius: responsive.spacing(2),
                       ),
                     ],
                   ),
@@ -615,7 +606,7 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
                     highlightColor: gameState.isAdBoostActive
                         ? Colors.amber.withOpacity(0.2)
                         : Colors.blue.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(24.0),
+                    borderRadius: BorderRadius.circular(responsive.spacing(24.0)),
                     child: Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -623,22 +614,20 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
                         children: [
                           Icon(
                             Icons.touch_app,
-                            size: 72,
+                            size: responsive.iconSize(72),
                             color: gameState.isAdBoostActive
                                 ? Colors.amber
                                 : Colors.blue.shade400,
                           ),
-                          const SizedBox(height: 16),
+                          SizedBox(height: responsive.spacing(16)),
                           Flexible(
-                            child: Text(
+                            child: ResponsiveText(
                               'Tap to earn ${NumberFormatter.formatCurrency(_calculateClickValue(gameState))}',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: gameState.isAdBoostActive
-                                    ? Colors.amber.shade800
-                                    : Colors.blue.shade800,
-                              ),
+                              baseFontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: gameState.isAdBoostActive
+                                  ? Colors.amber.shade800
+                                  : Colors.blue.shade800,
                               textAlign: TextAlign.center,
                               overflow: TextOverflow.ellipsis,
                               maxLines: 2,
@@ -646,32 +635,7 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
                           ),
                           if (gameState.isPlatinumBoostActive)
                             Flexible(
-                              child: _buildPlatinumBoostStatus(gameState),
-                            ),
-                          if (gameState.isAdBoostActive)
-                            Flexible(
-                              child: Padding(
-                                padding: const EdgeInsets.only(top: 8.0),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 4,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.amber.shade100,
-                                    borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(color: Colors.amber),
-                                  ),
-                                  child: Text(
-                                    '10x BOOST ACTIVE',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.amber.shade800,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                              ),
+                              child: _buildPlatinumBoostStatus(gameState, responsive),
                             ),
                         ],
                       ),
@@ -679,10 +643,65 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
                   ),
                 ),
               ),
-            );
+          );
         },
       ),
     );
+  }
+
+  String _formatBoostTime(DateTime? endTime) {
+    if (endTime == null) return "00:00";
+    
+    final Duration remaining = endTime.difference(DateTime.now());
+    if (remaining.isNegative) return "00:00";
+    
+    final minutes = remaining.inMinutes.remainder(60);
+    final seconds = remaining.inSeconds.remainder(60);
+    return "${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}";
+  }
+
+  Widget _buildPlatinumBoostStatus(GameState gameState, ResponsiveUtils responsive) {
+    if (gameState.platinumClickFrenzyRemainingSeconds > 0) {
+      return Padding(
+        padding: EdgeInsets.only(top: responsive.spacing(8)),
+        child: Container(
+          padding: responsive.padding(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.purple.shade600, Colors.pink.shade600],
+            ),
+            borderRadius: BorderRadius.circular(responsive.spacing(20)),
+          ),
+          child: ResponsiveText(
+            'PLATINUM FRENZY: ${gameState.platinumClickFrenzyRemainingSeconds}s',
+            baseFontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+      );
+    } else if (gameState.platinumSteadyBoostRemainingSeconds > 0) {
+      return Padding(
+        padding: EdgeInsets.only(top: responsive.spacing(8)),
+        child: Container(
+          padding: responsive.padding(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.blue.shade600, Colors.cyan.shade600],
+            ),
+            borderRadius: BorderRadius.circular(responsive.spacing(20)),
+          ),
+          child: ResponsiveText(
+            'STEADY BOOST: ${gameState.platinumSteadyBoostRemainingSeconds}s',
+            baseFontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+      );
+    }
+    
+    return const SizedBox.shrink();
   }
 
   double _calculateClickValue(GameState gameState) {
@@ -703,47 +722,5 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
 
     // Combine all multipliers: Base * Ad * Platinum
     return baseValue * adBoostMultiplier * platinumBoostMultiplier;
-  }
-
-  Widget _buildPlatinumBoostStatus(GameState gameState) {
-    String boostName = '';
-    String boostMultiplier = '';
-    int remainingSeconds = 0;
-
-    if (gameState.platinumClickFrenzyRemainingSeconds > 0) {
-      boostName = 'Click Frenzy';
-      boostMultiplier = '10x';
-      remainingSeconds = gameState.platinumClickFrenzyRemainingSeconds;
-    } else if (gameState.platinumSteadyBoostRemainingSeconds > 0) {
-      boostName = 'Steady Boost';
-      boostMultiplier = '2x';
-      remainingSeconds = gameState.platinumSteadyBoostRemainingSeconds;
-    } else {
-      return const SizedBox.shrink();
-    }
-
-    final minutes = remainingSeconds ~/ 60;
-    final seconds = remainingSeconds % 60;
-    final timeString = '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
-
-    return Padding(
-      padding: const EdgeInsets.only(top: 8.0),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-        decoration: BoxDecoration(
-          color: Colors.purple.shade100,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.purple),
-        ),
-        child: Text(
-          '$boostName Active ($boostMultiplier) - $timeString remaining',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.purple.shade800,
-            fontSize: 12,
-          ),
-        ),
-      ),
-    );
   }
 }

@@ -145,34 +145,78 @@ class ReincorporationUtils {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('About Re-Incorporation'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Re-Incorporation is a prestige system that allows you to:'),
-            const SizedBox(height: 8),
-            const Text('• Reset your progress for permanent bonuses'),
-            const Text('• Earn tap multipliers based on your net worth'),
-            const Text('• Gain 20% compounding bonus to passive income'),
-            const Text('• Start over with boosted earnings'),
-            const SizedBox(height: 16),
-            const Text('How it works:'),
-            Text('1. Re-Incorporation uses unlock at \$1M, \$10M, \$100M, \$1B up to \$100T (9 total)'),
-            Text('2. You can only use ONE re-incorporation level at a time, starting from the lowest'),
-            Text('3. You have ${gameState.reincorporationUsesAvailable} use(s) available now'),
-            Text('4. Next unlock at $formattedThreshold net worth'),
-            const Text('5. Each use provides permanent 20% passive income bonus'),
-            const Text('6. Tap value increases with each prestige level'),
-            const SizedBox(height: 12),
-            const Text('NOTE: Even if your net worth meets multiple thresholds, you must re-incorporate once for each threshold level, starting with the lowest.', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orange)),
-            const SizedBox(height: 12),
-            const Text('Your prestige level and multipliers are kept forever, even if you reset your game!'),
-          ],
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Re-Incorporation is a prestige system that allows you to:'),
+              const SizedBox(height: 8),
+              const Text('• Reset your progress for permanent bonuses'),
+              const Text('• Earn tap multipliers based on your net worth'),
+              const Text('• Gain 20% compounding bonus to passive income'),
+              const Text('• Start over with boosted earnings'),
+              const SizedBox(height: 16),
+              const Text('How it works:', style: TextStyle(fontWeight: FontWeight.w600)),
+              const SizedBox(height: 8),
+              Text('1. Re-Incorporation uses unlock at \$1M, \$10M, \$100M, \$1B up to \$100T (9 total)'),
+              Text('2. You can only use ONE re-incorporation level at a time, starting from the lowest'),
+              Text('3. You have ${gameState.reincorporationUsesAvailable} use(s) available now'),
+              Text('4. Next unlock at $formattedThreshold net worth'),
+              const Text('5. Each use provides permanent 20% passive income bonus'),
+              const Text('6. Tap value increases with each prestige level'),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                ),
+                child: const Text(
+                  'NOTE: Even if your net worth meets multiple thresholds, you must re-incorporate once for each threshold level, starting with the lowest.',
+                  style: TextStyle(fontWeight: FontWeight.bold, color: Colors.orange),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                ),
+                child: const Text(
+                  'Your prestige level and multipliers are kept forever, even if you reset your game!',
+                  style: TextStyle(fontWeight: FontWeight.w600, color: Colors.blue),
+                ),
+              ),
+              const SizedBox(height: 20), // Extra space before actions
+            ],
+          ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Got it'),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text(
+                'Got it',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
           ),
         ],
       ),

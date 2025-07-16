@@ -155,7 +155,17 @@ class CategoryContent extends StatelessWidget {
         
         // Return the item card with appropriate context
         return VaultItemCard(
-          item: item,
+          item: item.id == 'platinum_yacht' && isOwned ? VaultItem(
+            id: item.id,
+            name: item.name,
+            description: gameState.platinumYachtDockedLocaleId != null 
+                ? 'Currently docked at ${gameState.realEstateLocales.firstWhere((l) => l.id == gameState.platinumYachtDockedLocaleId, orElse: () => RealEstateLocale(id: '', name: 'Unknown', properties: [], theme: '', icon: Icons.error, unlocked: false)).name}.\n\nProviding +5% income boost to all properties in that region.'
+                : item.description,
+            category: item.category,
+            type: item.type,
+            cost: item.cost,
+            iconData: item.iconData,
+          ) : item,
           currentPoints: gameState.platinumPoints,
           isOwned: isOwned,
           purchaseCount: purchaseCount,

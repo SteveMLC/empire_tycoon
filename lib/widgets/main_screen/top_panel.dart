@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'dart:math' as math;
 
 import '../../models/game_state.dart';
 import '../../services/income_service.dart';
+import '../../services/game_service.dart';
 import '../money_display.dart';
+import '../../utils/responsive_utils.dart';
 import '../../utils/number_formatter.dart';
 import 'animated_pp_icon.dart';
 import '../../painters/luxury_painters.dart';
@@ -14,18 +17,17 @@ class TopPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Get screen width to make panel full width
-    final screenWidth = MediaQuery.of(context).size.width;
+    // Get responsive design utilities
+    final responsive = context.responsive;
+    final layoutConstraints = responsive.layoutConstraints;
     final mediaQuery = MediaQuery.of(context);
     
     // Use Consumer for efficient rebuilds
     return Consumer<GameState>(
       builder: (context, gameState, child) {
-        // OPTIMIZED: Removed excessive debug logging that was causing performance issues
-        // Only log on significant changes to reduce spam
-        
-        // Access the IncomeService through Provider
-        final incomeService = Provider.of<IncomeService>(context, listen: false);
+        // Get IncomeService from GameService instead of direct Provider to ensure consistency
+        final gameService = Provider.of<GameService>(context, listen: false);
+        final incomeService = gameService.incomeService;
         
         // Determine if boost is currently active based on GameState
         final bool isBoostCurrentlyActive = gameState.clickMultiplier > 1.0 && 
@@ -36,14 +38,16 @@ class TopPanel extends StatelessWidget {
         final bool isPlatinumFrameActive = gameState.isPlatinumFrameUnlocked && gameState.isPlatinumFrameActive;
 
         return Container(
-          width: screenWidth,
-          // Reduce overall padding, especially top padding to account for status bar
+          width: double.infinity,
+          // FIXED: Increased height by 21px to prevent overflow (132px content + 69px padding = 201px needed)
+          height: math.max(mediaQuery.padding.top + 145, 188),
+          // RESPONSIVE PADDING: Fine-tuned padding for optimal spacing
           padding: EdgeInsets.fromLTRB(
-            12, 
-            // Add mediaQuery.padding.top to ensure we account for status bar in both modes
-            mediaQuery.padding.top + (isPlatinumFrameActive ? 8 : 12), 
-            12, 
-            isPlatinumFrameActive ? 10 : 12
+            responsive.spacing(12), 
+            // Status bar + reduced top padding
+            mediaQuery.padding.top + responsive.spacing(4), 
+            responsive.spacing(12), 
+            responsive.spacing(25) // Increased bottom padding to separate from tab bar
           ),
           decoration: isPlatinumFrameActive
               ? BoxDecoration(
@@ -120,6 +124,7 @@ class TopPanel extends StatelessWidget {
               // Main content with enhanced visual design
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween, // Better content distribution
                 children: [
                   // Top Row: Account Label and PP Display - More compact for Platinum
                   Row(
@@ -191,8 +196,8 @@ class TopPanel extends StatelessWidget {
                     ],
                   ),
                   
-                  // Tighter spacing for both modes
-                  SizedBox(height: isPlatinumFrameActive ? 8 : 10),
+                  // Minimized spacing between account label and cash
+                  SizedBox(height: isPlatinumFrameActive ? 2 : 4),
                   
                   // Enhanced money container with platinum theme - more depth and dimension
                   Container(
@@ -334,7 +339,7 @@ class TopPanel extends StatelessWidget {
                         
                         if (isPlatinumFrameActive) 
                           Container(
-                            margin: const EdgeInsets.symmetric(vertical: 6), // Reduced from 10
+                            margin: const EdgeInsets.symmetric(vertical: 6), // Reduced spacing
                             height: 1,
                             decoration: BoxDecoration(
                               gradient: const LinearGradient(
@@ -352,7 +357,7 @@ class TopPanel extends StatelessWidget {
                             ),
                           )
                         else 
-                          const SizedBox(height: 8), // Reduced from 12
+                          const SizedBox(height: 8), // Reduced spacing between cash and income
                         
                         // Income per second with improved styling - more clear and vibrant, smaller size
                         Row(
@@ -416,8 +421,8 @@ class TopPanel extends StatelessWidget {
                                 fit: BoxFit.scaleDown,
                                 alignment: Alignment.centerRight,
                                 child: Text(
-                                  // Calculate income per second using the IncomeService
-                                  incomeService.formatIncomePerSecond(incomeService.calculateIncomePerSecond(gameState)),
+                                  // FIXED: Use safer income calculation with fallback
+                                  _getSafeIncomeDisplay(incomeService, gameState),
                                   key: const Key('incomeDisplay'), // Add a unique key to ensure single instance
                                   style: TextStyle(
                                     color: isPlatinumFrameActive ? const Color(0xFF4CEA5C) : Colors.green.shade700,
@@ -446,7 +451,7 @@ class TopPanel extends StatelessWidget {
                         
                         // Boost timer display - only visible when boost is active
                         if (isBoostCurrentlyActive) ...[
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 12), // Increased spacing
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
@@ -508,10 +513,8 @@ class TopPanel extends StatelessWidget {
                                   fit: BoxFit.scaleDown,
                                   alignment: Alignment.centerRight,
                                   child: Text(
-                                    // Format remaining time using the IncomeService
-                                    incomeService.formatBoostTimeRemaining(Duration(
-                                      seconds: gameState.clickBoostEndTime!.difference(DateTime.now()).inSeconds,
-                                    )),
+                                    // FIXED: Use safer boost timer calculation with fallback
+                                    _getSafeBoostTimeDisplay(gameState),
                                     style: TextStyle(
                                       color: isPlatinumFrameActive ? const Color(0xFFFF9800) : Colors.orange,
                                       fontSize: 18,
@@ -543,43 +546,7 @@ class TopPanel extends StatelessWidget {
                 ],
               ),
               
-              // Enhanced corner accents (only if platinum frame active)
-              if (isPlatinumFrameActive) ...[
-                // Top left corner accent
-                Positioned(
-                  top: 0,
-                  left: 0,
-                  child: _buildCornerAccent(),
-                ),
-                // Top right corner accent
-                Positioned(
-                  top: 0,
-                  right: 0,
-                  child: Transform.flip(
-                    flipX: true,
-                    child: _buildCornerAccent(),
-                  ),
-                ),
-                // Bottom left corner accent
-                Positioned(
-                  bottom: 0,
-                  left: 0,
-                  child: Transform.flip(
-                    flipY: true,
-                    child: _buildCornerAccent(),
-                  ),
-                ),
-                // Bottom right corner accent
-                Positioned(
-                  bottom: 0,
-                  right: 0,
-                  child: Transform.flip(
-                    flipX: true,
-                    flipY: true,
-                    child: _buildCornerAccent(),
-                  ),
-                ),
-              ],
+              // Simplified platinum frame - no corner accents for cleaner look
             ],
           ),
         );
@@ -587,16 +554,45 @@ class TopPanel extends StatelessWidget {
     );
   }
   
-  // Helper method to build luxury corner accents
-  Widget _buildCornerAccent() {
-    return SizedBox(
-      width: 24,
-      height: 24,
-      child: CustomPaint(
-        painter: CornerAccentPainter(),
-      ),
-    );
+  /// Safe income display with fallback calculation
+  String _getSafeIncomeDisplay(IncomeService incomeService, GameState gameState) {
+    try {
+      // Try to use IncomeService for consistent calculation
+      final incomePerSecond = incomeService.calculateIncomePerSecond(gameState);
+      return incomeService.formatIncomePerSecond(incomePerSecond);
+    } catch (e) {
+      // Fallback to direct calculation if IncomeService fails
+      print('⚠️ IncomeService failed, using fallback: $e');
+      final incomePerSecond = gameState.calculateTotalIncomePerSecond();
+      return '${NumberFormatter.formatCurrency(incomePerSecond)}/sec';
+    }
   }
+  
+  /// Safe boost timer display with proper edge case handling
+  String _getSafeBoostTimeDisplay(GameState gameState) {
+    try {
+      if (gameState.clickBoostEndTime == null) {
+        return 'Expired';
+      }
+      
+      final now = DateTime.now();
+      final endTime = gameState.clickBoostEndTime!;
+      final remaining = endTime.difference(now);
+      
+      // Handle edge cases
+      if (remaining.isNegative || remaining.inSeconds <= 0) {
+        return 'Expired';
+      }
+      
+      // Use NumberFormatter for consistent formatting
+      return NumberFormatter.formatBoostTimeRemaining(remaining);
+    } catch (e) {
+      print('⚠️ Boost timer calculation failed: $e');
+      return 'Error';
+    }
+  }
+  
+
 
   // Rich UI component for PP display with animation
   Widget _buildPPDisplay(GameState gameState, BuildContext context) {

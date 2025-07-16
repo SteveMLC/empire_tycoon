@@ -13,6 +13,7 @@ import 'services/auth_service.dart';
 import 'services/admob_service.dart';
 import 'screens/platinum_vault_screen.dart';
 import 'widgets/empire_loading_screen.dart';
+import 'utils/responsive_utils.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -82,22 +83,13 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         // Add AdMobService for ad integration (singleton)
         Provider<AdMobService>.value(value: AdMobService()),
       ],
-      child: MaterialApp(
-        title: 'Investment Account',
-        theme: ThemeData(
-          primarySwatch: Colors.blue,
-          scaffoldBackgroundColor: Colors.grey[100],
-          appBarTheme: AppBarTheme(
-            backgroundColor: Colors.grey[100],
-            foregroundColor: Colors.black,
-            elevation: 0,
-          ),
-          fontFamily: kIsWeb ? null : 'Roboto',
-          iconTheme: const IconThemeData(
-            color: Colors.blue,
-            size: 24.0,
-          ),
-          textTheme: kIsWeb 
+      child: Builder(
+        builder: (context) {
+          // Get responsive utilities for theme adaptation
+          final responsive = ResponsiveUtils.of(context);
+          
+          // Create adaptive theme based on device characteristics
+          final baseTextTheme = kIsWeb 
             ? const TextTheme() 
             : const TextTheme(
                 displayLarge: TextStyle(
@@ -190,12 +182,87 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
                   fontSize: 11,
                   color: Colors.black54,
                 ),
+              );
+          
+          // Get adaptive text theme based on device
+          final adaptiveTextTheme = responsive.getAdaptiveTextTheme(baseTextTheme);
+          
+          return MaterialApp(
+            title: 'Empire Tycoon',
+            theme: ThemeData(
+              primarySwatch: Colors.blue,
+              scaffoldBackgroundColor: Colors.grey[100],
+              appBarTheme: AppBarTheme(
+                backgroundColor: Colors.grey[100],
+                foregroundColor: Colors.black,
+                elevation: 0,
               ),
-        ),
-        home: AppInitializer(onInitialized: _markInitialized),
-        routes: {
-          '/platinum_vault': (context) => const PlatinumVaultScreen(),
-        },
+              fontFamily: kIsWeb ? null : 'Roboto',
+              iconTheme: IconThemeData(
+                color: Colors.blue,
+                size: responsive.iconSize(24.0),
+              ),
+              // RESPONSIVE TEXT THEME: Adapts to device size and density
+              textTheme: adaptiveTextTheme,
+              
+              // RESPONSIVE BUTTON THEME: Ensure minimum tap targets
+              elevatedButtonTheme: ElevatedButtonThemeData(
+                style: ElevatedButton.styleFrom(
+                  minimumSize: Size(
+                    responsive.layoutConstraints.minimumTapTarget * 2,
+                    responsive.layoutConstraints.buttonHeight,
+                  ),
+                  padding: responsive.padding(horizontal: 16, vertical: 8),
+                  textStyle: TextStyle(
+                    fontSize: responsive.fontSize(14),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+              
+              // RESPONSIVE CARD THEME: Adaptive padding and margins
+              cardTheme: CardTheme(
+                margin: responsive.margin(all: 8),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(responsive.spacing(12)),
+                ),
+                elevation: 4,
+              ),
+              
+              // RESPONSIVE LIST TILE THEME: Proper spacing and sizes
+              listTileTheme: ListTileThemeData(
+                contentPadding: responsive.padding(horizontal: 16, vertical: 8),
+                minVerticalPadding: responsive.spacing(4),
+                iconColor: Colors.blue,
+                titleTextStyle: TextStyle(
+                  fontSize: responsive.fontSize(16),
+                  fontWeight: FontWeight.w500,
+                  color: Colors.black87,
+                ),
+                subtitleTextStyle: TextStyle(
+                  fontSize: responsive.fontSize(14),
+                  color: Colors.black54,
+                ),
+              ),
+              
+              // RESPONSIVE TAB BAR THEME: Proper sizing for different devices
+              tabBarTheme: TabBarTheme(
+                labelStyle: TextStyle(
+                  fontSize: responsive.fontSize(12),
+                  fontWeight: FontWeight.bold,
+                ),
+                unselectedLabelStyle: TextStyle(
+                  fontSize: responsive.fontSize(12),
+                ),
+                indicatorSize: TabBarIndicatorSize.tab,
+              ),
+            ),
+            home: AppInitializer(onInitialized: _markInitialized),
+            routes: {
+              '/platinum_vault': (context) => const PlatinumVaultScreen(),
+            },
+          );
+        }
       ),
     );
   }
@@ -251,48 +318,27 @@ class _AppInitializerState extends State<AppInitializer> {
       await adMobService.initialize();
       print('Game initializer: Finished AdMob initialization');
       
-      // ENHANCED: Set up AdMobService integration with GameState for predictive ad loading
-      gameState.setAdMobService(adMobService);
-      print('Game initializer: AdMobService integrated with GameState');
-      
-      // PREDICTIVE LOADING: Enable comprehensive revenue analytics and monitoring
-      if (kDebugMode) {
-        print('Game initializer: Enabling AdMob predictive loading analytics');
-        // Set up periodic analytics reporting every 5 minutes in debug mode
-        Timer.periodic(const Duration(minutes: 5), (_) {
-          adMobService.printDebugStatus();
-          print('💰 Quick Revenue Status: ${adMobService.getQuickRevenueDiagnostic()}');
-        });
-        
-        // Set up immediate game state update to trigger predictive loading
-        Future.delayed(const Duration(seconds: 2), () {
-          // Get actual game state for more accurate predictions
-          final businessCount = gameState.businesses.length;
-          final firstBusinessLevel = gameState.businesses.isNotEmpty ? gameState.businesses.first.level : 1;
-          final hasActiveEvents = gameState.activeEvents.isNotEmpty;
-          
-          adMobService.updateGameState(
-            businessCount: businessCount,
-            firstBusinessLevel: firstBusinessLevel,
-            hasActiveEvents: hasActiveEvents,
-            currentScreen: 'hustle',
-            isReturningFromBackground: false,
-            hasOfflineIncome: gameState.showOfflineIncomeNotification,
-          );
-          
-          if (hasActiveEvents) {
-            print('Game initializer: ✅ Found ${gameState.activeEvents.length} active events - EventClear ads will be preloaded');
-          } else {
-            print('Game initializer: ℹ️ No active events found - EventClear ads will not be preloaded');
-          }
-        });
-      }
-      
       setState(() {
         _loadingText = 'Finalizing setup...';
       });
       
-      // DISABLED: Automatic premium check to prevent false activation
+      // Update AdMob service with initial game state for predictive loading
+      int businessCount = gameState.businesses.where((b) => b.level > 0).length;
+      int firstBusinessLevel = gameState.businesses.isNotEmpty ? gameState.businesses.first.level : 0;
+      bool hasActiveEvents = gameState.activeEvents.isNotEmpty;
+      
+      adMobService.updateGameState(
+        businessCount: businessCount,
+        firstBusinessLevel: firstBusinessLevel,
+        hasActiveEvents: hasActiveEvents,
+        currentScreen: 'hustle', // Default starting screen
+      );
+      print('Game initializer: AdMob service updated with initial game state');
+      
+      // Check AdMob state and configuration
+      print('Game initializer: AdMob final check - ads enabled: true');
+      
+      // REMOVED automatic premium check to prevent false activation
       print('Game initializer: Skipped automatic premium check to prevent false activation');
       
       await Future.delayed(const Duration(milliseconds: 500)); // Brief pause before showing main screen

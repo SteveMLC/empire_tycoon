@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
+import 'dart:async';
 import 'package:provider/provider.dart';
 import '../models/event.dart';
 import '../models/game_state.dart';
-import '../models/game_state_events.dart';
+
 import '../services/admob_service.dart';
 import 'package:flutter/foundation.dart';
 
@@ -27,6 +28,37 @@ class EventNotification extends StatefulWidget {
 
 class _EventNotificationState extends State<EventNotification> {
   bool _isMinimized = false;
+  Timer? _countdownTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _startCountdownTimer();
+  }
+
+  @override
+  void dispose() {
+    _countdownTimer?.cancel();
+    super.dispose();
+  }
+
+  void _startCountdownTimer() {
+    _countdownTimer?.cancel();
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      
+      // Update UI every second to show countdown progress
+      setState(() {});
+      
+      // If event has expired, cancel timer
+      if (widget.event.hasExpired) {
+        timer.cancel();
+      }
+    });
+  }
 
   /// Get affected business names from IDs
   List<String> _getAffectedBusinessNames() {
@@ -199,6 +231,11 @@ class _EventNotificationState extends State<EventNotification> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Auto-expiry timer for all events
+                    _buildAutoExpiryTimer(),
+                    
+                    const SizedBox(height: 8),
+                    
                     // Resolution explanation
                     _buildResolutionProgress(),
                     
@@ -249,6 +286,30 @@ class _EventNotificationState extends State<EventNotification> {
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
+              ),
+              // Mini timer display
+              const SizedBox(height: 2),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(3),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.access_time, size: 10, color: Colors.white70),
+                    const SizedBox(width: 2),
+                    Text(
+                      _getTimeRemainingFormatted(),
+                      style: const TextStyle(
+                        fontSize: 9,
+                        color: Colors.white70,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -910,12 +971,8 @@ class _EventNotificationState extends State<EventNotification> {
         : 'Income reduced by 25%';
   }
 
-  /// Get time remaining for time-based events formatted as MM:SS
+  /// Get time remaining for ALL events formatted as MM:SS
   String _getTimeRemainingFormatted() {
-    if (widget.event.resolution.type != EventResolutionType.timeBased) {
-      return '';
-    }
-    
     final int secondsRemaining = widget.event.timeRemaining;
     if (secondsRemaining <= 0) {
       return 'Resolving...';
@@ -925,5 +982,49 @@ class _EventNotificationState extends State<EventNotification> {
     final seconds = secondsRemaining % 60;
     
     return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+  }
+  
+  /// Build auto-expiry timer display for all events
+  Widget _buildAutoExpiryTimer() {
+    final timeRemaining = _getTimeRemainingFormatted();
+    final bool isExpiring = widget.event.timeRemaining < 300; // Last 5 minutes
+    
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      decoration: BoxDecoration(
+        color: isExpiring ? Colors.red.shade50 : Colors.blue.shade50,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(
+          color: isExpiring ? Colors.red.shade200 : Colors.blue.shade200,
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.access_time,
+            size: 16,
+            color: isExpiring ? Colors.red.shade600 : Colors.blue.shade600,
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              'Auto-resolves in: $timeRemaining',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: isExpiring ? Colors.red.shade700 : Colors.blue.shade700,
+              ),
+            ),
+          ),
+          if (isExpiring)
+            Icon(
+              Icons.warning,
+              size: 14,
+              color: Colors.red.shade600,
+            ),
+        ],
+      ),
+    );
   }
 }

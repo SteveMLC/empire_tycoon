@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../models/game_state.dart';
+import '../../utils/responsive_utils.dart';
 
 /// The tab bar for the main screen navigation
 class MainTabBar extends StatelessWidget {
@@ -14,11 +15,15 @@ class MainTabBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final responsive = context.responsive;
+    final layoutConstraints = responsive.layoutConstraints;
+    
     // Check if platinum frame is active
     final bool isPlatinumFrameActive = Provider.of<GameState>(context).isPlatinumFrameUnlocked && 
                                       Provider.of<GameState>(context).isPlatinumFrameActive;
     
     return Container(
+      height: layoutConstraints.tabBarHeight,
       decoration: BoxDecoration(
         gradient: isPlatinumFrameActive
             ? const LinearGradient(
@@ -45,9 +50,9 @@ class MainTabBar extends StatelessWidget {
             ? [
                 BoxShadow(
                   color: const Color(0xFFFFD700).withOpacity(0.3),
-                  blurRadius: 8,
-                  spreadRadius: -4,
-                  offset: const Offset(0, -2),
+                  blurRadius: responsive.spacing(8),
+                  spreadRadius: responsive.spacing(-4),
+                  offset: Offset(0, responsive.spacing(-2)),
                 ),
               ]
             : null,
@@ -58,11 +63,11 @@ class MainTabBar extends StatelessWidget {
         unselectedLabelColor: isPlatinumFrameActive ? Colors.grey.shade400 : Colors.grey,
         indicatorWeight: 3,
         indicatorColor: isPlatinumFrameActive ? const Color(0xFFFFD700) : Colors.blue,
-        indicatorPadding: isPlatinumFrameActive ? const EdgeInsets.symmetric(horizontal: 10) : EdgeInsets.zero,
+        indicatorPadding: isPlatinumFrameActive ? EdgeInsets.symmetric(horizontal: responsive.spacing(10)) : EdgeInsets.zero,
         isScrollable: false,
         labelPadding: EdgeInsets.zero,
         labelStyle: TextStyle(
-          fontSize: 12, 
+          fontSize: responsive.fontSize(12), 
           fontWeight: FontWeight.bold,
           shadows: isPlatinumFrameActive
               ? [
@@ -74,14 +79,32 @@ class MainTabBar extends StatelessWidget {
                 ]
               : null,
         ),
-        unselectedLabelStyle: const TextStyle(fontSize: 12),
-        tabs: const [
-          Tab(icon: Icon(Icons.touch_app), text: 'Hustle'),
-          Tab(icon: Icon(Icons.business), text: 'Biz'),
-          Tab(icon: Icon(Icons.trending_up), text: 'Invest'),
-          Tab(icon: Icon(Icons.home), text: 'Estate'),
-          Tab(icon: Icon(Icons.bar_chart), text: 'Stats'),
-          Tab(icon: Icon(Icons.person), text: 'Profile'),
+        unselectedLabelStyle: TextStyle(fontSize: responsive.fontSize(12)),
+        tabs: [
+          Tab(
+            icon: Icon(Icons.touch_app, size: responsive.iconSize(20)), 
+            text: responsive.isVeryCompact ? 'Tap' : 'Hustle'
+          ),
+          Tab(
+            icon: Icon(Icons.business, size: responsive.iconSize(20)), 
+            text: 'Biz'
+          ),
+          Tab(
+            icon: Icon(Icons.trending_up, size: responsive.iconSize(20)), 
+            text: responsive.isVeryCompact ? '\$' : 'Invest'
+          ),
+          Tab(
+            icon: Icon(Icons.home, size: responsive.iconSize(20)), 
+            text: responsive.isVeryCompact ? 'RE' : 'Estate'
+          ),
+          Tab(
+            icon: Icon(Icons.bar_chart, size: responsive.iconSize(20)), 
+            text: 'Stats'
+          ),
+          Tab(
+            icon: Icon(Icons.person, size: responsive.iconSize(20)), 
+            text: responsive.isVeryCompact ? 'Me' : 'Profile'
+          ),
         ],
       ),
     );

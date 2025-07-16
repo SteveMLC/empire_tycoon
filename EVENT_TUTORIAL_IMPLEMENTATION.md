@@ -10,7 +10,7 @@ The tutorial uses simple, clear language to explain:
 
 1. **What events are**: "This alert indicates events happening in your Empire."
 2. **Impact**: "Events cause you to lose money."
-3. **How to resolve**: "Complete challenges to fix them or let them expire."
+3. **How to resolve**: "Complete challenges to fix them or wait 60 minutes for auto-expiry."
 4. **Bonus tip**: "Drag the alert button to place it where you'd like!"
 
 ### Visual Design
@@ -72,7 +72,7 @@ void _handleBadgeTap(BuildContext context) {
 ```
 "This alert indicates events happening in your Empire.
 Events cause you to lose money.
-Complete challenges to fix them or let them expire."
+Complete challenges to fix them or wait 60 minutes for auto-expiry."
 ```
 
 ### Bonus Feature Tip

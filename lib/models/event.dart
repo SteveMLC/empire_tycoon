@@ -73,6 +73,9 @@ class GameEvent {
   DateTime? timestamp;          // Event creation timestamp
   double? resolutionFeePaid;    // Amount paid to resolve (for fee-based)
   
+  /// Auto-expiry time in seconds (default 60 minutes)
+  final int autoExpirySeconds;
+  
   /// Standard event income penalty (25% reduction)
   static const double EVENT_INCOME_PENALTY = -0.25; // -25% of income (negative value)
   
@@ -89,19 +92,32 @@ class GameEvent {
     this.completedTimestamp,
     this.timestamp,
     this.resolutionFeePaid,
+    this.autoExpirySeconds = 3600, // Default 60 minutes (60 * 60 = 3600 seconds)
   }) {
     // Set creation timestamp if not provided
     this.timestamp ??= DateTime.now();
   }
   
-  /// Get the remaining time for time-based events
+  /// Get the remaining time until auto-expiry (works for ALL events)
   int get timeRemaining {
-    if (resolution.type != EventResolutionType.timeBased) return 0;
-    
-    final totalSeconds = resolution.value as int;
     final elapsedSeconds = DateTime.now().difference(startTime).inSeconds;
+    final remaining = autoExpirySeconds - elapsedSeconds;
+    return remaining > 0 ? remaining : 0;
+  }
+  
+  /// Check if this event has expired and should be auto-resolved
+  bool get hasExpired {
+    return timeRemaining <= 0;
+  }
+  
+  /// Get a formatted string of time remaining (e.g., "45:30", "5:00")
+  String get timeRemainingFormatted {
+    final remaining = timeRemaining;
+    if (remaining <= 0) return "00:00";
     
-    return totalSeconds - elapsedSeconds > 0 ? totalSeconds - elapsedSeconds : 0;
+    final minutes = remaining ~/ 60;
+    final seconds = remaining % 60;
+    return "${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}";
   }
   
   /// Get the tap count required for tap challenges
@@ -191,6 +207,7 @@ class GameEvent {
       'completedTimestamp': completedTimestamp?.toIso8601String(),
       'timestamp': timestamp?.toIso8601String(),
       'resolutionFeePaid': resolutionFeePaid,
+      'autoExpirySeconds': autoExpirySeconds,
     };
   }
   
@@ -213,6 +230,7 @@ class GameEvent {
           ? DateTime.parse(json['timestamp'] as String) 
           : null,
       resolutionFeePaid: json['resolutionFeePaid'] as double?,
+      autoExpirySeconds: json['autoExpirySeconds'] as int? ?? 3600, // Default to 3600 if not provided
     );
   }
 }

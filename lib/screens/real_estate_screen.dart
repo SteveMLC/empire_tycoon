@@ -41,8 +41,9 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
     return Scaffold(
       body: Column(
         children: [
+          // Compact Real Estate Header
           Container(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 10),
             decoration: BoxDecoration(
               color: theme.colorScheme.primary,
               boxShadow: [
@@ -54,47 +55,44 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
               ],
             ),
             width: double.infinity,
-            child: Column(
+            child: Row(
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.white24,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Icon(Icons.home, color: Colors.white, size: 18),
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      'Real Estate Income',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
+                // Icon and title - more compact
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: Colors.white24,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Icon(Icons.home, color: Colors.white, size: 16),
                 ),
-
-                const SizedBox(height: 6),
-
+                const SizedBox(width: 8),
                 Text(
-                  displayedTotalREIncome < 0
-                      ? '(\$${NumberFormatter.formatCompact(displayedTotalREIncome.abs())})/sec'
-                      : '\$${NumberFormatter.formatCompact(displayedTotalREIncome)}/sec',
-                  style: TextStyle(
-                    color: displayedTotalREIncome < 0 ? Colors.red.shade300 : Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.5,
+                  'Real Estate',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                
+                // Income display - inline and compact
+                Expanded(
+                  child: Text(
+                    displayedTotalREIncome < 0
+                        ? '(\$${NumberFormatter.formatCompact(displayedTotalREIncome.abs())})/sec'
+                        : '\$${NumberFormatter.formatCompact(displayedTotalREIncome)}/sec',
+                    style: TextStyle(
+                      color: displayedTotalREIncome < 0 ? Colors.red.shade300 : Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
 
-                if (gameState.getTotalOwnedProperties() > 0) Column(children: [
-                  const SizedBox(height: 8),
+                // Portfolio button - compact on the right
+                if (gameState.getTotalOwnedProperties() > 0)
                   InkWell(
                     onTap: () {
                       List<Map<String, dynamic>> ownedProperties = gameState.getAllOwnedPropertiesWithDetails();
@@ -106,12 +104,12 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
                         ),
                       );
                     },
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(16),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(16),
                         border: Border.all(
                           color: Colors.white.withOpacity(0.3),
                           width: 1,
@@ -121,24 +119,23 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
-                            'Portfolio: ${gameState.getTotalOwnedProperties()} Properties',
+                            '${gameState.getTotalOwnedProperties()}',
                             style: const TextStyle(
                               color: Colors.white,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                           const SizedBox(width: 4),
                           const Icon(
                             Icons.visibility,
                             color: Colors.white,
-                            size: 16,
+                            size: 14,
                           ),
                         ],
                       ),
                     ),
                   ),
-                ]),
               ],
             ),
           ),
@@ -146,34 +143,29 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
           Expanded(
             child: Row(
               children: [
+                // Reduced navigation width for more space for properties
                 Expanded(
-                  flex: 3,
+                  flex: 2, // Reduced from 3
                   child: Container(
                     color: Colors.grey.shade50,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // Simplified header
                         Container(
-                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                          padding: const EdgeInsets.all(12),
                           child: Row(
                             children: [
-                              Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: theme.colorScheme.primary.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Icon(
-                                  Icons.map,
-                                  color: theme.colorScheme.primary,
-                                  size: 20,
-                                ),
+                              Icon(
+                                Icons.map,
+                                color: theme.colorScheme.primary,
+                                size: 18,
                               ),
-                              const SizedBox(width: 12),
+                              const SizedBox(width: 8),
                               const Text(
-                                'Global',
+                                'Locations',
                                 style: TextStyle(
-                                  fontSize: 18,
+                                  fontSize: 16,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -181,20 +173,9 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
                           ),
                         ),
 
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          child: Text(
-                            'Select a locale',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey.shade700,
-                            ),
-                          ),
-                        ),
-
                         Expanded(
                           child: ListView(
-                            padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
+                            padding: const EdgeInsets.fromLTRB(12, 4, 12, 80),
                             children: _getSortedLocales(gameState.realEstateLocales).map((locale) =>
                               _buildLocaleItem(locale, gameState, theme)
                             ).toList(),
@@ -211,8 +192,9 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
                   color: Colors.grey.shade300,
                 ),
 
+                // Increased properties panel width
                 Expanded(
-                  flex: 4,
+                  flex: 5, // Increased from 4
                   child: Container(
                     color: Colors.white,
                     child: _selectedLocale != null
@@ -229,213 +211,193 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
   }
 
   Widget _buildLocaleItem(RealEstateLocale locale, GameState gameState, ThemeData theme) {
-    // If not unlocked, show locked indicator with appropriate unlock message
+    // If not unlocked, show minimal locked indicator
     if (!locale.unlocked) {
       return Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.all(16),
+        margin: const EdgeInsets.only(bottom: 6),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.grey.shade200,
-          borderRadius: BorderRadius.circular(10),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.03),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          color: Colors.grey.shade100,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.grey.shade300, width: 1),
         ),
         child: Row(
           children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(Icons.lock, color: Colors.grey.shade600, size: 22),
+            Icon(
+              locale.icon,
+              color: Colors.grey.shade400,
+              size: 20,
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Consumer<GameState>(
-                builder: (context, gameState, child) {
-                  // Determine unlock message based purely on monetary thresholds
-                  String message = 'Unlock by progressing further'; // Default message
-
-                  // Check money thresholds based on tiers
-                  // NOTE: We are removing the 'hasAnyBusiness' check as per user feedback
-                  if (locale.id == 'rural_kenya') {
-                     // Assuming rural_kenya is unlocked by default or another condition not monetary
-                     // If it should have a monetary condition, adjust here.
-                     // For now, keeping a placeholder or specific message if needed.
-                     message = 'Unlock criteria TBD'; // Placeholder - adjust as needed
-                  } else if (['lagos_nigeria', 'rural_thailand', 'rural_mexico'].contains(locale.id)) {
-                    message = 'Unlock at ${NumberFormatter.formatCurrency(10000)}';
-                  } else if (['cape_town_sa', 'mumbai_india', 'ho_chi_minh_city', 'bucharest_romania', 'lima_peru', 'sao_paulo_brazil'].contains(locale.id)) {
-                    message = 'Unlock at ${NumberFormatter.formatCurrency(50000)}';
-                  } else if (['lisbon_portugal', 'berlin_germany', 'mexico_city'].contains(locale.id)) {
-                    message = 'Unlock at ${NumberFormatter.formatCurrency(250000)}';
-                  } else if (['singapore', 'london_uk', 'miami_florida', 'new_york_city', 'los_angeles'].contains(locale.id)) {
-                    message = 'Unlock at ${NumberFormatter.formatCurrency(1000000)}';
-                  } else if (['hong_kong', 'dubai_uae'].contains(locale.id)) {
-                    message = 'Unlock at ${NumberFormatter.formatCurrency(5000000)}';
-                  }
-                  // Removed the `hasAnyBusiness` check block entirely
-
-                  return Text(
-                    message,
-                    style: TextStyle(
-                      color: Colors.grey.shade600,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  );
-                },
+            const SizedBox(width: 8),
+            Icon(
+              Icons.lock,
+              color: Colors.grey.shade400,
+              size: 16,
+            ),
+            const Spacer(),
+            Text(
+              '0/10',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey.shade500,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ],
-        )
+        ),
       );
     }
 
     int ownedProperties = locale.properties.where((p) => p.owned > 0).length;
+    int totalProperties = locale.properties.length;
     bool isSelected = _selectedLocale?.id == locale.id;
-
-    return Card(
-      margin: const EdgeInsets.only(bottom: 10),
-      elevation: isSelected ? 3 : 1,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10),
-        side: BorderSide(
-          color: isSelected ? theme.colorScheme.primary : Colors.transparent,
-          width: isSelected ? 2.0 : 0,
-        ),
-      ),
-      child: InkWell(
-        onTap: () {
-          setState(() {
-            _selectedLocale = locale;
-          });
-        },
-        borderRadius: BorderRadius.circular(10),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
-          decoration: BoxDecoration(
-            color: isSelected ? theme.colorScheme.primary.withOpacity(0.1) : Colors.white,
-            borderRadius: BorderRadius.circular(10),
+    
+    // Check completion status for visual styling
+    bool isFullyPurchased = ownedProperties == totalProperties;
+    bool isFullyMaxed = isFullyPurchased && locale.properties.every((p) => p.owned > 0 && p.allUpgradesPurchased);
+    
+    // Check if yacht is docked at this locale
+    bool isYachtDocked = gameState.platinumYachtDockedLocaleId == locale.id;
+    
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedLocale = locale;
+        });
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 6),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: isSelected ? theme.colorScheme.primary.withOpacity(0.1) : Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isSelected ? theme.colorScheme.primary : Colors.grey.shade300,
+            width: isSelected ? 2 : 1,
           ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  locale.icon,
-                  color: theme.colorScheme.primary,
-                  size: 24,
+          // Add special glow effect for yacht docking
+          boxShadow: isYachtDocked ? [
+            BoxShadow(
+              color: Colors.blue.withOpacity(0.3),
+              blurRadius: 8,
+              spreadRadius: 0,
+            ),
+          ] : null,
+        ),
+        child: Row(
+          children: [
+            Icon(
+              locale.icon,
+              color: isSelected ? theme.colorScheme.primary : Colors.grey.shade700,
+              size: 20,
+            ),
+            const SizedBox(width: 8),
+            
+            // Yacht indicator with tooltip
+            if (isYachtDocked) ...[
+              Tooltip(
+                message: 'Platinum Yacht Docked (+5% Income)',
+                child: Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade100,
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(color: Colors.blue.shade300, width: 1),
+                  ),
+                  child: Icon(
+                    Icons.sailing,
+                    color: Colors.blue.shade700,
+                    size: 14,
+                    shadows: [
+                      Shadow(
+                        color: Colors.blue.withOpacity(0.5),
+                        blurRadius: 2,
+                      ),
+                    ],
+                  ),
                 ),
               ),
-
-              const SizedBox(width: 12),
-
-              Expanded(
-                child: Text(
-                  locale.name,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: isSelected ? theme.colorScheme.primary : Colors.black87,
-                  ),
-                ),
-              ),
-
-              // ADDED: Platinum Yacht Indicator
-              if (gameState.platinumYachtDockedLocaleId == locale.id)
-                Padding(
-                  padding: const EdgeInsets.only(left: 8.0), // Add some spacing
-                  child: Tooltip(
-                    message: 'Platinum Yacht Docked (+5% Income)',
-                    child: Icon(
-                      Icons.directions_boat, // Yacht icon
-                      size: 20,
-                      color: Colors.blue.shade700, // Example color
-                      shadows: [
-                        Shadow(
-                          color: Colors.blue.withOpacity(0.5),
-                          blurRadius: 3,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              // END ADDED
-
-              if (gameState.platinumFoundationsApplied.containsKey(locale.id))
-                Padding(
-                  padding: const EdgeInsets.only(left: 8.0),
-                  child: Tooltip(
-                    message: 'Platinum Foundation Applied (+5% Income)',
-                    child: Container(
-                      width: 20,
-                      height: 20,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: const Color(0xFFFFD700),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFFFFD700).withOpacity(0.6),
-                            blurRadius: 4,
-                            spreadRadius: 0,
-                          ),
-                        ],
-                      ),
-                      child: const Center(
-                        child: Text(
-                          '✦',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            height: 1.0,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-
-              const SizedBox(width: 8),
-
+              const SizedBox(width: 6),
+            ],
+            
+            const Spacer(),
+            
+            // Enhanced completion status display
+            if (isFullyMaxed)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withOpacity(0.1),
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
+                  ),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: theme.colorScheme.primary.withOpacity(0.3),
-                    width: 1,
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFFFD700).withOpacity(0.4),
+                      blurRadius: 6,
+                      spreadRadius: 0,
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.star,
+                      color: Colors.white,
+                      size: 12,
+                    ),
+                    const SizedBox(width: 4),
+                    const Text(
+                      'MAX',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else if (isFullyPurchased)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade500,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.green.shade600, width: 1),
+                ),
+                child: const Text(
+                  'FULL',
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
-                child: Text(
-                  '$ownedProperties/${locale.properties.length}',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.primary,
-                  ),
+              )
+            else
+              Text(
+                '$ownedProperties/$totalProperties',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: isSelected ? theme.colorScheme.primary : Colors.grey.shade600,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
-            ],
-          ),
+          ],
         ),
       ),
     );
   }
 
   Widget _buildPropertiesList(RealEstateLocale locale, GameState gameState, ThemeData theme) {
+    // Calculate completion status for header display
+    int ownedProperties = locale.properties.where((p) => p.owned > 0).length;
+    int totalProperties = locale.properties.length;
+    bool isFullyPurchased = ownedProperties == totalProperties;
+    bool isFullyMaxed = isFullyPurchased && locale.properties.every((p) => p.owned > 0 && p.allUpgradesPurchased);
+    
     // Calculate displayed total RE income
     double permanentIncomeBoostMultiplier = gameState.isPermanentIncomeBoostActive ? 1.05 : 1.0;
     double displayedTotalREIncome = gameState.getRealEstateIncomePerSecond() *
@@ -461,8 +423,9 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
       key: ValueKey<String>(locale.id),
       padding: const EdgeInsets.only(bottom: 80),
       children: [
+        // Compact header for the selected locale
         Container(
-          padding: const EdgeInsets.only(bottom: 16),
+          padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
           decoration: BoxDecoration(
             color: Colors.white,
             boxShadow: [
@@ -472,134 +435,145 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
                 offset: const Offset(0, 2),
               ),
             ],
-            borderRadius: const BorderRadius.only(
-              bottomLeft: Radius.circular(10),
-              bottomRight: Radius.circular(10),
-            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Header with back button and locale info
               Row(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.arrow_back),
-                    onPressed: () {
-                      setState(() {
-                        _selectedLocale = null;
-                      });
-                    },
+                    icon: const Icon(Icons.arrow_back, size: 20),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    onPressed: () => setState(() => _selectedLocale = null),
                   ),
+                  const SizedBox(width: 8),
+                  Icon(locale.icon, size: 20),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       locale.name,
-                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        fontSize: 24,
+                        fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
+                  // Yacht indicator in header
+                  if (gameState.platinumYachtDockedLocaleId == locale.id) ...[
+                    Tooltip(
+                      message: 'Platinum Yacht Docked\n+5% Income Boost Active',
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [Colors.blue.shade100, Colors.blue.shade50],
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: Colors.blue.shade300, width: 1),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.blue.withOpacity(0.2),
+                              blurRadius: 4,
+                              spreadRadius: 0,
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.sailing,
+                              color: Colors.blue.shade700,
+                              size: 16,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              '+5%',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.blue.shade700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                  // Completion status in header
+                  if (isFullyMaxed)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFFFFD700).withOpacity(0.4),
+                            blurRadius: 6,
+                            spreadRadius: 0,
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.star,
+                            color: Colors.white,
+                            size: 12,
+                          ),
+                          const SizedBox(width: 4),
+                          const Text(
+                            'MAX',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  else if (isFullyPurchased)
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.green.shade500,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.green.shade600, width: 1),
+                      ),
+                      child: const Text(
+                        'FULL',
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
                 ],
-              ),
-
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Text(
-                  locale.theme,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey.shade600,
-                  ),
-                ),
               ),
 
               // Check if this locale has the Platinum Spire Trophy
               if (gameState.platinumSpireLocaleId == locale.id)
                 _buildPlatinumSpireTrophyDisplay(locale, gameState),
-
-              const SizedBox(height: 16),
-
-              Padding(
-                padding: const EdgeInsets.only(left: 16, right: 16, top: 8),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.primary.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: theme.colorScheme.primary.withOpacity(0.3),
-                          width: 1,
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.home,
-                            size: 14,
-                            color: theme.colorScheme.primary,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            '${locale.getTotalPropertiesOwned()} owned',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                              color: theme.colorScheme.primary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: isLocaleAffectedByEvent 
-                            ? Colors.red.withOpacity(0.1) 
-                            : Colors.green.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: isLocaleAffectedByEvent 
-                              ? Colors.red.withOpacity(0.3) 
-                              : Colors.green.withOpacity(0.3),
-                          width: 1,
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.attach_money,
-                            size: 14,
-                            color: isLocaleAffectedByEvent ? Colors.red : Colors.green,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            isLocaleAffectedByEvent && displayedLocaleIncome < 0
-                                ? '(\$${NumberFormatter.formatCompact(displayedLocaleIncome.abs())})/sec'
-                                : '\$${NumberFormatter.formatCompact(displayedLocaleIncome)}/sec',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                              color: isLocaleAffectedByEvent ? Colors.red : Colors.green,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
             ],
           ),
         ),
 
-        const SizedBox(height: 16),
+        const SizedBox(height: 8),
 
-        ...locale.properties.map((property) => _buildPropertyItem(locale, property, gameState, theme)).toList(),
+        // Properties list
+        ...locale.properties.map((property) => Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: _buildPropertyItem(locale, property, gameState, theme)
+        )).toList(),
       ],
     );
   }
@@ -767,18 +741,18 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
                                permanentIncomeBoostMultiplier;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isOwned ? theme.colorScheme.primary.withOpacity(0.3) : Colors.grey.shade200,
           width: isOwned ? 2.0 : 1.0,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 4,
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 8,
             offset: const Offset(0, 2),
           ),
         ],
@@ -786,136 +760,167 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Enhanced large image as focal point
           ClipRRect(
             borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(10),
-              topRight: Radius.circular(10),
+              topLeft: Radius.circular(12),
+              topRight: Radius.circular(12),
             ),
-            child: Image.asset(
-              'assets/images/$localeId/${property.id}.jpg',
-              height: 180,
-              width: double.infinity,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                // Fallback to a placeholder if image can't be loaded
-                return Container(
-                  height: 180,
+            child: Stack(
+              children: [
+                Image.asset(
+                  'assets/images/$localeId/${property.id}.jpg',
+                  height: 280, // Significantly increased from 180
                   width: double.infinity,
-                  color: Colors.grey.shade200,
-                  child: Center(
-                    child: Icon(
-                      Icons.home_work,
-                      size: 50,
-                      color: Colors.grey.shade400,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      height: 280,
+                      width: double.infinity,
+                      color: Colors.grey.shade200,
+                      child: Center(
+                        child: Icon(
+                          Icons.home_work,
+                          size: 60,
+                          color: Colors.grey.shade400,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                // Overlay with property name and status
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.bottomCenter,
+                        end: Alignment.topCenter,
+                        colors: [
+                          Colors.black.withOpacity(0.7),
+                          Colors.black.withOpacity(0.3),
+                          Colors.transparent,
+                        ],
+                      ),
+                    ),
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                property.name,
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                  shadows: [
+                                    Shadow(
+                                      offset: Offset(0, 1),
+                                      blurRadius: 3,
+                                      color: Colors.black54,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            if (isOwned)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.green.withOpacity(0.9),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: const Text(
+                                  'OWNED',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 10,
+                                  ),
+                                ),
+                              ),
+                            if (allUpgradesPurchased && isOwned)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                margin: const EdgeInsets.only(left: 6),
+                                decoration: BoxDecoration(
+                                  color: Colors.amber.withOpacity(0.9),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: const Text(
+                                  'MAX',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 10,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.monetization_on,
+                              size: 16,
+                              color: isLocaleAffectedByEvent ? Colors.red.shade300 : Colors.green.shade300,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              isLocaleAffectedByEvent && displayedIncome < 0
+                                  ? '(\$${NumberFormatter.formatCompact(displayedIncome.abs())})/sec'
+                                  : '\$${NumberFormatter.formatCompact(displayedIncome)}/sec',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: isLocaleAffectedByEvent ? Colors.red.shade300 : Colors.green.shade300,
+                                shadows: const [
+                                  Shadow(
+                                    offset: Offset(0, 1),
+                                    blurRadius: 2,
+                                    color: Colors.black54,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
-                );
-              },
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Wrap(
-                  spacing: 8,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    Text(
-                      property.name,
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: isOwned ? theme.colorScheme.primary : Colors.black87,
-                      ),
-                    ),
-                    if (isOwned)
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.primary.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(4),
-                          border: Border.all(
-                            color: theme.colorScheme.primary.withOpacity(0.3),
-                            width: 1,
-                          ),
-                        ),
-                        child: const Text(
-                          'Owned',
-                          style: TextStyle(
-                            color: Colors.green,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                    if (isOwned && allUpgradesPurchased)
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: Colors.amber.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(4),
-                          border: Border.all(
-                            color: Colors.amber.withOpacity(0.5),
-                            width: 1,
-                          ),
-                        ),
-                        child: const Text(
-                          'Max Level',
-                          style: TextStyle(
-                            color: Colors.amber,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-
-                Row(
-                  children: [
-                    Icon(
-                      isOwned ? Icons.monetization_on : Icons.attach_money,
-                      size: 16,
-                      color: isLocaleAffectedByEvent ? Colors.red.shade700 : Colors.green.shade700
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      isLocaleAffectedByEvent && displayedIncome < 0
-                          ? '(\$${NumberFormatter.formatCompact(displayedIncome.abs())})/sec'
-                          : '\$${NumberFormatter.formatCompact(displayedIncome)}/sec',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: isLocaleAffectedByEvent ? Colors.red.shade700 : Colors.green.shade700,
-                      ),
-                    ),
-                  ],
                 ),
               ],
             ),
           ),
-
-          Divider(height: 1, color: Colors.grey.shade200),
-
-          Container(
-            padding: const EdgeInsets.all(16),
+          
+          // Compact information panel
+          Padding(
+            padding: const EdgeInsets.all(12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Price/Value row
                 Row(
                   children: [
-                    const Icon(Icons.payments, size: 18, color: Colors.grey),
-                    const SizedBox(width: 8),
+                    Icon(
+                      Icons.payments, 
+                      size: 16, 
+                      color: Colors.grey.shade600
+                    ),
+                    const SizedBox(width: 6),
                     Text(
                       isOwned
                         ? 'Value: ${NumberFormatter.formatCurrency(property.totalValue)}'
                         : 'Price: ${NumberFormatter.formatCurrency(property.purchasePrice)}',
                       style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
@@ -923,6 +928,7 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
 
                 const SizedBox(height: 12),
 
+                // Action button
                 SizedBox(
                   width: double.infinity,
                   child: isOwned
@@ -937,69 +943,50 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
                         )
                       : ElevatedButton.icon(
                           onPressed: null,
-                          icon: const Icon(Icons.check, size: 18),
+                          icon: const Icon(Icons.check, size: 16),
                           label: const Text('FULLY UPGRADED'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.amber.shade200,
                             foregroundColor: Colors.amber.shade800,
                             disabledBackgroundColor: Colors.amber.shade200,
                             disabledForegroundColor: Colors.amber.shade800,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            padding: const EdgeInsets.symmetric(vertical: 10),
                           ),
                         )
                     : ElevatedButton.icon(
                         onPressed: canAfford
                           ? () {
-                              // Use the passed locale's ID here too for consistency
                               if (gameState.buyRealEstateProperty(locale.id, property.id)) {
                                 final gameService = Provider.of<GameService>(context, listen: false);
                                 try {
-                                  // Preload sound first
                                   final assetLoader = AssetLoader();
                                   unawaited(assetLoader.preloadSound(SoundAssets.realEstatePurchase));
-                                  // Use the playRealEstateSound method
                                   gameService.playRealEstateSound();
                                 } catch (e) {
-                                  // Only log real estate sound errors occasionally to reduce spam
                                   if (DateTime.now().second % 30 == 0) {
                                     print("Error playing real estate purchase sound: $e");
                                   }
                                 }
-
-                                // ScaffoldMessenger.of(context).showSnackBar(
-                                //   SnackBar(
-                                //     content: Text('Purchased ${property.name}'),
-                                //     duration: const Duration(seconds: 2),
-                                //   ),
-                                // );
                               } else {
                                 final gameService = Provider.of<GameService>(context, listen: false);
-                                // Use generic playSound for error
                                 gameService.playSound(() => gameService.soundManager.playFeedbackErrorSound());
-
-                                // ScaffoldMessenger.of(context).showSnackBar(
-                                //   const SnackBar(
-                                //     content: Text('Not enough money!'),
-                                //     duration: Duration(seconds: 2),
-                                //   ),
-                                // );
                               }
                             }
                           : null,
-                        icon: const Icon(Icons.shopping_cart, size: 18),
+                        icon: const Icon(Icons.shopping_cart, size: 16),
                         label: Text(canAfford ? 'BUY PROPERTY' : 'INSUFFICIENT FUNDS'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: theme.colorScheme.primary,
                           foregroundColor: Colors.white,
                           disabledBackgroundColor: Colors.grey.shade400,
                           disabledForegroundColor: Colors.white70,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          padding: const EdgeInsets.symmetric(vertical: 10),
                         ),
                       ),
                 ),
 
                 if (isOwned && hasUpgrade) ...[
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 12),
                   _buildUpgradeInfo(property, nextUpgrade!, theme),
                 ],
               ],

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../models/business.dart';
 import '../models/game_state.dart';
-import '../services/game_service.dart';
+import '../models/business.dart';
 import '../widgets/business_item.dart';
+import '../utils/responsive_utils.dart';
 
 class BusinessScreen extends StatefulWidget {
   const BusinessScreen({Key? key}) : super(key: key);
@@ -14,41 +14,67 @@ class BusinessScreen extends StatefulWidget {
 }
 
 class _BusinessScreenState extends State<BusinessScreen> {
-  // Sort options for businesses
-  final List<String> _sortOptions = [
-    'Default',
-    'Price (Low to High)',
-    'Price (High to Low)',
-    'ROI (High to Low)',
-    'Income (High to Low)',
-    'Level (High to Low)',
-  ];
+  String _sortBy = 'default'; // default, level, income, cost
 
-  String _currentSort = 'Default';
+  List<Business> _getSortedBusinesses(List<Business> businesses) {
+    List<Business> sorted = List.from(businesses);
+    
+    switch (_sortBy) {
+      case 'level':
+        sorted.sort((a, b) => b.level.compareTo(a.level));
+        break;
+      case 'income':
+        sorted.sort((a, b) => b.getIncomePerSecond().compareTo(a.getIncomePerSecond()));
+        break;
+      case 'cost':
+        sorted.sort((a, b) => a.getNextUpgradeCost().compareTo(b.getNextUpgradeCost()));
+        break;
+      default:
+        // Keep default order (by unlock sequence)
+        break;
+    }
+    
+    return sorted;
+  }
 
   @override
   Widget build(BuildContext context) {
+    final responsive = context.responsive;
+    final layoutConstraints = responsive.layoutConstraints;
+    
     return Consumer<GameState>(
       builder: (context, gameState, child) {
         // Get list of businesses and sort based on selection
         List<Business> businesses = _getSortedBusinesses(gameState.businesses);
 
         return Scaffold(
-          body: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+          body: ResponsiveContainer(
+            padding: EdgeInsets.symmetric(
+              horizontal: layoutConstraints.cardPadding, 
+              vertical: responsive.spacing(8.0)
+            ),
             child: businesses.isEmpty
-                ? const Center(child: Text('No businesses available yet'))
+                ? Center(
+                    child: ResponsiveText(
+                      'No businesses available yet',
+                      baseFontSize: 16,
+                      color: Colors.grey.shade600,
+                    ),
+                  )
                 : ListView.builder(
                     itemCount: businesses.length,
-                    padding: const EdgeInsets.only(top: 8.0, bottom: 80.0), // Add bottom padding to prevent Android UI overlap
+                    padding: EdgeInsets.only(
+                      top: responsive.spacing(8.0), 
+                      bottom: responsive.safeAreaBottom // Responsive bottom padding
+                    ),
                     itemBuilder: (context, index) {
                       Business business = businesses[index];
 
                       // Only show unlocked businesses
                       if (!business.unlocked) return const SizedBox.shrink();
 
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 8.0), // Reduced from 12.0 to 8.0 for more compact layout
+                      return ResponsiveContainer(
+                        margin: EdgeInsets.only(bottom: layoutConstraints.listItemPadding),
                         child: BusinessItem(
                           business: business,
                         ),
@@ -56,188 +82,79 @@ class _BusinessScreenState extends State<BusinessScreen> {
                     },
                   ),
           ),
-          // Compact floating action button for sorting
-          floatingActionButton: _buildSortFAB(),
+          // Responsive floating action button for sorting
+          floatingActionButton: responsive.needsSpaceOptimization 
+              ? null // Hide on very small screens to save space
+              : _buildSortFAB(responsive),
           floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
         );
       },
     );
   }
 
-  Widget _buildSortFAB() {
-    return FloatingActionButton.small(
-      onPressed: _showSortBottomSheet,
-      backgroundColor: Colors.white,
-      foregroundColor: Colors.blue,
-      elevation: 4,
-      child: Stack(
-        children: [
-          const Icon(Icons.sort, size: 20),
-          // Small indicator dot if not on default sort
-          if (_currentSort != 'Default')
-            Positioned(
-              right: 0,
-              top: 0,
-                             child: Container(
-                 width: 8,
-                 height: 8,
-                 decoration: const BoxDecoration(
-                   color: Colors.orange,
-                   shape: BoxShape.circle,
-                 ),
-               ),
+  Widget _buildSortFAB(ResponsiveUtils responsive) {
+    return FloatingActionButton(
+      mini: responsive.isCompact,
+      onPressed: () => _showSortDialog(),
+      tooltip: 'Sort businesses',
+      child: Icon(
+        Icons.sort,
+        size: responsive.iconSize(responsive.isCompact ? 20 : 24),
+      ),
+    );
+  }
+
+  void _showSortDialog() {
+    final responsive = context.responsive;
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: ResponsiveText(
+          'Sort Businesses',
+          baseFontSize: 18,
+          fontWeight: FontWeight.bold,
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildSortOption('Default Order', 'default', responsive),
+            _buildSortOption('By Level', 'level', responsive),
+            _buildSortOption('By Income', 'income', responsive),
+            _buildSortOption('By Upgrade Cost', 'cost', responsive),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: ResponsiveText(
+              'Close',
+              baseFontSize: 14,
+              fontWeight: FontWeight.w500,
             ),
+          ),
         ],
       ),
     );
   }
 
-  void _showSortBottomSheet() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+  Widget _buildSortOption(String title, String value, ResponsiveUtils responsive) {
+    return RadioListTile<String>(
+      title: ResponsiveText(
+        title,
+        baseFontSize: 16,
       ),
-      builder: (BuildContext context) {
-        return Container(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              Row(
-                children: [
-                  const Icon(Icons.sort, color: Colors.blue),
-                  const SizedBox(width: 8),
-                  const Text(
-                    'Sort Businesses',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const Spacer(),
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.close, color: Colors.grey),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              
-              // Sort options
-              ..._sortOptions.map((option) => _buildSortOption(option)),
-              
-              const SizedBox(height: 10),
-            ],
-          ),
-        );
+      value: value,
+      groupValue: _sortBy,
+      onChanged: (String? newValue) {
+        if (newValue != null) {
+          setState(() {
+            _sortBy = newValue;
+          });
+          Navigator.of(context).pop();
+        }
       },
+      contentPadding: responsive.padding(horizontal: 0),
     );
-  }
-
-  Widget _buildSortOption(String option) {
-    final isSelected = _currentSort == option;
-    
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () {
-            setState(() {
-              _currentSort = option;
-            });
-            Navigator.pop(context);
-          },
-          borderRadius: BorderRadius.circular(12),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: isSelected ? Colors.blue.shade50 : Colors.transparent,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: isSelected ? Colors.blue.shade300 : Colors.grey.shade300,
-                width: 1,
-              ),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  _getSortIcon(option),
-                  color: isSelected ? Colors.blue : Colors.grey.shade600,
-                  size: 20,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    option,
-                    style: TextStyle(
-                      color: isSelected ? Colors.blue : Colors.grey.shade800,
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                      fontSize: 15,
-                    ),
-                  ),
-                ),
-                if (isSelected)
-                  Icon(
-                    Icons.check_circle,
-                    color: Colors.blue,
-                    size: 20,
-                  ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  IconData _getSortIcon(String option) {
-    switch (option) {
-      case 'Default':
-        return Icons.list;
-      case 'Price (Low to High)':
-        return Icons.arrow_upward;
-      case 'Price (High to Low)':
-        return Icons.arrow_downward;
-      case 'ROI (High to Low)':
-        return Icons.trending_up;
-      case 'Income (High to Low)':
-        return Icons.attach_money;
-      case 'Level (High to Low)':
-        return Icons.bar_chart;
-      default:
-        return Icons.sort;
-    }
-  }
-
-  List<Business> _getSortedBusinesses(List<Business> businesses) {
-    // Create a copy of the list to avoid modifying the original
-    List<Business> sorted = List.from(businesses);
-
-    switch (_currentSort) {
-      case 'Price (Low to High)':
-        sorted.sort((a, b) => a.getNextUpgradeCost().compareTo(b.getNextUpgradeCost()));
-        break;
-      case 'Price (High to Low)':
-        sorted.sort((a, b) => b.getNextUpgradeCost().compareTo(a.getNextUpgradeCost()));
-        break;
-      case 'ROI (High to Low)':
-        sorted.sort((a, b) => b.getROI().compareTo(a.getROI()));
-        break;
-      case 'Income (High to Low)':
-        sorted.sort((a, b) => b.getIncomePerSecond().compareTo(a.getIncomePerSecond()));
-        break;
-      case 'Level (High to Low)':
-        sorted.sort((a, b) => b.level.compareTo(a.level));
-        break;
-      default:
-        // Default is the original order
-        break;
-    }
-
-    return sorted;
   }
 }

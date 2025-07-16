@@ -183,7 +183,7 @@ class OverviewCard extends StatelessWidget {
                     ? const Color(0xFF242C3B)
                     : Colors.blue.withOpacity(0.05),
               ),
-              padding: const EdgeInsets.all(14),
+              padding: const EdgeInsets.all(16),
               child: Row(
                 children: [
                   Expanded(
@@ -194,37 +194,40 @@ class OverviewCard extends StatelessWidget {
                       icon: Icon(
                         Icons.refresh,
                         color: canReincorporate ? Colors.white : Colors.grey[400],
-                        size: 18,
+                        size: 20,
                       ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: isExecutive 
-                            ? const Color(0xFF1A56DB) // Rich blue for executive theme
-                            : Colors.indigo,
-                        foregroundColor: Colors.white,
-                        disabledBackgroundColor: isExecutive 
-                            ? const Color(0xFF1E2430) 
-                            : Colors.grey[300],
-                        disabledForegroundColor: isExecutive 
-                            ? Colors.grey[600] 
-                            : Colors.grey[600],
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        elevation: isExecutive ? 2 : 1,
+                        backgroundColor: canReincorporate 
+                            ? (isExecutive ? const Color(0xFF1A56DB) : Colors.indigo)
+                            : (isExecutive ? const Color(0xFF1E2430) : Colors.grey[300]),
+                        foregroundColor: canReincorporate ? Colors.white : Colors.grey[600],
+                        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                        elevation: canReincorporate ? (isExecutive ? 3 : 2) : 0,
+                        shadowColor: canReincorporate ? Colors.black38 : Colors.transparent,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(12),
                         ),
+                        minimumSize: const Size(0, 48), // Ensure consistent button height
                       ),
                       label: Text(
                           gameState.reincorporationUsesAvailable > 0
-                            ? 'Re-Incorporate (${gameState.reincorporationUsesAvailable} use${gameState.reincorporationUsesAvailable > 1 ? 's' : ''} available)'
+                            ? 'Re-Incorporate (${gameState.reincorporationUsesAvailable} use${gameState.reincorporationUsesAvailable > 1 ? 's' : ''})'
                             : gameState.totalReincorporations >= 9
                               ? 'Re-Incorporate (Maxed Out)'
                               : netWorth >= minNetWorthRequired
                                 ? 'Re-Incorporate (No uses available)'
-                                : 'Re-Incorporate (${NumberFormatter.formatCurrency(minNetWorthRequired)} needed)'),
+                                : 'Re-Incorporate (${NumberFormatter.formatCurrency(minNetWorthRequired)} needed)',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 12),
                   Container(
+                    height: 48, // Match button height
+                    width: 48,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: isExecutive 
@@ -233,18 +236,26 @@ class OverviewCard extends StatelessWidget {
                       border: Border.all(
                         color: isExecutive
                             ? theme.cardBorderColor
-                            : Colors.blue.shade100,
-                        width: 1,
+                            : Colors.blue.shade200,
+                        width: 1.5,
                       ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 2,
+                          offset: const Offset(0, 1),
+                        ),
+                      ],
                     ),
                     child: IconButton(
                       icon: Icon(
                         Icons.info_outline,
-                        color: isExecutive ? Colors.blue.shade300 : Colors.blue,
+                        color: isExecutive ? Colors.blue.shade300 : Colors.blue.shade600,
                         size: 22,
                       ),
                       onPressed: () => showReincorporateInfo(context),
                       tooltip: 'About Re-Incorporation',
+                      padding: EdgeInsets.zero,
                     ),
                   ),
                 ],
