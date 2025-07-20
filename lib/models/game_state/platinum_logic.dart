@@ -76,6 +76,10 @@ extension PlatinumLogic on GameState {
             if (timeWarpUsesThisPeriod >= 2) { // Use constant value directly
                 return false; // Limit reached
             }
+            // Check if on cooldown
+            if (timeWarpCooldownEnd != null && now.isBefore(timeWarpCooldownEnd!)) {
+                return false; // On cooldown
+            }
             break;
         case 'platinum_shield':
             if (isDisasterShieldActive) {
@@ -426,20 +430,23 @@ extension PlatinumLogic on GameState {
         case 'platinum_warp':
             // Pre-check in spendPlatinumPoints ensures limit not reached
             double incomePerSecond = calculateTotalIncomePerSecond();
-            double fourHoursInSeconds = 4.0 * 60 * 60; // 4 hours in seconds
-            double incomeAward = incomePerSecond * fourHoursInSeconds;
+            double oneHourInSeconds = 1.0 * 60 * 60; // 1 hour in seconds
+            double incomeAward = incomePerSecond * oneHourInSeconds;
             
             if (incomeAward > 0) {
                 money += incomeAward;
                 totalEarned += incomeAward;
                 passiveEarnings += incomeAward; // Attribute to passive
-                print("INFO: Awarded ${NumberFormatter.formatCompact(incomeAward)} via Income Warp (4 hours of income).");
+                print("INFO: Awarded ${NumberFormatter.formatCompact(incomeAward)} via Income Warp (1 hour of income).");
                 // TODO: Add user-facing notification.
             } else {
                 print("INFO: Income Warp: No income calculated (income/sec might be zero).");
             }
             timeWarpUsesThisPeriod++; // Increment usage count
+            // Set 2-hour cooldown
+            timeWarpCooldownEnd = purchaseTime.add(const Duration(hours: 2));
             print("INFO: Income Warp uses this period: $timeWarpUsesThisPeriod/2");
+            print("INFO: Income Warp cooldown set until: $timeWarpCooldownEnd");
             // notifyListeners(); // Called at the end of the method
             break;
         case 'platinum_cache':

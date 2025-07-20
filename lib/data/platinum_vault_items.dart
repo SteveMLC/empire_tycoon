@@ -271,10 +271,10 @@ List<VaultItem> getVaultItems() {
     // ADDED: Platinum Time Warp
     VaultItem(
       id: 'platinum_warp',
-      name: 'Income Warp (4h)',
-      description: 'Instantly receive 4 hours worth of current income.',
+      name: 'Income Warp (1h)',
+      description: 'Instantly receive 1 hour worth of current income. Limited to 2 uses per week with a 2-hour cooldown after each use. Total cash awarded equals your current income/sec × 3600.',
       category: VaultItemCategory.boosters,
-      type: VaultItemType.repeatable, // TODO: Implement 2x per week limit
+      type: VaultItemType.repeatable, // 2x per week limit implemented
       cost: 50,
       iconData: Icons.hourglass_bottom, // Example icon
     ),

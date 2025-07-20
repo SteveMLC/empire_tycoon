@@ -42,7 +42,7 @@ class MarketOverviewWidget extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
           ),
           child: Padding(
-            padding: const EdgeInsets.all(10.0),
+            padding: const EdgeInsets.all(6.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -96,7 +96,7 @@ class MarketOverviewWidget extends StatelessWidget {
                 InkWell(
                   onTap: onOpenPortfolio,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     decoration: BoxDecoration(
                       color: Colors.blue.shade50,
                       borderRadius: BorderRadius.circular(8),
@@ -143,50 +143,49 @@ class MarketOverviewWidget extends StatelessWidget {
                   ),
                 ),
                 
-                const SizedBox(height: 8),
+                const SizedBox(height: 4),
                 
                 // Diversification bonus and dividend row
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    // Diversification bonus
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.shade50,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            Icons.diversity_3,
-                            size: 14,
-                            color: Colors.blue.shade700,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            '${(gameState.calculateDiversificationBonus() * 100).toStringAsFixed(1)}%',
-                            style: TextStyle(
+                    // Diversification bonus - Compact design
+                    GestureDetector(
+                      onTap: () => _showDiversificationInfoDialog(context, gameState),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.blue.shade50,
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.diversity_3,
+                              size: 10,
                               color: Colors.blue.shade700,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
                             ),
-                          ),
-                          // Info button for diversification bonus
-                          IconButton(
-                            icon: Icon(Icons.info_outline, size: 16, color: Colors.blue.shade700),
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(), // Remove default padding
-                            tooltip: 'Learn about Diversification Bonus',
-                            onPressed: () {
-                              _showDiversificationInfoDialog(context, gameState);
-                            },
-                          ),
-                        ],
+                            const SizedBox(width: 2),
+                            Text(
+                              '${(gameState.calculateDiversificationBonus() * 100).toStringAsFixed(1)}%',
+                              style: TextStyle(
+                                color: Colors.blue.shade700,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Icon(
+                              Icons.info_outline, 
+                              size: 10, 
+                              color: Colors.blue.shade700
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                     
-                    // Total dividend income (if any)
+                    // Total dividend income (if any) - Compact design
                     Builder(
                       builder: (context) {
                         double totalDividends = 0.0;
@@ -198,25 +197,26 @@ class MarketOverviewWidget extends StatelessWidget {
                         
                         if (totalDividends > 0) {
                           return Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
                               color: Colors.green.shade50,
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(6),
                             ),
                             child: Row(
+                              mainAxisSize: MainAxisSize.min,
                               children: [
                                 Icon(
                                   Icons.payments,
-                                  size: 14,
+                                  size: 10,
                                   color: Colors.green.shade700,
                                 ),
-                                const SizedBox(width: 4),
+                                const SizedBox(width: 2),
                                 Text(
                                   '\$${totalDividends.toStringAsFixed(2)}/sec',
                                   style: TextStyle(
                                     color: Colors.green.shade700,
                                     fontWeight: FontWeight.bold,
-                                    fontSize: 12,
+                                    fontSize: 10,
                                   ),
                                 ),
                               ],

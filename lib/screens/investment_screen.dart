@@ -38,7 +38,7 @@ class _InvestmentScreenState extends State<InvestmentScreen> {
         List<Investment> investments = _getSortedInvestments(gameState.investments);
         
         return Padding(
-          padding: const EdgeInsets.fromLTRB(12.0, 8.0, 12.0, 8.0),
+          padding: const EdgeInsets.fromLTRB(6.0, 3.0, 6.0, 3.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -55,12 +55,12 @@ class _InvestmentScreenState extends State<InvestmentScreen> {
                 },
               ),
               
-              const SizedBox(height: 10),
+              const SizedBox(height: 6),
               
               // Filter controls row
               _buildFilterControls(gameState),
               
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
               
               // Investments list
               Expanded(
@@ -89,18 +89,22 @@ class _InvestmentScreenState extends State<InvestmentScreen> {
         // Category filter dropdown
         Expanded(
           child: Container(
-            height: 40,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+            height: 36,
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
             decoration: BoxDecoration(
               color: Colors.white,
               border: Border.all(color: Colors.grey.shade300),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(6),
             ),
             child: DropdownButton<String>(
               value: _selectedCategory,
               isExpanded: true,
               underline: const SizedBox(),
-              icon: const Icon(Icons.filter_list, size: 20),
+              icon: const Icon(Icons.filter_list, size: 16),
+              style: const TextStyle(
+                fontSize: 13,
+                color: Colors.black87,
+              ),
               onChanged: (String? newValue) {
                 if (newValue != null) {
                   setState(() {
@@ -111,28 +115,35 @@ class _InvestmentScreenState extends State<InvestmentScreen> {
               items: categories.map<DropdownMenuItem<String>>((String value) {
                 return DropdownMenuItem<String>(
                   value: value,
-                  child: Text(value),
+                  child: Text(
+                    value,
+                    style: const TextStyle(fontSize: 13),
+                  ),
                 );
               }).toList(),
             ),
           ),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 4),
         // Sort dropdown
         Expanded(
           child: Container(
-            height: 40,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+            height: 36,
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
             decoration: BoxDecoration(
               color: Colors.white,
               border: Border.all(color: Colors.grey.shade300),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(6),
             ),
             child: DropdownButton<String>(
               value: _currentSort,
               isExpanded: true,
               underline: const SizedBox(),
-              icon: const Icon(Icons.sort, size: 20),
+              icon: const Icon(Icons.sort, size: 16),
+              style: const TextStyle(
+                fontSize: 13,
+                color: Colors.black87,
+              ),
               onChanged: (String? newValue) {
                 if (newValue != null) {
                   setState(() {
@@ -143,7 +154,10 @@ class _InvestmentScreenState extends State<InvestmentScreen> {
               items: _sortOptions.map<DropdownMenuItem<String>>((String value) {
                 return DropdownMenuItem<String>(
                   value: value,
-                  child: Text(value),
+                  child: Text(
+                    value,
+                    style: const TextStyle(fontSize: 13),
+                  ),
                 );
               }).toList(),
             ),
@@ -169,7 +183,7 @@ class _InvestmentScreenState extends State<InvestmentScreen> {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(10),
         boxShadow: [
           BoxShadow(
             color: Colors.grey.withOpacity(0.2),
@@ -180,7 +194,7 @@ class _InvestmentScreenState extends State<InvestmentScreen> {
         ],
       ),
       child: ListView.builder(
-        padding: const EdgeInsets.only(bottom: 80.0),
+        padding: const EdgeInsets.only(bottom: 70.0),
         itemCount: investments.length,
         itemBuilder: (context, index) {
           Investment investment = investments[index];

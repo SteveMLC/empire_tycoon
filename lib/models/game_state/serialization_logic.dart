@@ -86,6 +86,7 @@ extension SerializationLogic on GameState {
       'cashCacheCooldownEnd': cashCacheCooldownEnd?.toIso8601String(),
       'timeWarpUsesThisPeriod': timeWarpUsesThisPeriod,
       'lastTimeWarpReset': lastTimeWarpReset?.toIso8601String(),
+      'timeWarpCooldownEnd': timeWarpCooldownEnd?.toIso8601String(),
       'platinumFoundationsApplied': platinumFoundationsApplied,
       'platinumFacadeAppliedBusinessIds': platinumFacadeAppliedBusinessIds.toList(),
       'isPlatinumCrestUnlocked': isPlatinumCrestUnlocked,
@@ -537,6 +538,7 @@ extension SerializationLogic on GameState {
     cashCacheCooldownEnd = _parseDateTimeSafe(json['cashCacheCooldownEnd']);
     timeWarpUsesThisPeriod = json['timeWarpUsesThisPeriod'] ?? 0;
     lastTimeWarpReset = _parseDateTimeSafe(json['lastTimeWarpReset']);
+    timeWarpCooldownEnd = _parseDateTimeSafe(json['timeWarpCooldownEnd']);
     platinumFoundationsApplied = Map<String, int>.from(json['platinumFoundationsApplied'] ?? {});
     platinumFacadeAppliedBusinessIds = Set<String>.from(json['platinumFacadeAppliedBusinessIds'] ?? []);
     isPlatinumCrestUnlocked = json['isPlatinumCrestUnlocked'] ?? false;

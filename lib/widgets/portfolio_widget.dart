@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../models/game_state.dart';
 import '../models/investment.dart';
 import '../screens/investment_detail_screen.dart';
+import '../utils/number_formatter.dart';
 
 class PortfolioWidget extends StatefulWidget {
   final VoidCallback onClose;
@@ -458,7 +459,7 @@ class _PortfolioWidgetState extends State<PortfolioWidget> {
                               ),
                             ),
                             Text(
-                              '\$${investment.currentPrice.toStringAsFixed(2)}/share',
+                              '${NumberFormatter.formatCurrencyPrecise(investment.currentPrice)}/share',
                               style: TextStyle(
                                 fontSize: 11,
                                 color: Colors.grey.shade600,

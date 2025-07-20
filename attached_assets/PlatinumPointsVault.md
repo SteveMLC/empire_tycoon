@@ -234,7 +234,7 @@ Temporary perks for immediate gains.
     - Tie-In: Accelerates hustle and passive income.
 19. ID: platinum_warp
     - Name: Platinum Time Warp
-    - Description: Grants 4 hours of offline income instantly.
+    - Description: Grants 1 hour of offline income instantly.
     - Cost: 40 PP
     - Category: Boosters
     - Limit: Repeatable, 2x per in-game week
@@ -422,7 +422,7 @@ items: [
   {
     id: "platinum_warp",
     name: "Platinum Time Warp",
-    description: "Grants 4 hours of offline income instantly.",
+    description: "Grants 1 hour of offline income instantly.",
     cost: 40,
     category: "boosters",
     limit: "repeatable:2/week",

@@ -75,7 +75,7 @@ Adds totals to money, totalEarned, and respective categories (passiveEarnings, r
 Sets offlineEarningsAwarded, offlineDurationForNotification, and _shouldShowOfflineEarnings for the UI notification.
 Instant Income Awards (Platinum Vault):
 platinum_cache: Awards cash based on current passive income rate (calculateTotalIncomePerSecond). Adds to money, totalEarned.
-platinum_warp: Awards 4 hours of offline income (calculateOfflineIncome, uses calculateTotalIncomePerSecond). Adds to money, totalEarned, passiveEarnings.
+platinum_warp: Awards 1 hour of offline income (calculateOfflineIncome, uses calculateTotalIncomePerSecond). Adds to money, totalEarned, passiveEarnings.
 III. Supporting Calculations & Models
 Business (Business.dart, business_definitions.dart): Defines baseIncome, incomeInterval. getCurrentIncome() likely calculates baseIncome * level * upgrade_multipliers. getIncomePerSecond() is getCurrentIncome() / incomeInterval. getCurrentValue() used for net worth.
 Investment (Investment.dart, investment_definitions.dart): Defines dividendPerSecond, category. getDividendIncomePerSecond() returns the per-share rate. getCurrentValue() is currentPrice * owned. Market events (MarketEvent) modify currentPrice. calculateDiversificationBonus() implemented in GameState.

@@ -42,11 +42,9 @@ extension BoosterLogic on GameState {
     _adBoostTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (adBoostRemainingSeconds > 0) {
         adBoostRemainingSeconds--;
-        // OPTIMIZED: Only notify listeners every 5 seconds or when boost expires
-        // This reduces excessive UI rebuilds while keeping functionality
-        if (adBoostRemainingSeconds == 0 || adBoostRemainingSeconds % 5 == 0) {
-          notifyListeners();
-        }
+        // CRITICAL: Always notify listeners for ad boost to ensure smooth countdown display
+        // Ad boost is short (60 seconds) so frequent updates are acceptable for UX
+        notifyListeners();
       } else {
         timer.cancel();
         _adBoostTimer = null;

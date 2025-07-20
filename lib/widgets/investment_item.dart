@@ -6,7 +6,7 @@ import '../models/game_state.dart';
 import '../models/investment.dart';
 import '../utils/number_formatter.dart';
 
-class InvestmentItem extends StatelessWidget {
+class InvestmentItem extends StatefulWidget {
   final Investment investment;
   final int quantity;
   final Function(int) onQuantityChanged;
@@ -22,6 +22,44 @@ class InvestmentItem extends StatelessWidget {
     required this.onSell,
   }) : super(key: key);
 
+  @override
+  _InvestmentItemState createState() => _InvestmentItemState();
+}
+
+class _InvestmentItemState extends State<InvestmentItem> with SingleTickerProviderStateMixin {
+  late AnimationController _buttonController;
+  late Animation<double> _buttonScaleAnimation;
+  bool _isBuyPressed = false;
+  bool _isSellPressed = false;
+  
+  @override
+  void initState() {
+    super.initState();
+    _buttonController = AnimationController(
+      duration: const Duration(milliseconds: 150),
+      vsync: this,
+    );
+    _buttonScaleAnimation = Tween<double>(begin: 1.0, end: 0.95).animate(
+      CurvedAnimation(parent: _buttonController, curve: Curves.easeInOut),
+    );
+  }
+  
+  @override
+  void dispose() {
+    _buttonController.dispose();
+    super.dispose();
+  }
+  
+  void _handleBuyPressed() {
+    HapticFeedback.mediumImpact();
+    widget.onBuy();
+  }
+  
+  void _handleSellPressed() {
+    HapticFeedback.mediumImpact();
+    widget.onSell();
+  }
+  
   @override
   Widget build(BuildContext context) {
     return Consumer<GameState>(
@@ -70,7 +108,7 @@ class InvestmentItem extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Text(
-                          '\$${investment.currentPrice.toStringAsFixed(2)}',
+                          NumberFormatter.formatCurrencyPrecise(investment.currentPrice),
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -196,7 +234,7 @@ class InvestmentItem extends StatelessWidget {
                     ),
                     Expanded(
                       child: Text(
-                        'Total: \$${(investment.currentPrice * quantity).toStringAsFixed(2)}',
+                        'Total: ${NumberFormatter.formatCurrencyPrecise(investment.currentPrice * quantity)}',
                         textAlign: TextAlign.right,
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
@@ -208,28 +246,117 @@ class InvestmentItem extends StatelessWidget {
                 
                 // Buy and sell buttons
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Expanded(
-                      child: ElevatedButton(
-                        onPressed: canAfford ? onBuy : null,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
+                      child: GestureDetector(
+                        onTapDown: canAfford ? (_) {
+                          setState(() {
+                            _isBuyPressed = true;
+                          });
+                          _buttonController.forward();
+                        } : null,
+                        onTapUp: canAfford ? (_) {
+                          setState(() {
+                            _isBuyPressed = false;
+                          });
+                          _buttonController.reverse();
+                          _handleBuyPressed();
+                        } : null,
+                        onTapCancel: canAfford ? () {
+                          setState(() {
+                            _isBuyPressed = false;
+                          });
+                          _buttonController.reverse();
+                        } : null,
+                        child: AnimatedBuilder(
+                          animation: _buttonScaleAnimation,
+                          builder: (context, child) {
+                            return Transform.scale(
+                              scale: _isBuyPressed ? _buttonScaleAnimation.value : 1.0,
+                              child: Container(
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  color: canAfford ? Colors.green : Colors.grey[300],
+                                  borderRadius: BorderRadius.circular(8),
+                                  boxShadow: _isBuyPressed && canAfford ? [] : [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.1),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    'Buy',
+                                    style: TextStyle(
+                                      color: canAfford ? Colors.white : Colors.grey[600],
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 15,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
                         ),
-                        child: const Text('Buy'),
                       ),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
-                      child: ElevatedButton(
-                        onPressed: canSell ? onSell : null,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
+                      child: GestureDetector(
+                        onTapDown: canSell ? (_) {
+                          setState(() {
+                            _isSellPressed = true;
+                          });
+                          _buttonController.forward();
+                        } : null,
+                        onTapUp: canSell ? (_) {
+                          setState(() {
+                            _isSellPressed = false;
+                          });
+                          _buttonController.reverse();
+                          _handleSellPressed();
+                        } : null,
+                        onTapCancel: canSell ? () {
+                          setState(() {
+                            _isSellPressed = false;
+                          });
+                          _buttonController.reverse();
+                        } : null,
+                        child: AnimatedBuilder(
+                          animation: _buttonScaleAnimation,
+                          builder: (context, child) {
+                            return Transform.scale(
+                              scale: _isSellPressed ? _buttonScaleAnimation.value : 1.0,
+                              child: Container(
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  color: canSell ? Colors.red : Colors.grey[300],
+                                  borderRadius: BorderRadius.circular(8),
+                                  boxShadow: _isSellPressed && canSell ? [] : [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.1),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    'Sell',
+                                    style: TextStyle(
+                                      color: canSell ? Colors.white : Colors.grey[600],
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 15,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
                         ),
-                        child: const Text('Sell'),
                       ),
                     ),
                   ],
@@ -348,48 +475,94 @@ class InvestmentItem extends StatelessWidget {
   }
   
   Widget _buildPriceHistoryChart() {
-    // Simple price history visualization
+    // Enhanced price history visualization with animations
     return Container(
-      height: 50,
+      height: 70,
       decoration: BoxDecoration(
         border: Border.all(color: Colors.grey[300]!),
-        borderRadius: BorderRadius.circular(4),
+        borderRadius: BorderRadius.circular(8),
+        color: Colors.grey[50],
       ),
-      child: Row(
-        children: List.generate(investment.priceHistory.length, (index) {
-          // Calculate relative height
-          double minPrice = investment.priceHistory.reduce((a, b) => a < b ? a : b);
-          double maxPrice = investment.priceHistory.reduce((a, b) => a > b ? a : b);
-          double range = maxPrice - minPrice;
-          
-          // Prevent division by zero
-          double relativeHeight = range == 0 
-              ? 0.5 
-              : (investment.priceHistory[index] - minPrice) / range;
-          
-          // Determine color based on comparison to previous day
-          Color barColor = Colors.grey;
-          if (index > 0) {
-            barColor = investment.priceHistory[index] >= investment.priceHistory[index - 1]
-                ? Colors.green
-                : Colors.red;
-          }
-          
-          return Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 1),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Container(
-                    height: 40 * relativeHeight.clamp(0.1, 1.0),
-                    color: barColor,
-                  ),
-                ],
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: 8, top: 4),
+            child: Text(
+              'Price History',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey[700],
               ),
             ),
-          );
-        }),
+          ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: List.generate(widget.investment.priceHistory.length, (index) {
+                  // Calculate relative height
+                  double minPrice = widget.investment.priceHistory.reduce((a, b) => a < b ? a : b);
+                  double maxPrice = widget.investment.priceHistory.reduce((a, b) => a > b ? a : b);
+                  double range = maxPrice - minPrice;
+                  
+                  // Prevent division by zero
+                  double relativeHeight = range == 0 
+                      ? 0.5 
+                      : (widget.investment.priceHistory[index] - minPrice) / range;
+                  
+                  // Determine color based on comparison to previous day
+                  Color barColor = Colors.grey;
+                  if (index > 0) {
+                    barColor = widget.investment.priceHistory[index] >= widget.investment.priceHistory[index - 1]
+                        ? Colors.green.shade400
+                        : Colors.red.shade400;
+                  }
+                  
+                  return Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 1),
+                      child: TweenAnimationBuilder<double>(
+                        duration: Duration(milliseconds: 800 + (index * 50)),
+                        curve: Curves.elasticOut,
+                        tween: Tween<double>(
+                          begin: 0.0,
+                          end: relativeHeight.clamp(0.1, 1.0),
+                        ),
+                        builder: (context, value, child) {
+                          return Column(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              Container(
+                                height: 40 * value,
+                                decoration: BoxDecoration(
+                                  color: barColor,
+                                  borderRadius: BorderRadius.only(
+                                    topLeft: Radius.circular(2),
+                                    topRight: Radius.circular(2),
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: barColor.withOpacity(0.3),
+                                      blurRadius: 2,
+                                      offset: Offset(0, 1),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                    ),
+                  );
+                }),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

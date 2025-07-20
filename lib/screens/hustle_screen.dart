@@ -505,7 +505,7 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
                             ),
                             SizedBox(height: responsive.spacing(4)),
                             ResponsiveText(
-                              'Time remaining: ${_formatBoostTime(gameState.clickBoostEndTime)}',
+                              'Time remaining: ${_formatAdBoostTime(gameState.adBoostRemainingSeconds)}',
                               baseFontSize: 12,
                             ),
                           ],
@@ -657,6 +657,14 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
     
     final minutes = remaining.inMinutes.remainder(60);
     final seconds = remaining.inSeconds.remainder(60);
+    return "${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}";
+  }
+
+  String _formatAdBoostTime(int remainingSeconds) {
+    if (remainingSeconds <= 0) return "00:00";
+    
+    final minutes = remainingSeconds ~/ 60;
+    final seconds = remainingSeconds % 60;
     return "${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}";
   }
 

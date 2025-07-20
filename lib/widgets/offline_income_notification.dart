@@ -666,43 +666,73 @@ class _OfflineIncomeNotificationState extends State<OfflineIncomeNotification>
                                 // Bonus banner - only show if ad not watched
                                 if (!gameState.offlineIncomeAdWatched) ...[
                                   const SizedBox(height: 10),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                    decoration: BoxDecoration(
-                                      gradient: LinearGradient(
-                                        colors: [
-                                          Colors.amber.shade400,
-                                          Colors.amber.shade500,
+                                  GestureDetector(
+                                    onTap: gameState.offlineIncomeAdWatched 
+                                      ? null 
+                                      : () {
+                                          final adMobService = Provider.of<AdMobService>(context, listen: false);
+                                          
+                                          // Check if premium user should skip ads
+                                          if (gameState.isPremium) {
+                                            // Premium users skip ads and get 2x boost immediately
+                                            gameState.setOfflineIncomeAdWatched(true);
+                                            return;
+                                          }
+                                          
+                                          // Show AdMob rewarded ad for offline income boost
+                                          adMobService.showOfflineincome2xAd(
+                                            onRewardEarned: (String rewardType) {
+                                              // Verify we received the correct reward type
+                                              if (rewardType == 'Offlineincome2x') {
+                                                // User successfully watched the ad
+                                                gameState.setOfflineIncomeAdWatched(true);
+                                              } else {
+                                                print('Warning: Expected Offlineincome2x reward but received: $rewardType');
+                                              }
+                                            },
+                                            onAdFailure: () async {
+                                              // Ad failed to show, handle error silently
+                                            },
+                                          );
+                                        },
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                      decoration: BoxDecoration(
+                                        gradient: LinearGradient(
+                                          colors: [
+                                            Colors.amber.shade400,
+                                            Colors.amber.shade500,
+                                          ],
+                                        ),
+                                        borderRadius: BorderRadius.circular(12),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.amber.shade300.withOpacity(0.4),
+                                            blurRadius: 6,
+                                            offset: const Offset(0, 2),
+                                          ),
                                         ],
                                       ),
-                                      borderRadius: BorderRadius.circular(12),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.amber.shade300.withOpacity(0.4),
-                                          blurRadius: 6,
-                                          offset: const Offset(0, 2),
-                                        ),
-                                      ],
-                                    ),
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        const Icon(
-                                          Icons.star,
-                                          color: Colors.white,
-                                          size: 12,
-                                        ),
-                                        const SizedBox(width: 6),
-                                        const Text(
-                                          'Watch AD for 2x bonus!',
-                                          style: TextStyle(
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Icon(
+                                            Icons.star,
                                             color: Colors.white,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 11,
+                                            size: 12,
                                           ),
-                                        ),
-                                      ],
+                                          const SizedBox(width: 6),
+                                          const Text(
+                                            'Watch AD for 2x bonus!',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 11,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   ),
                                 ],

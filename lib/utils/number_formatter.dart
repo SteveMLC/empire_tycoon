@@ -33,6 +33,34 @@ class NumberFormatter {
     return isNegative ? "-$formattedAmount" : formattedAmount;
   }
   
+  /// Format a number as currency with more precision for low-priced investments
+  /// Shows up to 6 decimal places for amounts less than $1
+  /// Example: formatCurrencyPrecise(0.001234) => "$0.001234"
+  static String formatCurrencyPrecise(double amount) {
+    if (amount == 0) {
+      return "\$0.00";
+    }
+    
+    // Handle negative numbers
+    bool isNegative = amount < 0;
+    amount = amount.abs();
+    
+    String formattedAmount;
+    
+    if (amount < 1.0) {
+      // For amounts less than $1, show up to 6 decimal places, removing trailing zeros
+      formattedAmount = "\$${amount.toStringAsFixed(6)}";
+      // Remove trailing zeros after the decimal point
+      formattedAmount = formattedAmount.replaceAll(RegExp(r'0+$'), '').replaceAll(RegExp(r'\.$'), '.00');
+    } else {
+      // For amounts $1 and above, use standard currency formatting
+      formattedAmount = _currencyFormat.format(amount);
+    }
+    
+    // Add negative sign if needed
+    return isNegative ? "-$formattedAmount" : formattedAmount;
+  }
+  
   /// Format a number in compact notation for large numbers
   /// Example: formatCompact(1234567) => "$1.2M"
   static String formatCompact(double value) {

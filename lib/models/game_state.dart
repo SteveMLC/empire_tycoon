@@ -134,6 +134,7 @@ class GameState with ChangeNotifier {
   DateTime? cashCacheCooldownEnd; // Cooldown for 'platinum_cache' (1x per day - previously 5x/week)
   int timeWarpUsesThisPeriod = 0; // Counter for 'platinum_warp' (2x per week)
   DateTime? lastTimeWarpReset; // Timestamp for weekly reset of 'platinum_warp'
+  DateTime? timeWarpCooldownEnd; // Cooldown for 'platinum_warp' (2h after each use)
   // >> END: Platinum Vault Item State <<
 
   // ADDED: Active Challenge State
@@ -1202,14 +1203,14 @@ class GameState with ChangeNotifier {
         case 'platinum_warp':
             // Pre-check in spendPlatinumPoints ensures limit not reached
             double incomePerSecond = calculateTotalIncomePerSecond(); // FIX: Use correct method for current income rate
-            double fourHoursInSeconds = 4.0 * 60 * 60; // 4 hours in seconds
-            double incomeAward = incomePerSecond * fourHoursInSeconds;
+            double oneHourInSeconds = 1.0 * 60 * 60; // 1 hour in seconds
+            double incomeAward = incomePerSecond * oneHourInSeconds;
             
             if (incomeAward > 0) {
                 money += incomeAward;
                 totalEarned += incomeAward;
                 passiveEarnings += incomeAward; // Attribute to passive
-                print("INFO: Awarded ${NumberFormatter.formatCompact(incomeAward)} via Income Warp (4 hours of income).");
+                print("INFO: Awarded ${NumberFormatter.formatCompact(incomeAward)} via Income Warp (1 hour of income).");
                 // TODO: Add user-facing notification.
             } else {
                 print("INFO: Income Warp: No income calculated (income/sec might be zero).");

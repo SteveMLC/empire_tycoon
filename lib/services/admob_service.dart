@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'dart:async';
@@ -97,6 +98,14 @@ class AdMobService {
   Map<String, List<String>> _adErrors = {};
   String? _lastAdError;
   DateTime? _lastErrorTime;
+  
+  // ROBUST ERROR HANDLING: Exponential backoff and failure tracking
+  Map<String, int> _consecutiveFailures = {};
+  Map<String, DateTime?> _lastFailureTime = {};
+  Map<String, bool> _adTypeThrottled = {};
+  static const int _maxConsecutiveFailures = 3;
+  static const Duration _baseRetryDelay = Duration(minutes: 2);
+  static const Duration _throttleResetDuration = Duration(minutes: 15);
 
   // PREDICTIVE LOADING: Update game state for intelligent loading decisions
   void updateGameState({
@@ -112,54 +121,136 @@ class AdMobService {
     if (businessCount != null && businessCount != _userBusinessCount) {
       _userBusinessCount = businessCount;
       stateChanged = true;
-      if (kDebugMode) {
-        print('🎯 Game state updated: User owns $_userBusinessCount businesses');
-      }
     }
     
     if (firstBusinessLevel != null && firstBusinessLevel != _firstBusinessLevel) {
       _firstBusinessLevel = firstBusinessLevel;
       stateChanged = true;
-      if (kDebugMode) {
-        print('🎯 Game state updated: First business level $_firstBusinessLevel');
-      }
     }
     
     if (hasActiveEvents != null && hasActiveEvents != _hasActiveEvents) {
       _hasActiveEvents = hasActiveEvents;
       stateChanged = true;
-      if (kDebugMode) {
-        print('🎯 Game state updated: Active events = $_hasActiveEvents');
-      }
     }
     
     if (currentScreen != null && currentScreen != _currentScreen) {
       _currentScreen = currentScreen;
       stateChanged = true;
-      if (kDebugMode) {
-        print('🎯 Screen changed: $_currentScreen');
-      }
     }
     
-    if (isReturningFromBackground != null) {
+    if (isReturningFromBackground != null && isReturningFromBackground != _isReturningFromBackground) {
       _isReturningFromBackground = isReturningFromBackground;
       stateChanged = true;
-      if (kDebugMode) {
-        print('🎯 Background return: $_isReturningFromBackground');
-      }
     }
     
     if (hasOfflineIncome != null && hasOfflineIncome != _hasOfflineIncome) {
       _hasOfflineIncome = hasOfflineIncome;
       stateChanged = true;
+    }
+    
+    // PREDICTIVE LOADING: Only trigger if state actually changed
+    if (stateChanged) {
       if (kDebugMode) {
-        print('🎯 Offline income available: $_hasOfflineIncome');
+        print('🎯 Game state updated - triggering predictive loading');
+        print('🎯 Businesses: $_userBusinessCount, Level: $_firstBusinessLevel');
+        print('🎯 Events: $_hasActiveEvents, Screen: $_currentScreen');
+        print('🎯 Background: $_isReturningFromBackground, Offline: $_hasOfflineIncome');
+      }
+      
+      // Small delay to batch multiple rapid state changes
+      Future.delayed(const Duration(milliseconds: 500), () {
+        _performPredictiveLoading();
+      });
+    }
+  }
+  
+  // ROBUST ERROR HANDLING: Check if ad type should be retried
+  bool _shouldRetryAdType(String adType) {
+    // Reset throttle if enough time has passed
+    final lastFailure = _lastFailureTime[adType];
+    if (lastFailure != null && DateTime.now().difference(lastFailure) > _throttleResetDuration) {
+      _consecutiveFailures[adType] = 0;
+      _adTypeThrottled[adType] = false;
+      if (kDebugMode) {
+        print('🔄 Reset throttle for $adType after ${_throttleResetDuration.inMinutes} minutes');
       }
     }
     
-    // Trigger predictive loading based on state changes
-    if (stateChanged) {
-      _performPredictiveLoading();
+    // Don't retry if throttled
+    if (_adTypeThrottled[adType] == true) {
+      if (kDebugMode) {
+        print('⏸️ Skipping $adType - throttled due to consecutive failures');
+      }
+      return false;
+    }
+    
+    return true;
+  }
+  
+  // ROBUST ERROR HANDLING: Calculate exponential backoff delay
+  Duration _getRetryDelay(String adType) {
+    final failures = _consecutiveFailures[adType] ?? 0;
+    final multiplier = math.pow(2, failures).toInt().clamp(1, 8); // Max 8x base delay
+    return Duration(milliseconds: _baseRetryDelay.inMilliseconds * multiplier);
+  }
+  
+  // ROBUST ERROR HANDLING: Handle ad load failure with exponential backoff
+  void _handleAdLoadFailure(String adType, LoadAdError error) {
+    _consecutiveFailures[adType] = (_consecutiveFailures[adType] ?? 0) + 1;
+    _lastFailureTime[adType] = DateTime.now();
+    
+    final failures = _consecutiveFailures[adType]!;
+    
+    // Throttle ad type if too many consecutive failures
+    if (failures >= _maxConsecutiveFailures) {
+      _adTypeThrottled[adType] = true;
+      if (kDebugMode) {
+        print('🚫 Throttling $adType after $failures consecutive failures');
+        print('🚫 Will retry after ${_throttleResetDuration.inMinutes} minutes');
+      }
+      return;
+    }
+    
+    // Schedule retry with exponential backoff
+    final retryDelay = _getRetryDelay(adType);
+    if (kDebugMode) {
+      print('🔄 Scheduling $adType retry in ${retryDelay.inSeconds} seconds (attempt ${failures + 1})');
+    }
+    
+    Future.delayed(retryDelay, () {
+      if (_shouldRetryAdType(adType)) {
+        switch (adType) {
+          case 'hustleBoost':
+            if (!_isHustleBoostAdLoading && !_isAdValid(_hustleBoostAd, _hustleBoostAdLoadTime)) {
+              _loadHustleBoostAd();
+            }
+            break;
+          case 'buildSkip':
+            if (!_isBuildSkipAdLoading && !_isAdValid(_buildSkipAd, _buildSkipAdLoadTime)) {
+              _loadBuildSkipAd();
+            }
+            break;
+          case 'eventClear':
+            if (!_isEventClearAdLoading && !_isAdValid(_eventClearAd, _eventClearAdLoadTime)) {
+              _loadEventClearAd();
+            }
+            break;
+          case 'offlineincome2x':
+            if (!_isOfflineincome2xAdLoading && !_isAdValid(_offlineincome2xAd, _offlineincome2xAdLoadTime)) {
+              _loadOfflineincome2xAd();
+            }
+            break;
+        }
+      }
+    });
+  }
+  
+  // ROBUST ERROR HANDLING: Handle successful ad load
+  void _handleAdLoadSuccess(String adType) {
+    _consecutiveFailures[adType] = 0;
+    _adTypeThrottled[adType] = false;
+    if (kDebugMode) {
+      print('✅ $adType loaded successfully - reset failure count');
     }
   }
   
@@ -173,12 +264,20 @@ class AdMobService {
       print('🎯 Events: $_hasActiveEvents, Screen: $_currentScreen');
       print('🎯 Background Return: $_isReturningFromBackground');
       print('🎯 Offline Income Available: $_hasOfflineIncome');
+      
+      // Show throttling status
+      final throttledTypes = _adTypeThrottled.entries.where((e) => e.value == true).map((e) => e.key).toList();
+      if (throttledTypes.isNotEmpty) {
+        print('⏸️ Throttled ad types: ${throttledTypes.join(", ")}');
+      }
     }
     
     // 1. HustleBoost: Always preload (main screen accessible anytime)
     if (!_isAdValid(_hustleBoostAd, _hustleBoostAdLoadTime) && !_isHustleBoostAdLoading) {
-      if (kDebugMode) print('🎯 Loading HustleBoost (always available)');
-      _loadHustleBoostAd();
+      if (_shouldRetryAdType('hustleBoost')) {
+        if (kDebugMode) print('🎯 Loading HustleBoost (always available)');
+        _loadHustleBoostAd();
+      }
     }
     
     // 2. BuildSkip: Context-aware loading
@@ -187,28 +286,31 @@ class AdMobService {
                               _firstBusinessLevel >= 3;
     
     if (shouldLoadBuildSkip && !_isAdValid(_buildSkipAd, _buildSkipAdLoadTime) && !_isBuildSkipAdLoading) {
-      if (kDebugMode) print('🎯 Loading BuildSkip (context-aware)');
-      if (kDebugMode) print('🎯 Loading BuildSkip ad (context-aware: $_userBusinessCount businesses, level $_firstBusinessLevel)...');
-      _loadBuildSkipAd();
+      if (_shouldRetryAdType('buildSkip')) {
+        if (kDebugMode) print('🎯 Loading BuildSkip (context-aware: $_userBusinessCount businesses, level $_firstBusinessLevel)');
+        _loadBuildSkipAd();
+      }
     }
     
     // 3. EventClear: Event-based preloading
     if (_hasActiveEvents && !_isAdValid(_eventClearAd, _eventClearAdLoadTime) && !_isEventClearAdLoading) {
-      if (kDebugMode) print('🎯 Loading EventClear (events active)');
-      _loadEventClearAd();
+      if (_shouldRetryAdType('eventClear')) {
+        if (kDebugMode) print('🎯 Loading EventClear (events active)');
+        _loadEventClearAd();
+      }
     }
     
     // 4. Offlineincome2x: ENHANCED - Preload when offline income is available OR returning from background
-    // CRITICAL FIX: Check for active offline income, not just background return
     bool shouldLoadOfflineIncomeAd = _isReturningFromBackground || _hasOfflineIncome;
     
     if (shouldLoadOfflineIncomeAd && !_isAdValid(_offlineincome2xAd, _offlineincome2xAdLoadTime) && !_isOfflineincome2xAdLoading) {
-      if (kDebugMode) {
-        String reason = _isReturningFromBackground ? 'background return' : 'offline income available';
-        print('🎯 Loading Offlineincome2x ($reason)');
-        print('🎯 Loading Offlineincome2x ad ($reason)...');
+      if (_shouldRetryAdType('offlineincome2x')) {
+        if (kDebugMode) {
+          String reason = _isReturningFromBackground ? 'background return' : 'offline income available';
+          print('🎯 Loading Offlineincome2x ($reason)');
+        }
+        _loadOfflineincome2xAd();
       }
-      _loadOfflineincome2xAd();
     }
   }
   
@@ -231,12 +333,6 @@ class AdMobService {
     
     return false;
   }
-
-  // Ad readiness checking
-  bool get isHustleBoostAdReady => _isAdValid(_hustleBoostAd, _hustleBoostAdLoadTime);
-  bool get isBuildSkipAdReady => _isAdValid(_buildSkipAd, _buildSkipAdLoadTime);
-  bool get isEventClearAdReady => _isAdValid(_eventClearAd, _eventClearAdLoadTime);
-  bool get isOfflineincome2xAdReady => _isAdValid(_offlineincome2xAd, _offlineincome2xAdLoadTime);
 
   // Check if an ad is valid and not expired (50-minute window for safety)
   bool _isAdValid(RewardedAd? ad, DateTime? loadTime) {
@@ -520,6 +616,9 @@ class AdMobService {
     if (!_adsEnabled) return;
     if (_isHustleBoostAdLoading || _isAdValid(_hustleBoostAd, _hustleBoostAdLoadTime)) return;
     
+    // Check if this ad type should be retried
+    if (!_shouldRetryAdType('hustleBoost')) return;
+    
     _isHustleBoostAdLoading = true;
     _adRequestCounts['hustleBoost'] = (_adRequestCounts['hustleBoost'] ?? 0) + 1;
     
@@ -535,6 +634,7 @@ class AdMobService {
           _hustleBoostAd = ad;
           _isHustleBoostAdLoading = false;
           _hustleBoostAdLoadTime = DateTime.now();
+          _handleAdLoadSuccess('hustleBoost');
           if (kDebugMode) {
             print('✅ HustleBoost ad loaded - Ready for instant use');
           }
@@ -542,6 +642,7 @@ class AdMobService {
         onAdFailedToLoad: (LoadAdError error) {
           _isHustleBoostAdLoading = false;
           _logAdError('hustleBoost', 'Load failed: ${error.code} - ${error.message}');
+          
           // PRODUCTION DEBUG: Enhanced error logging for release mode
           debugPrint('❌ HustleBoost ad load failed:');
           debugPrint('   Error Code: ${error.code}');
@@ -549,13 +650,9 @@ class AdMobService {
           debugPrint('   Error Domain: ${error.domain}');
           debugPrint('   Build Mode: ${kDebugMode ? "DEBUG" : "RELEASE"}');
           debugPrint('   Ad Unit: ${_getAdUnitId(AdType.hustleBoost)}');
-          // Retry after delay
-          Future.delayed(const Duration(seconds: 30), () {
-            if (!_isHustleBoostAdLoading && !_isAdValid(_hustleBoostAd, _hustleBoostAdLoadTime)) {
-              debugPrint('🔄 Retrying HustleBoost ad load after failure...');
-              _loadHustleBoostAd();
-            }
-          });
+          
+          // Use robust error handling with exponential backoff
+          _handleAdLoadFailure('hustleBoost', error);
         },
       ),
     );
@@ -566,11 +663,14 @@ class AdMobService {
     if (!_adsEnabled) return;
     if (_isBuildSkipAdLoading || _isAdValid(_buildSkipAd, _buildSkipAdLoadTime)) return;
     
+    // Check if this ad type should be retried
+    if (!_shouldRetryAdType('buildSkip')) return;
+    
     _isBuildSkipAdLoading = true;
     _adRequestCounts['buildSkip'] = (_adRequestCounts['buildSkip'] ?? 0) + 1;
     
     if (kDebugMode) {
-      print('🎯 Loading BuildSkip ad (context-aware: ${_userBusinessCount} businesses, level ${_firstBusinessLevel})...');
+      print('🎯 Loading BuildSkip ad (context-aware: $_userBusinessCount businesses, level $_firstBusinessLevel)...');
     }
     
     await RewardedAd.load(
@@ -581,8 +681,9 @@ class AdMobService {
           _buildSkipAd = ad;
           _isBuildSkipAdLoading = false;
           _buildSkipAdLoadTime = DateTime.now();
+          _handleAdLoadSuccess('buildSkip');
           if (kDebugMode) {
-            print('✅ BuildSkip ad loaded - Ready for instant business upgrades');
+            print('✅ BuildSkip ad loaded - Ready for instant use');
           }
         },
         onAdFailedToLoad: (LoadAdError error) {
@@ -591,12 +692,8 @@ class AdMobService {
           if (kDebugMode) {
             print('❌ BuildSkip ad load failed: ${error.code} - ${error.message}');
           }
-          // Retry after delay
-          Future.delayed(const Duration(seconds: 30), () {
-            if (!_isBuildSkipAdLoading && !_isAdValid(_buildSkipAd, _buildSkipAdLoadTime)) {
-              _loadBuildSkipAd();
-            }
-          });
+          // Use robust error handling with exponential backoff
+          _handleAdLoadFailure('buildSkip', error);
         },
       ),
     );
@@ -606,6 +703,9 @@ class AdMobService {
   Future<void> _loadEventClearAd() async {
     if (!_adsEnabled) return;
     if (_isEventClearAdLoading || _isAdValid(_eventClearAd, _eventClearAdLoadTime)) return;
+    
+    // Check if this ad type should be retried
+    if (!_shouldRetryAdType('eventClear')) return;
     
     _isEventClearAdLoading = true;
     _adRequestCounts['eventClear'] = (_adRequestCounts['eventClear'] ?? 0) + 1;
@@ -622,6 +722,7 @@ class AdMobService {
           _eventClearAd = ad;
           _isEventClearAdLoading = false;
           _eventClearAdLoadTime = DateTime.now();
+          _handleAdLoadSuccess('eventClear');
           if (kDebugMode) {
             print('✅ EventClear ad loaded - Ready for instant event resolution');
           }
@@ -632,12 +733,9 @@ class AdMobService {
           if (kDebugMode) {
             print('❌ EventClear ad load failed: ${error.code} - ${error.message}');
           }
-          // Retry after delay
-          Future.delayed(const Duration(seconds: 30), () {
-            if (!_isEventClearAdLoading && !_isAdValid(_eventClearAd, _eventClearAdLoadTime)) {
-              _loadEventClearAd();
-            }
-          });
+          
+          // Use robust error handling with exponential backoff
+          _handleAdLoadFailure('eventClear', error);
         },
       ),
     );
@@ -647,6 +745,9 @@ class AdMobService {
   Future<void> _loadOfflineincome2xAd() async {
     if (!_adsEnabled) return;
     if (_isOfflineincome2xAdLoading || _isAdValid(_offlineincome2xAd, _offlineincome2xAdLoadTime)) return;
+    
+    // Check if this ad type should be retried
+    if (!_shouldRetryAdType('offlineincome2x')) return;
     
     _isOfflineincome2xAdLoading = true;
     _adRequestCounts['offlineincome2x'] = (_adRequestCounts['offlineincome2x'] ?? 0) + 1;
@@ -663,6 +764,7 @@ class AdMobService {
           _offlineincome2xAd = ad;
           _isOfflineincome2xAdLoading = false;
           _offlineincome2xAdLoadTime = DateTime.now();
+          _handleAdLoadSuccess('offlineincome2x');
           if (kDebugMode) {
             print('✅ Offlineincome2x ad loaded - Ready for instant offline income boost');
           }
@@ -673,12 +775,9 @@ class AdMobService {
           if (kDebugMode) {
             print('❌ Offlineincome2x ad load failed: ${error.code} - ${error.message}');
           }
-          // Retry after delay
-          Future.delayed(const Duration(seconds: 30), () {
-            if (!_isOfflineincome2xAdLoading && !_isAdValid(_offlineincome2xAd, _offlineincome2xAdLoadTime)) {
-              _loadOfflineincome2xAd();
-            }
-          });
+          
+          // Use robust error handling with exponential backoff
+          _handleAdLoadFailure('offlineincome2x', error);
         },
       ),
     );
@@ -1102,10 +1201,28 @@ class AdMobService {
     status += "Requests: ${analytics['totalRequests']} | ";
     status += "Success: ${analytics['totalShowSuccesses']} | ";
     status += "Failures: ${analytics['totalShowFailures']}\n";
-    status += "HustleBoost: ${isHustleBoostAdReady ? "✅" : "❌"} | ";
-    status += "BuildSkip: ${isBuildSkipAdReady ? "✅" : "❌"} | ";
-    status += "EventClear: ${isEventClearAdReady ? "✅" : "❌"} | ";
-    status += "OfflineIncome: ${isOfflineincome2xAdReady ? "✅" : "❌"}\n";
+    
+    // Ad readiness with throttling info
+    status += "HustleBoost: ${_getAdStatusWithThrottling('hustleBoost', isHustleBoostAdReady)} | ";
+    status += "BuildSkip: ${_getAdStatusWithThrottling('buildSkip', isBuildSkipAdReady)} | ";
+    status += "EventClear: ${_getAdStatusWithThrottling('eventClear', isEventClearAdReady)} | ";
+    status += "OfflineIncome: ${_getAdStatusWithThrottling('offlineincome2x', isOfflineincome2xAdReady)}\n";
+    
+    // Show throttled ad types
+    final throttledTypes = _adTypeThrottled.entries.where((e) => e.value == true).map((e) => e.key).toList();
+    if (throttledTypes.isNotEmpty) {
+      status += "⏸️ Throttled: ${throttledTypes.join(", ")}\n";
+    }
+    
+    // Show consecutive failures
+    final failingTypes = _consecutiveFailures.entries.where((e) => e.value > 0).toList();
+    if (failingTypes.isNotEmpty) {
+      status += "🔄 Failures: ";
+      for (final entry in failingTypes) {
+        status += "${entry.key}(${entry.value}) ";
+      }
+      status += "\n";
+    }
     
     if (_lastAdError != null) {
       status += "Last Error: $_lastAdError\n";
@@ -1113,6 +1230,45 @@ class AdMobService {
     
     return status;
   }
+  
+  // Helper function to show ad status with throttling information
+  String _getAdStatusWithThrottling(String adType, bool isReady) {
+    if (_adTypeThrottled[adType] == true) {
+      return "⏸️";
+    }
+    return isReady ? "✅" : "❌";
+  }
+  
+  // MANUAL RECOVERY: Reset throttling for a specific ad type
+  void resetAdTypeThrottling(String adType) {
+    _consecutiveFailures[adType] = 0;
+    _adTypeThrottled[adType] = false;
+    _lastFailureTime[adType] = null;
+    if (kDebugMode) {
+      print('🔄 Manually reset throttling for $adType');
+    }
+  }
+  
+  // MANUAL RECOVERY: Reset throttling for all ad types
+  void resetAllAdThrottling() {
+    _consecutiveFailures.clear();
+    _adTypeThrottled.clear();
+    _lastFailureTime.clear();
+    if (kDebugMode) {
+      print('🔄 Manually reset throttling for all ad types');
+    }
+    
+    // Trigger predictive loading after reset
+    Future.delayed(const Duration(milliseconds: 500), () {
+      _performPredictiveLoading();
+    });
+  }
+  
+  // Getter methods for ad readiness (useful for UI)
+  bool get isHustleBoostAdReady => _isAdValid(_hustleBoostAd, _hustleBoostAdLoadTime) && (_adTypeThrottled['hustleBoost'] ?? false) == false;
+  bool get isBuildSkipAdReady => _isAdValid(_buildSkipAd, _buildSkipAdLoadTime) && (_adTypeThrottled['buildSkip'] ?? false) == false;
+  bool get isEventClearAdReady => _isAdValid(_eventClearAd, _eventClearAdLoadTime) && (_adTypeThrottled['eventClear'] ?? false) == false;
+  bool get isOfflineincome2xAdReady => _isAdValid(_offlineincome2xAd, _offlineincome2xAdLoadTime) && (_adTypeThrottled['offlineincome2x'] ?? false) == false;
 
   // Dispose all ads
   void dispose() {

@@ -1175,7 +1175,7 @@ class _InvestmentPortfolioScreenState extends State<InvestmentPortfolioScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  '\$${investment.currentPrice.toStringAsFixed(2)}/share',
+                                  '${NumberFormatter.formatCurrencyPrecise(investment.currentPrice)}/share',
                                   style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                                 ),
                                 if (isBuying)
