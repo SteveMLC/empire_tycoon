@@ -87,7 +87,11 @@ class _InvestmentPortfolioScreenState extends State<InvestmentPortfolioScreen> {
         ),
       ],
       flexibleSpace: FlexibleSpaceBar(
-        titlePadding: const EdgeInsets.only(left: 16, bottom: 12),
+        titlePadding: const EdgeInsetsDirectional.only(
+          start: 72,
+          end: 16,
+          bottom: 12,
+        ),
         title: const Text(
           'Investment Portfolio',
           style: TextStyle(
