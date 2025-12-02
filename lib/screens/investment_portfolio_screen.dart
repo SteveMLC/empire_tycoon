@@ -71,36 +71,29 @@ class _InvestmentPortfolioScreenState extends State<InvestmentPortfolioScreen> {
     double profitPercentage = totalValue > 0 ? (totalProfit / (totalValue - totalProfit)) * 100 : 0;
     
     return SliverAppBar(
-      expandedHeight: 200, // Increased to 200 to provide more space
+      expandedHeight: 130,
       floating: false,
       pinned: true,
       elevation: 0,
       backgroundColor: const Color(0xFF1A237E),
       leading: IconButton(
-        icon: const Icon(Icons.arrow_back, color: Colors.white, size: 24),
+        icon: const Icon(Icons.arrow_back, color: Colors.white, size: 22),
         onPressed: () => Navigator.pop(context),
       ),
       actions: [
         IconButton(
-          icon: const Icon(Icons.close, color: Colors.white, size: 24),
+          icon: const Icon(Icons.close, color: Colors.white, size: 22),
           onPressed: () => Navigator.pop(context),
         ),
       ],
       flexibleSpace: FlexibleSpaceBar(
-        titlePadding: const EdgeInsets.only(left: 16, bottom: 16), // Proper title positioning
+        titlePadding: const EdgeInsets.only(left: 16, bottom: 12),
         title: const Text(
           'Investment Portfolio',
           style: TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
-            fontSize: 18,
-            shadows: [
-              Shadow(
-                offset: Offset(0, 1),
-                blurRadius: 2,
-                color: Colors.black26,
-              ),
-            ],
+            fontSize: 16,
           ),
         ),
         background: Container(
@@ -111,43 +104,32 @@ class _InvestmentPortfolioScreenState extends State<InvestmentPortfolioScreen> {
               colors: [
                 Color(0xFF1A237E),
                 Color(0xFF3949AB),
-                Color(0xFF5C6BC0),
               ],
             ),
           ),
           child: SafeArea(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 100, 16, 60), // Adjusted to prevent overlap with title
+              padding: const EdgeInsets.fromLTRB(16, 50, 16, 40),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   _buildAppBarStat(
-                    'Portfolio Value',
+                    'Value',
                     '\$${NumberFormatter.formatCompact(totalValue)}',
                     Icons.account_balance_wallet_outlined,
                     Colors.white,
                   ),
-                  Container(
-                    width: 1,
-                    height: 30, // Further reduced height
-                    color: Colors.white.withOpacity(0.3),
-                  ),
                   _buildAppBarStat(
-                    'Total P&L',
+                    'P&L',
                     '${totalProfit >= 0 ? '+' : ''}\$${NumberFormatter.formatCompact(totalProfit)}',
                     totalProfit >= 0 ? Icons.trending_up : Icons.trending_down,
-                    totalProfit >= 0 ? const Color(0xFF4CAF50) : const Color(0xFFE53935),
-                  ),
-                  Container(
-                    width: 1,
-                    height: 30, // Further reduced height
-                    color: Colors.white.withOpacity(0.3),
+                    totalProfit >= 0 ? const Color(0xFF81C784) : const Color(0xFFE57373),
                   ),
                   _buildAppBarStat(
-                    'Return %',
+                    'Return',
                     '${profitPercentage >= 0 ? '+' : ''}${profitPercentage.toStringAsFixed(1)}%',
                     profitPercentage >= 0 ? Icons.arrow_upward : Icons.arrow_downward,
-                    profitPercentage >= 0 ? const Color(0xFF4CAF50) : const Color(0xFFE53935),
+                    profitPercentage >= 0 ? const Color(0xFF81C784) : const Color(0xFFE57373),
                   ),
                 ],
               ),
@@ -159,41 +141,23 @@ class _InvestmentPortfolioScreenState extends State<InvestmentPortfolioScreen> {
   }
 
   Widget _buildAppBarStat(String label, String value, IconData icon, Color color) {
-    return Expanded(
-      child: Container(
-        constraints: const BoxConstraints(maxHeight: 50), // Constrain height to prevent overflow
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: color, size: 16), // Further reduced icon size
-            const SizedBox(height: 2), // Minimal spacing
-            Text(
-              label,
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.9),
-                fontSize: 8, // Further reduced font size
-                fontWeight: FontWeight.w500,
-              ),
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 1), // Minimal spacing
-            Text(
-              value,
-              style: TextStyle(
-                color: color,
-                fontSize: 10, // Further reduced font size
-                fontWeight: FontWeight.bold,
-              ),
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, color: color, size: 14),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.bold),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
-      ),
+        Text(
+          label,
+          style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 9),
+          maxLines: 1,
+        ),
+      ],
     );
   }
 
@@ -371,58 +335,48 @@ class _InvestmentPortfolioScreenState extends State<InvestmentPortfolioScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         child: Row(
           children: [
-            Text(
+            const Text(
               'Your Investments',
-              style: const TextStyle(
-                fontSize: 18,
+              style: TextStyle(
+                fontSize: 16,
                 fontWeight: FontWeight.bold,
                 color: Color(0xFF1A237E),
               ),
             ),
             const Spacer(),
-            // Sort Dropdown
+            // Sort Dropdown - compact styling
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              height: 36,
+              padding: const EdgeInsets.symmetric(horizontal: 10),
               decoration: BoxDecoration(
                 color: Colors.white,
                 border: Border.all(color: Colors.grey.shade300),
                 borderRadius: BorderRadius.circular(8),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
               ),
-              child: DropdownButton<String>(
-                value: _sortMode,
-                underline: const SizedBox(),
-                icon: Icon(Icons.sort, color: const Color(0xFF1A237E), size: 16),
-                style: const TextStyle(fontSize: 13, color: Colors.black),
-                items: const [
-                  DropdownMenuItem(value: 'value', child: Text('Value')),
-                  DropdownMenuItem(value: 'profit', child: Text('P&L')),
-                  DropdownMenuItem(value: 'percentage', child: Text('P&L %')),
-                  DropdownMenuItem(value: 'name', child: Text('Name')),
-                ],
-                onChanged: (value) => setState(() => _sortMode = value!),
+              child: DropdownButtonHideUnderline(
+                child: DropdownButton<String>(
+                  value: _sortMode,
+                  isDense: true,
+                  icon: const Icon(Icons.sort, color: Color(0xFF1A237E), size: 16),
+                  style: const TextStyle(fontSize: 12, color: Colors.black87),
+                  items: const [
+                    DropdownMenuItem(value: 'value', child: Text('Value')),
+                    DropdownMenuItem(value: 'profit', child: Text('P&L')),
+                    DropdownMenuItem(value: 'percentage', child: Text('P&L %')),
+                    DropdownMenuItem(value: 'name', child: Text('Name')),
+                  ],
+                  onChanged: (value) => setState(() => _sortMode = value!),
+                ),
               ),
             ),
-            const SizedBox(width: 12),
-            // View Mode Toggle
+            const SizedBox(width: 8),
+            // View Mode Toggle - matching height
             Container(
+              height: 36,
               decoration: BoxDecoration(
                 color: Colors.white,
                 border: Border.all(color: Colors.grey.shade300),
                 borderRadius: BorderRadius.circular(8),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,

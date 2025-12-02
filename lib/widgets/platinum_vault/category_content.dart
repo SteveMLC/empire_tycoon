@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'dart:math';
+import 'dart:math' as math;
 
 import '../../models/game_state.dart';
 import '../../data/platinum_vault_items.dart';
@@ -34,12 +34,12 @@ class CategoryContent extends StatelessWidget {
     }
 
     return GridView.builder(
-      padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 96.0),
-      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 200.0,
-        childAspectRatio: 2 / 4.2,
-        crossAxisSpacing: 16.0,
-        mainAxisSpacing: 16.0,
+      padding: const EdgeInsets.fromLTRB(10.0, 10.0, 10.0, 100.0),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2, // Always 2 columns for readability
+        childAspectRatio: 0.64, // Slightly taller cards: titles + 3-line description + status
+        crossAxisSpacing: 10.0,
+        mainAxisSpacing: 10.0,
       ),
       itemCount: filteredItems.length,
       itemBuilder: (context, index) {
@@ -69,7 +69,7 @@ class CategoryContent extends StatelessWidget {
             break;
           case 'platinum_warp':
             maxUses = 2;
-            usesLeft = max(0, maxUses - gameState.timeWarpUsesThisPeriod);
+            usesLeft = math.max(0, maxUses - gameState.timeWarpUsesThisPeriod);
             break;
           case 'platinum_shield':
             isActive = gameState.isDisasterShieldActive;
@@ -99,7 +99,7 @@ class CategoryContent extends StatelessWidget {
           case 'platinum_challenge':
             gameState.checkAndResetPlatinumChallengeLimit(now);
             maxUses = 2;
-            usesLeft = max(0, maxUses - gameState.platinumChallengeUsesToday);
+            usesLeft = math.max(0, maxUses - gameState.platinumChallengeUsesToday);
             isActive = gameState.activeChallenge != null && 
                       gameState.activeChallenge!.itemId == 'platinum_challenge' && 
                       gameState.activeChallenge!.isActive(now);

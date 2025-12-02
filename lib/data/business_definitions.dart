@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/business.dart';
+import 'business_branch_definitions.dart';
 
 /// Defines the default list of businesses available at the start of the game.
 final List<Business> defaultBusinesses = [
@@ -27,7 +28,10 @@ final List<Business> defaultBusinesses = [
       BusinessLevel(cost: 128000.0, incomePerSecond: 1406.25, description: 'Citywide coverage', timerSeconds: 150),
     ],
   ),
-  // 2. Pop-Up Food Stall
+  // 2. Pop-Up Food Stall (WITH BRANCHING SYSTEM)
+  // Branch selection occurs at Level 3
+  // Pre-branch: Levels 1-2 (generic food stall)
+  // Post-branch: Levels 3-10 (Taco Stand, Burger Bar, or Smoke BBQ)
   Business(
     id: 'food_stall',
     name: 'Pop-Up Food Stall',
@@ -38,9 +42,12 @@ final List<Business> defaultBusinesses = [
     incomeInterval: 1,
     unlocked: true,
     icon: Icons.fastfood,
+    // Pre-branch levels (1-2) - generic food stall progression
     levels: [
       BusinessLevel(cost: 1000.0, incomePerSecond: 1.80, description: 'Basic stall', timerSeconds: 0),
       BusinessLevel(cost: 2000.0, incomePerSecond: 4.50, description: 'Better grill', timerSeconds: 30),
+      // Levels 3-10 are defined in branches below
+      // These fallback entries are only used if no branch is selected (migration safety)
       BusinessLevel(cost: 4000.0, incomePerSecond: 11.25, description: 'Menu expansion', timerSeconds: 60),
       BusinessLevel(cost: 8000.0, incomePerSecond: 28.13, description: 'More staff', timerSeconds: 90),
       BusinessLevel(cost: 16000.0, incomePerSecond: 67.5, description: 'Branded tent', timerSeconds: 120),
@@ -50,6 +57,9 @@ final List<Business> defaultBusinesses = [
       BusinessLevel(cost: 256000.0, incomePerSecond: 2601.25, description: 'Catering gigs', timerSeconds: 240),
       BusinessLevel(cost: 512000.0, incomePerSecond: 6002.5, description: 'Chain operation', timerSeconds: 300),
     ],
+    // BRANCHING SYSTEM: Three specialization paths
+    branchSelectionLevel: foodStallBranchSelectionLevel, // Level 3
+    branches: foodStallBranches, // Taco Stand, Burger Bar, Smoke BBQ
   ),
   // 3. Boutique Coffee Roaster
   Business(

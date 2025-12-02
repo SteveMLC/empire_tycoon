@@ -54,6 +54,11 @@ List<Achievement> getAchievementDefinitions() {
         id: 'max_level_business', name: 'Expansion Expert', description: 'Upgrade any business to maximum level',
         icon: Icons.arrow_upward, category: AchievementCategory.progress, rarity: AchievementRarity.rare, ppReward: 40,
       ),
+      // Food Stall Branch Achievements
+      Achievement(
+        id: 'food_stall_master', name: 'Food Stall Master', description: 'Max out all 3 food stall branches: Taco Stand, Burger Bar, and Smoke BBQ',
+        icon: Icons.restaurant, category: AchievementCategory.progress, rarity: AchievementRarity.rare, ppReward: 50,
+      ),
       Achievement(
         id: 'big_investment', name: 'Stock Market Savvy', description: 'Own investments worth 100,000 dollars or more',
         icon: Icons.attach_money, category: AchievementCategory.progress, rarity: AchievementRarity.rare, ppReward: 30,

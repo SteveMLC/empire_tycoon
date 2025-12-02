@@ -162,6 +162,7 @@ extension UtilityLogic on GameState {
     lifetimeNetworkWorth = 0.0;
     reincorporationUsesAvailable = 0;
     totalReincorporations = 0;
+    maxedFoodStallBranches = {}; // Reset food stall branch tracking on full reset
 
     // Reset stats tracking (including persistent)
     hourlyEarnings = {};
@@ -180,6 +181,14 @@ extension UtilityLogic on GameState {
       business.level = 0;
       business.secondsSinceLastIncome = 0;
       business.unlocked = business.id == 'mobile_car_wash' || business.id == 'food_stall' || business.id == 'coffee_roaster';
+      // Reset upgrade timer state
+      business.isUpgrading = false;
+      business.upgradeEndTime = null;
+      business.initialUpgradeDurationSeconds = null;
+      // Reset branching state (allows re-selection after reset)
+      business.selectedBranchId = null;
+      business.hasMadeBranchChoice = false;
+      business.branchSelectionTime = null;
     }
     
     // CRITICAL FIX: Ensure all investments are explicitly reset to owned = 0

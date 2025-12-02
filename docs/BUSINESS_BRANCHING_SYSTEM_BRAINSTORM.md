@@ -56,6 +56,154 @@ This document captures comprehensive brainstorming for implementing branching up
    - **Growth Pattern**: High-value plateaus with breakthrough moments
    - **Visual Evolution**: Pit → Restaurant → Competition circuit → BBQ empire
 
+#### Pop-Up Food Stall – Detailed Plan
+
+##### Progression & Branch Trigger
+
+- **Base Levels (1–2)**
+  - Level 1–2 remain a **generic Pop-Up Food Stall** with mixed food offerings.
+  - These levels mirror the current early upgrades (basic stall, better grill/menu, etc.) with only light copy/balance tweaks if needed.
+- **Branch Selection Level**
+  - **BranchSelectionLevel = 3** for Pop-Up Food Stall.
+  - When the business reaches **Level 3** for the first time **and no branch is selected**:
+    - Show the **Branch Selection UI**.
+    - **Freeze further upgrades** for this business until a branch is chosen.
+  - After a branch is chosen:
+    - `selectedBranchId` is set (e.g., `"taco_stand"`, `"burger_bar"`, `"smoke_bbq"`).
+    - `hasMadeBranchChoice = true`.
+    - All **subsequent levels (4–10)** come from the chosen branch’s `levels` list.
+
+##### Branch Archetypes & Economics
+
+Use the **current Pop-Up Food Stall income curve** as the **baseline**. Map the three branches onto existing archetypes and adjust cost / income / timer multipliers.
+
+- **Baseline Reference (Burger Bar Path)**
+  - Use existing Pop-Up Food Stall levels as the **Burger Bar** reference curve.
+  - `costMultiplier = 1.0`, `incomeMultiplier = 1.0`, `speedMultiplier = 1.0`.
+  - This path should feel closest to the **current game experience**.
+
+- **Taco Stand Path – Speed Specialist (Budget Volume)**
+  - **Theme**: Fast Mexican street food, high volume, lower margins.
+  - **Economy** (relative to Burger Bar):
+    - Upgrade **costs ~20% cheaper**: `costMultiplier ≈ 0.8`.
+    - **Income ~20–25% lower** per level: `incomeMultiplier ≈ 0.75–0.8`.
+    - **Timers ~25% faster**: `speedMultiplier ≈ 0.75` (shorter upgrade durations).
+  - **Player Fantasy**: Easy to upgrade quickly, satisfying “rapid progress” feel, but ultimate income ceiling is lower.
+
+- **Burger Bar Path – Balanced (Baseline / Light Innovation)**
+  - **Theme**: Classic burger stall evolving into a neighborhood brand.
+  - **Economy**:
+    - Mirrors existing Pop-Up Food Stall balance (cost, income, timers).
+    - Slight room for **small innovation bonuses** later (e.g., event-based boosts) without distorting the baseline.
+  - **Player Fantasy**: Familiar, stable growth. Feels like “default” path with predictable progression.
+
+- **Smoke BBQ Path – Premium (Slow, High Reward)**
+  - **Theme**: Artisanal slow-cooked BBQ with premium pricing and prestige.
+  - **Economy** (relative to Burger Bar):
+    - Upgrade **costs ~30% more**: `costMultiplier ≈ 1.3`.
+    - **Income ~35–40% higher** per level: `incomeMultiplier ≈ 1.35–1.4`.
+    - **Timers ~50% longer**: `speedMultiplier ≈ 1.5` (long, chunky timers).
+  - **Player Fantasy**: “Hard mode” investment path – slow and expensive to build, but pays off with the highest long-term income.
+
+##### Branch Level Concepts (Lv3–10)
+
+Keep exact numbers flexible for balance, but lock in **level theming and story arcs** so content work is clear.
+
+- **Shared Structure**
+  - Level 0: Locked (not yet purchased).
+  - Levels 1–2: Generic Pop-Up Food Stall, foundation and learning.
+  - Level 3: **Branch selection moment** (specialize into Taco / Burger / BBQ).
+  - Levels 4–10: Branch-specific story and power curve.
+
+- **Taco Stand Path – Level Arc**
+  - Lv3: **“Choose Taco Stand Specialization”** (branch choice).
+  - Lv4: "Street Taco Cart" – small cart with improved signage.
+  - Lv5: "Double Grill Setup" – higher throughput, quick timer.
+  - Lv6: "Late Night Taco Hours" – rush-hour themed income bump.
+  - Lv7: "Food Court Taco Stall" – steady mall traffic.
+  - Lv8: "Multi-Cart Operation" – multiple carts across the city.
+  - Lv9: "Citywide Taco Fleet" – strong overall volume.
+  - Lv10: "Taco Empire" – maxed-out speed archetype.
+
+- **Burger Bar Path – Level Arc**
+  - Lv3: **“Choose Burger Bar Specialization”** (branch choice).
+  - Lv4: "Burger Kiosk" – small stall with focused menu.
+  - Lv5: "Classic Burger Stand" – permanent stall, stronger branding.
+  - Lv6: "Gourmet Add-Ons" – premium toppings, income spike.
+  - Lv7: "Burger Food Truck" – mobile operations, event synergy.
+  - Lv8: "Downtown Burger Bar" – prestige location, balanced growth.
+  - Lv9: "Mini Burger Chain" – multiple spots, solid plateau.
+  - Lv10: "Franchise-Ready Burger Brand" – slightly above original curve.
+
+- **Smoke BBQ Path – Level Arc**
+  - Lv3: **“Choose Smoke BBQ Specialization”** (branch choice).
+  - Lv4: "Backyard Smoke Pit" – small-scale but flavorful.
+  - Lv5: "Street-Side Smoke Shack" – dedicated shack, long timer.
+  - Lv6: "Signature Smokers" – big equipment spend, large income jump.
+  - Lv7: "Full BBQ Restaurant" – sit-down, very high per-second income.
+  - Lv8: "BBQ Competition Circuit" – prestige and trophy bonuses.
+  - Lv9: "Regional BBQ Brand" – multiple restaurants, elite status.
+  - Lv10: "Legendary BBQ Empire" – peak premium income for this business.
+
+##### UI / UX – Branching Experience
+
+**Existing Pattern**: Business list with cards showing icon, name, level, income/sec, and a single upgrade button + timer. We extend this pattern rather than replace it.
+
+1. **Branch Selection Trigger**
+   - When Pop-Up Food Stall reaches Level 3 and `hasMadeBranchChoice == false`:
+     - Open a **full-screen modal or bottom sheet**.
+     - Temporarily disable upgrade actions for this business until a branch is chosen.
+
+2. **Branch Selection Screen Layout**
+   - Header: `"Choose Your Path: Pop-Up Food Stall"`.
+   - Subheader: `"Level 3 – Ready to Specialize"`.
+   - Three **branch cards** (Taco Stand, Burger Bar, Smoke BBQ):
+     - Large icon / preview image.
+     - Short description summarizing theme + economy tradeoffs.
+     - Simple **three-bar stat preview**: Cost, Income, Speed.
+     - One or two **future level snapshots** (e.g., Lv8 & Lv10 name + short flavor text).
+     - Primary button: **"Select This Path"** with confirmation.
+
+3. **Post-Selection Business Card Changes**
+   - Business card now shows:
+     - **Branch icon** next to the existing business icon.
+     - Name updated with suffix, e.g.:
+       - `Pop-Up Food Stall – Taco Stand`
+       - `Pop-Up Food Stall – Burger Bar`
+       - `Pop-Up Food Stall – Smoke BBQ`
+     - Small branch-type indicator (color accent per archetype):
+       - Taco (Speed): energetic colors (e.g., orange/green).
+       - Burger (Balanced): classic fast-food colors.
+       - BBQ (Premium): deep, rich tones (e.g., dark red/gold).
+   - Expanded business detail panel (if present) includes:
+     - Short branch summary.
+     - Next branch-specific upgrade description.
+     - Simple **branch completion bar** for Levels 4–10.
+
+4. **Consistency for Future Businesses**
+   - The **branch selection flow** and **card presentation** are designed to be **generic**:
+     - Any business that adds branches will reuse:
+       - The same selection modal structure.
+       - The same “branch icon + suffix name + branch info panel” pattern.
+     - Only content (names, descriptions, icons, multipliers) changes per business.
+
+##### Implementation-Ready Notes
+
+- **Data Model Alignment**
+  - This plan assumes the `Business` model will gain:
+    - `branches`, `selectedBranchId`, `branchSelectionLevel`, `hasMadeBranchChoice` fields.
+  - Pop-Up Food Stall will be the **first business** to populate these fields with real branch data.
+
+- **Economy Alignment**
+  - Use current Pop-Up Food Stall values as the **Burger Bar baseline**.
+  - Derive Taco and BBQ numbers by applying the multipliers above, then fine-tune via playtesting.
+
+- **Backwards Compatibility**
+  - Existing saves where Pop-Up Food Stall is already past Level 3 should:
+    - Either **auto-assign** the Burger Bar path as a safe default, or
+    - Prompt players **once** to choose a branch when they next view the business.
+  - Exact migration rules can be finalized during the implementation phase, but this plan is structured to support both options.
+
 ## Technical Architecture
 
 ### Data Structure Evolution

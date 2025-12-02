@@ -220,6 +220,12 @@ class AchievementManager {
         int maxLevelCount = gameState.businesses.where((b) => b.isMaxLevel()).length;
         return maxLevelCount / gameState.businesses.length;
 
+      // Food Stall Master Achievement - requires all 3 branches maxed
+      case 'food_stall_master':
+        // Progress is number of branches maxed out of 3
+        int branchesMaxed = gameState.maxedFoodStallBranches.length;
+        return branchesMaxed / 3.0;
+
       case 'first_investment':
         bool anyInvestment = gameState.investments.any((i) => i.owned > 0);
         return anyInvestment ? 1.0 : 0.0;
@@ -476,6 +482,30 @@ class AchievementManager {
         gameState.businesses.every((b) => b.isMaxLevel())) {
       completeAchievement('all_max_level');
       newlyCompleted.add(achievements.firstWhere((a) => a.id == 'all_max_level'));
+    }
+    
+    // Food Stall Master Achievement - requires maxing ALL 3 branches across playthroughs
+    final foodStall = gameState.businesses.firstWhere(
+      (b) => b.id == 'food_stall',
+      orElse: () => gameState.businesses.first, // Fallback
+    );
+    
+    // Track when a branch is maxed (persists through reincorporation)
+    if (foodStall.id == 'food_stall' && foodStall.isMaxLevel() && foodStall.hasMadeBranchChoice) {
+      final branchId = foodStall.selectedBranchId;
+      if (branchId != null && !gameState.maxedFoodStallBranches.contains(branchId)) {
+        gameState.maxedFoodStallBranches.add(branchId);
+        print("🌮 Food stall branch maxed: $branchId (${gameState.maxedFoodStallBranches.length}/3)");
+      }
+    }
+    
+    // Check if all 3 branches have been maxed
+    if (!_isCompleted('food_stall_master') && 
+        gameState.maxedFoodStallBranches.contains('taco_stand') &&
+        gameState.maxedFoodStallBranches.contains('burger_bar') &&
+        gameState.maxedFoodStallBranches.contains('smoke_bbq')) {
+      completeAchievement('food_stall_master');
+      newlyCompleted.add(achievements.firstWhere((a) => a.id == 'food_stall_master'));
     }
   }
 

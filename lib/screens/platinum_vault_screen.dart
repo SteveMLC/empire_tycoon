@@ -33,11 +33,30 @@ class _PlatinumVaultScreenState extends State<PlatinumVaultScreen> with SingleTi
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF0D1117), // Deep charcoal base
       appBar: AppBar(
         title: const PlatinumHeader(),
-        backgroundColor: const Color(0xFF2D0C3E), // Rich purple background
-        elevation: 8,
-        shadowColor: Colors.black.withOpacity(0.5),
+        backgroundColor: const Color(0xFF161B22), // Sophisticated dark
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white), // White back arrow
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                const Color(0xFF1C2128),
+                const Color(0xFF161B22),
+              ],
+            ),
+            border: Border(
+              bottom: BorderSide(
+                color: const Color(0xFFFFD700).withOpacity(0.3),
+                width: 1,
+              ),
+            ),
+          ),
+        ),
         actions: const [
           PlatinumBalance(),
         ],
@@ -45,33 +64,48 @@ class _PlatinumVaultScreenState extends State<PlatinumVaultScreen> with SingleTi
       ),
       body: Container(
         decoration: BoxDecoration(
-          // Luxury rich purple gradient background
+          // Elegant dark gradient with subtle gold shimmer
           gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
             colors: [
-              const Color(0xFF2D0C3E), // Rich purple
-              const Color(0xFF1A0523), // Darker purple
+              const Color(0xFF161B22), // Dark header blend
+              const Color(0xFF0D1117), // Deep charcoal
+              const Color(0xFF0A0E12), // Near black
             ],
-            stops: const [0.0, 1.0],
+            stops: const [0.0, 0.3, 1.0],
           ),
-          // Add shimmer effect
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFFFFD700).withOpacity(0.05),
-              blurRadius: 15,
-              spreadRadius: 10,
+        ),
+        child: Stack(
+          children: [
+            // Subtle gold accent glow at top
+            Positioned(
+              top: -100,
+              left: 0,
+              right: 0,
+              child: Container(
+                height: 200,
+                decoration: BoxDecoration(
+                  gradient: RadialGradient(
+                    colors: [
+                      const Color(0xFFFFD700).withOpacity(0.08),
+                      Colors.transparent,
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            // Main content
+            TabBarView(
+              controller: _tabController,
+              children: VaultItemCategory.values.map((category) {
+                return CategoryContent(
+                  category: category,
+                  items: _vaultItems,
+                );
+              }).toList(),
             ),
           ],
-        ),
-        child: TabBarView(
-          controller: _tabController,
-          children: VaultItemCategory.values.map((category) {
-            return CategoryContent(
-              category: category,
-              items: _vaultItems,
-            );
-          }).toList(),
         ),
       ),
     );

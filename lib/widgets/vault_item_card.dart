@@ -1,25 +1,96 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart'; // To potentially access GameState for owned status?
-import 'dart:async'; // Import for Timer
+import 'dart:async';
 
 import '../data/platinum_vault_items.dart';
-import '../utils/number_formatter.dart'; // For formatting cost
+
+// Rarity tiers based on cost
+enum ItemRarity { common, rare, epic, legendary }
+
+ItemRarity getRarity(int cost) {
+  if (cost >= 150) return ItemRarity.legendary;
+  if (cost >= 100) return ItemRarity.epic;
+  if (cost >= 50) return ItemRarity.rare;
+  return ItemRarity.common;
+}
+
+// Rarity colors and styling
+class RarityStyle {
+  final Color primary;
+  final Color secondary;
+  final Color glow;
+  final String label;
+  
+  const RarityStyle({
+    required this.primary,
+    required this.secondary,
+    required this.glow,
+    required this.label,
+  });
+  
+  static RarityStyle forRarity(ItemRarity rarity) {
+    switch (rarity) {
+      case ItemRarity.legendary:
+        return const RarityStyle(
+          primary: Color(0xFFFFD700),     // Gold
+          secondary: Color(0xFFFF8C00),   // Dark orange
+          glow: Color(0xFFFFD700),
+          label: '★ LEGENDARY',
+        );
+      case ItemRarity.epic:
+        return const RarityStyle(
+          primary: Color(0xFFAB47BC),     // Purple
+          secondary: Color(0xFF7B1FA2),   // Deep purple
+          glow: Color(0xFFCE93D8),
+          label: '◆ EPIC',
+        );
+      case ItemRarity.rare:
+        return const RarityStyle(
+          primary: Color(0xFF42A5F5),     // Blue
+          secondary: Color(0xFF1976D2),   // Deep blue
+          glow: Color(0xFF90CAF9),
+          label: '● RARE',
+        );
+      case ItemRarity.common:
+        return const RarityStyle(
+          primary: Color(0xFFE0E0E0),     // Light silver/white
+          secondary: Color(0xFFBDBDBD),   // Medium grey
+          glow: Color(0xFFFFFFFF),
+          label: '',  // No badge for common
+        );
+    }
+  }
+}
+
+// Premium vault theme colors
+class VaultColors {
+  static const Color cardBg = Color(0xFF1A1D24);
+  static const Color cardBgLight = Color(0xFF252A34);
+  static const Color border = Color(0xFF3A3F4B);
+  static const Color gold = Color(0xFFFFD700);
+  static const Color goldDark = Color(0xFFB8860B);
+  static const Color goldLight = Color(0xFFFFF4CC);
+  static const Color textPrimary = Color(0xFFF0F2F5);
+  static const Color textSecondary = Color(0xFF9CA3AF);
+  static const Color success = Color(0xFF10B981);
+  static const Color active = Color(0xFF3B82F6);
+  static const Color cooldown = Color(0xFFF59E0B);
+}
 
 class VaultItemCard extends StatefulWidget {
   final VaultItem item;
   final int currentPoints;
-  final bool isOwned; // For one-time items OR if max repeatable reached
+  final bool isOwned;
   final VoidCallback onBuy;
-  final int? purchaseCount; // Optional: Current purchase count for repeatable items
-  final int? maxPurchaseCount; // Optional: Max purchase count for repeatable items
-  final bool isActive; // Is the effect currently active?
-  final Duration? activeDurationRemaining; // Remaining duration if active
-  final bool isOnCooldown; // Is the item on cooldown?
-  final Duration? cooldownDurationRemaining; // Remaining duration if on cooldown
-  final int usesLeft; // Uses left for limited-use items (e.g., Time Warp)
-  final int maxUses; // Max uses for limited-use items
+  final int? purchaseCount;
+  final int? maxPurchaseCount;
+  final bool isActive;
+  final Duration? activeDurationRemaining;
+  final bool isOnCooldown;
+  final Duration? cooldownDurationRemaining;
+  final int usesLeft;
+  final int maxUses;
   final bool isAnyPlatinumBoostActive;
-  final int? activeBoostRemainingSeconds; // Remaining seconds if THIS booster is active
+  final int? activeBoostRemainingSeconds;
 
   const VaultItemCard({
     Key? key,
@@ -44,37 +115,24 @@ class VaultItemCard extends StatefulWidget {
 }
 
 class _VaultItemCardState extends State<VaultItemCard> with SingleTickerProviderStateMixin {
-  bool _isHovering = false;
-  late AnimationController _animationController;
-  late Animation<double> _scaleAnimation;
-  late Animation<double> _glowAnimation;
-  Timer? _timer; // Timer for updating remaining duration display
+  late AnimationController _glowController;
+  Timer? _timer;
   Duration? _currentActiveRemaining;
   Duration? _currentCooldownRemaining;
 
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 200),
+    _glowController = AnimationController(
+      duration: const Duration(milliseconds: 1500),
       vsync: this,
-    );
-    
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.02).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
-    );
-    
-    _glowAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
-    );
-
+    )..repeat(reverse: true);
     _updateTimers();
   }
 
   @override
   void didUpdateWidget(covariant VaultItemCard oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Update timers if the relevant durations change
     if (widget.activeDurationRemaining != oldWidget.activeDurationRemaining ||
         widget.cooldownDurationRemaining != oldWidget.cooldownDurationRemaining) {
       _updateTimers();
@@ -89,54 +147,20 @@ class _VaultItemCardState extends State<VaultItemCard> with SingleTickerProvider
     if ((_currentActiveRemaining != null && _currentActiveRemaining! > Duration.zero) ||
         (_currentCooldownRemaining != null && _currentCooldownRemaining! > Duration.zero)) {
       _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-        if (!mounted) {
-          timer.cancel();
-          return;
-        }
-        
-        bool activeTimerRunning = false;
-        bool cooldownTimerRunning = false;
-        bool uiNeedsUpdate = false; // Track if UI actually needs updating
-
+        if (!mounted) { timer.cancel(); return; }
+        bool needsUpdate = false;
         if (_currentActiveRemaining != null && _currentActiveRemaining! > Duration.zero) {
-          final newActiveRemaining = _currentActiveRemaining! - const Duration(seconds: 1);
-          // Only update if the displayed seconds value changed
-          if (_currentActiveRemaining!.inSeconds != newActiveRemaining.inSeconds) {
-            _currentActiveRemaining = newActiveRemaining;
-            uiNeedsUpdate = true;
-          }
-          if (_currentActiveRemaining! <= Duration.zero) {
-            _currentActiveRemaining = Duration.zero;
-            uiNeedsUpdate = true;
-          } else {
-             activeTimerRunning = true;
-          }
+          _currentActiveRemaining = _currentActiveRemaining! - const Duration(seconds: 1);
+          needsUpdate = true;
         }
         if (_currentCooldownRemaining != null && _currentCooldownRemaining! > Duration.zero) {
-          final newCooldownRemaining = _currentCooldownRemaining! - const Duration(seconds: 1);
-          // Only update if the displayed seconds value changed
-          if (_currentCooldownRemaining!.inSeconds != newCooldownRemaining.inSeconds) {
-            _currentCooldownRemaining = newCooldownRemaining;
-            uiNeedsUpdate = true;
-          }
-           if (_currentCooldownRemaining! <= Duration.zero) {
-            _currentCooldownRemaining = Duration.zero;
-            uiNeedsUpdate = true;
-          } else {
-            cooldownTimerRunning = true;
-          }
+          _currentCooldownRemaining = _currentCooldownRemaining! - const Duration(seconds: 1);
+          needsUpdate = true;
         }
-
-        // OPTIMIZED: Only call setState if timer state changes or UI display would change
-        if (!activeTimerRunning && !cooldownTimerRunning) {
+        if (needsUpdate) setState(() {});
+        if ((_currentActiveRemaining == null || _currentActiveRemaining! <= Duration.zero) &&
+            (_currentCooldownRemaining == null || _currentCooldownRemaining! <= Duration.zero)) {
           timer.cancel();
-          _timer = null;
-          // Optionally trigger a state refresh from GameState if needed
-        }
-        
-        // Only rebuild if the UI display would actually change
-        if (uiNeedsUpdate) {
-          setState(() {});
         }
       });
     }
@@ -145,767 +169,546 @@ class _VaultItemCardState extends State<VaultItemCard> with SingleTickerProvider
   @override
   void dispose() {
     _timer?.cancel();
-    _animationController.dispose();
+    _glowController.dispose();
     super.dispose();
   }
 
-  // Helper to format duration into HH:MM:SS or MM:SS
-  String _formatDuration(Duration duration) {
-    String twoDigits(int n) => n.toString().padLeft(2, '0');
-    final hours = duration.inHours;
-    final minutes = duration.inMinutes.remainder(60);
-    final seconds = duration.inSeconds.remainder(60);
-    if (hours > 0) {
-      return "${twoDigits(hours)}:${twoDigits(minutes)}:${twoDigits(seconds)}";
-    } else {
-      return "${twoDigits(minutes)}:${twoDigits(seconds)}";
+  String _formatDuration(Duration d) {
+    final h = d.inHours;
+    final m = d.inMinutes.remainder(60);
+    final s = d.inSeconds.remainder(60);
+    if (h > 0) return '${h}h ${m}m';
+    if (m > 0) return '${m}m ${s}s';
+    return '${s}s';
+  }
+
+  Color _accentColor(VaultItemCategory cat) {
+    switch (cat) {
+      case VaultItemCategory.boosters: return const Color(0xFFFFB020);
+      case VaultItemCategory.cosmetics: return const Color(0xFFE040FB);
+      case VaultItemCategory.eventsAndChallenges: return const Color(0xFFFF6D00);
+      case VaultItemCategory.unlockables: return const Color(0xFF00B0FF);
+      case VaultItemCategory.upgrades: return const Color(0xFF00E676);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final bool canAfford = widget.currentPoints >= widget.item.cost;
-    final bool isRepeatable = widget.item.type == VaultItemType.repeatable;
-    final bool isOneTimeOwned = !isRepeatable && widget.isOwned;
-    final bool isMaxedOut = isRepeatable && 
-                           widget.maxPurchaseCount != null && 
-                           widget.purchaseCount != null && 
-                           widget.purchaseCount! >= widget.maxPurchaseCount!;
-    
-    // --- Determine purchasability based on new states --- 
+    final canAfford = widget.currentPoints >= widget.item.cost;
+    final isRepeatable = widget.item.type == VaultItemType.repeatable;
+    final isOneTimeOwned = !isRepeatable && widget.isOwned;
+    final isMaxedOut = isRepeatable &&
+        widget.maxPurchaseCount != null &&
+        widget.purchaseCount != null &&
+        widget.purchaseCount! >= widget.maxPurchaseCount!;
+
     bool isPurchasable = true;
     if (isOneTimeOwned) isPurchasable = false;
     if (isMaxedOut) isPurchasable = false;
-    // Use the locally updating timer values for checks
-    if (widget.isActive && (_currentActiveRemaining == null || _currentActiveRemaining! > Duration.zero)) isPurchasable = false; // Cannot buy if already active
-    if (widget.isOnCooldown && (_currentCooldownRemaining == null || _currentCooldownRemaining! > Duration.zero)) isPurchasable = false; // Cannot buy if on cooldown
+    if (widget.isActive && (_currentActiveRemaining == null || _currentActiveRemaining! > Duration.zero)) isPurchasable = false;
+    if (widget.isOnCooldown && (_currentCooldownRemaining == null || _currentCooldownRemaining! > Duration.zero)) isPurchasable = false;
     if (widget.item.id == 'platinum_warp' && widget.usesLeft <= 0) isPurchasable = false;
     if ((widget.item.id == 'temp_boost_10x_5min' || widget.item.id == 'temp_boost_2x_10min') && widget.isAnyPlatinumBoostActive) {
-       isPurchasable = false; // Cannot buy one booster if another plat booster is active
+      isPurchasable = false;
     }
-    // --- End purchasability logic --- 
 
-    bool isBuyButtonEnabled = canAfford && isPurchasable;
+    final isBuyEnabled = canAfford && isPurchasable;
+    final isInteractive = isBuyEnabled || (widget.item.id == 'platinum_yacht' && widget.isOwned);
+    final isActive = widget.isActive && _currentActiveRemaining != null && _currentActiveRemaining! > Duration.zero;
+    final isOnCooldown = widget.isOnCooldown && _currentCooldownRemaining != null && _currentCooldownRemaining! > Duration.zero;
     
-    // Special case: Allow interaction with owned yacht for management
-    bool isInteractionEnabled = isBuyButtonEnabled || (widget.item.id == 'platinum_yacht' && widget.isOwned);
+    // Get rarity styling
+    final rarity = getRarity(widget.item.cost);
+    final rarityStyle = RarityStyle.forRarity(rarity);
+    final accent = _accentColor(widget.item.category);
 
-    // --- Determine Button Text and Style based on state --- 
-    String buttonText = "Purchase"; // Default
-    Color buttonColor = const Color(0xFF8E44AD); // Default purple
-    Color buttonTextColor = const Color(0xFFFFD700); // Default gold text
-    Color buttonBorderColor = const Color(0xFFFFD700).withOpacity(0.4);
-    List<BoxShadow>? buttonShadow = [ // Default shadow
-      BoxShadow(
-        color: const Color(0xFFAA00FF).withOpacity(0.2),
-        blurRadius: 6,
-        spreadRadius: 0,
-      ),
-    ];
+    // No full-card tap - purchase only via BUY button
+    return AnimatedBuilder(
+        animation: _glowController,
+        builder: (context, _) {
+          final glowVal = _glowController.value;
+          final isLegendary = rarity == ItemRarity.legendary;
+          final isEpic = rarity == ItemRarity.epic;
+          
+          // Dynamic border color based on rarity and state
+          Color borderColor;
+          double borderWidth = 1.5;
+          if (isOneTimeOwned || isMaxedOut) {
+            borderColor = VaultColors.gold.withOpacity(0.8 + glowVal * 0.2);
+            borderWidth = 2.5;
+          } else if (isActive) {
+            borderColor = accent.withOpacity(0.9);
+            borderWidth = 2;
+          } else if (isOnCooldown) {
+            borderColor = VaultColors.cooldown.withOpacity(0.7);
+          } else if (isLegendary) {
+            borderColor = Color.lerp(rarityStyle.primary, rarityStyle.secondary, glowVal)!.withOpacity(0.8);
+            borderWidth = 2;
+          } else if (isEpic) {
+            borderColor = rarityStyle.primary.withOpacity(0.6 + glowVal * 0.2);
+          } else if (canAfford) {
+            borderColor = accent.withOpacity(0.5);
+          } else {
+            borderColor = VaultColors.border.withOpacity(0.5);
+          }
 
-    if (!canAfford) {
-      buttonText = "Insufficient PP";
-      buttonColor = const Color(0xFF38134A); // Darker disabled color
-      buttonTextColor = Colors.grey.shade600;
-      buttonBorderColor = Colors.grey.shade700;
-      buttonShadow = [];
-    } else if (isOneTimeOwned) {
-      if (widget.item.id == 'platinum_yacht') {
-        buttonText = "Manage";
-        buttonColor = const Color(0xFF4A90E2); // Blue color for yacht management
-        buttonTextColor = Colors.white;
-        buttonBorderColor = const Color(0xFF4A90E2).withOpacity(0.8);
-        buttonShadow = [BoxShadow(color: const Color(0xFF4A90E2).withOpacity(0.3), blurRadius: 8)];
-      } else {
-        buttonText = "Owned";
-        buttonColor = const Color(0xFFFFD700); // Gold color for owned
-        buttonTextColor = Colors.black;
-        buttonBorderColor = const Color(0xFFFFD700).withOpacity(0.8);
-        buttonShadow = [BoxShadow(color: const Color(0xFFFFD700).withOpacity(0.3), blurRadius: 8)];
-      }
-    } else if (isMaxedOut) {
-       buttonText = "Maxed Out";
-       buttonColor = Colors.grey.shade700;
-       buttonTextColor = Colors.grey.shade400;
-       buttonBorderColor = Colors.grey.shade600;
-       buttonShadow = [];
-    } else if (widget.isActive && _currentActiveRemaining != null && _currentActiveRemaining! > Duration.zero) {
-       buttonText = "Active: ${_formatDuration(_currentActiveRemaining!)}";
-       buttonColor = Colors.blue.shade800; // Distinct color for active
-       buttonTextColor = Colors.lightBlue.shade100;
-       buttonBorderColor = Colors.blue.shade400;
-       buttonShadow = [BoxShadow(color: Colors.blue.withOpacity(0.4), blurRadius: 8)];
-    } else if (widget.isOnCooldown && _currentCooldownRemaining != null && _currentCooldownRemaining! > Duration.zero) {
-      buttonText = "Cooldown: ${_formatDuration(_currentCooldownRemaining!)}";
-       buttonColor = Colors.orange.shade900; // Distinct color for cooldown
-       buttonTextColor = Colors.orange.shade100;
-       buttonBorderColor = Colors.orange.shade600;
-       buttonShadow = [BoxShadow(color: Colors.orange.withOpacity(0.4), blurRadius: 8)];
-    } else if (widget.item.id == 'platinum_warp') {
-       if (widget.usesLeft > 0) {
-         buttonText = "Purchase (${widget.usesLeft}/${widget.maxUses} Left)";
-         // Keep default purchase colors
-       } else {
-         buttonText = "Limit Reached";
-         buttonColor = Colors.grey.shade700;
-         buttonTextColor = Colors.grey.shade400;
-         buttonBorderColor = Colors.grey.shade600;
-         buttonShadow = [];
-       }
-    } else if ((widget.item.id == 'temp_boost_10x_5min' || widget.item.id == 'temp_boost_2x_10min') && widget.isAnyPlatinumBoostActive) {
-       // Find which booster IS active to display its timer potentially
-       // For now, just show generic text
-       buttonText = "Boost Active"; 
-       buttonColor = Colors.blue.shade800;
-       buttonTextColor = Colors.lightBlue.shade100;
-       buttonBorderColor = Colors.blue.shade400;
-       buttonShadow = [BoxShadow(color: Colors.blue.withOpacity(0.4), blurRadius: 8)];
-    }
-    // --- End Button Text and Style Logic --- 
-
-    // Check for mobile screen size
-    final bool isMobile = MediaQuery.of(context).size.width < 600;
-    
-    // Adjusted for better mobile readability
-    final double iconSize = isMobile ? 50 : 55; 
-    final double borderRadius = isMobile ? 16.0 : 16.0;
-    final double titleFontSize = isMobile ? 15.0 : 16.0;
-    final double descFontSize = isMobile ? 13.0 : 12.0;
-    final EdgeInsets contentPadding = isMobile 
-        ? const EdgeInsets.fromLTRB(12.0, 10.0, 12.0, 6.0)
-        : const EdgeInsets.fromLTRB(12.0, 12.0, 12.0, 4.0);
-    final double buttonHeight = isMobile ? 42 : 38;
-
-    return MouseRegion(
-      onEnter: (_) {
-        if (isInteractionEnabled) {
-          setState(() => _isHovering = true);
-          _animationController.forward();
-        }
-      },
-      onExit: (_) {
-        setState(() => _isHovering = false);
-        _animationController.reverse();
-      },
-      child: AnimatedBuilder(
-        animation: _animationController,
-        builder: (context, child) {
-          return GestureDetector(
-            onTap: isInteractionEnabled ? widget.onBuy : null,
-            child: Transform.scale(
-              scale: isBuyButtonEnabled ? _scaleAnimation.value : 1.0,
-              child: Container(
-                clipBehavior: Clip.antiAlias,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(borderRadius),
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      const Color(0xFF3A1249).withOpacity(0.95),
-                      const Color(0xFF260B33).withOpacity(0.95),
-                    ],
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: widget.isOwned || isMaxedOut
-                          ? const Color(0xFFFFD700).withOpacity(0.3 + (_glowAnimation.value * 0.2))
-                          : isBuyButtonEnabled && _isHovering
-                              ? const Color(0xFFAA00FF).withOpacity(0.3 + (_glowAnimation.value * 0.2))
-                              : Colors.black26,
-                      blurRadius: 12 + (_glowAnimation.value * 8),
-                      spreadRadius: 2 + (_glowAnimation.value * 2),
+          return Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(14),
+              // Rich gradient background based on rarity
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: isLegendary ? [
+                  const Color(0xFF2A2215), // Dark gold tint
+                  const Color(0xFF1A1510),
+                  const Color(0xFF151210),
+                ] : isEpic ? [
+                  const Color(0xFF1F1A28), // Dark purple tint
+                  const Color(0xFF151218),
+                  const Color(0xFF100E14),
+                ] : rarity == ItemRarity.rare ? [
+                  const Color(0xFF151D28), // Dark blue tint
+                  const Color(0xFF121820),
+                  const Color(0xFF0E1318),
+                ] : [
+                  const Color(0xFF1F2226), // Lighter for common - more visible
+                  const Color(0xFF1A1D22),
+                  const Color(0xFF16191E),
+                ],
+              ),
+              border: Border.all(width: borderWidth, color: borderColor),
+              boxShadow: [
+                BoxShadow(color: Colors.black.withOpacity(0.5), blurRadius: 10, offset: const Offset(0, 4)),
+                if (isOneTimeOwned || isMaxedOut)
+                  BoxShadow(color: VaultColors.gold.withOpacity(0.2 + glowVal * 0.2), blurRadius: 24, spreadRadius: 2),
+                if (isActive)
+                  BoxShadow(color: accent.withOpacity(0.3 + glowVal * 0.2), blurRadius: 20, spreadRadius: 2),
+                if (isLegendary && !isOneTimeOwned)
+                  BoxShadow(color: rarityStyle.glow.withOpacity(0.15 + glowVal * 0.1), blurRadius: 16, spreadRadius: 1),
+                if (isEpic && !isOneTimeOwned)
+                  BoxShadow(color: rarityStyle.glow.withOpacity(0.1 + glowVal * 0.08), blurRadius: 12),
+              ],
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Stack(
+              children: [
+                // Rarity gradient overlay at top
+                Positioned(
+                  top: 0, left: 0, right: 0,
+                  child: Container(
+                    height: 60,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          rarityStyle.primary.withOpacity(isLegendary ? 0.35 : isEpic ? 0.25 : rarity == ItemRarity.rare ? 0.18 : 0.12),
+                          rarityStyle.secondary.withOpacity(0.05),
+                          Colors.transparent,
+                        ],
+                        stops: const [0.0, 0.6, 1.0],
+                      ),
                     ),
-                  ],
-                  border: Border.all(
-                    width: 1.5,
-                    color: widget.isOwned || isMaxedOut
-                        ? const Color(0xFFFFD700).withOpacity(0.7)
-                        : isBuyButtonEnabled && _isHovering
-                            ? const Color(0xFFAA00FF).withOpacity(0.7)
-                            : const Color(0xFF4A1259).withOpacity(0.5),
                   ),
                 ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    splashColor: isInteractionEnabled 
-                        ? const Color(0xFFFFD700).withOpacity(0.3) 
-                        : Colors.transparent,
-                    highlightColor: isInteractionEnabled 
-                        ? const Color(0xFFAA00FF).withOpacity(0.1) 
-                        : Colors.transparent,
-                    onTap: isInteractionEnabled ? widget.onBuy : null,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        // Top section with icon
-                        Container(
-                          padding: EdgeInsets.symmetric(vertical: isMobile ? 12 : 12),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [
-                                const Color(0xFF4A1259),
-                                const Color(0xFF38134A),
-                              ],
-                            ),
-                          ),
-                          child: Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              // Shine effect
-                              Positioned.fill(
-                                child: ShaderMask(
-                                  blendMode: BlendMode.srcIn,
-                                  shaderCallback: (bounds) => LinearGradient(
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                    colors: [
-                                      Colors.white.withOpacity(0.15),
-                                      Colors.transparent,
-                                    ],
-                                  ).createShader(bounds),
-                                  child: Container(color: Colors.white),
-                                ),
-                              ),
-                              
-                              // Icon with animated glow
-                              Container(
-                                width: iconSize,
-                                height: iconSize,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  gradient: RadialGradient(
-                                    colors: [
-                                      const Color(0xFF38134A).withOpacity(0.9),
-                                      const Color(0xFF260B33).withOpacity(0.9),
-                                    ],
-                                  ),
-                                  boxShadow: [
-                                    if (canAfford)
-                                      BoxShadow(
-                                        color: const Color(0xFFFFD700).withOpacity(0.4 + (_glowAnimation.value * 0.4)),
-                                        blurRadius: 15 + (_glowAnimation.value * 10),
-                                        spreadRadius: 1 + (_glowAnimation.value * 2),
-                                      ),
-                                  ],
-                                  border: Border.all(
-                                    color: canAfford
-                                        ? const Color(0xFFFFD700).withOpacity(0.7 + (_glowAnimation.value * 0.3))
-                                        : Colors.grey.withOpacity(0.4),
-                                    width: 2,
-                                  ),
-                                ),
-                                child: Icon(
-                                  widget.item.iconData ?? Icons.shopping_bag,
-                                  size: isMobile ? 28 : 28,
-                                  color: canAfford
-                                      ? const Color(0xFFFFD700).withOpacity(0.8 + (_glowAnimation.value * 0.2))
-                                      : Colors.grey.shade400,
-                                ),
-                              ),
-                              
-                              // Status indicator for owned items OR maxed out
-                              if (isOneTimeOwned || isMaxedOut)
-                                Positioned(
-                                  top: 0,
-                                  right: 16,
-                                  child: _buildStatusIndicator(isOneTimeOwned, isMaxedOut),
-                                ),
+                // Static diagonal shine for legendary/epic (no animation)
+                if (isLegendary || isEpic)
+                  Positioned(
+                    right: -20,
+                    top: -10,
+                    child: Transform.rotate(
+                      angle: -0.5,
+                      child: Container(
+                        width: 60,
+                        height: 120,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.transparent,
+                              Colors.white.withOpacity(isLegendary ? 0.12 : 0.06),
+                              Colors.transparent,
                             ],
                           ),
                         ),
-                        
-                        // Title and description - allow 2 lines for title to avoid truncation
-                        Padding(
-                          padding: contentPadding,
-                          child: LayoutBuilder(
-                            builder: (context, constraints) => Column(
+                      ),
+                    ),
+                  ),
+                // Corner accent for legendary
+                if (isLegendary)
+                  Positioned(
+                    top: 0, right: 0,
+                    child: Container(
+                      width: 50, height: 50,
+                      decoration: BoxDecoration(
+                        gradient: RadialGradient(
+                          center: Alignment.topRight,
+                          radius: 1.2,
+                          colors: [
+                            VaultColors.gold.withOpacity(0.3),
+                            Colors.transparent,
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                // Main content
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Icon + Title row (titles now align across all cards)
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Icon with rarity indicator
+                          Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              Container(
+                                width: 40, height: 40,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: [
+                                      rarityStyle.primary.withOpacity(0.4),
+                                      rarityStyle.secondary.withOpacity(0.2),
+                                    ],
+                                  ),
+                                  border: Border.all(
+                                    color: (isOneTimeOwned || canAfford) 
+                                        ? VaultColors.gold.withOpacity(0.7 + glowVal * 0.3)
+                                        : rarityStyle.primary.withOpacity(0.5),
+                                    width: 2,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: (isOneTimeOwned || canAfford)
+                                          ? VaultColors.gold.withOpacity(0.35)
+                                          : rarityStyle.glow.withOpacity(0.2),
+                                      blurRadius: 10,
+                                    ),
+                                  ],
+                                ),
+                                child: Icon(
+                                  widget.item.iconData ?? Icons.star,
+                                  size: 20,
+                                  color: (isOneTimeOwned || canAfford) ? VaultColors.gold : rarityStyle.primary,
+                                ),
+                              ),
+                              // Rarity badge on icon (only for rare+)
+                              if (rarityStyle.label.isNotEmpty)
+                                Positioned(
+                                  bottom: -2,
+                                  right: -4,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: [rarityStyle.primary, rarityStyle.secondary],
+                                      ),
+                                      borderRadius: BorderRadius.circular(6),
+                                      border: Border.all(color: const Color(0xFF1A1D24), width: 1.5),
+                                      boxShadow: [
+                                        BoxShadow(color: rarityStyle.glow.withOpacity(0.5), blurRadius: 4),
+                                      ],
+                                    ),
+                                    child: Text(
+                                      rarity == ItemRarity.legendary ? '★' : rarity == ItemRarity.epic ? '◆' : '●',
+                                      style: const TextStyle(
+                                        fontSize: 8,
+                                        fontWeight: FontWeight.w900,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(width: 10),
+                          // Title
+                          Expanded(
+                            child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
                                   widget.item.name,
                                   style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: titleFontSize,
-                                    color: widget.isOwned
-                                        ? const Color(0xFFFFD700)
-                                        : Colors.white,
-                                    height: 1.2, // Add line height to ensure readability
-                                    letterSpacing: 0.5,
-                                    shadows: [
-                                      Shadow(
-                                        color: Colors.black.withOpacity(0.6),
-                                        blurRadius: 2,
-                                        offset: const Offset(0, 1),
-                                      ),
-                                    ],
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 14,
+                                    color: isOneTimeOwned 
+                                        ? VaultColors.gold 
+                                        : isLegendary 
+                                            ? const Color(0xFFFFE082)
+                                            : VaultColors.textPrimary,
+                                    height: 1.2,
+                                    shadows: isLegendary ? [
+                                      Shadow(color: VaultColors.gold.withOpacity(0.5), blurRadius: 8),
+                                    ] : null,
                                   ),
-                                  maxLines: 2, // Allow two lines for title
+                                  maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
                                 ),
-                                SizedBox(height: isMobile ? 8 : 4),
-                                Container(
-                                  constraints: BoxConstraints(
-                                    maxHeight: constraints.maxHeight * (isMobile ? 0.25 : 0.3)
-                                  ),
-                                  child: Text(
-                                    widget.item.description,
-                                    style: TextStyle(
-                                      fontSize: descFontSize,
-                                      color: Colors.grey.shade300,
-                                      height: 1.3, // Increase line height for better readability
-                                    ),
-                                    maxLines: isMobile ? 3 : 3,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                                // Info button for detailed description
-                                if (widget.item.description.length > 80)
-                                  Align(
-                                    alignment: Alignment.centerRight,
-                                    child: GestureDetector(
-                                      onTap: () {
-                                        _showFullDescription(context);
-                                      },
-                                      child: Container(
-                                        margin: const EdgeInsets.only(top: 4),
-                                        padding: const EdgeInsets.all(4),
-                                        decoration: BoxDecoration(
-                                          color: Colors.black12,
-                                          borderRadius: BorderRadius.circular(12),
-                                        ),
-                                        child: Icon(
-                                          Icons.info_outline,
-                                          size: isMobile ? 16 : 16,
-                                          color: const Color(0xFFFFD700).withOpacity(0.7),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
+                                if (isOneTimeOwned || isMaxedOut || isActive || isOnCooldown) ...[
+                                  const SizedBox(height: 4),
+                                  _buildStatusChip(isOneTimeOwned, isMaxedOut, isActive, isOnCooldown, accent),
+                                ],
                               ],
                             ),
                           ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      // Description
+                      Expanded(
+                        child: Text(
+                          widget.item.description,
+                          style: TextStyle(
+                            fontSize: 11.5,
+                            color: VaultColors.textSecondary,
+                            height: 1.35,
+                          ),
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        
-                        // Spacer to push cost and button to bottom
-                        const Spacer(),
-                        
-                        // Cost display and buy button
-                        Padding(
-                          padding: EdgeInsets.fromLTRB(12.0, 0, 12.0, isMobile ? 12.0 : 8.0),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              // Cost with premium coin indicator
-                              GestureDetector(
-                                onTap: isBuyButtonEnabled ? widget.onBuy : null,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                  decoration: BoxDecoration(
-                                    color: Colors.black.withOpacity(0.2),
-                                    borderRadius: BorderRadius.circular(24),
-                                    border: Border.all(
-                                      color: canAfford
-                                          ? const Color(0xFFFFD700).withOpacity(0.6)
-                                          : Colors.red.shade300.withOpacity(0.4),
-                                      width: 1.5,
-                                    ),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: canAfford
-                                            ? const Color(0xFFFFD700).withOpacity(0.2)
-                                            : Colors.transparent,
-                                        blurRadius: 8,
-                                        spreadRadius: 0,
-                                      ),
-                                    ],
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      // Premium coin
-                                      Container(
-                                        width: isMobile ? 20 : 18,
-                                        height: isMobile ? 20 : 18,
-                                        decoration: BoxDecoration(
-                                          shape: BoxShape.circle,
-                                          gradient: RadialGradient(
-                                            colors: [
-                                              const Color(0xFFFFD700),
-                                              const Color(0xFFFFBC00),
-                                            ],
-                                          ),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: const Color(0xFFFFD700).withOpacity(0.7),
-                                              blurRadius: 6,
-                                              spreadRadius: 1,
-                                            ),
-                                          ],
-                                        ),
-                                        child: const Center(
-                                          child: Text(
-                                            '✦',
-                                            style: TextStyle(
-                                              fontSize: 13,
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        widget.item.cost.toString(),
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: isMobile ? 16 : 14,
-                                          color: canAfford
-                                              ? const Color(0xFFFFD700)
-                                              : Colors.red.shade300,
-                                          letterSpacing: 0.5,
-                                          shadows: [
-                                            Shadow(
-                                              color: Colors.black.withOpacity(0.6),
-                                              blurRadius: 2,
-                                              offset: const Offset(0, 1),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
+                      ),
+                      const SizedBox(height: 8),
+                      // Cost + Button row
+                      Row(
+                        children: [
+                          // Cost pill with glow
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: canAfford 
+                                    ? [const Color(0xFF2A2510), const Color(0xFF1A1808)]
+                                    : [const Color(0xFF2A1515), const Color(0xFF1A0E0E)],
                               ),
-                              const SizedBox(height: 12),
-                              
-                              // Buy button with improved styling for mobile
-                              SizedBox(
-                                width: double.infinity,
-                                child: AnimatedContainer(
-                                  duration: const Duration(milliseconds: 200),
-                                  height: buttonHeight,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: canAfford 
+                                    ? VaultColors.gold.withOpacity(0.6) 
+                                    : Colors.red.withOpacity(0.4),
+                                width: 1.5,
+                              ),
+                              boxShadow: canAfford ? [
+                                BoxShadow(color: VaultColors.gold.withOpacity(0.2), blurRadius: 8),
+                              ] : null,
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  width: 16, height: 16,
                                   decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(12),
+                                    shape: BoxShape.circle,
                                     gradient: LinearGradient(
                                       begin: Alignment.topLeft,
                                       end: Alignment.bottomRight,
-                                      colors: isBuyButtonEnabled
-                                          ? [
-                                              _isHovering
-                                                  ? Color.lerp(buttonColor, Colors.white, 0.1)! // Slightly lighter on hover
-                                                  : buttonColor,
-                                              _isHovering
-                                                  ? Color.lerp(buttonColor, Colors.black, 0.1)! // Slightly darker on hover
-                                                  : buttonColor.withOpacity(0.8),
-                                            ]
-                                          : [
-                                              buttonColor, // Use the determined disabled/status color
-                                              buttonColor.withOpacity(0.8),
-                                            ],
+                                      colors: [VaultColors.gold, VaultColors.goldDark],
                                     ),
-                                    boxShadow: isBuyButtonEnabled
-                                        ? buttonShadow // Use determined shadow
-                                        : [], // No shadow when disabled
-                                    border: Border.all(
-                                      color: isBuyButtonEnabled
-                                          ? (_isHovering
-                                              ? buttonBorderColor.withOpacity(0.8)
-                                              : buttonBorderColor)
-                                          : buttonBorderColor, // Use determined border color
-                                      width: 1.5,
-                                    ),
+                                    boxShadow: [
+                                      BoxShadow(color: VaultColors.gold.withOpacity(0.4), blurRadius: 3),
+                                    ],
                                   ),
-                                  child: Material(
-                                    color: Colors.transparent,
-                                    child: InkWell(
-                                      borderRadius: BorderRadius.circular(12),
-                                      onTap: isBuyButtonEnabled ? widget.onBuy : null,
-                                      splashColor: const Color(0xFFFFD700).withOpacity(0.1),
-                                      highlightColor: const Color(0xFFFFD700).withOpacity(0.05),
-                                      child: Center(
-                                        child: Row(
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          children: [
-                                            if (isBuyButtonEnabled && _isHovering)
-                                              Padding(
-                                                padding: const EdgeInsets.only(right: 8.0),
-                                                child: Icon(
-                                                  Icons.shopping_cart,
-                                                  size: isMobile ? 18 : 16,
-                                                  color: const Color(0xFFFFD700),
-                                                ),
-                                              ),
-                                            Text(
-                                              buttonText, // Use the determined text
-                                              style: TextStyle(
-                                                color: isBuyButtonEnabled
-                                                    ? buttonTextColor // Use determined text color
-                                                    : buttonTextColor, // Use determined disabled/status text color
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: isMobile ? 16 : 14,
-                                                letterSpacing: 0.8,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
+                                  child: const Icon(Icons.star_rounded, size: 10, color: Colors.white),
+                                ),
+                                const SizedBox(width: 5),
+                                Text(
+                                  '${widget.item.cost} PP',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 13,
+                                    color: canAfford ? VaultColors.gold : const Color(0xFFFF6B6B),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          // Action button - only tappable element for purchase
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: isInteractive ? widget.onBuy : null,
+                              child: _buildButton(canAfford, isBuyEnabled, isOneTimeOwned, isMaxedOut, isActive, isOnCooldown, rarityStyle),
+                            ),
+                          ),
+                        ],
+                      ),
+                      // Progress bar for repeatables (compact)
+                      if (isRepeatable && widget.purchaseCount != null && widget.maxPurchaseCount != null) ...[
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Container(
+                                height: 6,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(4),
+                                  color: VaultColors.border.withOpacity(0.3),
+                                ),
+                                child: FractionallySizedBox(
+                                  alignment: Alignment.centerLeft,
+                                  widthFactor: widget.purchaseCount! / widget.maxPurchaseCount!,
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(4),
+                                      gradient: LinearGradient(
+                                        colors: isMaxedOut 
+                                            ? [VaultColors.gold, VaultColors.goldDark]
+                                            : [accent, accent.withOpacity(0.7)],
                                       ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: (isMaxedOut ? VaultColors.gold : accent).withOpacity(0.4),
+                                          blurRadius: 6,
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 ),
                               ),
-                              
-                              // Purchase count indicator for repeatable items
-                              if (isRepeatable && widget.purchaseCount != null && widget.maxPurchaseCount != null)
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 8.0),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      // Progress bar
-                                      Expanded(
-                                        child: ClipRRect(
-                                          borderRadius: BorderRadius.circular(4),
-                                          child: LinearProgressIndicator(
-                                            value: widget.purchaseCount! / widget.maxPurchaseCount!,
-                                            backgroundColor: Colors.grey.shade800.withOpacity(0.5),
-                                            valueColor: AlwaysStoppedAnimation<Color>(
-                                              isMaxedOut
-                                                  ? const Color(0xFFFFD700).withOpacity(0.7)
-                                                  : const Color(0xFFAA00FF).withOpacity(0.7),
-                                            ),
-                                            minHeight: isMobile ? 4 : 3,
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        "${widget.purchaseCount}/${widget.maxPurchaseCount}",
-                                        style: TextStyle(
-                                          fontSize: isMobile ? 14 : 10,
-                                          color: isMaxedOut
-                                              ? const Color(0xFFFFD700)
-                                              : Colors.grey.shade400,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                            ],
-                          ),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              '${widget.purchaseCount}/${widget.maxPurchaseCount}',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                color: isMaxedOut ? VaultColors.gold : VaultColors.textSecondary,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
-                    ),
+                    ],
                   ),
                 ),
-              ),
+              ],
             ),
           );
         },
-      ),
-    );
+      );
   }
 
-  void _showFullDescription(BuildContext context) {
-    final bool isMobile = MediaQuery.of(context).size.width < 600;
+  Widget _buildStatusChip(bool isOwned, bool isMaxed, bool isActive, bool isOnCooldown, Color accent) {
+    String label;
+    Color bg;
+    Color fg;
+    List<BoxShadow>? shadows;
     
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          widget.item.name,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Color(0xFFFFD700),
-            fontSize: 18,
-          ),
-        ),
-        content: Container(
-          constraints: BoxConstraints(
-            maxWidth: isMobile ? double.infinity : 400,
-            maxHeight: isMobile ? 300 : 400,
-          ),
-          child: SingleChildScrollView(
-            child: Text(
-              widget.item.description,
-              style: TextStyle(
-                fontSize: isMobile ? 16 : 14,
-                color: Colors.white,
-                height: 1.4,
-              ),
-            ),
-          ),
-        ),
-        backgroundColor: const Color(0xFF2D0C3E),
-        contentTextStyle: const TextStyle(color: Colors.white),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: Color(0xFFFFD700), width: 1.5),
-        ),
-        actions: [
-          Center(
-            child: TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              style: TextButton.styleFrom(
-                backgroundColor: const Color(0xFF8E44AD),
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  side: const BorderSide(color: Color(0xFFFFD700), width: 1),
-                ),
-              ),
-              child: const Text(
-                'Close',
-                style: TextStyle(
-                  color: Color(0xFFFFD700),
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-            ),
-          ),
-        ],
-        actionsPadding: const EdgeInsets.only(bottom: 16),
+    if (isOwned) {
+      label = '✓ OWNED';
+      bg = VaultColors.gold;
+      fg = Colors.black;
+      shadows = [BoxShadow(color: VaultColors.gold.withOpacity(0.5), blurRadius: 6)];
+    } else if (isMaxed) {
+      label = '★ MAXED';
+      bg = VaultColors.gold;
+      fg = Colors.black;
+      shadows = [BoxShadow(color: VaultColors.gold.withOpacity(0.4), blurRadius: 6)];
+    } else if (isActive) {
+      label = '⚡ ${_formatDuration(_currentActiveRemaining!)}';
+      bg = accent;
+      fg = Colors.white;
+      shadows = [BoxShadow(color: accent.withOpacity(0.5), blurRadius: 6)];
+    } else {
+      label = '⏳ ${_formatDuration(_currentCooldownRemaining!)}';
+      bg = VaultColors.cooldown;
+      fg = Colors.white;
+    }
+    
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: shadows,
+      ),
+      child: Text(
+        label,
+        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: fg),
       ),
     );
   }
 
-  Widget _buildActiveBoosterStatus() {
-    if (widget.activeBoostRemainingSeconds == null || widget.activeBoostRemainingSeconds! <= 0) {
-      return const SizedBox.shrink(); // Should not happen if isThisBoosterActive is true
+  Widget _buildButton(bool canAfford, bool isEnabled, bool isOwned, bool isMaxed, bool isActive, bool isOnCooldown, RarityStyle rarityStyle) {
+    String text;
+    Color bg;
+    Color fg;
+    Color borderColor;
+    List<BoxShadow>? shadows;
+    
+    if (isOwned) {
+      text = widget.item.id == 'platinum_yacht' ? 'Manage' : 'Owned';
+      bg = VaultColors.gold;
+      fg = Colors.black;
+      borderColor = VaultColors.gold;
+      shadows = [BoxShadow(color: VaultColors.gold.withOpacity(0.4), blurRadius: 8)];
+    } else if (isMaxed) {
+      text = 'Maxed';
+      bg = VaultColors.gold.withOpacity(0.2);
+      fg = VaultColors.gold;
+      borderColor = VaultColors.gold.withOpacity(0.5);
+    } else if (isActive) {
+      text = 'Active';
+      bg = VaultColors.active;
+      fg = Colors.white;
+      borderColor = VaultColors.active;
+      shadows = [BoxShadow(color: VaultColors.active.withOpacity(0.4), blurRadius: 8)];
+    } else if (isOnCooldown) {
+      text = 'Cooldown';
+      bg = VaultColors.cooldown.withOpacity(0.2);
+      fg = VaultColors.cooldown;
+      borderColor = VaultColors.cooldown.withOpacity(0.6);
+    } else if (!canAfford) {
+      text = 'Locked';
+      bg = Colors.transparent;
+      fg = VaultColors.textSecondary.withOpacity(0.6);
+      borderColor = VaultColors.border.withOpacity(0.3);
+    } else if (widget.item.id == 'platinum_warp' && widget.usesLeft <= 0) {
+      text = 'Limit';
+      bg = VaultColors.border.withOpacity(0.3);
+      fg = VaultColors.textSecondary;
+      borderColor = VaultColors.border;
+    } else if ((widget.item.id == 'temp_boost_10x_5min' || widget.item.id == 'temp_boost_2x_10min') && widget.isAnyPlatinumBoostActive) {
+      text = 'In Use';
+      bg = VaultColors.active.withOpacity(0.15);
+      fg = VaultColors.active;
+      borderColor = VaultColors.active.withOpacity(0.4);
+    } else {
+      text = 'BUY';
+      bg = VaultColors.gold.withOpacity(0.15);
+      fg = VaultColors.gold;
+      borderColor = VaultColors.gold.withOpacity(0.7);
+      shadows = [BoxShadow(color: VaultColors.gold.withOpacity(0.3), blurRadius: 10)];
     }
-
-    final minutes = widget.activeBoostRemainingSeconds! ~/ 60;
-    final seconds = widget.activeBoostRemainingSeconds! % 60;
-    final timeString = '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
-
+    
+    if (widget.item.id == 'platinum_warp' && widget.usesLeft > 0 && isEnabled) {
+      text = 'BUY (${widget.usesLeft})';
+    }
+    
     return Container(
-      height: 42, // Match button height
+      height: 30,
       decoration: BoxDecoration(
-        color: Colors.purple.shade700, // Use a distinct active color
-        borderRadius: BorderRadius.circular(12.0),
-        border: Border.all(color: Colors.purple.shade300),
+        color: bg,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: borderColor, width: 1.5),
+        boxShadow: shadows,
       ),
       child: Center(
         child: Text(
-          'Active: $timeString',
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 14,
+          text,
+          style: TextStyle(
+            fontWeight: FontWeight.w700,
+            fontSize: 12,
+            color: fg,
+            letterSpacing: 0.3,
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPurchaseButton(bool isEnabled, String text, bool canAfford, double height) {
-    return Opacity(
-      opacity: isEnabled ? 1.0 : 0.6,
-      child: Container(
-        height: height,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: isEnabled
-                ? [const Color(0xFFFFD700), const Color(0xFFE5C100)]
-                : [Colors.grey.shade600, Colors.grey.shade500],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-          borderRadius: BorderRadius.circular(12.0),
-          boxShadow: isEnabled
-              ? [
-                  BoxShadow(
-                    color: const Color(0xFFFFD700).withOpacity(0.4),
-                    blurRadius: 8,
-                    offset: const Offset(0, 3),
-                  ),
-                ]
-              : [],
-        ),
-        child: Center(
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Optional: Add cost icon
-              if (isEnabled && canAfford)
-                Container(
-                  width: 14,
-                  height: 14,
-                  margin: const EdgeInsets.only(right: 6),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: const Color(0xFF260B33), // Dark purple contrast
-                  ),
-                  child: const Center(
-                    child: Text(
-                      '✦',
-                      style: TextStyle(
-                        fontSize: 9,
-                        color: Color(0xFFFFD700),
-                        fontWeight: FontWeight.bold,
-                        height: 1.0,
-                      ),
-                    ),
-                  ),
-                ),
-              Text(
-                isEnabled ? '${widget.item.cost} - $text' : text,
-                style: TextStyle(
-                  color: isEnabled ? Colors.black : Colors.white70,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // Helper to build the status indicator (Owned/Maxed)
-  Widget _buildStatusIndicator(bool isOneTimeOwned, bool isMaxedOut) {
-    String text = "";
-    Color bgColor = Colors.grey;
-    Color textColor = Colors.white;
-
-    if (isOneTimeOwned) {
-      text = "Owned";
-      bgColor = const Color(0xFFFFD700).withOpacity(0.9);
-      textColor = Colors.black;
-    } else if (isMaxedOut) {
-      text = "Maxed";
-      bgColor = Colors.grey.withOpacity(0.9);
-    } else {
-      return const SizedBox.shrink(); // No indicator if not owned/maxed
-    }
-
-    final bool isMobile = MediaQuery.of(context).size.width < 600;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.3),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Text(
-        text,
-        style: TextStyle(
-          color: textColor,
-          fontSize: isMobile ? 12 : 10,
-          fontWeight: FontWeight.bold,
         ),
       ),
     );

@@ -6,16 +6,14 @@ import 'dart:async';
 
 import '../models/game_state.dart';
 import '../models/investment.dart';
-import '../models/investment_holding.dart';
 import '../services/game_service.dart';
 import '../utils/number_formatter.dart';
 import '../utils/sounds.dart';
 import '../widgets/investment_chart.dart';
 import '../utils/asset_loader.dart';
-import '../utils/sound_assets.dart';
 
 String formatCurrency(double value) {
-  return NumberFormatter.formatCurrency(value);
+  return NumberFormatter.formatCurrencyPrecise(value);
 }
 
 String formatInt(int value) {
@@ -115,50 +113,17 @@ class _InvestmentDetailScreenState extends State<InvestmentDetailScreen> {
       ),
       body: SingleChildScrollView(
         child: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Card(
                 elevation: 2,
                 child: Padding(
-                  padding: const EdgeInsets.all(16.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          Icon(
-                            investment.icon,
-                            color: investment.color,
-                            size: 32,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  investment.name,
-                                  style: const TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                Text(
-                                  investment.category,
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.grey[600],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -219,90 +184,48 @@ class _InvestmentDetailScreenState extends State<InvestmentDetailScreen> {
                         ],
                       ),
                       
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 12),
                       
                       SizedBox(
-                        height: 180,
+                        height: 140,
                         child: InvestmentChart(
-                          priceHistory: investment.priceHistory,
+                          priceHistory: _getDisplayPriceHistory(investment),
                           changePercent: investment.priceChangePercent,
                         ),
                       ),
                       
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 10),
                       
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
                         children: [
-                          _buildDataItem(
-                            'Risk',
-                            investment.riskLevel,
-                            icon: Icons.warning_outlined,
-                          ),
-                          _buildDataItem(
-                            'Market Cap',
-                            '\$${investment.marketCap.toStringAsFixed(2)}B',
-                            icon: Icons.pie_chart_outline,
-                          ),
-                          _buildDataItem(
-                            'Max Shares',
-                            formatInt(investment.maxShares),
-                            icon: Icons.inventory_2_outlined,
-                          ),
-                          _buildDataItem(
-                            'Volume',
-                            formatCurrency(investment.getDailyVolume()),
-                            icon: Icons.bar_chart,
-                          ),
+                          _buildCompactStat('Risk', investment.riskLevel),
+                          _buildCompactStat('Mkt Cap', NumberFormatter.formatLargeNumber(investment.marketCap * 1000000000)),
+                          _buildCompactStat('Shares', _formatCompactInt(investment.maxShares)),
+                          _buildCompactStat('Vol', NumberFormatter.formatLargeNumber(investment.getDailyVolume())),
                         ],
                       ),
                       
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 10),
                       
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildForecastCard(investment),
-                          ),
-                        ],
-                      ),
+                      _buildCompactForecast(investment),
                       
                       if (investment.hasDividends()) ...[
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 8),
                         Container(
-                          padding: const EdgeInsets.all(12),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                           decoration: BoxDecoration(
                             color: Colors.green.shade50,
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(6),
                           ),
                           child: Row(
                             children: [
-                              Icon(
-                                Icons.payments,
-                                color: Colors.green.shade700,
-                                size: 18,
-                              ),
-                              const SizedBox(width: 8),
+                              Icon(Icons.payments, color: Colors.green.shade700, size: 16),
+                              const SizedBox(width: 6),
                               Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text(
-                                      'Dividend Information',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.black87,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      'Yield: ${investment.getDividendYield().toStringAsFixed(2)}% • Income: \$${investment.dividendPerSecond.toStringAsFixed(2)}/sec per share',
-                                      style: TextStyle(
-                                        color: Colors.grey.shade800,
-                                        fontSize: 13,
-                                      ),
-                                    ),
-                                  ],
+                                child: Text(
+                                  'Yield: ${investment.getDividendYield().toStringAsFixed(2)}% • \$${investment.dividendPerSecond.toStringAsFixed(2)}/sec/share',
+                                  style: TextStyle(color: Colors.green.shade800, fontSize: 12, fontWeight: FontWeight.w500),
                                 ),
                               ),
                             ],
@@ -314,173 +237,127 @@ class _InvestmentDetailScreenState extends State<InvestmentDetailScreen> {
                 ),
               ),
               
-              const SizedBox(height: 16),
+              const SizedBox(height: 10),
               
               if (ownedShares > 0)
                 Card(
                   elevation: 2,
                   child: Padding(
-                    padding: const EdgeInsets.all(16.0),
+                    padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 10.0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Your Holdings',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            _buildDataItem(
-                              'Owned',
-                              '$ownedShares Shares',
-                              icon: Icons.account_balance_wallet_outlined,
-                            ),
-                            _buildDataItem(
-                              'Avg. Price',
-                              formatCurrency(investment.purchasePrice),
-                              icon: Icons.attach_money,
-                            ),
-                            _buildDataItem(
-                              'Current Value',
-                              formatCurrency(currentValue),
-                              icon: Icons.monetization_on_outlined,
+                            const Text('Your Holdings', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: performanceColor.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                '${profitLoss >= 0 ? "+" : ""}${formatCurrency(profitLoss)} (${profitPercentage.toStringAsFixed(1)}%)',
+                                style: TextStyle(color: performanceColor, fontWeight: FontWeight.bold, fontSize: 12),
+                              ),
                             ),
                           ],
                         ),
-                        
-                        const SizedBox(height: 16),
-                        
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: performanceColor.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Total Profit/Loss',
-                                style: TextStyle(
-                                  color: performanceColor,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              Row(
-                                children: [
-                                  Text(
-                                    formatCurrency(profitLoss),
-                                    style: TextStyle(
-                                      color: performanceColor,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    '(${profitPercentage.toStringAsFixed(2)}%)',
-                                    style: TextStyle(
-                                      color: performanceColor,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
+                        const SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            _buildCompactStat('Owned', '$ownedShares'),
+                            _buildCompactStat('Avg Price', formatCurrency(investment.purchasePrice)),
+                            _buildCompactStat('Value', formatCurrency(currentValue)),
+                          ],
                         ),
-                        
-                        if (investment.hasDividends())
-                          Padding(
-                            padding: const EdgeInsets.only(top: 16.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const Text(
-                                  'Dividend Information',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                const SizedBox(height: 8),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    _buildDataItem(
-                                      'Yield',
-                                      '${investment.getDividendYield().toStringAsFixed(2)}%',
-                                      icon: Icons.trending_up,
-                                    ),
-                                    _buildDataItem(
-                                      'Income/sec',
-                                      formatCurrency(investment.getDividendIncomePerSecond()),
-                                      icon: Icons.access_time,
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
                       ],
                     ),
                   ),
                 ),
               
-              const SizedBox(height: 16),
+              const SizedBox(height: 10),
               
               Card(
                 elevation: 2,
                 child: Padding(
-                  padding: const EdgeInsets.all(16.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 10.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: _isBuying ? Colors.blue : Colors.grey[300],
-                                foregroundColor: _isBuying ? Colors.white : Colors.black,
+                      Container(
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade200,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () {
+                                  if (!_isBuying) {
+                                    setState(() {
+                                      _isBuying = true;
+                                      _quantity = 1;
+                                      _updateQuantityController();
+                                    });
+                                  }
+                                },
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: _isBuying ? Colors.green : Colors.transparent,
+                                    borderRadius: const BorderRadius.horizontal(left: Radius.circular(8)),
+                                  ),
+                                  alignment: Alignment.center,
+                                  child: Text(
+                                    'BUY',
+                                    style: TextStyle(
+                                      color: _isBuying ? Colors.white : Colors.grey.shade600,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ),
                               ),
-                              onPressed: () {
-                                setState(() {
-                                  _isBuying = true;
-                                  _quantity = 1;
-                                  _updateQuantityController();
-                                });
-                              },
-                              child: const Text('Buy'),
                             ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: !_isBuying ? Colors.blue : Colors.grey[300],
-                                foregroundColor: !_isBuying ? Colors.white : Colors.black,
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: ownedShares > 0
+                                    ? () {
+                                        if (_isBuying) {
+                                          setState(() {
+                                            _isBuying = false;
+                                            _quantity = 1;
+                                            _updateQuantityController();
+                                          });
+                                        }
+                                      }
+                                    : null,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: !_isBuying ? Colors.red : Colors.transparent,
+                                    borderRadius: const BorderRadius.horizontal(right: Radius.circular(8)),
+                                  ),
+                                  alignment: Alignment.center,
+                                  child: Text(
+                                    'SELL',
+                                    style: TextStyle(
+                                      color: !_isBuying ? Colors.white : (ownedShares > 0 ? Colors.grey.shade600 : Colors.grey.shade400),
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ),
                               ),
-                              onPressed: ownedShares > 0
-                                  ? () {
-                                      setState(() {
-                                        _isBuying = false;
-                                        _quantity = 1;
-                                        _updateQuantityController();
-                                      });
-                                    }
-                                  : null,
-                              child: const Text('Sell'),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                       
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 12),
                       
                       Row(
                         children: [
@@ -518,58 +395,38 @@ class _InvestmentDetailScreenState extends State<InvestmentDetailScreen> {
                         ],
                       ),
                       
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 10),
                       
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            _isBuying ? 'Total Cost:' : 'Total Proceeds:',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Text(
-                            formatCurrency(totalCost),
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                          Text(_isBuying ? 'Total Cost:' : 'Proceeds:', style: const TextStyle(fontSize: 14)),
+                          Text(formatCurrency(totalCost), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
                         ],
                       ),
-                      
-                      const SizedBox(height: 8),
-                      
+                      const SizedBox(height: 4),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          const Text('Available Cash:'),
-                          Text(formatCurrency(gameState.money)),
+                          Text('Cash:', style: TextStyle(fontSize: 13, color: Colors.grey.shade600)),
+                          Text(formatCurrency(gameState.money), style: TextStyle(fontSize: 13, color: Colors.grey.shade600)),
                         ],
                       ),
                       
                       if (_isBuying && !canAfford && _quantity > 0)
                         Padding(
-                          padding: const EdgeInsets.only(top: 8.0),
-                          child: Text(
-                            'You cannot afford this purchase!',
-                            style: TextStyle(
-                              color: Colors.red[700],
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+                          padding: const EdgeInsets.only(top: 6.0),
+                          child: Text('Insufficient funds', style: TextStyle(color: Colors.red[700], fontSize: 12, fontWeight: FontWeight.w500)),
                         ),
                       
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 10),
                       
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
                           style: ElevatedButton.styleFrom(
                             backgroundColor: _isBuying ? Colors.green : Colors.red,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
                           ),
                           onPressed: (_isBuying && canAfford && _quantity > 0) ||
                                   (!_isBuying && ownedShares >= _quantity && _quantity > 0)
@@ -666,13 +523,8 @@ class _InvestmentDetailScreenState extends State<InvestmentDetailScreen> {
                                 }
                               : null,
                           child: Text(
-                            _isBuying
-                                ? 'Buy $_quantity Shares'
-                                : 'Sell $_quantity Shares',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
+                            _isBuying ? 'Buy $_quantity Shares' : 'Sell $_quantity Shares',
+                            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                           ),
                         ),
                       ),
@@ -681,30 +533,18 @@ class _InvestmentDetailScreenState extends State<InvestmentDetailScreen> {
                 ),
               ),
               
-              const SizedBox(height: 16),
+              const SizedBox(height: 10),
               
               Card(
                 elevation: 2,
                 child: Padding(
-                  padding: const EdgeInsets.all(16.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 10.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'About This Investment',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        investment.description,
-                        style: TextStyle(
-                          color: Colors.grey[800],
-                          height: 1.5,
-                        ),
-                      ),
+                      const Text('About', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 4),
+                      Text(investment.description, style: TextStyle(color: Colors.grey[700], fontSize: 13, height: 1.4)),
                     ],
                   ),
                 ),
@@ -712,84 +552,93 @@ class _InvestmentDetailScreenState extends State<InvestmentDetailScreen> {
             ],
           ),
         ),
-      ),
+      )
     );
   }
   
-  Widget _buildDataItem(String label, String value, {required IconData icon}) {
+  String _formatCompactInt(int value) {
+    if (value >= 1000000000) {
+      return '${(value / 1000000000).toStringAsFixed(1)}B';
+    } else if (value >= 1000000) {
+      return '${(value / 1000000).toStringAsFixed(1)}M';
+    } else if (value >= 1000) {
+      return '${(value / 1000).toStringAsFixed(1)}K';
+    }
+    return value.toString();
+  }
+
+  Widget _buildCompactStat(String label, String value) {
     return Column(
       children: [
-        Icon(
-          icon,
-          color: Colors.blue[700],
-          size: 18,
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey[600],
-          ),
-        ),
+        Text(label, style: TextStyle(fontSize: 11, color: Colors.grey.shade600)),
         const SizedBox(height: 2),
-        Text(
-          value,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        Text(value, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
       ],
     );
   }
-  
-  Widget _buildForecastCard(Investment investment) {
+
+  Widget _buildCompactForecast(Investment investment) {
     final String forecastCategory = investment.getForecastCategory();
     final Color forecastColor = investment.getForecastColor();
-    
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         color: forecastColor.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: forecastColor.withOpacity(0.5),
-          width: 1,
-        ),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: forecastColor.withOpacity(0.3)),
       ),
       child: Row(
         children: [
-          Icon(
-            _getForecastIcon(forecastCategory),
-            color: forecastColor,
-            size: 24,
-          ),
+          Icon(_getForecastIcon(forecastCategory), color: forecastColor, size: 18),
           const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Expert Forecast',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
-                  ),
-                ),
-                Text(
-                  forecastCategory,
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: forecastColor,
-                  ),
-                ),
-              ],
-            ),
-          ),
+          Text('Forecast: ', style: TextStyle(fontSize: 12, color: Colors.grey.shade600)),
+          Text(forecastCategory, style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: forecastColor)),
         ],
       ),
     );
+  }
+
+  List<double> _getDisplayPriceHistory(Investment investment) {
+    return _generateSyntheticHistory(investment);
+  }
+
+  List<double> _generateSyntheticHistory(Investment investment) {
+    final int targetLength = Investment.maxPriceHistoryLength;
+    double currentPrice = investment.currentPrice;
+    final double basePrice = investment.basePrice;
+    final double volatility = investment.volatility;
+    final random = Random(investment.id.hashCode ^ 0x9E3779B9);
+
+    if (currentPrice <= 0) {
+      currentPrice = basePrice > 0 ? basePrice : 1.0;
+    }
+
+    final double direction = investment.trend >= 0 ? 1.0 : -1.0;
+    final double baseDrift = 0.15 + volatility * 0.35;
+    final double totalChange = direction * baseDrift;
+    double startPrice = currentPrice / (1.0 + totalChange);
+
+    final double minBound = currentPrice * 0.5;
+    final double maxBound = currentPrice * 2.0;
+    startPrice = startPrice.clamp(minBound, maxBound);
+
+    final List<double> history = List<double>.filled(targetLength, 0.0);
+    double runningPrice = startPrice;
+    
+    for (int i = 0; i < targetLength; i++) {
+      final double t = i / (targetLength - 1);
+      final double targetPrice = startPrice + (currentPrice - startPrice) * t;
+      
+      final double noiseAmplitude = (0.03 + volatility * 0.12).clamp(0.03, 0.15);
+      final double noise = (random.nextDouble() * 2 - 1.0) * noiseAmplitude;
+      runningPrice = targetPrice * (1 + noise);
+      
+      if (runningPrice <= 0) runningPrice = 0.0001;
+      history[i] = runningPrice;
+    }
+
+    history[history.length - 1] = currentPrice;
+    return history;
   }
   
   IconData _getForecastIcon(String category) {

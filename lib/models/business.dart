@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:convert'; // Import for jsonEncode/Decode
 import 'dart:math'; // Import for max function
 import 'game_state_events.dart';
+import 'business_branch.dart';
 
 class BusinessLevel {
   final double cost;
@@ -59,6 +60,13 @@ class Business {
   DateTime? upgradeEndTime;
   int? initialUpgradeDurationSeconds; // Store initial duration for progress calculation
   
+  // ADDED: Business Branching System
+  List<BusinessBranch>? branches;          // Available specialization paths (null = no branching)
+  String? selectedBranchId;                // Currently selected branch ID (null = no choice made)
+  int branchSelectionLevel;                // Level at which branching becomes available (default: 0 = no branching)
+  bool hasMadeBranchChoice;                // Whether player has selected a branch
+  DateTime? branchSelectionTime;           // When the branch choice was made (for analytics)
+  
   Business({
     required this.id,
     required this.name,
@@ -78,23 +86,123 @@ class Business {
     this.isUpgrading = false,
     this.upgradeEndTime,
     this.initialUpgradeDurationSeconds,
+    // ADDED: Initialize branching fields
+    this.branches,
+    this.selectedBranchId,
+    this.branchSelectionLevel = 0,
+    this.hasMadeBranchChoice = false,
+    this.branchSelectionTime,
   });
   
-  // Calculate cost for next level upgrade
+  // --- ADDED: Business Branching Methods ---
+  
+  /// Check if this business supports branching
+  bool get hasBranching => branches != null && branches!.isNotEmpty && branchSelectionLevel > 0;
+  
+  /// Check if player can currently select a branch (at branch level, hasn't chosen yet)
+  bool canSelectBranch() {
+    return hasBranching && 
+           level >= branchSelectionLevel && 
+           !hasMadeBranchChoice;
+  }
+  
+  /// Check if upgrades are blocked pending branch selection
+  bool get isBlockedForBranchSelection {
+    return canSelectBranch() && !isUpgrading;
+  }
+  
+  /// Get the list of available branches for selection
+  List<BusinessBranch> getAvailableBranches() {
+    return branches ?? [];
+  }
+  
+  /// Get the currently selected branch (null if none selected)
+  BusinessBranch? getCurrentBranch() {
+    if (selectedBranchId == null || branches == null) return null;
+    return branches!.firstWhere(
+      (b) => b.id == selectedBranchId,
+      orElse: () => branches!.first, // Fallback to first branch
+    );
+  }
+  
+  /// Select a branch for this business
+  bool selectBranch(String branchId) {
+    if (!canSelectBranch()) return false;
+    if (branches == null || !branches!.any((b) => b.id == branchId)) return false;
+    
+    selectedBranchId = branchId;
+    hasMadeBranchChoice = true;
+    branchSelectionTime = DateTime.now();
+    return true;
+  }
+  
+  /// Get the effective BusinessLevel for a given game level (1-10)
+  /// This handles the branch transition at branchSelectionLevel
+  BusinessLevel? _getEffectiveLevelData(int gameLevel) {
+    if (gameLevel <= 0 || gameLevel > maxLevel) return null;
+    
+    // Pre-branch levels (1 to branchSelectionLevel-1) use base levels list
+    if (!hasBranching || gameLevel < branchSelectionLevel) {
+      final index = gameLevel - 1;
+      if (index >= 0 && index < levels.length) {
+        return levels[index];
+      }
+      return null;
+    }
+    
+    // At or after branch selection level
+    final branch = getCurrentBranch();
+    if (branch == null) {
+      // No branch selected yet, use base levels as fallback
+      final index = gameLevel - 1;
+      if (index >= 0 && index < levels.length) {
+        return levels[index];
+      }
+      return null;
+    }
+    
+    // Branch levels: gameLevel 3 -> branch index 0, gameLevel 4 -> branch index 1, etc.
+    final branchIndex = gameLevel - branchSelectionLevel;
+    if (branchIndex >= 0 && branchIndex < branch.levels.length) {
+      return branch.levels[branchIndex];
+    }
+    
+    return null;
+  }
+  
+  /// Get the display name including branch suffix if applicable
+  String getDisplayName() {
+    if (hasMadeBranchChoice && selectedBranchId != null) {
+      final branch = getCurrentBranch();
+      if (branch != null) {
+        return '$name – ${branch.name}';
+      }
+    }
+    return name;
+  }
+  
+  // --- END: Business Branching Methods ---
+  
+  // Calculate cost for next level upgrade (BRANCH-AWARE)
   double getNextUpgradeCost() {
     if (level >= maxLevel) return 0.0; // Already at max level
     // If currently upgrading, prevent showing cost for the *next* level
     if (isUpgrading) return 0.0;
-    return levels[level].cost; // Current level is 0-based index for the *next* upgrade
+    // Block if branch selection is pending
+    if (isBlockedForBranchSelection) return 0.0;
+    
+    final levelData = _getEffectiveLevelData(level + 1);
+    return levelData?.cost ?? levels[level].cost;
   }
   
-  // ADDED: Get timer duration for the next upgrade
+  // ADDED: Get timer duration for the next upgrade (BRANCH-AWARE)
   int getNextUpgradeTimerSeconds() {
     if (level >= maxLevel) return 0;
     if (isUpgrading) return 0; // No timer if already upgrading
-    // Ensure level index is valid for levels list
-    if (level < 0 || level >= levels.length) return 0; 
-    return levels[level].timerSeconds;
+    if (isBlockedForBranchSelection) return 0;
+    
+    final levelData = _getEffectiveLevelData(level + 1);
+    return levelData?.timerSeconds ?? levels[level].timerSeconds;
   }
   
   // Check if at max level
@@ -102,22 +210,22 @@ class Business {
     return level >= maxLevel;
   }
   
-  // Calculate current income per second based on level
+  // Calculate current income per second based on level (BRANCH-AWARE)
   double getCurrentIncome({bool isResilienceActive = false}) {
     if (level <= 0) return 0.0; // Not owned yet
-    // Use level-1 index because level is 1-based for owned levels
-    double baseIncome = levels[level - 1].incomePerSecond * incomeInterval;
     
-    return baseIncome;
+    final levelData = _getEffectiveLevelData(level);
+    double baseIncomeValue = (levelData?.incomePerSecond ?? levels[level - 1].incomePerSecond) * incomeInterval;
+    
+    return baseIncomeValue;
   }
   
-  // Get current income per second
+  // Get current income per second (BRANCH-AWARE)
   double getIncomePerSecond({bool isResilienceActive = false}) {
     if (level <= 0) return 0.0; // Not owned yet
-    // Use level-1 index because level is 1-based for owned levels
-    double baseIncome = levels[level - 1].incomePerSecond;
     
-    return baseIncome;
+    final levelData = _getEffectiveLevelData(level);
+    return levelData?.incomePerSecond ?? levels[level - 1].incomePerSecond;
   }
   
   // Get expected income after purchase (for unpurchased businesses)
@@ -130,27 +238,30 @@ class Business {
     return getIncomePerSecond();
   }
 
-  // Get next level's income per second
+  // Get next level's income per second (BRANCH-AWARE)
   double getNextLevelIncomePerSecond() {
-    // Return income of the level currently being upgraded TO, or the next level if not upgrading
-    int targetLevelIndex = isUpgrading ? level : level; // Index for levels list
-    if (targetLevelIndex >= maxLevel) return getIncomePerSecond(); // Already at max or upgrading to max
-    return levels[targetLevelIndex].incomePerSecond;
+    int targetLevel = level + 1;
+    if (targetLevel > maxLevel) return getIncomePerSecond(); // Already at max
+    
+    final levelData = _getEffectiveLevelData(targetLevel);
+    return levelData?.incomePerSecond ?? levels[min(level, levels.length - 1)].incomePerSecond;
   }
   
-  // Get current level description
+  // Get current level description (BRANCH-AWARE)
   String getCurrentLevelDescription() {
     if (level <= 0) return description; // Not owned yet
-    // Use level-1 index
-    return levels[level - 1].description;
+    
+    final levelData = _getEffectiveLevelData(level);
+    return levelData?.description ?? levels[level - 1].description;
   }
   
-  // Get next level description
+  // Get next level description (BRANCH-AWARE)
   String getNextLevelDescription() {
-    // Return description of the level currently being upgraded TO, or the next level if not upgrading
-    int targetLevelIndex = isUpgrading ? level : level; // Index for levels list
-    if (targetLevelIndex >= maxLevel) return getCurrentLevelDescription(); // Already at max or upgrading to max
-    return levels[targetLevelIndex].description;
+    int targetLevel = level + 1;
+    if (targetLevel > maxLevel) return getCurrentLevelDescription(); // Already at max
+    
+    final levelData = _getEffectiveLevelData(targetLevel);
+    return levelData?.description ?? levels[min(level, levels.length - 1)].description;
   }
   
   // Calculate current value of the business

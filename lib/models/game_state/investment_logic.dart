@@ -554,8 +554,10 @@ extension InvestmentLogic on GameState {
       double maxPrice = investment.basePrice * 4.0;
       newPrice = newPrice.clamp(minPrice, maxPrice);
       
-      // Only update if significant change
-      if ((newPrice - investment.currentPrice).abs() > 0.001) {
+      // Only update if significant change (use percentage-based threshold for low-priced assets)
+      double threshold = investment.currentPrice * 0.001; // 0.1% change threshold
+      threshold = threshold.clamp(0.0000001, 0.01); // Min threshold for very low prices, max for high prices
+      if ((newPrice - investment.currentPrice).abs() > threshold) {
         investment.currentPrice = newPrice;
         changed = true;
         investment.updateLatestPricePoint(investment.currentPrice);

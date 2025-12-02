@@ -3,12 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../models/business.dart';
+import '../models/business_branch.dart';
 import '../models/game_state.dart';
 import '../services/game_service.dart';
 import '../services/admob_service.dart';
 import '../utils/number_formatter.dart';
 import '../utils/time_formatter.dart';
 import '../utils/asset_loader.dart';
+import 'business_branch_selection_dialog.dart';
 
 class BusinessItem extends StatefulWidget {
   final Business business;
@@ -50,7 +52,16 @@ class _BusinessItemState extends State<BusinessItem> {
   static int _nextColorIndex = 0;
   
   // Get a consistent color based on business ID, ensuring no duplicates
+  // For businesses with branch selection, use the branch theme color
   Color _getBusinessColor(String id) {
+    // Check if this business has a selected branch - use branch theme color
+    if (widget.business.hasMadeBranchChoice) {
+      final branch = widget.business.getCurrentBranch();
+      if (branch != null) {
+        return branch.themeColor;
+      }
+    }
+    
     // If this business already has an assigned color, use it
     if (_businessColorAssignments.containsKey(id)) {
       return _businessColors[_businessColorAssignments[id]!];
@@ -236,7 +247,10 @@ class _BusinessItemState extends State<BusinessItem> {
                       ),
                     ),
                     child: Icon(
-                      business.icon,
+                      // Use branch icon if branch is selected, otherwise use business icon
+                      business.hasMadeBranchChoice && business.getCurrentBranch() != null
+                          ? business.getCurrentBranch()!.icon
+                          : business.icon,
                       color: hasPlatinumFacade 
                           ? const Color(0xFF666666)
                           : (isOwned ? businessBaseColor : Colors.grey.shade500),
@@ -253,16 +267,26 @@ class _BusinessItemState extends State<BusinessItem> {
                         Row(
                           children: [
                             Expanded(
-                              child: Text(
-                                business.name,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                  color: hasPlatinumFacade 
-                                      ? const Color(0xFF333333)
-                                      : (isOwned ? Colors.grey.shade800 : Colors.grey.shade600),
-                                ),
-                                overflow: TextOverflow.ellipsis,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    business.getDisplayName(),
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                      color: hasPlatinumFacade 
+                                          ? const Color(0xFF333333)
+                                          : (isOwned ? Colors.grey.shade800 : Colors.grey.shade600),
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  // Show branch badge if branch is selected
+                                  if (business.hasMadeBranchChoice && business.getCurrentBranch() != null) ...[
+                                    const SizedBox(height: 2),
+                                    _buildBranchBadge(business.getCurrentBranch()!),
+                                  ],
+                                ],
                               ),
                             ),
                             // Level badge
@@ -507,8 +531,14 @@ class _BusinessItemState extends State<BusinessItem> {
                 _buildUpgradeTimerSection(context, gameState, business, remainingUpgradeTime),
               ],
               
-              // Action button
-              if (!isUpgrading) ...[
+              // Branch selection button (when branch selection is required)
+              if (!isUpgrading && business.isBlockedForBranchSelection) ...[
+                const SizedBox(height: 12),
+                _buildBranchSelectionButton(context, business),
+              ],
+              
+              // Action button (only when not blocked for branch selection)
+              if (!isUpgrading && !business.isBlockedForBranchSelection) ...[
                 const SizedBox(height: 12),
                 _buildBuyUpgradeButton(context, gameState, business, canAfford, incomeIncrease),
               ],
@@ -865,4 +895,127 @@ class _BusinessItemState extends State<BusinessItem> {
       ),
     );
   }
+  
+  // --- ADDED: Branch System UI Methods ---
+  
+  Widget _buildBranchBadge(BusinessBranch branch) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: branch.themeColor.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: branch.themeColor.withOpacity(0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(branch.icon, size: 10, color: branch.themeColor),
+          const SizedBox(width: 4),
+          Text(
+            branch.characteristicsSummary,
+            style: TextStyle(
+              fontSize: 9,
+              color: branch.themeColor,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildBranchSelectionButton(BuildContext context, Business business) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Colors.amber.shade50,
+            Colors.orange.shade50,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.amber.shade300, width: 1.5),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.amber.shade100,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.fork_right,
+                  color: Colors.amber.shade700,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Ready to Specialize!',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        color: Colors.amber.shade800,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Choose your business path to continue upgrading',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.amber.shade700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () {
+                BusinessBranchSelectionDialog.show(
+                  context,
+                  business,
+                  onBranchSelected: () {
+                    // Refresh the UI after branch selection
+                    if (mounted) setState(() {});
+                  },
+                );
+              },
+              icon: const Icon(Icons.explore, size: 18),
+              label: const Text(
+                'Choose Specialization',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.amber.shade600,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                elevation: 2,
+                shadowColor: Colors.amber.withOpacity(0.3),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  // --- END: Branch System UI Methods ---
 }

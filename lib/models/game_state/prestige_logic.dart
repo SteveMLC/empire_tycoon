@@ -174,6 +174,10 @@ extension PrestigeLogic on GameState {
       business.isUpgrading = false;
       business.upgradeEndTime = null;
       business.initialUpgradeDurationSeconds = null;
+      // Reset branching state (allows re-selection after reincorporation)
+      business.selectedBranchId = null;
+      business.hasMadeBranchChoice = false;
+      business.branchSelectionTime = null;
     }
     // Re-unlock initial businesses
     businesses[0].unlocked = true; // Mobile Car Wash

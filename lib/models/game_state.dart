@@ -326,6 +326,9 @@ class GameState with ChangeNotifier {
   double lifetimeNetworkWorth = 0.0; // Accumulates actual networth at reincorporation time
   int reincorporationUsesAvailable = 0;
   int totalReincorporations = 0;
+  
+  // ADDED: Track which food stall branches have been maxed (persists through reincorporation)
+  Set<String> maxedFoodStallBranches = {};
 
   Timer? _saveTimer;
   Timer? _updateTimer;

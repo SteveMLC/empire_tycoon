@@ -15,6 +15,12 @@ extension BusinessLogic on GameState {
         print("Cannot upgrade business ${business.id}: Max level or already upgrading.");
         return false;
     }
+    
+    // ADDED: Check if business is blocked pending branch selection
+    if (business.isBlockedForBranchSelection) {
+        print("Cannot upgrade business ${business.id}: Branch selection required first.");
+        return false;
+    }
 
     double cost = business.getNextUpgradeCost();
     int timerSeconds = business.getNextUpgradeTimerSeconds();
@@ -161,6 +167,31 @@ extension BusinessLogic on GameState {
 
   // NOTE: All notification management (scheduling, updating, cancelling) is handled
   // by the UI layer (business_item.dart) which has proper access to GameService
+
+  // ADDED: Select a branch for a business
+  bool selectBusinessBranch(String businessId, String branchId) {
+    int index = businesses.indexWhere((b) => b.id == businessId);
+    if (index == -1) {
+      print("❌ Cannot select branch: Business $businessId not found.");
+      return false;
+    }
+
+    Business business = businesses[index];
+    
+    if (!business.canSelectBranch()) {
+      print("❌ Cannot select branch for ${business.name}: Not at branch selection level or already chosen.");
+      return false;
+    }
+    
+    if (business.selectBranch(branchId)) {
+      print("✅ Branch '$branchId' selected for ${business.name}");
+      notifyListeners();
+      return true;
+    }
+    
+    print("❌ Failed to select branch '$branchId' for ${business.name}");
+    return false;
+  }
 
   // Update which businesses are unlocked based on money
   void _updateBusinessUnlocks() {

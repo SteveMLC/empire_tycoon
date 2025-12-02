@@ -8,41 +8,67 @@ class PlatinumHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final gameState = context.watch<GameState>();
-
     return Row(
       children: [
-        // Custom vault icon with glow effect
+        // Elegant vault icon with gold glow
         Container(
-          width: 32,
-          height: 32,
+          width: 36,
+          height: 36,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFFFFD700).withOpacity(0.8),
-                blurRadius: 10,
-                spreadRadius: 2,
+            gradient: RadialGradient(
+              colors: [
+                const Color(0xFFFFD700).withOpacity(0.2),
+                Colors.transparent,
+              ],
+            ),
+          ),
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              // Outer glow ring
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: const Color(0xFFFFD700).withOpacity(0.5),
+                    width: 1.5,
+                  ),
+                ),
+              ),
+              // Icon
+              ShaderMask(
+                shaderCallback: (bounds) => const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFFFFD700), Color(0xFFDAA520)],
+                ).createShader(bounds),
+                child: const Icon(
+                  Icons.account_balance,
+                  color: Colors.white,
+                  size: 20,
+                ),
               ),
             ],
           ),
-          child: const Icon(Icons.shield_moon_outlined, color: Color(0xFFFFD700), size: 24),
         ),
         const SizedBox(width: 12),
-        Text(
-          'Platinum Vault',
-          style: TextStyle(
-            color: const Color(0xFFFFD700),
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 0.5,
-            shadows: [
-              Shadow(
-                color: Colors.black.withOpacity(0.7),
-                blurRadius: 2,
-                offset: const Offset(0, 1),
-              ),
-            ],
+        ShaderMask(
+          shaderCallback: (bounds) => const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFFFFD700), Color(0xFFF5DEB3), Color(0xFFFFD700)],
+          ).createShader(bounds),
+          child: const Text(
+            'Platinum Vault',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.0,
+            ),
           ),
         ),
       ],
@@ -60,43 +86,48 @@ class PlatinumBalance extends StatelessWidget {
 
     return Container(
       margin: const EdgeInsets.only(right: 16.0),
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            const Color(0xFF4A1259).withOpacity(0.8),
-            const Color(0xFF7B1FA2).withOpacity(0.9),
+            const Color(0xFF1C2128),
+            const Color(0xFF21262D),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: const Color(0xFFFFD700).withOpacity(0.6),
-          width: 1.0,
+          color: const Color(0xFFFFD700).withOpacity(0.5),
+          width: 1.5,
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFFFD700).withOpacity(0.3),
-            blurRadius: 5,
+            color: const Color(0xFFFFD700).withOpacity(0.15),
+            blurRadius: 8,
             spreadRadius: 0,
           ),
         ],
       ),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          // Custom platinum coin
+          // Premium platinum coin with gradient
           Container(
-            width: 20,
-            height: 20,
+            width: 22,
+            height: 22,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: const Color(0xFFFFD700), // Solid gold background
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFFFFD700), Color(0xFFDAA520)],
+              ),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFFFFD700).withOpacity(0.6),
-                  blurRadius: 4,
-                  spreadRadius: 0,
+                  color: const Color(0xFFFFD700).withOpacity(0.5),
+                  blurRadius: 6,
+                  spreadRadius: 1,
                 ),
               ],
             ),
@@ -104,7 +135,7 @@ class PlatinumBalance extends StatelessWidget {
               child: Text(
                 '✦',
                 style: TextStyle(
-                  fontSize: 13,
+                  fontSize: 12,
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
                   height: 1.0,
@@ -119,10 +150,11 @@ class PlatinumBalance extends StatelessWidget {
               fontSize: 16,
               fontWeight: FontWeight.bold,
               color: Color(0xFFFFD700),
+              letterSpacing: 0.5,
             ),
           ),
         ],
       ),
     );
   }
-} 
+}

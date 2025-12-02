@@ -41,6 +41,7 @@ extension SerializationLogic on GameState {
       'lifetimeNetworkWorth': lifetimeNetworkWorth,
       'reincorporationUsesAvailable': reincorporationUsesAvailable,
       'totalReincorporations': totalReincorporations, // Save total reincorporations performed
+      'maxedFoodStallBranches': maxedFoodStallBranches.toList(), // Track maxed food stall branches
       'lastOpened': lastOpened.toIso8601String(),
       'lastSaved': DateTime.now().toIso8601String(), // Save timestamp when game is saved
       'isInitialized': isInitialized,
@@ -129,7 +130,7 @@ extension SerializationLogic on GameState {
       json['clickBoostEndTime'] = clickBoostEndTime!.toIso8601String();
     }
 
-    // Save businesses state
+    // Save businesses state (including branching data)
     json['businesses'] = businesses.map((business) => {
       'id': business.id,
       'level': business.level,
@@ -138,6 +139,10 @@ extension SerializationLogic on GameState {
       'isUpgrading': business.isUpgrading,
       'upgradeEndTime': business.upgradeEndTime?.toIso8601String(),
       'initialUpgradeDurationSeconds': business.initialUpgradeDurationSeconds,
+      // ADDED: Branching system state
+      'selectedBranchId': business.selectedBranchId,
+      'hasMadeBranchChoice': business.hasMadeBranchChoice,
+      'branchSelectionTime': business.branchSelectionTime?.toIso8601String(),
     }).toList();
 
     // Save investments state
@@ -261,6 +266,9 @@ extension SerializationLogic on GameState {
     lifetimeNetworkWorth = (json['lifetimeNetworkWorth'] as num?)?.toDouble() ?? 0.0;
     reincorporationUsesAvailable = json['reincorporationUsesAvailable'] ?? 0;
     totalReincorporations = json['totalReincorporations'] ?? 0;
+    maxedFoodStallBranches = json['maxedFoodStallBranches'] != null 
+        ? Set<String>.from(json['maxedFoodStallBranches']) 
+        : {};
     isInitialized = json['isInitialized'] ?? false;
 
     // Load lastSaved timestamp (use for offline calc baseline if lastOpened is missing/invalid)
@@ -313,6 +321,25 @@ extension SerializationLogic on GameState {
                 ? DateTime.tryParse(businessJson['upgradeEndTime'])
                 : null;
             businesses[index].initialUpgradeDurationSeconds = businessJson['initialUpgradeDurationSeconds'];
+            
+            // ADDED: Load branching system state
+            businesses[index].selectedBranchId = businessJson['selectedBranchId'];
+            businesses[index].hasMadeBranchChoice = businessJson['hasMadeBranchChoice'] ?? false;
+            businesses[index].branchSelectionTime = businessJson['branchSelectionTime'] != null
+                ? DateTime.tryParse(businessJson['branchSelectionTime'])
+                : null;
+            
+            // MIGRATION: For existing saves where food_stall is past level 3 but has no branch selected,
+            // auto-assign the Burger Bar path as the safe default (matches original progression)
+            if (id == 'food_stall' && 
+                businesses[index].level >= 3 && 
+                businesses[index].hasBranching &&
+                !businesses[index].hasMadeBranchChoice) {
+              print("🔄 Migration: Auto-assigning Burger Bar branch to existing food_stall at level ${businesses[index].level}");
+              businesses[index].selectedBranchId = 'burger_bar';
+              businesses[index].hasMadeBranchChoice = true;
+              businesses[index].branchSelectionTime = DateTime.now();
+            }
 
             // CRITICAL FIX: If loading reveals an upgrade ended while offline, complete it immediately
             if (businesses[index].isUpgrading && businesses[index].upgradeEndTime != null && businesses[index].upgradeEndTime!.isBefore(now)) {
