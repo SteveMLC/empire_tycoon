@@ -22,6 +22,7 @@ class RealEstateScreen extends StatefulWidget {
 
 class _RealEstateScreenState extends State<RealEstateScreen> {
   RealEstateLocale? _selectedLocale;
+  bool _hasRestoredLocale = false; // Track if we've restored the locale from GameState
 
   @override
   Widget build(BuildContext context) {
@@ -31,6 +32,25 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
         primary: Colors.green.shade700,
       ),
     );
+
+    // Restore last selected locale from GameState on first build
+    if (!_hasRestoredLocale && gameState.lastSelectedRealEstateLocaleId != null) {
+      final savedLocaleId = gameState.lastSelectedRealEstateLocaleId;
+      final savedLocale = gameState.realEstateLocales.firstWhere(
+        (locale) => locale.id == savedLocaleId && locale.unlocked,
+        orElse: () => gameState.realEstateLocales.firstWhere(
+          (locale) => locale.unlocked,
+          orElse: () => gameState.realEstateLocales.first,
+        ),
+      );
+      // Only restore if the locale is unlocked
+      if (savedLocale.unlocked) {
+        _selectedLocale = savedLocale;
+      }
+      _hasRestoredLocale = true;
+    } else if (!_hasRestoredLocale) {
+      _hasRestoredLocale = true;
+    }
 
     // Calculate displayed total RE income
     double permanentIncomeBoostMultiplier = gameState.isPermanentIncomeBoostActive ? 1.05 : 1.0;
@@ -263,6 +283,8 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
       onTap: () {
         setState(() {
           _selectedLocale = locale;
+          // Persist the selection to GameState so it survives navigation
+          gameState.lastSelectedRealEstateLocaleId = locale.id;
         });
       },
       child: Container(

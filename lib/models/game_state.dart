@@ -157,6 +157,9 @@ class GameState with ChangeNotifier {
   // ADDED: Platinum Spire State
   String? platinumSpireLocaleId; // ID of the locale where the spire is placed
 
+  // ADDED: UI State Persistence - Real Estate Screen
+  String? lastSelectedRealEstateLocaleId; // Remember last selected locale in Real Estate screen
+
   // ADDED: Income Surge State
   bool isIncomeSurgeActive = false;
   DateTime? incomeSurgeEndTime;

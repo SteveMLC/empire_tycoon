@@ -94,6 +94,10 @@ extension SerializationLogic on GameState {
       'platinumSpireLocaleId': platinumSpireLocaleId,
       // --- End Added ---
 
+      // --- Added: UI State Persistence ---
+      'lastSelectedRealEstateLocaleId': lastSelectedRealEstateLocaleId,
+      // --- End Added ---
+
       // Boost Timer Data
       'boostRemainingSeconds': boostRemainingSeconds,
 
@@ -332,6 +336,7 @@ extension SerializationLogic on GameState {
             // MIGRATION: For existing saves where food_stall is past level 3 but has no branch selected,
             // auto-assign the Burger Bar path as the safe default (matches original progression)
             if (id == 'food_stall' && 
+                !json.containsKey('maxedFoodStallBranches') &&
                 businesses[index].level >= 3 && 
                 businesses[index].hasBranching &&
                 !businesses[index].hasMadeBranchChoice) {
@@ -570,6 +575,10 @@ extension SerializationLogic on GameState {
     platinumFacadeAppliedBusinessIds = Set<String>.from(json['platinumFacadeAppliedBusinessIds'] ?? []);
     isPlatinumCrestUnlocked = json['isPlatinumCrestUnlocked'] ?? false;
     platinumSpireLocaleId = json['platinumSpireLocaleId'];
+
+    // --- Added: Load UI State Persistence ---
+    lastSelectedRealEstateLocaleId = json['lastSelectedRealEstateLocaleId'];
+    // --- End Added ---
 
     // Recalculate active flags based on loaded end times
     isDisasterShieldActive = disasterShieldEndTime != null && disasterShieldEndTime!.isAfter(DateTime.now());

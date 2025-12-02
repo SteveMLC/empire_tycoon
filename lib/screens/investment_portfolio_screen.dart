@@ -1092,15 +1092,30 @@ class _InvestmentPortfolioScreenState extends State<InvestmentPortfolioScreen> {
   }
 
   void _showQuickTradeDialog(Investment investment, bool isBuying) {
+    int quantity = 1;
+
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return Consumer<GameState>(
           builder: (context, gameState, _) {
-            int quantity = 1;
-            int maxAffordable = isBuying 
-                ? (gameState.money / investment.currentPrice).floor()
-                : investment.owned;
+            int maxAffordable;
+            if (isBuying) {
+              final double pricePerShare = investment.currentPrice;
+              int maxAffordableByCash = pricePerShare > 0
+                  ? (gameState.money / pricePerShare).floor()
+                  : 0;
+              int maxAffordableByShares = investment.availableShares;
+              maxAffordable = maxAffordableByCash;
+              if (maxAffordableByShares < maxAffordable) {
+                maxAffordable = maxAffordableByShares;
+              }
+              if (maxAffordable < 0) {
+                maxAffordable = 0;
+              }
+            } else {
+              maxAffordable = investment.owned;
+            }
             
             return StatefulBuilder(
               builder: (context, setState) {
