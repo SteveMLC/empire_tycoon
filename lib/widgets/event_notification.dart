@@ -30,6 +30,9 @@ class _EventNotificationState extends State<EventNotification> {
   bool _isMinimized = false;
   Timer? _countdownTimer;
 
+  // Fail-open rewarded ad UX state
+  bool _isResolvingViaAd = false;
+
   @override
   void initState() {
     super.initState();
@@ -415,100 +418,116 @@ class _EventNotificationState extends State<EventNotification> {
         // Ad button with premium bypass
         final bool isPremium = widget.gameState.isPremium;
         return InkWell(
-          onTap: () {
-            if (isPremium) {
-              // Premium users skip ads and resolve immediately
-              widget.event.resolve();
-              // Update event achievement tracking
-              widget.gameState.totalEventsResolved++;
-              widget.gameState.eventsResolvedByAd++;
-              widget.gameState.trackEventResolution(widget.event, "ad");
-              widget.onResolved();
-            } else {
-              // Regular users need to watch an ad
-              final adMobService = Provider.of<AdMobService>(context, listen: false);
-              
-              if (kDebugMode) {
-                print('🎯 === EVENT AD BUTTON PRESSED ===');
-                print('🎯 Event: ${widget.event.name}');
-                print('🎯 Event ID: ${widget.event.id}');
-                print('🎯 Event IsResolved: ${widget.event.isResolved}');
-              }
-              
-              adMobService.showEventClearAd(
-                onRewardEarned: (String rewardType) {
+          onTap: _isResolvingViaAd
+              ? null
+              : () async {
+                  if (isPremium) {
+                    // Premium users skip ads and resolve immediately
+                    widget.event.resolve();
+                    // Update event achievement tracking
+                    widget.gameState.totalEventsResolved++;
+                    widget.gameState.eventsResolvedByAd++;
+                    widget.gameState.trackEventResolution(widget.event, "ad");
+                    widget.onResolved();
+                    return;
+                  }
+
+                  final adMobService = Provider.of<AdMobService>(context, listen: false);
+
                   if (kDebugMode) {
-                    print('🎁 === EVENT AD REWARD CALLBACK ===');
-                    print('🎁 Received reward type: $rewardType');
-                    print('🎁 Expected: EventAdSkip');
-                    print('🎁 Event before resolution: ${widget.event.name} (${widget.event.id})');
-                    print('🎁 Event isResolved before: ${widget.event.isResolved}');
+                    print('🎯 === EVENT AD BUTTON PRESSED ===');
+                    print('🎯 Event: ${widget.event.name}');
+                    print('🎯 Event ID: ${widget.event.id}');
+                    print('🎯 Event IsResolved: ${widget.event.isResolved}');
                   }
-                  
-                  // Verify we received the correct reward type
-                  if (rewardType == 'EventAdSkip') {
-                    try {
-                      // User successfully watched the ad
-                      widget.event.resolve();
-                      
+
+                  setState(() {
+                    _isResolvingViaAd = true;
+                  });
+
+                  // Note: AdMobService will wait briefly (~7s) for EventClear to become ready.
+                  await adMobService.showEventClearAd(
+                    onRewardEarned: (String rewardType) {
+                      if (!mounted) return;
+                      setState(() {
+                        _isResolvingViaAd = false;
+                      });
+
                       if (kDebugMode) {
-                        print('🎁 Event.resolve() called');
-                        print('🎁 Event isResolved after: ${widget.event.isResolved}');
+                        print('🎁 === EVENT AD REWARD CALLBACK ===');
+                        print('🎁 Received reward type: $rewardType');
+                        print('🎁 Expected: EventAdSkip');
+                        print('🎁 Event before resolution: ${widget.event.name} (${widget.event.id})');
+                        print('🎁 Event isResolved before: ${widget.event.isResolved}');
                       }
-                      
-                      // Update event achievement tracking
-                      widget.gameState.totalEventsResolved++;
-                      widget.gameState.eventsResolvedByAd++;
-                      widget.gameState.trackEventResolution(widget.event, "ad");
-                      
-                      if (kDebugMode) {
-                        print('🎁 Achievement tracking updated');
-                        print('🎁 Total events resolved: ${widget.gameState.totalEventsResolved}');
-                        print('🎁 Calling widget.onResolved()...');
+
+                      if (rewardType == 'EventAdSkip') {
+                        try {
+                          widget.event.resolve();
+
+                          // Update event achievement tracking
+                          widget.gameState.totalEventsResolved++;
+                          widget.gameState.eventsResolvedByAd++;
+                          widget.gameState.trackEventResolution(widget.event, "ad");
+
+                          widget.onResolved();
+                        } catch (e) {
+                          if (kDebugMode) {
+                            print('❌ Error in event resolution: $e');
+                          }
+                        }
+                      } else {
+                        if (kDebugMode) {
+                          print('❌ Warning: Expected EventAdSkip reward but received: $rewardType');
+                        }
                       }
-                      
-                      widget.onResolved();
-                      
-                      if (kDebugMode) {
-                        print('🎁 === EVENT AD SKIP COMPLETE ===');
-                      }
-                    } catch (e) {
-                      if (kDebugMode) {
-                        print('❌ Error in event resolution: $e');
-                      }
-                      // Show error to user
-                      // ScaffoldMessenger.of(context).showSnackBar(
-                      //   const SnackBar(
-                      //     content: Text('Error resolving event. Please try again.'),
-                      //     duration: Duration(seconds: 3),
-                      //   ),
-                      // );
-                    }
-                  } else {
-                    if (kDebugMode) {
-                      print('❌ Warning: Expected EventAdSkip reward but received: $rewardType');
-                    }
-                    // Show warning to user about incorrect reward
-                    // ScaffoldMessenger.of(context).showSnackBar(
-                    //   SnackBar(
-                    //     content: Text('Unexpected reward type: $rewardType. Please try again.'),
-                    //     duration: const Duration(seconds: 3),
-                    //   ),
-                    // );
-                  }
+                    },
+                    onAdFailure: () async {
+                      if (!mounted) return;
+                      setState(() {
+                        _isResolvingViaAd = false;
+                      });
+
+                      // Fail-open: don't deadlock. Offer retry or limited fallback.
+                      final canFallback = adMobService.canUseEventFailOpenNow();
+                      await showDialog<void>(
+                        context: context,
+                        builder: (ctx) {
+                          return AlertDialog(
+                            title: const Text('Ad not available'),
+                            content: Text(
+                              canFallback
+                                  ? 'We couldn\'t load a rewarded ad right now. You can try again, or use a limited fallback to resolve this event.'
+                                  : 'We couldn\'t load a rewarded ad right now. Please try again in a bit, or let the event auto-resolve.',
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.of(ctx).pop(),
+                                child: const Text('Try again'),
+                              ),
+                              if (canFallback)
+                                TextButton(
+                                  onPressed: () {
+                                    adMobService.markEventFailOpenUsed();
+
+                                    // Resolve immediately (limited by cooldown in AdMobService).
+                                    widget.event.resolve();
+                                    widget.gameState.totalEventsResolved++;
+                                    widget.gameState.eventsResolvedByAd++;
+                                    widget.gameState.trackEventResolution(widget.event, "ad");
+                                    widget.onResolved();
+
+                                    Navigator.of(ctx).pop();
+                                  },
+                                  child: const Text('Use fallback'),
+                                ),
+                            ],
+                          );
+                        },
+                      );
+                    },
+                  );
                 },
-                onAdFailure: () {
-                  // Ad failed to show, show error message
-                  // ScaffoldMessenger.of(context).showSnackBar(
-                  //   const SnackBar(
-                  //     content: Text('Ad not available. Please try again later.'),
-                  //     duration: Duration(seconds: 3),
-                  //   ),
-                  // );
-                },
-              );
-            }
-          },
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(

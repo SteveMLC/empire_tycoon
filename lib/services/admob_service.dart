@@ -107,6 +107,26 @@ class AdMobService {
   static const Duration _baseRetryDelay = Duration(minutes: 2);
   static const Duration _throttleResetDuration = Duration(minutes: 15);
 
+  // FAIL-OPEN (events): allow a limited fallback resolution when rewarded ads aren't available.
+  // NOTE: This is intentionally in-memory only (no persistence) to keep the patch small.
+  static const Duration _eventFailOpenCooldown = Duration(hours: 6);
+  DateTime? _lastEventFailOpenUsedAt;
+
+  // Ad load waiters (used for short wait windows like EventClear).
+  Completer<bool>? _eventClearLoadWaiter;
+
+  // Minimal analytics counters (kept simple; surfaced via getRevenueAnalytics()).
+  final Map<String, int> _eventClearOutcomeCounts = {
+    'attempted': 0,
+    'shown': 0,
+    'rewarded': 0,
+    'not_ready': 0,
+    'load_failed': 0,
+    'timeout': 0,
+    'show_failed': 0,
+    'fallback_used': 0,
+  };
+
   // PREDICTIVE LOADING: Update game state for intelligent loading decisions
   void updateGameState({
     int? businessCount,
@@ -434,6 +454,8 @@ class AdMobService {
       'totalShowFailures': totalFailures,
       'impressionLossRate': impressionLossRate,
       'byAdType': byAdType,
+      // Added: eventClear-specific fail-open outcomes
+      'eventClearOutcomes': _eventClearOutcomeCounts,
       'predictiveLoadingEnabled': true,
       'gameState': {
         'businessCount': _userBusinessCount,
@@ -703,6 +725,9 @@ class AdMobService {
   Future<void> _loadEventClearAd() async {
     if (!_adsEnabled) return;
     if (_isEventClearAdLoading || _isAdValid(_eventClearAd, _eventClearAdLoadTime)) return;
+
+    // Create (or reuse) a waiter for callers that want to wait briefly for an ad.
+    _eventClearLoadWaiter ??= Completer<bool>();
     
     // Check if this ad type should be retried
     if (!_shouldRetryAdType('eventClear')) return;
@@ -723,6 +748,13 @@ class AdMobService {
           _isEventClearAdLoading = false;
           _eventClearAdLoadTime = DateTime.now();
           _handleAdLoadSuccess('eventClear');
+
+          // Notify any short-wait callers.
+          if (_eventClearLoadWaiter != null && !_eventClearLoadWaiter!.isCompleted) {
+            _eventClearLoadWaiter!.complete(true);
+          }
+          _eventClearLoadWaiter = null;
+
           if (kDebugMode) {
             print('✅ EventClear ad loaded - Ready for instant event resolution');
           }
@@ -733,7 +765,14 @@ class AdMobService {
           if (kDebugMode) {
             print('❌ EventClear ad load failed: ${error.code} - ${error.message}');
           }
-          
+
+          // Track + notify waiters.
+          _eventClearOutcomeCounts['load_failed'] = (_eventClearOutcomeCounts['load_failed'] ?? 0) + 1;
+          if (_eventClearLoadWaiter != null && !_eventClearLoadWaiter!.isCompleted) {
+            _eventClearLoadWaiter!.complete(false);
+          }
+          _eventClearLoadWaiter = null;
+
           // Use robust error handling with exponential backoff
           _handleAdLoadFailure('eventClear', error);
         },
@@ -987,7 +1026,36 @@ class AdMobService {
     });
   }
 
-  // INSTANT: Show EventClear ad (should be ready when events are active)
+  bool canUseEventFailOpenNow() {
+    final last = _lastEventFailOpenUsedAt;
+    if (last == null) return true;
+    return DateTime.now().difference(last) >= _eventFailOpenCooldown;
+  }
+
+  void markEventFailOpenUsed() {
+    _lastEventFailOpenUsedAt = DateTime.now();
+    _eventClearOutcomeCounts['fallback_used'] = (_eventClearOutcomeCounts['fallback_used'] ?? 0) + 1;
+  }
+
+  Future<bool> _waitForEventClearReady({Duration timeout = const Duration(seconds: 7)}) async {
+    if (_isAdValid(_eventClearAd, _eventClearAdLoadTime)) return true;
+
+    // Trigger an emergency load if not already loading.
+    if (!_isEventClearAdLoading) {
+      _loadEventClearAd();
+    }
+
+    // If load is throttled or fails instantly, just poll briefly.
+    final deadline = DateTime.now().add(timeout);
+    while (DateTime.now().isBefore(deadline)) {
+      if (_isAdValid(_eventClearAd, _eventClearAdLoadTime)) return true;
+      await Future.delayed(const Duration(milliseconds: 250));
+    }
+
+    return _isAdValid(_eventClearAd, _eventClearAdLoadTime);
+  }
+
+  // FAIL-OPEN: Show EventClear ad. If it isn't ready, wait briefly; if still unavailable, fail fast.
   Future<void> showEventClearAd({
     required Function(String rewardType) onRewardEarned,
     Function()? onAdFailure,
@@ -998,26 +1066,31 @@ class AdMobService {
       return;
     }
 
+    _eventClearOutcomeCounts['attempted'] = (_eventClearOutcomeCounts['attempted'] ?? 0) + 1;
+
     if (kDebugMode) {
       print('🎯 === EventClear Ad Request ===');
       print('🎯 Ad valid: ${_isAdValid(_eventClearAd, _eventClearAdLoadTime)}');
       print('🎯 Events active: $_hasActiveEvents');
     }
 
+    // If not ready, wait briefly (fail-open UX expects a short window before giving up).
     if (!_isAdValid(_eventClearAd, _eventClearAdLoadTime)) {
-      if (kDebugMode) print('🎯 EventClear ad not ready - emergency loading');
-      _logAdError('eventClear', 'Show failed: Ad not ready when event needed clearing');
-      _adShowFailures['eventClear'] = (_adShowFailures['eventClear'] ?? 0) + 1;
-      
-      // Emergency load
-      if (!_isEventClearAdLoading) {
-        _loadEventClearAd();
+      _eventClearOutcomeCounts['not_ready'] = (_eventClearOutcomeCounts['not_ready'] ?? 0) + 1;
+      if (kDebugMode) print('🎯 EventClear ad not ready - waiting briefly before failing');
+
+      final ready = await _waitForEventClearReady(timeout: const Duration(seconds: 7));
+      if (!ready) {
+        _eventClearOutcomeCounts['timeout'] = (_eventClearOutcomeCounts['timeout'] ?? 0) + 1;
+        _logAdError('eventClear', 'Show failed: Ad not ready after wait timeout');
+        _adShowFailures['eventClear'] = (_adShowFailures['eventClear'] ?? 0) + 1;
+        onAdFailure?.call();
+        return;
       }
-      onAdFailure?.call();
-      return;
     }
 
     _adShowSuccesses['eventClear'] = (_adShowSuccesses['eventClear'] ?? 0) + 1;
+    _eventClearOutcomeCounts['shown'] = (_eventClearOutcomeCounts['shown'] ?? 0) + 1;
     final totalRequests = (_adRequestCounts['eventClear'] ?? 0);
     final successRate = totalRequests > 0 ? ((_adShowSuccesses['eventClear'] ?? 0) / totalRequests * 100) : 0;
     
@@ -1039,6 +1112,7 @@ class AdMobService {
         // DELAYED REWARD: Only grant reward when ad is fully dismissed (all videos completed)
         if (_eventClearRewardEarned && _pendingEventClearCallback != null) {
           if (kDebugMode) print('🎁 Granting delayed EventAdSkip reward after full ad completion');
+          _eventClearOutcomeCounts['rewarded'] = (_eventClearOutcomeCounts['rewarded'] ?? 0) + 1;
           _pendingEventClearCallback!('EventAdSkip');
         } else if (kDebugMode) {
           print('⚠️ EventClear ad dismissed but no reward was earned (user closed early)');
@@ -1062,6 +1136,7 @@ class AdMobService {
       },
       onAdFailedToShowFullScreenContent: (RewardedAd ad, AdError error) {
         _logAdError('eventClear', 'Show failed: ${error.code} - ${error.message}');
+        _eventClearOutcomeCounts['show_failed'] = (_eventClearOutcomeCounts['show_failed'] ?? 0) + 1;
         if (kDebugMode) print('❌ EventClear ad failed to show: ${error.code} - ${error.message}');
         
         // Clean up delayed reward state on failure
