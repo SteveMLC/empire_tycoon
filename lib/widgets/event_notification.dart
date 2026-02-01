@@ -511,14 +511,19 @@ class _EventNotificationState extends State<EventNotification> {
                               if (canFallback)
                                 TextButton(
                                   onPressed: () async {
-                                    await adMobService.markEventFailOpenUsed();
-
                                     // Resolve immediately (limited by cooldown in AdMobService).
-                                    widget.event.resolve();
-                                    widget.gameState.totalEventsResolved++;
-                                    widget.gameState.eventsResolvedByFallback++;
-                                    widget.gameState.trackEventResolution(widget.event, "fallback");
-                                    widget.onResolved();
+                                    try {
+                                      widget.event.resolve();
+                                      widget.gameState.totalEventsResolved++;
+                                      widget.gameState.eventsResolvedByFallback++;
+                                      widget.gameState.trackEventResolution(widget.event, "fallback");
+                                      widget.onResolved();
+
+                                      // Only consume cooldown after a successful resolution.
+                                      await adMobService.markEventFailOpenUsed();
+                                    } catch (_) {
+                                      // If resolution fails, don't consume the cooldown.
+                                    }
 
                                     Navigator.of(ctx).pop();
                                   },
@@ -625,8 +630,15 @@ class _EventNotificationState extends State<EventNotification> {
         // Ad-based button with premium bypass
         final bool isPremium = widget.gameState.isPremium;
         return ElevatedButton.icon(
-          onPressed: () {
-            if (isPremium) {
+          onPressed: _isResolvingViaAd
+              ? null
+              : () async {
+                  // Guard inside handler to prevent double-tap races.
+                  if (_isResolvingViaAd) return;
+                  _isResolvingViaAd = true;
+                  if (mounted) setState(() {});
+
+                  if (isPremium) {
               // Premium users skip ads and resolve immediately
               widget.event.resolve();
               // Update event achievement tracking
@@ -645,8 +657,12 @@ class _EventNotificationState extends State<EventNotification> {
                 print('🎯 Event IsResolved: ${widget.event.isResolved}');
               }
               
-              adMobService.showEventClearAd(
+              await adMobService.showEventClearAd(
                 onRewardEarned: (String rewardType) {
+                  if (!mounted) return;
+                  setState(() {
+                    _isResolvingViaAd = false;
+                  });
                   if (kDebugMode) {
                     print('🎁 === EVENT AD REWARD CALLBACK ===');
                     print('🎁 Received reward type: $rewardType');
@@ -687,6 +703,7 @@ class _EventNotificationState extends State<EventNotification> {
                         print('❌ Error in event resolution: $e');
                       }
                       // Show error to user
+                      if (!mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text('Error resolving event. Please try again.'),
@@ -699,6 +716,7 @@ class _EventNotificationState extends State<EventNotification> {
                       print('❌ Warning: Expected EventAdSkip reward but received: $rewardType');
                     }
                     // Show warning to user about incorrect reward
+                    if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text('Unexpected reward type: $rewardType. Please try again.'),
@@ -708,6 +726,11 @@ class _EventNotificationState extends State<EventNotification> {
                   }
                 },
                 onAdFailure: () {
+                  if (!mounted) return;
+                  setState(() {
+                    _isResolvingViaAd = false;
+                  });
+
                   // Ad failed to show, show error message
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
@@ -718,6 +741,11 @@ class _EventNotificationState extends State<EventNotification> {
                 },
               );
             }
+
+            if (!mounted) return;
+            setState(() {
+              _isResolvingViaAd = false;
+            });
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: isPremium ? Colors.purple : Colors.amber,
