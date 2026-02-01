@@ -92,6 +92,7 @@ extension PrestigeLogic on GameState {
       'eventsResolvedByFee': eventsResolvedByFee,
       'eventFeesSpent': eventFeesSpent,
       'eventsResolvedByAd': eventsResolvedByAd,
+      'eventsResolvedByFallback': eventsResolvedByFallback,
       'eventsResolvedByLocale': eventsResolvedByLocale,
       'resolvedEvents': resolvedEvents.map((e) => e.toJson()).toList(),
       'lastEventResolvedTime': lastEventResolvedTime?.toIso8601String(),
@@ -248,6 +249,7 @@ extension PrestigeLogic on GameState {
     eventsResolvedByFee = preservedState['eventsResolvedByFee'];
     eventFeesSpent = preservedState['eventFeesSpent'];
     eventsResolvedByAd = preservedState['eventsResolvedByAd'];
+    eventsResolvedByFallback = preservedState['eventsResolvedByFallback'] ?? 0;
     eventsResolvedByLocale = Map<String, int>.from(preservedState['eventsResolvedByLocale']);
     
     // Restore resolved events history

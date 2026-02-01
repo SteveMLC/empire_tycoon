@@ -245,6 +245,7 @@ extension UtilityLogic on GameState {
     eventsResolvedByFee = 0;
     eventFeesSpent = 0.0;
     eventsResolvedByAd = 0;
+    eventsResolvedByFallback = 0;
     eventsResolvedByLocale = {};
     lastEventResolvedTime = null;
     resolvedEvents = [];

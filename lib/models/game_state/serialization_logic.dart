@@ -525,6 +525,7 @@ extension SerializationLogic on GameState {
     eventsResolvedByFee = json['eventsResolvedByFee'] ?? 0;
     eventFeesSpent = (json['eventFeesSpent'] as num?)?.toDouble() ?? 0.0;
     eventsResolvedByAd = json['eventsResolvedByAd'] ?? 0;
+    eventsResolvedByFallback = json['eventsResolvedByFallback'] ?? 0;
     eventsResolvedByLocale = Map<String, int>.from(json['eventsResolvedByLocale'] ?? {});
     if (json['lastEventResolvedTime'] != null) {
         try { lastEventResolvedTime = DateTime.parse(json['lastEventResolvedTime']); } catch (_) {}

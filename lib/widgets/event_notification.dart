@@ -421,6 +421,9 @@ class _EventNotificationState extends State<EventNotification> {
           onTap: _isResolvingViaAd
               ? null
               : () async {
+                  // Guard inside handler to prevent double-tap races before rebuild disables the InkWell.
+                  if (_isResolvingViaAd) return;
+
                   if (isPremium) {
                     // Premium users skip ads and resolve immediately
                     widget.event.resolve();
@@ -441,11 +444,11 @@ class _EventNotificationState extends State<EventNotification> {
                     print('🎯 Event IsResolved: ${widget.event.isResolved}');
                   }
 
-                  setState(() {
-                    _isResolvingViaAd = true;
-                  });
+                  // Set guard synchronously, then repaint.
+                  _isResolvingViaAd = true;
+                  if (mounted) setState(() {});
 
-                  // Note: AdMobService will wait briefly (~7s) for EventClear to become ready.
+                  // Note: AdMobService will wait briefly for EventClear to become ready.
                   await adMobService.showEventClearAd(
                     onRewardEarned: (String rewardType) {
                       if (!mounted) return;
@@ -489,7 +492,7 @@ class _EventNotificationState extends State<EventNotification> {
                       });
 
                       // Fail-open: don't deadlock. Offer retry or limited fallback.
-                      final canFallback = adMobService.canUseEventFailOpenNow();
+                      final canFallback = await adMobService.canUseEventFailOpenNow();
                       await showDialog<void>(
                         context: context,
                         builder: (ctx) {
@@ -507,14 +510,14 @@ class _EventNotificationState extends State<EventNotification> {
                               ),
                               if (canFallback)
                                 TextButton(
-                                  onPressed: () {
-                                    adMobService.markEventFailOpenUsed();
+                                  onPressed: () async {
+                                    await adMobService.markEventFailOpenUsed();
 
                                     // Resolve immediately (limited by cooldown in AdMobService).
                                     widget.event.resolve();
                                     widget.gameState.totalEventsResolved++;
-                                    widget.gameState.eventsResolvedByAd++;
-                                    widget.gameState.trackEventResolution(widget.event, "ad");
+                                    widget.gameState.eventsResolvedByFallback++;
+                                    widget.gameState.trackEventResolution(widget.event, "fallback");
                                     widget.onResolved();
 
                                     Navigator.of(ctx).pop();

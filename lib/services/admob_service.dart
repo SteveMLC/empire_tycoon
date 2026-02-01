@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'dart:async';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/sound_manager.dart';
 
 // Ad type enumeration - moved outside class
@@ -108,9 +109,12 @@ class AdMobService {
   static const Duration _throttleResetDuration = Duration(minutes: 15);
 
   // FAIL-OPEN (events): allow a limited fallback resolution when rewarded ads aren't available.
-  // NOTE: This is intentionally in-memory only (no persistence) to keep the patch small.
   static const Duration _eventFailOpenCooldown = Duration(hours: 6);
-  DateTime? _lastEventFailOpenUsedAt;
+  static const Duration _eventClearReadyWait = Duration(seconds: 4);
+  static const Duration _eventClearReadyPoll = Duration(milliseconds: 250);
+  static const String _prefsKeyEventFailOpenUsedAtMs = 'event_fail_open_used_at_ms';
+
+  final Future<SharedPreferences> _prefs = SharedPreferences.getInstance();
 
   // Ad load waiters (used for short wait windows like EventClear).
   Completer<bool>? _eventClearLoadWaiter;
@@ -1026,18 +1030,22 @@ class AdMobService {
     });
   }
 
-  bool canUseEventFailOpenNow() {
-    final last = _lastEventFailOpenUsedAt;
-    if (last == null) return true;
+  Future<bool> canUseEventFailOpenNow() async {
+    final prefs = await _prefs;
+    final lastMs = prefs.getInt(_prefsKeyEventFailOpenUsedAtMs);
+    if (lastMs == null) return true;
+    final last = DateTime.fromMillisecondsSinceEpoch(lastMs);
     return DateTime.now().difference(last) >= _eventFailOpenCooldown;
   }
 
-  void markEventFailOpenUsed() {
-    _lastEventFailOpenUsedAt = DateTime.now();
+  Future<void> markEventFailOpenUsed() async {
+    final prefs = await _prefs;
+    final nowMs = DateTime.now().millisecondsSinceEpoch;
+    await prefs.setInt(_prefsKeyEventFailOpenUsedAtMs, nowMs);
     _eventClearOutcomeCounts['fallback_used'] = (_eventClearOutcomeCounts['fallback_used'] ?? 0) + 1;
   }
 
-  Future<bool> _waitForEventClearReady({Duration timeout = const Duration(seconds: 7)}) async {
+  Future<bool> _waitForEventClearReady({Duration timeout = _eventClearReadyWait}) async {
     if (_isAdValid(_eventClearAd, _eventClearAdLoadTime)) return true;
 
     // Trigger an emergency load if not already loading.
@@ -1049,7 +1057,7 @@ class AdMobService {
     final deadline = DateTime.now().add(timeout);
     while (DateTime.now().isBefore(deadline)) {
       if (_isAdValid(_eventClearAd, _eventClearAdLoadTime)) return true;
-      await Future.delayed(const Duration(milliseconds: 250));
+      await Future.delayed(_eventClearReadyPoll);
     }
 
     return _isAdValid(_eventClearAd, _eventClearAdLoadTime);
@@ -1079,7 +1087,7 @@ class AdMobService {
       _eventClearOutcomeCounts['not_ready'] = (_eventClearOutcomeCounts['not_ready'] ?? 0) + 1;
       if (kDebugMode) print('🎯 EventClear ad not ready - waiting briefly before failing');
 
-      final ready = await _waitForEventClearReady(timeout: const Duration(seconds: 7));
+      final ready = await _waitForEventClearReady(timeout: _eventClearReadyWait);
       if (!ready) {
         _eventClearOutcomeCounts['timeout'] = (_eventClearOutcomeCounts['timeout'] ?? 0) + 1;
         _logAdError('eventClear', 'Show failed: Ad not ready after wait timeout');

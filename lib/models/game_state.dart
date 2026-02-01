@@ -273,6 +273,7 @@ class GameState with ChangeNotifier {
   int eventsResolvedByFee = 0;
   double eventFeesSpent = 0.0;
   int eventsResolvedByAd = 0;
+  int eventsResolvedByFallback = 0; // Resolved without a rewarded ad due to fail-open
   Map<String, int> eventsResolvedByLocale = {};
   DateTime? lastEventResolvedTime;
   List<GameEvent> resolvedEvents = []; // History of resolved events (limited)
