@@ -1,6 +1,6 @@
-# Empire Tycoon - Idle Investment & Business Simulator
+# Empire Tycoon - Idle Business
 
-Build your business empire! Idle tycoon game with real estate investing, business management simulation, and offline earnings. From nothing to billionaire mogul.
+Build your business empire! Idle tycoon with real estate & smart investing.
 
 **[Google Play](https://play.google.com/store/apps/details?id=com.go7studio.empire_tycoon)** | **[Website](https://go7studio.com)**
 
