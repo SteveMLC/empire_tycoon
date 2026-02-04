@@ -5,7 +5,7 @@ description: "Build your business empire! Idle tycoon game with real estate inve
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' 
 
-version: 1.0.1+134  
+version: 1.0.1+135  
 # Version format: [major].[minor].[patch]+[build-number]
 # The build number (100) is used by Android as versionCode
 
