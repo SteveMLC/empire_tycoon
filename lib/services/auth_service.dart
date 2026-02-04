@@ -9,6 +9,37 @@ import '../utils/leaderboard_config.dart';
 /// Service for managing Firebase Authentication with Google Play Games Services
 /// Following Firebase Google Play Games Services documentation
 class AuthService extends ChangeNotifier {
+  static const String achievementFirstStorefront = 'first_storefront';
+  static const String achievementFourDigits = 'four_digits';
+  static const String achievementHandsOffHustle = 'hands_off_hustle';
+  static const String achievementBusinessDistrict = 'business_district';
+  static const String achievementFirstMillion = 'first_million';
+  static const String achievementSecondCitySecondChance = 'second_city_second_chance';
+  static const String achievementEmpireNetwork = 'empire_network';
+  static const String achievementBillionaireTycoon = 'billionaire_tycoon';
+  static const String achievementExecutiveFloor = 'executive_floor';
+  static const String achievementWeeklyStreak = 'weekly_streak';
+  static const String achievementCrisisController = 'crisis_controller';
+  static const String achievementTwoWeekHabit = 'two_week_habit';
+
+  // Configure these in build commands using --dart-define.
+  // Example:
+  // --dart-define=GPGS_ACH_FIRST_STOREFRONT=CgkIxxxxxxxxEAIQAQ
+  static const Map<String, String> _achievementIdsByKey = {
+    achievementFirstStorefront: String.fromEnvironment('GPGS_ACH_FIRST_STOREFRONT', defaultValue: ''),
+    achievementFourDigits: String.fromEnvironment('GPGS_ACH_FOUR_DIGITS', defaultValue: ''),
+    achievementHandsOffHustle: String.fromEnvironment('GPGS_ACH_HANDS_OFF_HUSTLE', defaultValue: ''),
+    achievementBusinessDistrict: String.fromEnvironment('GPGS_ACH_BUSINESS_DISTRICT', defaultValue: ''),
+    achievementFirstMillion: String.fromEnvironment('GPGS_ACH_FIRST_MILLION', defaultValue: ''),
+    achievementSecondCitySecondChance: String.fromEnvironment('GPGS_ACH_SECOND_CITY_SECOND_CHANCE', defaultValue: ''),
+    achievementEmpireNetwork: String.fromEnvironment('GPGS_ACH_EMPIRE_NETWORK', defaultValue: ''),
+    achievementBillionaireTycoon: String.fromEnvironment('GPGS_ACH_BILLIONAIRE_TYCOON', defaultValue: ''),
+    achievementExecutiveFloor: String.fromEnvironment('GPGS_ACH_EXECUTIVE_FLOOR', defaultValue: ''),
+    achievementWeeklyStreak: String.fromEnvironment('GPGS_ACH_WEEKLY_STREAK', defaultValue: ''),
+    achievementCrisisController: String.fromEnvironment('GPGS_ACH_CRISIS_CONTROLLER', defaultValue: ''),
+    achievementTwoWeekHabit: String.fromEnvironment('GPGS_ACH_TWO_WEEK_HABIT', defaultValue: ''),
+  };
+
   static final AuthService _instance = AuthService._internal();
   factory AuthService() => _instance;
   AuthService._internal();
@@ -27,6 +58,9 @@ class AuthService extends ChangeNotifier {
   String? _lastError;
   User? _firebaseUser;
   bool _hasGamesPermission = false; // Track if we have full games permission
+  final Set<String> _pendingAchievementUnlocks = <String>{};
+  final Set<String> _completedAchievementUnlocks = <String>{};
+  final Set<String> _loggedMissingAchievementIdKeys = <String>{};
 
   // Getters
   bool get isSignedIn => _isSignedIn;
@@ -177,6 +211,7 @@ class AuthService extends ChangeNotifier {
         
         _isSignedIn = true;
         _lastError = null;
+        await _flushPendingAchievementUnlocks();
         notifyListeners();
         return true;
       } else {
@@ -311,6 +346,8 @@ class AuthService extends ChangeNotifier {
     _firebaseUser = null;
     _lastError = null;
     _hasGamesPermission = false;
+    _pendingAchievementUnlocks.clear();
+    _completedAchievementUnlocks.clear();
   }
 
   /// Get current authentication status
@@ -410,6 +447,7 @@ class AuthService extends ChangeNotifier {
       if (account != null) {
         debugPrint("✅ Games permission granted successfully");
         _hasGamesPermission = true;
+        await _flushPendingAchievementUnlocks();
         notifyListeners();
         return true;
       } else {
@@ -594,6 +632,50 @@ class AuthService extends ChangeNotifier {
       'platform': defaultTargetPlatform.toString(),
       'timestamp': DateTime.now().toIso8601String(),
     };
+  }
+
+  Future<void> unlockAchievementByKey(String achievementKey) async {
+    if (_completedAchievementUnlocks.contains(achievementKey)) {
+      return;
+    }
+
+    final String achievementId = _achievementIdsByKey[achievementKey] ?? '';
+    if (achievementId.isEmpty) {
+      if (!_loggedMissingAchievementIdKeys.contains(achievementKey)) {
+        _loggedMissingAchievementIdKeys.add(achievementKey);
+        debugPrint('⚠️ GPGS achievement ID missing for key: $achievementKey');
+      }
+      return;
+    }
+
+    _pendingAchievementUnlocks.add(achievementKey);
+    await _flushPendingAchievementUnlocks();
+  }
+
+  Future<void> _flushPendingAchievementUnlocks() async {
+    if (!_isSignedIn || !_hasGamesPermission || _pendingAchievementUnlocks.isEmpty) {
+      return;
+    }
+
+    final List<String> pendingKeys = List<String>.from(_pendingAchievementUnlocks);
+    for (final String achievementKey in pendingKeys) {
+      final String achievementId = _achievementIdsByKey[achievementKey] ?? '';
+      if (achievementId.isEmpty) {
+        _pendingAchievementUnlocks.remove(achievementKey);
+        continue;
+      }
+
+      try {
+        await Achievements.unlock(
+          achievement: Achievement(androidID: achievementId),
+        );
+        _pendingAchievementUnlocks.remove(achievementKey);
+        _completedAchievementUnlocks.add(achievementKey);
+        debugPrint('🏆 GPGS achievement unlocked: $achievementKey ($achievementId)');
+      } catch (e) {
+        debugPrint('❌ Failed to unlock GPGS achievement ($achievementKey): $e');
+      }
+    }
   }
 
 

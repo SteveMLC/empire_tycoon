@@ -19,10 +19,9 @@ extension PlatinumLogic on GameState {
         showPPAnimation = true;
         notifyListeners();
         
-        // Use a safe timer with weak reference to avoid memory leaks
-        Timer(const Duration(seconds: 3), () {
+        cancelScheduledTimer('platinumPointsAnimation');
+        scheduleTimer('platinumPointsAnimation', const Duration(seconds: 3), () {
           try {
-            // Only update if animation is still showing (prevents race conditions)
             if (showPPAnimation) {
               showPPAnimation = false;
               notifyListeners();
@@ -481,14 +480,12 @@ extension PlatinumLogic on GameState {
         case 'temp_boost_10x_5min': // Click Frenzy
              platinumClickFrenzyEndTime = DateTime.now().add(const Duration(minutes: 5));
              platinumClickFrenzyRemainingSeconds = 300;
-             _startPlatinumClickFrenzyTimer();
              print("INFO: Click Frenzy (10x) Activated! Ends at: $platinumClickFrenzyEndTime");
              notifyListeners();
              break;
         case 'temp_boost_2x_10min': // Steady Boost
              platinumSteadyBoostEndTime = DateTime.now().add(const Duration(minutes: 10));
              platinumSteadyBoostRemainingSeconds = 600;
-             _startPlatinumSteadyBoostTimer();
              print("INFO: Steady Boost (2x) Activated! Ends at: $platinumSteadyBoostEndTime");
              notifyListeners();
              break;

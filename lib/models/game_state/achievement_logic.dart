@@ -27,14 +27,15 @@ extension AchievementLogic on GameState {
     }
     
     // Cancel any active auto-dismiss timer
-    _achievementNotificationTimer?.cancel();
+    cancelScheduledTimer('achievementAutoDismiss');
+    cancelScheduledTimer('achievementAnimationComplete');
     
     _currentAchievementNotification = null;
     _isAchievementNotificationVisible = false;
     notifyListeners(); // Notify UI to hide the notification
 
     // Reset animation flag after a short delay to ensure smooth transitions
-    Future.delayed(Duration(milliseconds: 500), () {
+    scheduleTimer('achievementAnimationComplete', const Duration(milliseconds: 500), () {
       _isAchievementAnimationInProgress = false;
       
       // Try showing the next achievement after the animation completes

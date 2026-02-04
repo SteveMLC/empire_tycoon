@@ -44,6 +44,12 @@ class GameService {
     _billingService = BillingService(); // ADDED: Initialize BillingService
     _appLifecycleService = AppLifecycleService(); // ADDED: Initialize AppLifecycleService
     _timerService = TimerService(_gameState, _performAutoSave);
+    _timerService.registerIncomeService(_incomeService);
+    _gameState.registerTimerDelegates(
+      cancelAllTimers: _timerService.cancelAllTimers,
+      scheduleOneShot: _timerService.scheduleOneShot,
+      cancelScheduled: _timerService.cancelScheduled,
+    );
     _persistenceService = PersistenceService(_prefs, _gameState, incomeService: _incomeService); // UPDATED: Pass IncomeService
     _diagnosticService = DiagnosticService(
       _gameState, 

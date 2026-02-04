@@ -33,6 +33,8 @@ extension SerializationLogic on GameState {
     'isEligibleForPremiumRestore': isEligibleForPremiumRestore,
       'lifetimeTaps': lifetimeTaps,
       'gameStartTime': gameStartTime.toIso8601String(),
+      'hasShownRateUsDialog': hasShownRateUsDialog,
+      'rateUsDialogShownAt': rateUsDialogShownAt?.toIso8601String(),
       'currentDay': currentDay,
       'incomeMultiplier': incomeMultiplier,
       'clickMultiplier': clickMultiplier,
@@ -53,6 +55,7 @@ extension SerializationLogic on GameState {
       '_retroactivePPAwarded': _retroactivePPAwarded,
       'ppPurchases': ppPurchases,
       'ppOwnedItems': ppOwnedItems.toList(), // Convert Set to List for JSON
+      'redeemedPromoCodes': redeemedPromoCodes.toList(),
       'isGoldenCursorUnlocked': isGoldenCursorUnlocked,
       'isExecutiveThemeUnlocked': isExecutiveThemeUnlocked,
       'isPlatinumFrameUnlocked': isPlatinumFrameUnlocked,
@@ -110,6 +113,8 @@ extension SerializationLogic on GameState {
       'googlePlayDisplayName': googlePlayDisplayName,
       'googlePlayAvatarUrl': googlePlayAvatarUrl,
       'lastCloudSync': lastCloudSync?.toIso8601String(),
+      'lastLoginDay': lastLoginDay?.toIso8601String(),
+      'consecutiveLoginDays': consecutiveLoginDays,
       
       // ADDED: Mogul avatars fields
       'isMogulAvatarsUnlocked': isMogulAvatarsUnlocked,
@@ -232,6 +237,14 @@ extension SerializationLogic on GameState {
         lastCloudSync = null;
       }
     }
+    if (json['lastLoginDay'] != null) {
+      try {
+        lastLoginDay = DateTime.parse(json['lastLoginDay']);
+      } catch (_) {
+        lastLoginDay = null;
+      }
+    }
+    consecutiveLoginDays = json['consecutiveLoginDays'] ?? 1;
     
     // ADDED: Load mogul avatars fields
     isMogulAvatarsUnlocked = json['isMogulAvatarsUnlocked'] ?? false;
@@ -260,6 +273,8 @@ extension SerializationLogic on GameState {
     } else {
       gameStartTime = DateTime.now(); // Initialize if missing
     }
+    hasShownRateUsDialog = json['hasShownRateUsDialog'] ?? false;
+    rateUsDialogShownAt = _parseDateTimeSafe(json['rateUsDialogShownAt']);
 
     // Load prestige/multipliers
     currentDay = json['currentDay'] ?? DateTime.now().weekday;
@@ -539,6 +554,7 @@ extension SerializationLogic on GameState {
     _retroactivePPAwarded = json['_retroactivePPAwarded'] ?? false;
     ppPurchases = Map<String, int>.from(json['ppPurchases'] ?? {});
     ppOwnedItems = Set<String>.from(json['ppOwnedItems'] ?? []); // Load Set from List
+    redeemedPromoCodes = Set<String>.from(json['redeemedPromoCodes'] ?? []);
     isGoldenCursorUnlocked = json['isGoldenCursorUnlocked'] ?? false;
     isExecutiveThemeUnlocked = json['isExecutiveThemeUnlocked'] ?? false;
     isPlatinumFrameUnlocked = json['isPlatinumFrameUnlocked'] ?? false;
@@ -599,20 +615,10 @@ extension SerializationLogic on GameState {
     // Re-evaluate unlocks and achievements after loading everything
     _updateBusinessUnlocks();
     _updateRealEstateUnlocks();
+    _updateLoginStreak(DateTime.now());
     achievementManager.evaluateAchievements(this); // Evaluate achievements based on loaded state
 
-    // CRITICAL FIX: Ensure timers are properly cancelled before setting up new ones
-    if (timersActive) {
-      print("⚠️ [fromJson] Found active timers, cancelling them before setup");
-      _cancelAllTimers();
-    } else {
-      print("⚠️ [fromJson] Ensuring all timers are cancelled before setup");
-      _cancelAllTimers(); // Use our dedicated method for cleanup
-    }
-    
-    // Ensure timers are set up after loading
-    print("⏱️ [fromJson] Setting up new timers after loading state");
-    _setupTimers();
+    // Timers are managed by TimerService; no setup here.
 
     // New Executive Stats Theme properties
     isExecutiveStatsThemeUnlocked = json['isExecutiveStatsThemeUnlocked'] ?? false;
