@@ -58,11 +58,12 @@ extension NotificationLogic on GameState {
     notifyListeners();
     
     // Cancel any existing timer
-    _achievementNotificationTimer?.cancel();
+    cancelScheduledTimer('achievementAutoDismiss');
+    cancelScheduledTimer('achievementAnimationComplete');
     
     // Set a timer to auto-dismiss the notification after 5 seconds (reduced from 6)
     // This serves as a fallback in case animation completion doesn't trigger properly
-    _achievementNotificationTimer = Timer(const Duration(seconds: 5), () {
+    scheduleTimer('achievementAutoDismiss', const Duration(seconds: 5), () {
       print("⏱️ Auto-dismissing achievement: ${_currentAchievementNotification?.name}");
       
       // Don't auto-dismiss if user is interacting (we'll keep this simple for now)
@@ -72,7 +73,7 @@ extension NotificationLogic on GameState {
       
       // Wait for exit animation to complete before showing next notification
       // Increased delay to ensure smooth transitions and prevent overlap
-      Timer(const Duration(milliseconds: 800), () {
+      scheduleTimer('achievementAnimationComplete', const Duration(milliseconds: 800), () {
         _isAchievementAnimationInProgress = false; // Reset animation flag
         
         print("🎬 Achievement animation complete, checking for next in queue...");

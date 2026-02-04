@@ -63,6 +63,12 @@ dependencies:
   
   # URL launcher for external links
   url_launcher: ^6.2.4
+  
+  # Deep links for Google Play promo campaigns
+  app_links: ^6.4.1
+  
+  # Google Play In-App Review API
+  in_app_review: ^2.0.9
 
 dev_dependencies:
   flutter_test:

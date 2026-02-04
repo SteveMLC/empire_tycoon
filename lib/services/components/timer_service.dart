@@ -25,13 +25,17 @@ class TimerService {
   bool _isUpdatingGameState = false;
   
   // Registered callbacks for synchronized updates
-  final List<Function> _updateCallbacks = [];
+  final List<void Function(DateTime)> _updateCallbacks = [];
   
   final GameState _gameState;
   final Function _performAutoSave;
-  IncomeService? _incomeService;
+  void Function(DateTime)? _incomeUpdateCallback;
+  final Map<String, _ScheduledTask> _scheduledTasks = {};
+  DateTime? _lastCentralTimerUpdate;
   
-  TimerService(this._gameState, this._performAutoSave);
+  TimerService(this._gameState, this._performAutoSave) {
+    registerUpdateCallback(_handleCentralTimers);
+  }
   
   void cancelAllTimers() {
     print("⏱️ CENTRAL TIMER SYSTEM: Cancelling all timers");
@@ -59,7 +63,8 @@ class TimerService {
       _diagnosticTimer = null;
       print("⏱️ Cancelled diagnostic timer");
     }
-    
+    _scheduledTasks.clear();
+    _lastCentralTimerUpdate = null;
     _timersActive = false;
   }
   
@@ -101,7 +106,11 @@ class TimerService {
             
             // Notify all registered callbacks
             for (var callback in _updateCallbacks) {
-              callback();
+              try {
+                callback(now);
+              } catch (e) {
+                print("⚠️ Timer callback error: $e");
+              }
             }
           } finally {
             _isUpdatingGameState = false;
@@ -170,27 +179,168 @@ class TimerService {
   
   /// Register a callback to be notified when the game state updates
   /// This ensures components are updated in sync with the game state
-  void registerUpdateCallback(Function callback) {
+  void registerUpdateCallback(void Function(DateTime) callback) {
     if (!_updateCallbacks.contains(callback)) {
       _updateCallbacks.add(callback);
     }
   }
   
   /// Unregister a callback when a component is disposed
-  void unregisterUpdateCallback(Function callback) {
+  void unregisterUpdateCallback(void Function(DateTime) callback) {
     _updateCallbacks.remove(callback);
   }
   
   /// Register the income service for synchronized updates
   void registerIncomeService(IncomeService incomeService) {
-    _incomeService = incomeService;
-    registerUpdateCallback(() {
-      // This will be called after each game state update
-      // ensuring income calculations happen in sync with game updates
-    });
+    if (_incomeUpdateCallback != null) {
+      unregisterUpdateCallback(_incomeUpdateCallback!);
+    }
+
+    _incomeUpdateCallback = (DateTime now) {
+      // Called after each game state update to keep income in sync.
+      final income = incomeService.calculateIncomePerSecond(_gameState);
+      _gameState.lastCalculatedIncomePerSecond = income;
+      incomeService.notifyListeners();
+    };
+
+    registerUpdateCallback(_incomeUpdateCallback!);
   }
   
   /// Check if the game state is currently being updated
   /// Components can use this to avoid race conditions
   bool get isUpdatingGameState => _isUpdatingGameState;
+
+  void scheduleOneShot(String id, Duration delay, void Function() action) {
+    _scheduledTasks[id] = _ScheduledTask(DateTime.now().add(delay), action);
+  }
+
+  void cancelScheduled(String id) {
+    _scheduledTasks.remove(id);
+  }
+
+  void _handleCentralTimers(DateTime now) {
+    _runScheduledTasks(now);
+    _updateBoostTimers(now);
+  }
+
+  void _runScheduledTasks(DateTime now) {
+    if (_scheduledTasks.isEmpty) {
+      return;
+    }
+
+    final List<String> dueTaskIds = [];
+    _scheduledTasks.forEach((id, task) {
+      if (!task.runAt.isAfter(now)) {
+        dueTaskIds.add(id);
+      }
+    });
+
+    for (final id in dueTaskIds) {
+      final task = _scheduledTasks.remove(id);
+      if (task == null) {
+        continue;
+      }
+      try {
+        task.action();
+      } catch (e) {
+        print("⚠️ Scheduled task error ($id): $e");
+      }
+    }
+  }
+
+  void _updateBoostTimers(DateTime now) {
+    if (_lastCentralTimerUpdate == null) {
+      _lastCentralTimerUpdate = now;
+      return;
+    }
+    final DateTime lastUpdate = _lastCentralTimerUpdate!;
+    final int elapsedSeconds = now.difference(lastUpdate).inSeconds;
+    if (elapsedSeconds <= 0) {
+      return;
+    }
+    _lastCentralTimerUpdate = now;
+
+    bool shouldNotify = false;
+
+    final int previousBoostSeconds = _gameState.boostRemainingSeconds;
+    if (previousBoostSeconds > 0) {
+      final int nextBoostSeconds =
+          previousBoostSeconds > elapsedSeconds ? (previousBoostSeconds - elapsedSeconds) : 0;
+      if (nextBoostSeconds != previousBoostSeconds) {
+        _gameState.boostRemainingSeconds = nextBoostSeconds;
+        if (_crossedInterval(previousBoostSeconds, nextBoostSeconds, 5) || nextBoostSeconds == 0) {
+          shouldNotify = true;
+        }
+      }
+    }
+
+    final int previousAdBoostSeconds = _gameState.adBoostRemainingSeconds;
+    if (previousAdBoostSeconds > 0) {
+      final int nextAdBoostSeconds =
+          previousAdBoostSeconds > elapsedSeconds ? (previousAdBoostSeconds - elapsedSeconds) : 0;
+      if (nextAdBoostSeconds != previousAdBoostSeconds) {
+        _gameState.adBoostRemainingSeconds = nextAdBoostSeconds;
+        shouldNotify = true;
+      }
+    }
+
+    final int previousClickFrenzySeconds = _gameState.platinumClickFrenzyRemainingSeconds;
+    if (previousClickFrenzySeconds > 0) {
+      final int nextClickFrenzySeconds = previousClickFrenzySeconds > elapsedSeconds
+          ? (previousClickFrenzySeconds - elapsedSeconds)
+          : 0;
+      if (nextClickFrenzySeconds != previousClickFrenzySeconds) {
+        _gameState.platinumClickFrenzyRemainingSeconds = nextClickFrenzySeconds;
+        if (_crossedInterval(previousClickFrenzySeconds, nextClickFrenzySeconds, 10) ||
+            nextClickFrenzySeconds == 0) {
+          shouldNotify = true;
+        }
+        if (nextClickFrenzySeconds == 0) {
+          _gameState.platinumClickFrenzyEndTime = null;
+          print("INFO: Click Frenzy boost expired.");
+        }
+      }
+    }
+
+    final int previousSteadyBoostSeconds = _gameState.platinumSteadyBoostRemainingSeconds;
+    if (previousSteadyBoostSeconds > 0) {
+      final int nextSteadyBoostSeconds = previousSteadyBoostSeconds > elapsedSeconds
+          ? (previousSteadyBoostSeconds - elapsedSeconds)
+          : 0;
+      if (nextSteadyBoostSeconds != previousSteadyBoostSeconds) {
+        _gameState.platinumSteadyBoostRemainingSeconds = nextSteadyBoostSeconds;
+        if (_crossedInterval(previousSteadyBoostSeconds, nextSteadyBoostSeconds, 10) ||
+            nextSteadyBoostSeconds == 0) {
+          shouldNotify = true;
+        }
+        if (nextSteadyBoostSeconds == 0) {
+          _gameState.platinumSteadyBoostEndTime = null;
+          print("INFO: Steady Boost expired.");
+        }
+      }
+    }
+
+    if (shouldNotify) {
+      _gameState.notifyListeners();
+    }
+  }
+
+  bool _crossedInterval(int previous, int next, int interval) {
+    if (previous == next) {
+      return false;
+    }
+    for (int value = previous; value >= next; value--) {
+      if (value % interval == 0) {
+        return true;
+      }
+    }
+    return false;
+  }
+}
+
+class _ScheduledTask {
+  final DateTime runAt;
+  final void Function() action;
+
+  _ScheduledTask(this.runAt, this.action);
 }

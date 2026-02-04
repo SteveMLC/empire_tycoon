@@ -10,49 +10,13 @@ extension UpdateLogic on GameState {
   
   // Tracking variables for income diagnostics
 
-  // Setup game timers - Optimized to use a single primary timer with error recovery
+  // Timer setup is handled by TimerService.
   void _setupTimers() {
-    // Cancel existing timers before creating new ones to prevent duplicates
-    if (timersActive) {
-      _cancelAllTimers();
-    }
-
-    // Setup timer for auto-saving every minute
-    _saveTimer = Timer.periodic(const Duration(minutes: 1), (_) {
-      // Auto-save handled by GameService listener
-    });
-
-    // Single unified timer for game state updates
-    _updateTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      try {
-        _updateGameState();
-      } catch (e, stackTrace) {
-        // Catch errors within the timer callback to prevent timer cancellation
-        print("❌ ERROR in timer callback: $e");
-        print(stackTrace);
-      }
-    });
-    
-    // Initialize update timestamps in the GameState class
-    final now = DateTime.now();
-    _lastUpdateTime = now;
-    _lastInvestmentMicroUpdateTime = now;
-    _lastDailyCheckTime = now;
-    _lastNetWorthUpdateTime = now;
-    
-    timersActive = true;
+    // No-op. TimerService drives the update loop.
   }
 
-  // Helper method to cancel all timers - Optimized for the new timer structure
   void _cancelAllTimers() {
-    _saveTimer?.cancel();
-    _saveTimer = null;
-    
-    _updateTimer?.cancel();
-    _updateTimer = null;
-    
-    // Reset the timer flag
-    timersActive = false;
+    // No-op. TimerService cancels timers centrally.
   }
 
   // Update game state every tick (second) - Optimized with frequency-based updates
@@ -450,10 +414,6 @@ extension UpdateLogic on GameState {
     } catch (e, stackTrace) {
       print("❌ ERROR in _updateGameState: $e");
       print(stackTrace);
-      // More robust error handling with timer recovery
-      if (timersActive && _updateTimer == null) {
-        _setupTimers(); // Attempt recovery
-      }
     }
   }
 

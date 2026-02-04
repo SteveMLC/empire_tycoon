@@ -1,11 +1,22 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'game_state.dart';
 import 'event.dart'; // Import for EventType extension
 import 'achievement_data.dart'; // Import the moved classes/enums
 import '../data/achievement_definitions.dart'; // Import the static definitions
+import '../services/auth_service.dart';
 
 class AchievementManager {
   List<Achievement> achievements = [];
+  static const Map<String, String> _googlePlayLocalAchievementMap = {
+    'first_business': AuthService.achievementFirstStorefront,
+    'first_thousand': AuthService.achievementFourDigits,
+    'all_businesses': AuthService.achievementBusinessDistrict,
+    'first_million': AuthService.achievementFirstMillion,
+    'first_billion': AuthService.achievementBillionaireTycoon,
+    'all_max_level': AuthService.achievementExecutiveFloor,
+  };
 
   static const Set<String> _tropicalLocaleIds = {'rural_thailand', 'ho_chi_minh_city', 'miami_florida'}; // Example IDs - replace with actual IDs
   static const Set<String> _urbanLocaleIds = {
@@ -70,7 +81,57 @@ class AchievementManager {
       print("🏆 Awarding ${completedAchievement.ppReward} PP for completing: ${completedAchievement.name}");
     }
 
+    _syncGooglePlayAchievements(gameState, newlyCompleted);
+
     return newlyCompleted;
+  }
+
+  void _syncGooglePlayAchievements(GameState gameState, List<Achievement> newlyCompleted) {
+    final authService = AuthService();
+    if (!authService.isSignedIn) {
+      return;
+    }
+
+    final Set<String> achievementKeysToUnlock = <String>{};
+
+    for (final achievement in newlyCompleted) {
+      final String? googlePlayKey = _googlePlayLocalAchievementMap[achievement.id];
+      if (googlePlayKey != null) {
+        achievementKeysToUnlock.add(googlePlayKey);
+      }
+    }
+
+    // This game currently has no explicit manager mechanic, so we use "first upgraded business"
+    // as a proxy signal for "hands-off" progression.
+    if (gameState.businesses.any((business) => business.level >= 2)) {
+      achievementKeysToUnlock.add(AuthService.achievementHandsOffHustle);
+    }
+
+    final int unlockedLocales = gameState.realEstateLocales.where((locale) => locale.unlocked).length;
+    if (unlockedLocales >= 2) {
+      achievementKeysToUnlock.add(AuthService.achievementSecondCitySecondChance);
+    }
+
+    if (gameState.realEstateLocales.isNotEmpty &&
+        unlockedLocales == gameState.realEstateLocales.length) {
+      achievementKeysToUnlock.add(AuthService.achievementEmpireNetwork);
+    }
+
+    if (gameState.totalEventsResolved >= 100) {
+      achievementKeysToUnlock.add(AuthService.achievementCrisisController);
+    }
+
+    if (gameState.consecutiveLoginDays >= 7) {
+      achievementKeysToUnlock.add(AuthService.achievementWeeklyStreak);
+    }
+
+    if (gameState.consecutiveLoginDays >= 14) {
+      achievementKeysToUnlock.add(AuthService.achievementTwoWeekHabit);
+    }
+
+    for (final String achievementKey in achievementKeysToUnlock) {
+      unawaited(authService.unlockAchievementByKey(achievementKey));
+    }
   }
 
   void _checkEventAchievements(GameState gameState, List<Achievement> newlyCompleted) {

@@ -42,6 +42,7 @@ part 'game_state/booster_logic.dart';   // ADDED: New part file
 part 'game_state/notification_logic.dart'; // ADDED: New part file
 part 'game_state/income_logic.dart';    // ADDED: New part file
 part 'game_state/offline_income_logic.dart';    // ADDED: New part file for offline income
+part 'game_state/promo_logic.dart'; // ADDED: Promo code redemption logic
 
 // Define a limit for how many days of earnings history to keep
 const int _maxDailyEarningsHistory = 30; // Memory Optimization: Limit history size
@@ -54,9 +55,6 @@ class GameState with ChangeNotifier {
   DateTime? _lastNetWorthUpdateTime; // Track last net worth update time
   DateTime? _lastEventStateCheckTime; // Track last event state check time for AdMobService
 
-  // Timer state tracking
-  bool timersActive = false;
-  
   // ADDED: Track calculation state
   bool _isCalculatingIncome = false;
   double lastCalculatedIncomePerSecond = 0.0;
@@ -106,6 +104,7 @@ class GameState with ChangeNotifier {
   bool _retroactivePPAwarded = false; // Flag for retroactive PP grant
   Map<String, int> ppPurchases = {}; // Tracks counts of repeatable PP items purchased {itemId: count}
   Set<String> ppOwnedItems = {};    // Tracks IDs of one-time PP items purchased {itemId}
+  Set<String> redeemedPromoCodes = {}; // Tracks one-time promotional codes already redeemed
   bool showPPAnimation = false; // Flag to control PP animation
   bool showPremiumPurchaseNotification = false; // ADDED: Flag for premium notification
   // >> END: Platinum Points System Fields <<
@@ -172,22 +171,18 @@ class GameState with ChangeNotifier {
 
   // Boost Timer State
   int boostRemainingSeconds = 0;
-  Timer? _boostTimer;
   bool get isBoostActive => boostRemainingSeconds > 0;
 
   // Ad Boost State (separate system)
   int adBoostRemainingSeconds = 0;
-  Timer? _adBoostTimer;
   bool get isAdBoostActive => adBoostRemainingSeconds > 0;
 
   // >> START: Platinum Booster State (Click Frenzy / Steady Boost) <<
   int platinumClickFrenzyRemainingSeconds = 0;
   DateTime? platinumClickFrenzyEndTime;
-  Timer? _platinumClickFrenzyTimer;
 
   int platinumSteadyBoostRemainingSeconds = 0;
   DateTime? platinumSteadyBoostEndTime;
-  Timer? _platinumSteadyBoostTimer;
 
   // Getter to check if *any* platinum click booster is active
   bool get isPlatinumBoostActive => platinumClickFrenzyRemainingSeconds > 0 || platinumSteadyBoostRemainingSeconds > 0;
@@ -205,6 +200,24 @@ class GameState with ChangeNotifier {
   
   void resetNotificationPermissionRequest() {
     _shouldRequestNotificationPermissions = false;
+  }
+
+  void registerTimerDelegates({
+    required VoidCallback cancelAllTimers,
+    required void Function(String id, Duration delay, VoidCallback action) scheduleOneShot,
+    required void Function(String id) cancelScheduled,
+  }) {
+    _cancelAllTimersDelegate = cancelAllTimers;
+    _scheduleTimerDelegate = scheduleOneShot;
+    _cancelScheduledTimerDelegate = cancelScheduled;
+  }
+
+  void scheduleTimer(String id, Duration delay, VoidCallback action) {
+    _scheduleTimerDelegate?.call(id, delay, action);
+  }
+
+  void cancelScheduledTimer(String id) {
+    _cancelScheduledTimerDelegate?.call(id);
   }
 
   // >> START: Add Achievement Tracking Fields Declaration <<
@@ -232,6 +245,8 @@ class GameState with ChangeNotifier {
   // Lifetime stats (persist across reincorporation)
   int lifetimeTaps = 0;
   DateTime gameStartTime = DateTime.now(); // Tracks when the game was first started
+  bool hasShownRateUsDialog = false;
+  DateTime? rateUsDialogShownAt;
 
   late AchievementManager achievementManager;
 
@@ -240,7 +255,10 @@ class GameState with ChangeNotifier {
   Achievement? _currentAchievementNotification;
   bool _isAchievementNotificationVisible = false;
   bool _isAchievementAnimationInProgress = false; // Flag to track animation state
-  Timer? _achievementNotificationTimer; // ADDED: Timer for hiding notification
+  // Timer delegates managed by TimerService
+  VoidCallback? _cancelAllTimersDelegate;
+  void Function(String id, Duration delay, VoidCallback action)? _scheduleTimerDelegate;
+  void Function(String id)? _cancelScheduledTimerDelegate;
 
   List<Achievement> get pendingAchievementNotifications => List.unmodifiable(_pendingAchievementNotifications);
   Achievement? get currentAchievementNotification => _currentAchievementNotification;
@@ -252,6 +270,8 @@ class GameState with ChangeNotifier {
   DateTime lastOpened = DateTime.now(); // When the game was last opened
 
   int currentDay = DateTime.now().weekday; // 1=Mon, 7=Sun
+  DateTime? lastLoginDay;
+  int consecutiveLoginDays = 1;
   bool isInitialized = false;
 
   List<Business> businesses = [];
@@ -334,10 +354,6 @@ class GameState with ChangeNotifier {
   // ADDED: Track which food stall branches have been maxed (persists through reincorporation)
   Set<String> maxedFoodStallBranches = {};
 
-  Timer? _saveTimer;
-  Timer? _updateTimer;
-  Timer? _investmentUpdateTimer;
-
   // Income tracking to prevent duplicate application
   DateTime? _lastIncomeApplicationTime;
 
@@ -370,22 +386,46 @@ class GameState with ChangeNotifier {
        _updateBusinessUnlocks(); // From business_logic.dart
        _updateRealEstateUnlocks(); // From real_estate_logic.dart
        isInitialized = true;
-       print("🏁 GameState Initialized (after async). Setting up timers...");
-       _setupTimers(); // From update_logic.dart
+       print("🏁 GameState Initialized (after async). Timers handled by TimerService.");
        notifyListeners();
     }).catchError((e, stackTrace) {
         print("❌❌❌ CRITICAL ERROR during Real Estate Upgrade Initialization: $e");
         print(stackTrace);
         isInitialized = true; // Still mark as initialized to allow game to run potentially degraded
-        print("⚠️ GameState Initialized (with RE upgrade error). Setting up timers...");
-        _setupTimers(); // Setup timers even if upgrades failed
+        print("⚠️ GameState Initialized (with RE upgrade error). Timers handled by TimerService.");
         notifyListeners();
     });
 
     _updateBusinessUnlocks();
     _updateRealEstateUnlocks();
+    _updateLoginStreak(DateTime.now());
 
     print("🚀 GameState Constructor Complete.");
+  }
+
+  void _updateLoginStreak(DateTime now) {
+    final DateTime today = DateTime(now.year, now.month, now.day);
+
+    if (lastLoginDay == null) {
+      consecutiveLoginDays = 1;
+      lastLoginDay = today;
+      return;
+    }
+
+    final DateTime previous = DateTime(lastLoginDay!.year, lastLoginDay!.month, lastLoginDay!.day);
+    final int dayDelta = today.difference(previous).inDays;
+
+    if (dayDelta == 0) {
+      return;
+    }
+
+    if (dayDelta == 1) {
+      consecutiveLoginDays += 1;
+    } else {
+      consecutiveLoginDays = 1;
+    }
+
+    lastLoginDay = today;
   }
 
   Future<void> initializeRealEstateUpgrades() async {
@@ -424,20 +464,7 @@ class GameState with ChangeNotifier {
   }
 
   void _setupTimers() {
-    // REMOVED: _saveTimer = Timer.periodic(const Duration(minutes: 1), (_) {
-    //   notifyListeners(); // This comment is incorrect; GameService uses its own timer.
-    // });
-
-    _updateTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      _updateGameState();
-    });
-
-    // Update investment prices more frequently
-    Timer.periodic(const Duration(seconds: 30), (_) {
-      if (isInitialized) {
-        _updateInvestmentPrices();
-      }
-    });
+    // Timer setup is managed by TimerService.
   }
 
   void _updateInvestmentPrices() {
@@ -866,16 +893,7 @@ class GameState with ChangeNotifier {
   @override
   void dispose() {
     print("🗑️ Disposing GameState resources");
-    // Call the extension method to properly clean up timers
-    if (timersActive) {
-      cancelAllTimers();
-    }
-    
-    _boostTimer?.cancel();
-    _adBoostTimer?.cancel();
-    _platinumClickFrenzyTimer?.cancel();
-    _platinumSteadyBoostTimer?.cancel();
-    _achievementNotificationTimer?.cancel();
+    cancelAllTimers();
     
     super.dispose();
   }
@@ -1253,14 +1271,12 @@ class GameState with ChangeNotifier {
         case 'temp_boost_10x_5min': // Click Frenzy
              platinumClickFrenzyEndTime = DateTime.now().add(const Duration(minutes: 5));
              platinumClickFrenzyRemainingSeconds = 300;
-             _startPlatinumClickFrenzyTimer();
              print("INFO: Click Frenzy (10x) Activated! Ends at: $platinumClickFrenzyEndTime");
              notifyListeners();
              break;
         case 'temp_boost_2x_10min': // Steady Boost
              platinumSteadyBoostEndTime = DateTime.now().add(const Duration(minutes: 10));
              platinumSteadyBoostRemainingSeconds = 600;
-             _startPlatinumSteadyBoostTimer();
              print("INFO: Steady Boost (2x) Activated! Ends at: $platinumSteadyBoostEndTime");
              notifyListeners();
              break;
@@ -1412,74 +1428,6 @@ class GameState with ChangeNotifier {
     return withGlobalMultipliers;
   }
 
-  // Helper method to start the boost timer
-  void _startBoostTimer() {
-    _boostTimer?.cancel();
-    _boostTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (boostRemainingSeconds > 0) {
-        boostRemainingSeconds--;
-      } else {
-        timer.cancel();
-        _boostTimer = null;
-      }
-      notifyListeners();
-    });
-  }
-
-  // Helper method to start the ad boost timer
-  void _startAdBoostTimer() {
-    _adBoostTimer?.cancel();
-    _adBoostTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (adBoostRemainingSeconds > 0) {
-        adBoostRemainingSeconds--;
-      } else {
-        timer.cancel();
-        _adBoostTimer = null;
-      }
-      notifyListeners();
-    });
-  }
-
-  // --- ADDED: Helper methods for Platinum Booster Timers ---
-  void _startPlatinumClickFrenzyTimer() {
-    _platinumClickFrenzyTimer?.cancel(); // Cancel existing timer if any
-    _platinumClickFrenzyTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (platinumClickFrenzyRemainingSeconds > 0) {
-        platinumClickFrenzyRemainingSeconds--;
-        notifyListeners(); // Notify UI about remaining time change
-      } else {
-        timer.cancel();
-        _platinumClickFrenzyTimer = null;
-        platinumClickFrenzyEndTime = null; // Clear end time when timer finishes
-        print("INFO: Click Frenzy boost expired.");
-        notifyListeners(); // Notify UI that boost is no longer active
-      }
-    });
-  }
-
-  void _startPlatinumSteadyBoostTimer() {
-    _platinumSteadyBoostTimer?.cancel(); // Cancel existing timer if any
-    _platinumSteadyBoostTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (platinumSteadyBoostRemainingSeconds > 0) {
-        platinumSteadyBoostRemainingSeconds--;
-        notifyListeners(); // Notify UI about remaining time change
-      } else {
-        timer.cancel();
-        _platinumSteadyBoostTimer = null;
-        platinumSteadyBoostEndTime = null; // Clear end time when timer finishes
-        print("INFO: Steady Boost expired.");
-        notifyListeners(); // Notify UI that boost is no longer active
-      }
-    });
-  }
-
-  void _cancelPlatinumTimers() {
-    _platinumClickFrenzyTimer?.cancel();
-    _platinumSteadyBoostTimer?.cancel();
-    _platinumClickFrenzyTimer = null;
-    _platinumSteadyBoostTimer = null;
-  }
-  // --- END: Helper methods for Platinum Booster Timers ---
 
   // ADDED: Method to dismiss premium purchase notification
   void dismissPremiumPurchaseNotification() {
@@ -1509,18 +1457,6 @@ class GameState with ChangeNotifier {
     } else {
       print("Cannot toggle platinum frame: Not unlocked.");
     }
-  }
-
-  // Public method to cancel the standard boost timer
-  void cancelBoostTimer() {
-    _boostTimer?.cancel();
-    _boostTimer = null;
-  }
-
-  // Public method to cancel the ad boost timer
-  void cancelAdBoostTimer() {
-    _adBoostTimer?.cancel();
-    _adBoostTimer = null;
   }
 
   // Apply platinum facade to a business
@@ -1576,9 +1512,9 @@ class GameState with ChangeNotifier {
 
   // Public method to cancel all timers (for game_service.dart to use)
   void cancelAllTimers() {
-    if (timersActive) {
+    if (_cancelAllTimersDelegate != null) {
       print("🛑 External call to cancel all game timers");
-      _cancelAllTimers(); // Call the extension method directly to preserve state
+      _cancelAllTimersDelegate!();
     }
   }
   

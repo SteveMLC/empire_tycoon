@@ -1,6 +1,8 @@
 import 'dart:async'; // Import dart:async for Timer
 import 'package:flutter/foundation.dart'; // Import for kDebugMode
 import 'package:flutter/material.dart';
+import 'package:app_links/app_links.dart';
+import 'package:in_app_review/in_app_review.dart';
 import 'package:provider/provider.dart';
 
 import '../models/game_state.dart';
@@ -35,6 +37,10 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
   late TabController _tabController;
   Timer? _boostTimer; // Timer for boost UI updates
   Duration _boostTimeRemaining = Duration.zero; // State variable for remaining time
+  late final AppLinks _appLinks;
+  StreamSubscription<Uri>? _deepLinkSubscription;
+  final Set<String> _processedDeepLinks = <String>{};
+  bool _isRateUsRequestInProgress = false;
   
   // We'll access these services through Provider instead of storing local references
   // This helps avoid memory leaks and ensures consistent access patterns
@@ -43,16 +49,19 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
   void initState() {
     super.initState();
     _tabController = TabController(length: 6, vsync: this);
+    _appLinks = AppLinks();
     
     // Initialize boost timer after the first frame is built
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         // Initialize boost timer
         _initializeBoostTimer();
+        _initializeDeepLinks();
         
         // Trigger initial achievement check
         final gameState = Provider.of<GameState>(context, listen: false);
         gameState.tryShowingNextAchievement();
+        _checkAndShowRateUsDialog(gameState);
         // Only log in debug mode to reduce production spam
         if (kDebugMode) {
           print("🔔 Initial achievement check triggered.");
@@ -65,12 +74,85 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
   void dispose() {
     _tabController.dispose();
     _boostTimer?.cancel(); // Cancel timer on dispose
+    _deepLinkSubscription?.cancel();
     
     // Remove listener to avoid memory leaks - safely check if context is still valid
     if (mounted) {
       Provider.of<GameState>(context, listen: false).removeListener(_handleGameStateChange);
     }
     super.dispose();
+  }
+
+  Future<void> _initializeDeepLinks() async {
+    try {
+      final Uri? initialUri = await _appLinks.getInitialLink();
+      if (initialUri != null) {
+        await _handlePromoDeepLink(initialUri);
+      }
+
+      _deepLinkSubscription = _appLinks.uriLinkStream.listen((Uri uri) {
+        _handlePromoDeepLink(uri);
+      });
+    } catch (e) {
+      if (kDebugMode) {
+        print("⚠️ Deep link initialization failed: $e");
+      }
+    }
+  }
+
+  Future<void> _handlePromoDeepLink(Uri uri) async {
+    if (!mounted) {
+      return;
+    }
+
+    final String scheme = uri.scheme.toLowerCase();
+    final String host = uri.host.toLowerCase();
+    final String path = uri.path.toLowerCase();
+    final bool isBonusLink = host == 'bonus' || path == '/bonus';
+    if (scheme != 'empiretycoon' || !isBonusLink) {
+      return;
+    }
+
+    final String linkKey = uri.toString();
+    if (_processedDeepLinks.contains(linkKey)) {
+      return;
+    }
+    _processedDeepLinks.add(linkKey);
+
+    final String? promoCode = uri.queryParameters['code']?.trim();
+    if (promoCode == null || promoCode.isEmpty) {
+      _showPromoMessage('Bonus link missing promo code.', success: false);
+      return;
+    }
+
+    final gameState = Provider.of<GameState>(context, listen: false);
+    final gameService = Provider.of<GameService>(context, listen: false);
+    final PromoRedemptionResult result = gameState.redeemPromoCode(promoCode);
+
+    if (result.success) {
+      try {
+        await gameService.saveGame();
+      } catch (e) {
+        if (kDebugMode) {
+          print("⚠️ Failed to save promo redemption: $e");
+        }
+      }
+    }
+    _showPromoMessage(result.message, success: result.success);
+  }
+
+  void _showPromoMessage(String message, {required bool success}) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: success ? Colors.green[700] : Colors.red[700],
+        ),
+      );
+    });
   }
 
   void _initializeBoostTimer() {
@@ -104,6 +186,7 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     
     // ADDED: Check if notification permissions should be requested
     _checkNotificationPermissionRequest(gameState);
+    _checkAndShowRateUsDialog(gameState);
   }
 
   // Start or stop the timer based on GameState
@@ -187,6 +270,38 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
           }
         }
       });
+    }
+  }
+
+  Future<void> _checkAndShowRateUsDialog(GameState gameState) async {
+    if (!mounted || _isRateUsRequestInProgress) {
+      return;
+    }
+    if (defaultTargetPlatform != TargetPlatform.android) {
+      return;
+    }
+    if (!gameState.shouldShowRateUsDialog()) {
+      return;
+    }
+
+    _isRateUsRequestInProgress = true;
+    final InAppReview inAppReview = InAppReview.instance;
+    try {
+      final bool isAvailable = await inAppReview.isAvailable();
+      if (!isAvailable) {
+        return;
+      }
+
+      await inAppReview.requestReview();
+      gameState.markRateUsDialogShown();
+      final gameService = Provider.of<GameService>(context, listen: false);
+      await gameService.saveGame();
+    } catch (e) {
+      if (kDebugMode) {
+        print("⚠️ Failed to request in-app review: $e");
+      }
+    } finally {
+      _isRateUsRequestInProgress = false;
     }
   }
 

@@ -2,6 +2,42 @@ part of '../game_state.dart';
 
 // Contains utility methods and general game actions
 extension UtilityLogic on GameState {
+  static const int _rateUsRequiredDaysPlayed = 3;
+  static const int _rateUsRequiredBusinessesOwned = 10;
+  static const double _rateUsRequiredIncomePerSecond = 100000.0;
+
+  bool shouldShowRateUsDialog() {
+    if (hasShownRateUsDialog) {
+      return false;
+    }
+
+    final Duration timePlayed = DateTime.now().difference(gameStartTime);
+    if (timePlayed.inDays < _rateUsRequiredDaysPlayed) {
+      return false;
+    }
+
+    final int ownedBusinesses = businesses.where((business) => business.level > 0).length;
+    if (ownedBusinesses < _rateUsRequiredBusinessesOwned) {
+      return false;
+    }
+
+    final double incomePerSecond = calculateTotalIncomePerSecond();
+    if (incomePerSecond <= _rateUsRequiredIncomePerSecond) {
+      return false;
+    }
+
+    return true;
+  }
+
+  void markRateUsDialogShown() {
+    if (hasShownRateUsDialog) {
+      return;
+    }
+
+    hasShownRateUsDialog = true;
+    rateUsDialogShownAt = DateTime.now();
+    notifyListeners();
+  }
 
   // Helper method to format time intervals in a human-readable way
   String _formatTimeInterval(int seconds) {
@@ -145,6 +181,8 @@ extension UtilityLogic on GameState {
     // Reset lifetime stats
     lifetimeTaps = 0;
     gameStartTime = DateTime.now();
+    hasShownRateUsDialog = false;
+    rateUsDialogShownAt = null;
 
     // Reset time tracking
     lastSaved = DateTime.now();
@@ -267,11 +305,6 @@ extension UtilityLogic on GameState {
   // This method should not override or call super.dispose(), as it's an extension.
   // It only handles cancelling timers specific to the GameState logic.
   void dispose() {
-    print("🗑️ Disposing GameState - Cancelling timers...");
-    _saveTimer?.cancel();
-    _updateTimer?.cancel();
-    _investmentUpdateTimer?.cancel();
-    // No super.dispose() call here
-    print("✅ Timers cancelled.");
+    print("🗑️ Disposing GameState - Timers handled by TimerService.");
   }
 } 
