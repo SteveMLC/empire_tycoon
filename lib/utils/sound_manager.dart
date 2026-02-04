@@ -1092,4 +1092,15 @@ class SoundManager with WidgetsBindingObserver {
      await playSound(SoundAssets.offlineIncome, priority: SoundPriority.high);
    }
 
+   Future<void> playOfflineIncomeCollectSound() async {
+     if (!_isInitialized || !_isSoundEnabled || !_isEventSoundsEnabled) return;
+     await playSound(SoundAssets.offlineIncomeCollect, priority: SoundPriority.high);
+   }
+
+   /// Plays only when user claims offline income with 2x bonus (after watching ad).
+   Future<void> playOfflineIncomeBonusSound() async {
+     if (!_isInitialized || !_isSoundEnabled || !_isEventSoundsEnabled) return;
+     await playSound(SoundAssets.offlineIncomeBonus, priority: SoundPriority.high);
+   }
+
 } 

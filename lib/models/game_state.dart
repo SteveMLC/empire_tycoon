@@ -344,6 +344,10 @@ class GameState with ChangeNotifier {
   // Future for tracking real estate initialization
   Future<void>? realEstateInitializationFuture;
 
+  /// Optional callback for throttled leaderboard score submit (same interval as net worth history).
+  /// Set from app init; receives this GameState so caller can submit totalLifetimeNetWorth via AuthService.
+  void Function(GameState)? onThrottledLeaderboardSubmit;
+
   GameState() {
     print("🚀 Initializing GameState...");
     _initializeDefaultBusinesses(); // From initialization_logic.dart
@@ -861,6 +865,9 @@ class GameState with ChangeNotifier {
     double realEstateValue = realEstateLocales.fold(0.0, (sum, locale) => sum + locale.getTotalValue());
     return money + businessesValue + investmentsValue + realEstateValue;
   }
+
+  /// Total lifetime net worth (current net worth + accumulated from reincorporations). Used for leaderboard.
+  double get totalLifetimeNetWorth => lifetimeNetworkWorth + calculateNetWorth();
 
   // Dispose timers when GameState is disposed
   @override

@@ -58,6 +58,14 @@ class SoundService {
     _soundManager.playOfflineIncomeSound();
   }
 
+  void playOfflineIncomeCollectSound() {
+    _soundManager.playOfflineIncomeCollectSound();
+  }
+
+  void playOfflineIncomeBonusSound() {
+    _soundManager.playOfflineIncomeBonusSound();
+  }
+
   void playFeedbackSound() {
     _soundManager.playFeedbackNotificationSound();
   }

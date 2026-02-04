@@ -40,6 +40,8 @@ class SoundAssets {
   static const String eventResolveBad = 'assets/sounds/events/resolve_bad.mp3';
   static const String eventTriggered = 'assets/sounds/events/event_triggered.mp3';
   static const String offlineIncome = 'assets/sounds/events/offline_income.mp3';
+  static const String offlineIncomeCollect = 'assets/sounds/events/offline_income_collect.mp3';
+  static const String offlineIncomeBonus = 'assets/sounds/events/OfflineIncomeBonus.mp3';
   
   // Feedback Sounds
   static const String feedback = 'assets/sounds/feedback/feedback.mp3';
@@ -104,6 +106,8 @@ class SoundAssets {
     eventResolveBad,
     eventTriggered,
     offlineIncome,
+    offlineIncomeCollect,
+    offlineIncomeBonus,
     
     // Feedback Sounds
     feedback,

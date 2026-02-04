@@ -47,6 +47,14 @@ Contains detailed documentation of critical bug fixes that have been implemented
    - Optimized sound performance and memory usage
    - Enhanced audio experience and reduced resource consumption
 
+### Setup and integration guides
+
+- **`PLAY_GAMES_LEADERBOARD_SETUP.md`** - Google Play "Highest Net Worth" leaderboard
+  - Leaderboard ID, USD score format (1/1,000,000th), config locations
+  - OAuth alignment with Play Console and google-services.json
+  - Play Games Sidekick overlay (optional)
+  - Testing steps for signed-in user and throttled submit
+
 ## Purpose
 
 These documents serve multiple purposes:

@@ -32,7 +32,7 @@ Detailed analysis of the comprehensive player progression journey through the ga
 
 ### 4. [Development Roadmap](./DEVELOPMENT_ROADMAP.md)
 Comprehensive development plans and prioritized features reflecting the current sophisticated state:
-- **Current Release Status**: v1.0.0+104 with complete feature set and platform deployment
+- **Current Release Status**: v1.0.1+130 with complete feature set and platform deployment
 - **Upcoming Features**: Content expansion, enhanced features, and technical improvements
 - **iOS Development**: Detailed planning for iOS port and platform-specific features
 - **Long-Term Vision**: Advanced features, platform expansion, and technology evolution
@@ -114,7 +114,7 @@ These documents are maintained and updated to reflect the evolving sophisticated
 
 ## Project Status Overview
 
-### Current State (v1.0.0+104)
+### Current State (v1.0.1+130)
 - **Codebase**: 35,000+ lines of sophisticated, modular Flutter code
 - **Features**: Comprehensive game systems with premium content and advanced progression
 - **Platforms**: Production deployment on Android, Web, Windows

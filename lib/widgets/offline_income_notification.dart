@@ -626,7 +626,15 @@ class _OfflineIncomeNotificationState extends State<OfflineIncomeNotification>
                                             width: double.infinity,
                                             height: 36,
                                             child: ElevatedButton(
-                                              onPressed: () => gameState.collectOfflineIncome(),
+                                              onPressed: () {
+                                                final hadBonus = gameState.offlineIncomeAdWatched;
+                                                gameState.collectOfflineIncome();
+                                                if (hadBonus) {
+                                                  gameService.playOfflineIncomeBonusSound();
+                                                } else {
+                                                  gameService.playOfflineIncomeCollectSound();
+                                                }
+                                              },
                                               style: ElevatedButton.styleFrom(
                                                 backgroundColor: gameState.offlineIncomeAdWatched 
                                                     ? Colors.amber.shade500

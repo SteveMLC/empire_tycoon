@@ -206,6 +206,14 @@ class GameService {
     _soundService.playOfflineIncomeSound();
   }
 
+  void playOfflineIncomeCollectSound() {
+    _soundService.playOfflineIncomeCollectSound();
+  }
+
+  void playOfflineIncomeBonusSound() {
+    _soundService.playOfflineIncomeBonusSound();
+  }
+
   void playFeedbackSound() {
     _soundService.playFeedbackSound();
   }

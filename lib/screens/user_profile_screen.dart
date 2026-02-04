@@ -1709,6 +1709,70 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                           ],
                         ),
                       ),
+                      // Leaderboard: compact, fun entry (signed in only)
+                      const SizedBox(height: 12),
+                      Material(
+                        color: Colors.amber.shade50,
+                        borderRadius: BorderRadius.circular(10),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(10),
+                          onTap: () async {
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Updating your rank…'),
+                                duration: Duration(seconds: 1),
+                              ),
+                            );
+                            await authService.submitHighestNetWorth(gameState.totalLifetimeNetWorth);
+                            if (!context.mounted) return;
+                            await authService.showHighestNetWorthLeaderboard();
+                            if (!context.mounted) return;
+                            if (authService.lastError != null) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(authService.lastError!),
+                                  backgroundColor: Colors.red.shade700,
+                                ),
+                              );
+                            }
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                            child: Row(
+                              children: [
+                                Icon(Icons.emoji_events, color: Colors.amber.shade700, size: 28),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        'Highest Net Worth',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.amber.shade900,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        'See where you rank among tycoons',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.amber.shade800,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Icon(Icons.chevron_right, color: Colors.amber.shade700, size: 24),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
                     ],
                     
                     // Show error message if there's one

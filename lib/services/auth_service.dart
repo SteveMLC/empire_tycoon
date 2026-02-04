@@ -4,6 +4,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:games_services/games_services.dart';
 
+import '../utils/leaderboard_config.dart';
+
 /// Service for managing Firebase Authentication with Google Play Games Services
 /// Following Firebase Google Play Games Services documentation
 class AuthService extends ChangeNotifier {
@@ -74,24 +76,10 @@ class AuthService extends ChangeNotifier {
         notifyListeners();
       });
 
-      // Listen to Google Play Games player changes
-      GameAuth.player.listen((PlayerData? player) {
-        debugPrint('🎮 AuthService: Google Play Games player state changed');
-        
-        if (player != null) {
-          _playerId = player.playerID;
-          _playerName = player.displayName;
-          _playerAvatarUrl = player.iconImage;
-          debugPrint('🎮 AuthService: Play Games player data - ID: $_playerId, Name: $_playerName');
-        } else {
-          debugPrint('🎮 AuthService: Play Games player data cleared');
-        }
-        notifyListeners();
-      }, onError: (error) {
-        debugPrint('🔴 AuthService: Error in Google Play Games player stream: $error');
-        _lastError = error.toString();
-        notifyListeners();
-      });
+      // NOTE: GameAuth.player.listen removed - it triggers PigeonUserDetails type cast
+      // error when Google Sign-In occurs (games_services plugin bug). Player data
+      // comes from Firebase user in _updateUserState. Play Games init deferred to
+      // requestGamesPermission() when user accesses leaderboards/achievements.
 
       debugPrint('✅ AuthService: Firebase + Google Play Games Services initialized successfully');
     } catch (e) {
@@ -183,15 +171,9 @@ class AuthService extends ChangeNotifier {
         debugPrint('🔥 Display Name: ${userCredential.user!.displayName}');
         debugPrint('🔥 Email: ${userCredential.user!.email}');
         
-        // Step 5: Initialize Google Play Games Services
-        debugPrint('🎮 AuthService: Step 5 - Initializing Google Play Games Services');
-        try {
-          final gameAuthResult = await GameAuth.signIn();
-          debugPrint('🎮 AuthService: Google Play Games sign-in result: $gameAuthResult');
-        } catch (gameError) {
-          debugPrint('⚠️ AuthService: Google Play Games Services sign-in failed: $gameError');
-          // Continue anyway - Firebase authentication succeeded
-        }
+        // Step 5: Skip GameAuth.signIn() - it throws PigeonUserDetails type cast error
+        // (games_services plugin bug). Firebase auth succeeded; user data from Firebase.
+        // Play Games is initialized only when user accesses leaderboards/achievements.
         
         _isSignedIn = true;
         _lastError = null;
@@ -205,6 +187,17 @@ class AuthService extends ChangeNotifier {
       }
       
     } catch (e) {
+      // Firebase auth may have succeeded (authStateChanges fired) but a downstream
+      // plugin (e.g. games_services PigeonUserDetails type cast) threw. Treat as success.
+      if (_firebaseUser != null &&
+          (e.toString().contains("PigeonUserDetails") || e.toString().contains("List<Object?>"))) {
+        debugPrint('⚠️ AuthService: Non-fatal error after successful Firebase auth, treating as success: $e');
+        _isSignedIn = true;
+        _lastError = null;
+        notifyListeners();
+        return true;
+      }
+
       debugPrint('🔴 AuthService: Error during sign-in: $e');
       debugPrint('🔴 AuthService: Exception type: ${e.runtimeType}');
       
@@ -296,8 +289,7 @@ class AuthService extends ChangeNotifier {
         // Try to get current player without triggering sign-in
         debugPrint('🎮 AuthService: Checking Google Play Games state...');
         
-        // The GameAuth.player stream should automatically update if user is signed in
-        // This is handled by the listener we set up in initialize()
+        // Player data comes from Firebase user via _updateUserState
         
       } catch (e) {
         debugPrint('🎮 AuthService: No existing Google Play Games state: $e');
@@ -333,6 +325,57 @@ class AuthService extends ChangeNotifier {
       'hasGamesPermission': _hasGamesPermission,
       'scopeLevel': _hasGamesPermission ? 'full' : 'minimal',
     };
+  }
+
+  /// Ensures the Play Games native client is connected. Must be called before
+  /// leaderboard/achievement actions so the native SDK is in a good state.
+  /// If not signed in to Games Services, triggers sign-in. Catches known
+  /// plugin callback errors (PigeonUserDetails) and continues.
+  Future<void> _ensurePlayGamesClientConnected() async {
+    try {
+      final isSignedIn = await GameAuth.isSignedIn;
+      if (!isSignedIn) {
+        debugPrint("🎮 Play Games not connected - triggering sign-in...");
+        await GameAuth.signIn();
+      }
+      debugPrint("✅ Play Games client connected");
+    } catch (e) {
+      if (e.toString().contains("PigeonUserDetails") ||
+          e.toString().contains("List<Object?>")) {
+        debugPrint("⚠️ Play Games signIn callback error (non-fatal): $e");
+        return;
+      }
+      rethrow;
+    }
+  }
+
+  /// Force re-authentication with Google Play Games (e.g. after 26502 stale session).
+  /// Catches known plugin callback errors so caller can proceed to retry.
+  Future<void> _forcePlayGamesReauth() async {
+    try {
+      debugPrint("🔄 Re-authenticating with Google Play Games...");
+      await GameAuth.signIn();
+      debugPrint("✅ Play Games re-auth completed");
+    } catch (e) {
+      if (e.toString().contains("PigeonUserDetails") ||
+          e.toString().contains("List<Object?>")) {
+        debugPrint("⚠️ Play Games re-auth callback error (non-fatal): $e");
+        return;
+      }
+      rethrow;
+    }
+  }
+
+  /// Returns true if the error indicates CLIENT_RECONNECT_REQUIRED (26502).
+  bool _isClientReconnectRequired(Object e) {
+    final s = e.toString();
+    if (e is PlatformException) {
+      return e.code == '26502' ||
+          (e.message ?? '').contains('CLIENT_RECONNECT_REQUIRED') ||
+          s.contains('26502') ||
+          s.contains('CLIENT_RECONNECT_REQUIRED');
+    }
+    return s.contains('26502') || s.contains('CLIENT_RECONNECT_REQUIRED');
   }
 
   /// Request additional games permissions for leaderboards and achievements
@@ -399,7 +442,8 @@ class AuthService extends ChangeNotifier {
         return;
       }
     }
-    
+    await _ensurePlayGamesClientConnected();
+
     try {
       await Achievements.showAchievements();
     } catch (e) {
@@ -427,13 +471,107 @@ class AuthService extends ChangeNotifier {
         return;
       }
     }
-    
+    await _ensurePlayGamesClientConnected();
+
     try {
       await Leaderboards.showLeaderboards();
     } catch (e) {
       debugPrint("❌ Error showing leaderboards: $e");
       _lastError = e.toString();
       notifyListeners();
+    }
+  }
+
+  /// Submit lifetime net worth to the "Highest Net Worth" leaderboard (USD as 1/1,000,000th).
+  Future<void> submitHighestNetWorth(double netWorthInDollars) async {
+    _lastError = null;
+    if (!_isSignedIn) {
+      debugPrint("⚠️ Cannot submit leaderboard score: not signed in");
+      return;
+    }
+    if (!_hasGamesPermission) {
+      final granted = await requestGamesPermission();
+      if (!granted) {
+        debugPrint("❌ Cannot submit leaderboard score: games permission denied");
+        return;
+      }
+    }
+    await _ensurePlayGamesClientConnected();
+
+    Future<void> doSubmit() => Leaderboards.submitScore(
+          score: Score(
+            androidLeaderboardID: LeaderboardConfig.highestNetWorthIdAndroid,
+            iOSLeaderboardID: LeaderboardConfig.highestNetWorthIdIos,
+            value: LeaderboardConfig.toLeaderboardScore(netWorthInDollars),
+          ),
+        );
+
+    try {
+      await doSubmit();
+      debugPrint("✅ Leaderboard score submitted");
+    } catch (e) {
+      if (_isClientReconnectRequired(e)) {
+        debugPrint("🔄 26502 CLIENT_RECONNECT_REQUIRED - re-authenticating and retrying submit...");
+        await _forcePlayGamesReauth();
+        await Future<void>.delayed(const Duration(milliseconds: 500));
+        try {
+          await doSubmit();
+          debugPrint("✅ Leaderboard score submitted (after re-auth)");
+        } catch (e2) {
+          debugPrint("❌ Error submitting leaderboard score (retry): $e2");
+          _lastError = e2.toString();
+          notifyListeners();
+        }
+      } else {
+        debugPrint("❌ Error submitting leaderboard score: $e");
+        _lastError = e.toString();
+        notifyListeners();
+      }
+    }
+  }
+
+  /// Show the "Highest Net Worth" leaderboard UI (with incremental authorization).
+  Future<void> showHighestNetWorthLeaderboard() async {
+    if (!_isSignedIn) {
+      debugPrint("⚠️ Cannot show leaderboards: not signed in");
+      return;
+    }
+    if (!_hasGamesPermission) {
+      debugPrint("🎮 Leaderboards requires games permission - requesting now...");
+      final granted = await requestGamesPermission();
+      if (!granted) {
+        debugPrint("❌ Cannot show leaderboards: games permission denied");
+        _lastError = "Leaderboards require additional permission";
+        notifyListeners();
+        return;
+      }
+    }
+    await _ensurePlayGamesClientConnected();
+
+    Future<void> doShow() => Leaderboards.showLeaderboards(
+          androidLeaderboardID: LeaderboardConfig.highestNetWorthIdAndroid,
+          iOSLeaderboardID: LeaderboardConfig.highestNetWorthIdIos,
+        );
+
+    try {
+      await doShow();
+    } catch (e) {
+      if (_isClientReconnectRequired(e)) {
+        debugPrint("🔄 26502 CLIENT_RECONNECT_REQUIRED - re-authenticating and retrying show leaderboard...");
+        await _forcePlayGamesReauth();
+        await Future<void>.delayed(const Duration(milliseconds: 500));
+        try {
+          await doShow();
+        } catch (e2) {
+          debugPrint("❌ Error showing leaderboards (retry): $e2");
+          _lastError = e2.toString();
+          notifyListeners();
+        }
+      } else {
+        debugPrint("❌ Error showing leaderboards: $e");
+        _lastError = e.toString();
+        notifyListeners();
+      }
     }
   }
 

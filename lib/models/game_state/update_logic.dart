@@ -435,6 +435,8 @@ extension UpdateLogic on GameState {
         persistentNetWorthHistory[timestampMs] = currentNetWorth;
         _prunePersistentNetWorthHistory();
         _lastNetWorthUpdateTime = now;
+        // Throttled leaderboard submit (callback wired from app init when signed in)
+        onThrottledLeaderboardSubmit?.call(this);
       }
 
       // --- [8] Final Notification --- 

@@ -53,7 +53,7 @@ android {
         // ADMOB FIX: Set minSdk to 23 to satisfy Google Mobile Ads SDK requirements
         // Previous: minSdk = flutter.minSdkVersion (was 21)
         // Google Mobile Ads SDK requires API 23 minimum
-        minSdk = 23
+        minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
@@ -67,6 +67,12 @@ android {
             // Configure shrinking
             isMinifyEnabled = false
             isShrinkResources = false
+            
+            // Workaround: Use SYMBOL_TABLE to avoid "failed to strip debug symbols" on Windows
+            // (Flutter 3.32+ regression with "full" / strip step; SYMBOL_TABLE path is reliable)
+            ndk {
+                debugSymbolLevel = "SYMBOL_TABLE"
+            }
             
             proguardFiles(getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro")
         }

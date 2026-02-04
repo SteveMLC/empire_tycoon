@@ -81,11 +81,22 @@ class AppLifecycleService with WidgetsBindingObserver {
   /// Handle app returning to foreground
   /// ENHANCED: Now calculates offline income for background time if significant
   /// ENHANCED: Notifies AdMobService for predictive ad loading
+  /// MITIGATION: Defer heavy work by ~300ms to reduce EGL/GPU stress during
+  /// resume on MediaTek/PowerVR devices (avoids IMGeglMakeCurrent SIGSEGV).
   void _handleAppReturningToForeground() {
     debugPrint('📱 App returning to foreground');
     
     _notificationService.cancelOfflineIncomeNotification();
     
+    // Defer heavy work so the EGL/surface can settle after resume (reduces
+    // chance of IMGeglMakeCurrent crash on MediaTek/PowerVR devices).
+    Future<void>.delayed(const Duration(milliseconds: 300), () {
+      if (!_isInitialized || _gameState == null) return;
+      _handleAppReturningToForegroundDeferred();
+    });
+  }
+
+  void _handleAppReturningToForegroundDeferred() {
     if (_backgroundStartTime != null && _gameState != null) {
       final DateTime now = DateTime.now();
       final Duration backgroundDuration = now.difference(_backgroundStartTime!);

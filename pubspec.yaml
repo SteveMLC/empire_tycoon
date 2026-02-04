@@ -5,7 +5,7 @@ description: "Build your global business empire! A sophisticated idle tycoon gam
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' 
 
-version: 1.0.1+130  
+version: 1.0.1+134  
 # Version format: [major].[minor].[patch]+[build-number]
 # The build number (100) is used by Android as versionCode
 
@@ -16,10 +16,10 @@ dependencies:
   flutter:
     sdk: flutter
   # Core dependencies with exact versions to prevent compatibility issues
-  vector_math: 2.1.4  # Explicitly required for Vector2 and Matrix4 types
-  collection: 1.19.1
-  characters: 1.4.0
-  meta: 1.16.0
+  vector_math: ^2.1.4  # Vector2 and Matrix4; ^ allows 2.2.x for Flutter SDK compatibility
+  collection: ^1.19.0
+  characters: ^1.4.0
+  meta: ^1.16.0
   
   # Regular dependencies
   cupertino_icons: ^1.0.2

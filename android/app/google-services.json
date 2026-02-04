@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "716473238772-4unvaq8nbfjrc3d6n3k7fhhj3emivctv.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.go7studio.empire_tycoon",
+            "certificate_hash": "9b0b7ffbd272ca9a20c09a906d528899b8e93a54"
+          }
+        },
+        {
           "client_id": "716473238772-ea5epou5ao3fd31u85vg2ghsjc70lvmi.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {

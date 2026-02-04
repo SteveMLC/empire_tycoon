@@ -221,7 +221,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
               ),
               
               // RESPONSIVE CARD THEME: Adaptive padding and margins
-              cardTheme: CardTheme(
+              cardTheme: CardThemeData(
                 margin: responsive.margin(all: 8),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(responsive.spacing(12)),
@@ -246,7 +246,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
               ),
               
               // RESPONSIVE TAB BAR THEME: Proper sizing for different devices
-              tabBarTheme: TabBarTheme(
+              tabBarTheme: TabBarThemeData(
                 labelStyle: TextStyle(
                   fontSize: responsive.fontSize(12),
                   fontWeight: FontWeight.bold,
@@ -310,7 +310,14 @@ class _AppInitializerState extends State<AppInitializer> {
       print('Game initializer: Starting authService.initialize()');
       await authService.initialize();
       print('Game initializer: Finished authService.initialize()');
-      
+
+      // Throttled leaderboard submit: when net worth is updated (every 30 mins), submit if signed in
+      gameState.onThrottledLeaderboardSubmit = (state) {
+        if (authService.isSignedIn && authService.hasGamesPermission) {
+          authService.submitHighestNetWorth(state.totalLifetimeNetWorth);
+        }
+      };
+
       setState(() {
         _loadingText = 'Setting up advertisements...';
       });
