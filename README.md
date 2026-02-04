@@ -1,10 +1,17 @@
-# Empire Tycoon
+# Empire Tycoon - Idle Investment & Business Simulator
 
-Build your global business empire! A sophisticated idle tycoon game that simulates entrepreneurship across diverse worldwide locales.
+Build your business empire! Idle tycoon game with real estate investing, business management simulation, and offline earnings. From nothing to billionaire mogul.
+
+**[Google Play](https://play.google.com/store/apps/details?id=com.go7studio.empire_tycoon)** | **[Website](https://go7studio.com)**
 
 ## 🎮 Game Overview
 
-Empire Tycoon is a cross-platform business simulation game where players build and manage a global business empire. Expand your operations across different cities worldwide, make strategic decisions, and watch your empire grow!
+Empire Tycoon is an addictive idle simulation game where you invest, build, and manage your way to the top. Perfect for fans of incremental games, business simulators, and tycoon strategy games.
+
+**Three Core Systems:**
+- 💼 **Business Empire** - Start from a single shop and expand into a global empire
+- 💰 **Investment Simulator** - Time the market for maximum returns
+- 🏠 **Real Estate Tycoon** - Buy, upgrade, and flip properties worldwide
 
 ## ✨ Features
 
