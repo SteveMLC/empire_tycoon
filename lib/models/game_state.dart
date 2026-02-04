@@ -40,6 +40,7 @@ part 'game_state/platinum_logic.dart';  // ADDED: New part file
 part 'game_state/challenge_logic.dart'; // ADDED: New part file  
 part 'game_state/booster_logic.dart';   // ADDED: New part file
 part 'game_state/notification_logic.dart'; // ADDED: New part file
+part 'game_state/promo_logic.dart';      // ADDED: Promo codes and deep-link rewards
 part 'game_state/income_logic.dart';    // ADDED: New part file
 part 'game_state/offline_income_logic.dart';    // ADDED: New part file for offline income
 
@@ -106,6 +107,7 @@ class GameState with ChangeNotifier {
   bool _retroactivePPAwarded = false; // Flag for retroactive PP grant
   Map<String, int> ppPurchases = {}; // Tracks counts of repeatable PP items purchased {itemId: count}
   Set<String> ppOwnedItems = {};    // Tracks IDs of one-time PP items purchased {itemId}
+  Set<String> redeemedPromoCodes = {}; // Promo codes already redeemed (deep links, etc.)
   bool showPPAnimation = false; // Flag to control PP animation
   bool showPremiumPurchaseNotification = false; // ADDED: Flag for premium notification
   // >> END: Platinum Points System Fields <<
@@ -257,6 +259,14 @@ class GameState with ChangeNotifier {
   DateTime lastSaved = DateTime.now(); // When the game was last saved
   DateTime lastOpened = DateTime.now(); // When the game was last opened
 
+  // Rate-us dialog (smart rate-us from promo/ASO)
+  bool hasShownRateUsDialog = false;
+  DateTime? rateUsDialogShownAt;
+
+  // Login streak for achievements (consecutive days)
+  DateTime? lastLoginDay;
+  int consecutiveLoginDays = 1;
+
   int currentDay = DateTime.now().weekday; // 1=Mon, 7=Sun
   bool isInitialized = false;
 
@@ -346,6 +356,10 @@ class GameState with ChangeNotifier {
   Timer? _updateTimer;
   Timer? _investmentUpdateTimer;
 
+  // Timer delegates from GameService (scheduleOneShot / cancelScheduled)
+  void Function(String id, Duration delay, void Function() action)? _scheduleOneShot;
+  void Function(String id)? _cancelScheduled;
+
   // Income tracking to prevent duplicate application
   DateTime? _lastIncomeApplicationTime;
 
@@ -383,14 +397,14 @@ class GameState with ChangeNotifier {
        _updateRealEstateUnlocks(); // From real_estate_logic.dart
        isInitialized = true;
        print("🏁 GameState Initialized (after async). Setting up timers...");
-       _setupTimers(); // From update_logic.dart
+       _setupTimers(); // No-op; GameService TimerService drives all timers
        notifyListeners();
     }).catchError((e, stackTrace) {
         print("❌❌❌ CRITICAL ERROR during Real Estate Upgrade Initialization: $e");
         print(stackTrace);
         isInitialized = true; // Still mark as initialized to allow game to run potentially degraded
         print("⚠️ GameState Initialized (with RE upgrade error). Setting up timers...");
-        _setupTimers(); // Setup timers even if upgrades failed
+        _setupTimers(); // No-op; GameService TimerService drives all timers
         notifyListeners();
     });
 
@@ -436,20 +450,8 @@ class GameState with ChangeNotifier {
   }
 
   void _setupTimers() {
-    // REMOVED: _saveTimer = Timer.periodic(const Duration(minutes: 1), (_) {
-    //   notifyListeners(); // This comment is incorrect; GameService uses its own timer.
-    // });
-
-    _updateTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      _updateGameState();
-    });
-
-    // Update investment prices more frequently
-    Timer.periodic(const Duration(seconds: 30), (_) {
-      if (isInitialized) {
-        _updateInvestmentPrices();
-      }
-    });
+    // No-op: TimerService in GameService drives the 1s game update and 30s investment update.
+    // Do not create timers here to avoid duplicate ticks (see docs/CODEBASE_CONSISTENCY_ANALYSIS.md).
   }
 
   void _updateInvestmentPrices() {
@@ -1616,8 +1618,18 @@ class GameState with ChangeNotifier {
   void cancelAllTimers() {
     if (timersActive) {
       print("🛑 External call to cancel all game timers");
-      _cancelAllTimers(); // Call the extension method directly to preserve state
+      _cancelAllTimers(); // Extension no-op; TimerService cancels its own timers
     }
+    // Also cancel any timers owned by this GameState (legacy / safety)
+    if (_updateTimer != null) {
+      _updateTimer!.cancel();
+      _updateTimer = null;
+    }
+    if (_investmentUpdateTimer != null) {
+      _investmentUpdateTimer!.cancel();
+      _investmentUpdateTimer = null;
+    }
+    timersActive = false;
   }
   
   // This method is kept for backward compatibility but delegates to the centralized timer system
@@ -1638,6 +1650,49 @@ class GameState with ChangeNotifier {
   // Public method to update investment prices (called by centralized timer in GameService)
   void updateInvestmentPrices() {
     _updateInvestmentPrices(); // Call the extension method directly to preserve state
+  }
+
+  /// Register timer callbacks from GameService (scheduleOneShot, cancelScheduled).
+  void registerTimerDelegates({
+    required void Function() cancelAllTimers,
+    required void Function(String id, Duration delay, void Function() action) scheduleOneShot,
+    required void Function(String id) cancelScheduled,
+  }) {
+    _scheduleOneShot = scheduleOneShot;
+    _cancelScheduled = cancelScheduled;
+  }
+
+  /// Schedule a one-shot timer (delegates to TimerService).
+  void scheduleTimer(String id, Duration delay, void Function() action) {
+    _scheduleOneShot?.call(id, delay, action);
+  }
+
+  /// Cancel a scheduled one-shot (delegates to TimerService).
+  void cancelScheduledTimer(String id) {
+    _cancelScheduled?.call(id);
+  }
+
+  /// Update login streak when loading or opening app (new day = increment, gap = reset to 1).
+  void _updateLoginStreak(DateTime now) {
+    final today = DateTime(now.year, now.month, now.day);
+    if (lastLoginDay == null) {
+      lastLoginDay = today;
+      consecutiveLoginDays = 1;
+      return;
+    }
+    final last = DateTime(lastLoginDay!.year, lastLoginDay!.month, lastLoginDay!.day);
+    final daysDiff = today.difference(last).inDays;
+    if (daysDiff == 0) {
+      return;
+    }
+    if (daysDiff == 1) {
+      consecutiveLoginDays += 1;
+      lastLoginDay = today;
+    } else {
+      consecutiveLoginDays = 1;
+      lastLoginDay = today;
+    }
+    notifyListeners();
   }
 
   // >> START: Offline Income Fields <<

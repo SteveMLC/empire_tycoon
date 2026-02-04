@@ -30,6 +30,15 @@ class _TopPanelState extends State<TopPanel> {
     _loadPPZoneTutorialState();
   }
 
+  /// Wraps the PP area in a gentle pulsing highlight when the tutorial is active.
+  Widget _wrapPPTutorialIfNeeded({
+    required bool showTutorial,
+    required Widget child,
+  }) {
+    if (!showTutorial) return child;
+    return _PPTutorialPulse(child: child);
+  }
+
   Future<void> _loadPPZoneTutorialState() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -630,80 +639,160 @@ class _TopPanelState extends State<TopPanel> {
   
 
 
-  // Rich UI component for PP display with animation
+  // Rich UI component for PP display with optional pulsing tutorial highlight
   Widget _buildPPDisplay(
     GameState gameState,
     BuildContext context, {
     bool showTutorial = false,
   }) {
-    return InkWell(
-      onTap: () {
-        if (showTutorial) _markPPZoneTutorialShown();
-        Navigator.pushNamed(context, '/platinum_vault');
-      },
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 6.0),
-        decoration: BoxDecoration(
-          color: showTutorial ? Colors.cyan.withOpacity(0.15) : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
-          border: showTutorial
-              ? Border.all(color: Colors.cyan.shade600, width: 2)
-              : null,
-          boxShadow: showTutorial
-              ? [
-                  BoxShadow(
-                    color: Colors.cyan.withOpacity(0.3),
-                    blurRadius: 8,
-                    spreadRadius: 1,
-                  ),
-                ]
-              : null,
+    final responsive = context.responsive;
+    final ppButton = Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          if (showTutorial) _markPPZoneTutorialShown();
+          Navigator.pushNamed(context, '/platinum_vault');
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 6.0),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AnimatedPPIcon(showAnimation: gameState.showPPAnimation),
+              const SizedBox(width: 8),
+              Text(
+                '${gameState.platinumPoints}',
+                style: const TextStyle(
+                  color: Color(0xFFFFD700),
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.5,
+                  shadows: [
+                    Shadow(
+                      color: Color(0xFF000000),
+                      blurRadius: 1,
+                      offset: Offset(0, 1),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Animated PP Icon
-                AnimatedPPIcon(showAnimation: gameState.showPPAnimation),
-                const SizedBox(width: 8),
-                // PP Amount with improved styling - sharper text
-                Text(
-                  '${gameState.platinumPoints}',
-                  style: const TextStyle(
-                    color: Color(0xFFFFD700),
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.5,
-                    shadows: [
-                      Shadow(
-                        color: Color(0xFF000000),
-                        blurRadius: 1,
-                        offset: Offset(0, 1),
-                      ),
-                    ],
-                  ),
+      ),
+    );
+
+    if (!showTutorial) return ppButton;
+
+    // Tutorial: wrap in pulsing highlight and add a clear callout (whole area tappable)
+    final tutorialContent = Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        ppButton,
+        SizedBox(height: responsive.spacing(4)),
+        Padding(
+          padding: const EdgeInsets.only(right: 2.0),
+          child: Text(
+            'Tap to open Platinum Vault',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 10,
+              color: Colors.amber.shade700,
+              fontWeight: FontWeight.w600,
+              shadows: [
+                Shadow(
+                  color: Colors.black.withOpacity(0.3),
+                  blurRadius: 2,
+                  offset: const Offset(0, 1),
                 ),
               ],
             ),
-            if (showTutorial)
-              Padding(
-                padding: const EdgeInsets.only(top: 4.0),
-                child: Text(
-                  'Tap here to spend your Platinum Points!',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.cyan.shade800,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-          ],
+          ),
+        ),
+      ],
+    );
+    return _wrapPPTutorialIfNeeded(
+      showTutorial: true,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            _markPPZoneTutorialShown();
+            Navigator.pushNamed(context, '/platinum_vault');
+          },
+          borderRadius: BorderRadius.circular(12),
+          child: tutorialContent,
         ),
       ),
+    );
+  }
+}
+
+/// Gentle pulsing highlight for the PP tutorial so the target area is obvious.
+class _PPTutorialPulse extends StatefulWidget {
+  const _PPTutorialPulse({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_PPTutorialPulse> createState() => _PPTutorialPulseState();
+}
+
+class _PPTutorialPulseState extends State<_PPTutorialPulse>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _pulse;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1600),
+    );
+    _pulse = Tween<double>(begin: 0.45, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+    _controller.repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _pulse,
+      builder: (context, child) {
+        final opacity = _pulse.value;
+        return Container(
+          decoration: BoxDecoration(
+            color: Colors.amber.withOpacity(0.08 * opacity),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: Colors.amber.withOpacity(0.4 + 0.35 * opacity),
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.amber.withOpacity(0.15 * opacity),
+                blurRadius: 6 + 4 * opacity,
+                spreadRadius: 0.5 * opacity,
+                offset: const Offset(0, 1),
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          child: child,
+        );
+      },
+      child: widget.child,
     );
   }
 }
