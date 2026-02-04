@@ -565,6 +565,8 @@ extension GameStateEvents on GameState {
       'eventFeesSpent': eventFeesSpent,
       'eventsResolvedByAd': eventsResolvedByAd,
       'eventsResolvedByFallback': eventsResolvedByFallback,
+      'eventsResolvedByPP': eventsResolvedByPP,
+      'ppSpentOnEventSkips': ppSpentOnEventSkips,
       'eventsResolvedByLocale': eventsResolvedByLocale,
       'lastEventResolvedTime': lastEventResolvedTime?.toIso8601String(),
       'resolvedEvents': resolvedEvents.map((e) => e.toJson()).toList(),
@@ -623,6 +625,8 @@ extension GameStateEvents on GameState {
     eventFeesSpent = json['eventFeesSpent'] as double? ?? 0.0;
     eventsResolvedByAd = json['eventsResolvedByAd'] as int? ?? 0;
     eventsResolvedByFallback = json['eventsResolvedByFallback'] as int? ?? 0;
+    eventsResolvedByPP = json['eventsResolvedByPP'] as int? ?? 0;
+    ppSpentOnEventSkips = json['ppSpentOnEventSkips'] as int? ?? 0;
     
     // Load locale-specific event tracking
     if (json.containsKey('eventsResolvedByLocale') && json['eventsResolvedByLocale'] != null) {

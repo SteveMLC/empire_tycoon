@@ -274,6 +274,8 @@ class GameState with ChangeNotifier {
   double eventFeesSpent = 0.0;
   int eventsResolvedByAd = 0;
   int eventsResolvedByFallback = 0; // Resolved without a rewarded ad due to fail-open
+  int eventsResolvedByPP = 0; // Resolved by spending Platinum Points
+  int ppSpentOnEventSkips = 0; // Total PP spent on event skips
   Map<String, int> eventsResolvedByLocale = {};
   DateTime? lastEventResolvedTime;
   List<GameEvent> resolvedEvents = []; // History of resolved events (limited)

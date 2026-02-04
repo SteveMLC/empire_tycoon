@@ -526,14 +526,13 @@ extension SerializationLogic on GameState {
     eventFeesSpent = (json['eventFeesSpent'] as num?)?.toDouble() ?? 0.0;
     eventsResolvedByAd = json['eventsResolvedByAd'] ?? 0;
     eventsResolvedByFallback = json['eventsResolvedByFallback'] ?? 0;
+    eventsResolvedByPP = json['eventsResolvedByPP'] ?? 0;
+    ppSpentOnEventSkips = json['ppSpentOnEventSkips'] ?? 0;
     eventsResolvedByLocale = Map<String, int>.from(json['eventsResolvedByLocale'] ?? {});
     if (json['lastEventResolvedTime'] != null) {
         try { lastEventResolvedTime = DateTime.parse(json['lastEventResolvedTime']); } catch (_) {}
     }
     // Note: ResolvedEvents list is handled within eventsFromJson
-
-    // Load active/resolved events using the dedicated method
-    eventsFromJson(json);
 
     // Load platinum points system data
     platinumPoints = json['platinumPoints'] ?? 0; // LOAD platinum points, default to 0
