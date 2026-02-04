@@ -1,11 +1,11 @@
 {
-    "name": "Empire Tycoon",
+    "name": "Empire Tycoon - Idle Investment & Business Simulator",
     "short_name": "Empire Tycoon",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#2E7D32",
     "theme_color": "#2E7D32",
-    "description": "Build your global business empire! A sophisticated idle tycoon game that simulates entrepreneurship across diverse worldwide locales.",
+    "description": "Build your business empire! Idle tycoon game with real estate investing, business management, and offline earnings. Start from nothing and become a billionaire mogul.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
