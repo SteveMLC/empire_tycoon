@@ -152,6 +152,8 @@ extension PrestigeLogic on GameState {
     platinumSteadyBoostRemainingSeconds = 0;
     platinumClickFrenzyEndTime = null;
     platinumSteadyBoostEndTime = null;
+    autoClickerRemainingSeconds = 0;
+    autoClickerEndTime = null;
     isIncomeSurgeActive = false;
     incomeSurgeEndTime = null;
     

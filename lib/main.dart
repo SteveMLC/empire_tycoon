@@ -12,6 +12,7 @@ import 'services/income_service.dart';
 import 'services/auth_service.dart';
 import 'services/admob_service.dart';
 import 'screens/platinum_vault_screen.dart';
+import 'screens/user_profile_screen.dart';
 import 'widgets/empire_loading_screen.dart';
 import 'utils/responsive_utils.dart';
 
@@ -260,6 +261,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
             home: AppInitializer(onInitialized: _markInitialized),
             routes: {
               '/platinum_vault': (context) => const PlatinumVaultScreen(),
+              '/user_profile': (context) => const UserProfileScreen(),
             },
           );
         }

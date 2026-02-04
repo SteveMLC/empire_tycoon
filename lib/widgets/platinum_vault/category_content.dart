@@ -87,6 +87,10 @@ class CategoryContent extends StatelessWidget {
             isActive = gameState.isSteadyBoostActive;
             activeEndTime = gameState.platinumSteadyBoostEndTime;
             break;
+          case 'auto_clicker':
+            isActive = gameState.isAutoClickerActive;
+            activeEndTime = gameState.autoClickerEndTime;
+            break;
           case 'platinum_foundation':
             maxPurchases = 5;
             break;
@@ -183,7 +187,9 @@ class CategoryContent extends StatelessWidget {
               ? gameState.platinumClickFrenzyRemainingSeconds
               : (item.id == 'temp_boost_2x_10min')
                   ? gameState.platinumSteadyBoostRemainingSeconds
-                  : null,
+                  : (item.id == 'auto_clicker')
+                      ? gameState.autoClickerRemainingSeconds
+                      : null,
           
           onBuy: () {
             // Pre-purchase check for instant feedback

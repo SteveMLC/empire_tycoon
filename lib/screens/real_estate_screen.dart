@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/game_state.dart';
 import '../models/real_estate.dart';
@@ -21,8 +22,84 @@ class RealEstateScreen extends StatefulWidget {
 }
 
 class _RealEstateScreenState extends State<RealEstateScreen> {
+  static const String _realEstateTutorialShownKey = 'real_estate_first_visit_tutorial_shown';
+
   RealEstateLocale? _selectedLocale;
   bool _hasRestoredLocale = false; // Track if we've restored the locale from GameState
+  bool _realEstateTutorialShown = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRealEstateTutorialState();
+  }
+
+  Future<void> _loadRealEstateTutorialState() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final shown = prefs.getBool(_realEstateTutorialShownKey) ?? false;
+      if (mounted) {
+        setState(() => _realEstateTutorialShown = shown);
+        if (!shown) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) _showRealEstateTutorial(context);
+          });
+        }
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _markRealEstateTutorialShown() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_realEstateTutorialShownKey, true);
+      if (mounted) setState(() => _realEstateTutorialShown = true);
+    } catch (_) {}
+  }
+
+  void _showRealEstateTutorial(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: Row(
+            children: [
+              Icon(Icons.home_work, color: Colors.green.shade700, size: 28),
+              const SizedBox(width: 8),
+              const Text(
+                'Real Estate',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+          content: const Text(
+            'Tap a location on the left to see properties, then buy to earn income.',
+            style: TextStyle(fontSize: 16, height: 1.4),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _markRealEstateTutorialShown();
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade600,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Text('Got it!', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -167,7 +244,21 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
                 Expanded(
                   flex: 2, // Reduced from 3
                   child: Container(
-                    color: Colors.grey.shade50,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade50,
+                      border: _realEstateTutorialShown
+                          ? null
+                          : Border.all(color: Colors.green.shade600, width: 2),
+                      boxShadow: _realEstateTutorialShown
+                          ? null
+                          : [
+                              BoxShadow(
+                                color: Colors.green.withOpacity(0.25),
+                                blurRadius: 10,
+                                spreadRadius: 1,
+                              ),
+                            ],
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [

@@ -38,6 +38,7 @@ class _PremiumAvatarSelectorState extends State<PremiumAvatarSelector> with Sing
   // CLASS-LEVEL VARIABLES for purchase dialog management
   Timer? _purchaseProcessingTimeout;
   bool _purchaseDialogClosed = false;
+  NavigatorState? _navigatorForPurchaseDialog;
   
   @override
   void initState() {
@@ -73,7 +74,8 @@ class _PremiumAvatarSelectorState extends State<PremiumAvatarSelector> with Sing
     super.dispose();
   }
   
-  /// Force close purchase processing dialog with multiple fallback methods
+  /// Force close purchase processing dialog with multiple fallback methods.
+  /// Uses stored NavigatorState only (no BuildContext) so it is safe from dispose/async.
   void _forceClosePurchaseDialog() {
     if (_purchaseDialogClosed) {
       print('🟡 Avatar Purchase dialog already marked as closed');
@@ -84,26 +86,28 @@ class _PremiumAvatarSelectorState extends State<PremiumAvatarSelector> with Sing
     _purchaseDialogClosed = true;
     _purchaseProcessingTimeout?.cancel();
     
-    // Try multiple methods to close the dialog
-    bool dialogClosed = false;
-    
-    // Method 1: Try Navigator.pop()
-    if (!dialogClosed && mounted) {
-      try {
-        if (Navigator.canPop(context)) {
-          Navigator.of(context).pop();
-          dialogClosed = true;
-          print('✅ AVATAR FORCE CLOSE: Dialog closed via Navigator.pop()');
-        }
-      } catch (e) {
-        print('🔴 AVATAR FORCE CLOSE: Navigator.pop() failed: $e');
-      }
+    final navigator = _navigatorForPurchaseDialog;
+    _navigatorForPurchaseDialog = null;
+    if (navigator == null) {
+      print('🟢 AVATAR FORCE CLOSE: No navigator stored, nothing to close');
+      return;
     }
     
-    // Method 2: Try Navigator.popUntil() as fallback
-    if (!dialogClosed && mounted) {
+    bool dialogClosed = false;
+    
+    try {
+      if (navigator.canPop()) {
+        navigator.pop();
+        dialogClosed = true;
+        print('✅ AVATAR FORCE CLOSE: Dialog closed via Navigator.pop()');
+      }
+    } catch (e) {
+      print('🔴 AVATAR FORCE CLOSE: Navigator.pop() failed: $e');
+    }
+    
+    if (!dialogClosed) {
       try {
-        Navigator.of(context).popUntil((route) => route.isFirst);
+        navigator.popUntil((route) => route.isFirst);
         dialogClosed = true;
         print('✅ AVATAR FORCE CLOSE: Dialog closed via Navigator.popUntil()');
       } catch (e) {
@@ -111,10 +115,9 @@ class _PremiumAvatarSelectorState extends State<PremiumAvatarSelector> with Sing
       }
     }
     
-    // Method 3: Try maybePop() as final fallback
-    if (!dialogClosed && mounted) {
+    if (!dialogClosed) {
       try {
-        Navigator.of(context).maybePop();
+        navigator.maybePop();
         print('✅ AVATAR FORCE CLOSE: Attempted Navigator.maybePop() as final fallback');
       } catch (e) {
         print('🔴 AVATAR FORCE CLOSE: Navigator.maybePop() failed: $e');
@@ -373,25 +376,27 @@ class _PremiumAvatarSelectorState extends State<PremiumAvatarSelector> with Sing
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Purchase Premium'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'For \$4.99, you will get lifetime access to premium features:',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            const Text('• Remove all ads from the game'),
-            const Text('• Bonus +✦1500 Platinum'),
-            const Text('• Exclusive profile customizations'),
-            const Text('• Premium customer support'),
-            const SizedBox(height: 16),
-            const Text(
-              'This is a one-time purchase and will remain active even if you reset your game progress.',
-              style: TextStyle(fontStyle: FontStyle.italic),
-            ),
-          ],
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'For \$4.99, you will get lifetime access to premium features:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              const Text('• Remove all ads from the game'),
+              const Text('• Bonus +✦1500 Platinum'),
+              const Text('• Exclusive profile customizations'),
+              const Text('• Premium customer support'),
+              const SizedBox(height: 16),
+              const Text(
+                'This is a one-time purchase and will remain active even if you reset your game progress.',
+                style: TextStyle(fontStyle: FontStyle.italic),
+              ),
+            ],
+          ),
         ),
         actions: [
           TextButton(
@@ -439,6 +444,8 @@ class _PremiumAvatarSelectorState extends State<PremiumAvatarSelector> with Sing
               
               if (mounted) {
                 try {
+                  // Capture navigator before showing dialog so force-close can run without context
+                  _navigatorForPurchaseDialog = Navigator.of(context);
                   showDialog(
                     context: context,
                     barrierDismissible: false,

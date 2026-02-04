@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:math' as math;
 
 import '../../models/game_state.dart';
@@ -12,8 +13,39 @@ import 'animated_pp_icon.dart';
 import '../../painters/luxury_painters.dart';
 
 /// The top panel of the main screen showing cash, income rate, and platinum points
-class TopPanel extends StatelessWidget {
+class TopPanel extends StatefulWidget {
   const TopPanel({Key? key}) : super(key: key);
+
+  @override
+  State<TopPanel> createState() => _TopPanelState();
+}
+
+class _TopPanelState extends State<TopPanel> {
+  static const String _ppZoneTutorialShownKey = 'pp_zone_tutorial_shown';
+  bool _ppZoneTutorialShown = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPPZoneTutorialState();
+  }
+
+  Future<void> _loadPPZoneTutorialState() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final shown = prefs.getBool(_ppZoneTutorialShownKey) ?? false;
+      if (mounted) setState(() => _ppZoneTutorialShown = shown);
+    } catch (_) {}
+  }
+
+  Future<void> _markPPZoneTutorialShown() async {
+    if (_ppZoneTutorialShown) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_ppZoneTutorialShownKey, true);
+      if (mounted) setState(() => _ppZoneTutorialShown = true);
+    } catch (_) {}
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -192,7 +224,11 @@ class TopPanel extends StatelessWidget {
                       ),
 
                       // PP display with enhanced glow
-                      _buildPPDisplay(gameState, context),
+                      _buildPPDisplay(
+                        gameState,
+                        context,
+                        showTutorial: gameState.platinumPoints >= 25 && !_ppZoneTutorialShown,
+                      ),
                     ],
                   ),
                   
@@ -595,42 +631,76 @@ class TopPanel extends StatelessWidget {
 
 
   // Rich UI component for PP display with animation
-  Widget _buildPPDisplay(GameState gameState, BuildContext context) {
+  Widget _buildPPDisplay(
+    GameState gameState,
+    BuildContext context, {
+    bool showTutorial = false,
+  }) {
     return InkWell(
       onTap: () {
-        // TODO: Add check if vault is unlocked (e.g., gameState.platinumPoints > 0 || gameState.vaultUnlocked)
+        if (showTutorial) _markPPZoneTutorialShown();
         Navigator.pushNamed(context, '/platinum_vault');
       },
       borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 6.0),
         decoration: BoxDecoration(
-          color: Colors.transparent,
+          color: showTutorial ? Colors.cyan.withOpacity(0.15) : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Animated PP Icon
-            AnimatedPPIcon(showAnimation: gameState.showPPAnimation),
-            const SizedBox(width: 8),
-            // PP Amount with improved styling - sharper text
-            Text(
-              '${gameState.platinumPoints}',
-              style: const TextStyle(
-                color: Color(0xFFFFD700),
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 0.5,
-                shadows: [
-                  Shadow(
-                    color: Color(0xFF000000),
-                    blurRadius: 1,
-                    offset: Offset(0, 1),
+          border: showTutorial
+              ? Border.all(color: Colors.cyan.shade600, width: 2)
+              : null,
+          boxShadow: showTutorial
+              ? [
+                  BoxShadow(
+                    color: Colors.cyan.withOpacity(0.3),
+                    blurRadius: 8,
+                    spreadRadius: 1,
                   ),
-                ],
-              ),
+                ]
+              : null,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Animated PP Icon
+                AnimatedPPIcon(showAnimation: gameState.showPPAnimation),
+                const SizedBox(width: 8),
+                // PP Amount with improved styling - sharper text
+                Text(
+                  '${gameState.platinumPoints}',
+                  style: const TextStyle(
+                    color: Color(0xFFFFD700),
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
+                    shadows: [
+                      Shadow(
+                        color: Color(0xFF000000),
+                        blurRadius: 1,
+                        offset: Offset(0, 1),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
+            if (showTutorial)
+              Padding(
+                padding: const EdgeInsets.only(top: 4.0),
+                child: Text(
+                  'Tap here to spend your Platinum Points!',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.cyan.shade800,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
           ],
         ),
       ),

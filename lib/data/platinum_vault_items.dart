@@ -165,6 +165,15 @@ List<VaultItem> getVaultItems() {
       cost: 30, // Cheaper, longer, less potent boost
       iconData: Icons.speed,
     ),
+    VaultItem(
+      id: 'auto_clicker',
+      name: 'Auto Clicker',
+      description: 'Hold the hustle button or tap-challenge to auto-click at 10/sec. Lasts 5 min.',
+      category: VaultItemCategory.boosters,
+      type: VaultItemType.repeatable,
+      cost: 20,
+      iconData: Icons.auto_fix_high,
+    ),
 
     // --- Events & Challenges --- (Example - could grant temporary event modifiers)
     VaultItem(

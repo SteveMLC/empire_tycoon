@@ -208,9 +208,6 @@ class _VaultItemCardState extends State<VaultItemCard> with SingleTickerProvider
     if (widget.isActive && (_currentActiveRemaining == null || _currentActiveRemaining! > Duration.zero)) isPurchasable = false;
     if (widget.isOnCooldown && (_currentCooldownRemaining == null || _currentCooldownRemaining! > Duration.zero)) isPurchasable = false;
     if (widget.item.id == 'platinum_warp' && widget.usesLeft <= 0) isPurchasable = false;
-    if ((widget.item.id == 'temp_boost_10x_5min' || widget.item.id == 'temp_boost_2x_10min') && widget.isAnyPlatinumBoostActive) {
-      isPurchasable = false;
-    }
 
     final isBuyEnabled = canAfford && isPurchasable;
     final isInteractive = isBuyEnabled || (widget.item.id == 'platinum_yacht' && widget.isOwned);
@@ -675,11 +672,6 @@ class _VaultItemCardState extends State<VaultItemCard> with SingleTickerProvider
       bg = VaultColors.border.withOpacity(0.3);
       fg = VaultColors.textSecondary;
       borderColor = VaultColors.border;
-    } else if ((widget.item.id == 'temp_boost_10x_5min' || widget.item.id == 'temp_boost_2x_10min') && widget.isAnyPlatinumBoostActive) {
-      text = 'In Use';
-      bg = VaultColors.active.withOpacity(0.15);
-      fg = VaultColors.active;
-      borderColor = VaultColors.active.withOpacity(0.4);
     } else {
       text = 'BUY';
       bg = VaultColors.gold.withOpacity(0.15);

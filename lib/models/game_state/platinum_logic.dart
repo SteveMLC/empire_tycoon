@@ -92,13 +92,18 @@ extension PlatinumLogic on GameState {
             }
             break;
         case 'temp_boost_10x_5min':
-            if (isClickFrenzyActive || isSteadyBoostActive) {
-                return false; // Prevent stacking or running both simultaneously
+            if (isClickFrenzyActive) {
+                return false; // Already active, no double-stack
             }
             break;
         case 'temp_boost_2x_10min':
-            if (isSteadyBoostActive || isClickFrenzyActive) {
-                return false; // Prevent stacking or running both simultaneously
+            if (isSteadyBoostActive) {
+                return false; // Already active, no double-stack
+            }
+            break;
+        case 'auto_clicker':
+            if (isAutoClickerActive) {
+                return false; // Prevent stacking
             }
             break;
         case 'platinum_foundation':
@@ -485,6 +490,13 @@ extension PlatinumLogic on GameState {
              platinumSteadyBoostRemainingSeconds = 600;
              _startPlatinumSteadyBoostTimer();
              print("INFO: Steady Boost (2x) Activated! Ends at: $platinumSteadyBoostEndTime");
+             notifyListeners();
+             break;
+        case 'auto_clicker':
+             autoClickerEndTime = DateTime.now().add(const Duration(minutes: 5));
+             autoClickerRemainingSeconds = 300;
+             _startPlatinumAutoClickerTimer();
+             print("INFO: Auto Clicker Activated! Ends at: $autoClickerEndTime");
              notifyListeners();
              break;
         // --- END: Platinum Click Boosters ---

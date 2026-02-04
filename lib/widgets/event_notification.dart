@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:math';
 import 'dart:async';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/event.dart';
 import '../models/game_state.dart';
 
@@ -29,10 +30,14 @@ class EventNotification extends StatefulWidget {
 class _EventNotificationState extends State<EventNotification> {
   bool _isMinimized = false;
   Timer? _countdownTimer;
+  Timer? _autoClickHoldTimer;
   static const int _eventPPSkipCost = 5;
 
   // Fail-open rewarded ad UX state
   bool _isResolvingViaAd = false;
+
+  static const String _adWatchCountKey = 'event_ad_watch_count';
+  static const String _premiumPromoAfterAdShownKey = 'premium_promo_after_ad_shown';
 
   @override
   void initState() {
@@ -43,7 +48,28 @@ class _EventNotificationState extends State<EventNotification> {
   @override
   void dispose() {
     _countdownTimer?.cancel();
+    _autoClickHoldTimer?.cancel();
+    _autoClickHoldTimer = null;
     super.dispose();
+  }
+
+  void _stopAutoClickHoldTimer() {
+    _autoClickHoldTimer?.cancel();
+    _autoClickHoldTimer = null;
+  }
+
+  void _onTapChallengeAutoClickTick() {
+    if (!mounted) {
+      _stopAutoClickHoldTimer();
+      return;
+    }
+    final gs = widget.gameState;
+    if (!gs.isAutoClickerActive || widget.event.isResolved) {
+      _stopAutoClickHoldTimer();
+      return;
+    }
+    gs.processTapForEvent(widget.event);
+    gs.tap();
   }
 
   void _startCountdownTimer() {
@@ -182,6 +208,35 @@ class _EventNotificationState extends State<EventNotification> {
     );
   }
 
+  Future<void> _onEventAdWatched() async {
+    if (!mounted || widget.gameState.isPremium) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final count = prefs.getInt(_adWatchCountKey) ?? 0;
+      final newCount = count + 1;
+      await prefs.setInt(_adWatchCountKey, newCount);
+
+      final promoShown = prefs.getBool(_premiumPromoAfterAdShownKey) ?? false;
+      if (newCount >= 2 && !promoShown) {
+        await prefs.setBool(_premiumPromoAfterAdShownKey, true);
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Tired of ads? Premium lets you skip them.'),
+            duration: const Duration(seconds: 4),
+            action: SnackBarAction(
+              label: 'Learn more',
+              textColor: Colors.white,
+              onPressed: () {
+                Navigator.pushNamed(context, '/user_profile');
+              },
+            ),
+          ),
+        );
+      }
+    } catch (_) {}
+  }
+
   Future<void> _handleWatchAdPressed() async {
     if (_isResolvingViaAd || widget.event.isResolved) return;
     final adMobService = Provider.of<AdMobService>(context, listen: false);
@@ -225,6 +280,7 @@ class _EventNotificationState extends State<EventNotification> {
             if (kDebugMode) {
               print('🎁 === EVENT AD SKIP COMPLETE ===');
             }
+            _onEventAdWatched();
           } catch (e) {
             if (kDebugMode) {
               print('❌ Error in event resolution: $e');
@@ -482,12 +538,13 @@ class _EventNotificationState extends State<EventNotification> {
   Widget _buildMinimizedResolutionButton() {
     switch (widget.event.resolution.type) {
       case EventResolutionType.tapChallenge:
-        // Just show the tap icon with current/total
+        // Just show the tap icon with current/total; support hold-to-auto-click when Auto Clicker is active
         final int requiredTaps = widget.event.requiredTaps;
-        final int currentTaps = (widget.event.resolution.value is Map) ? 
+        final int currentTaps = (widget.event.resolution.value is Map) ?
             widget.event.resolution.value['current'] ?? 0 : 0;
-        
-        return InkWell(
+        final bool autoClickerActive = widget.gameState.isAutoClickerActive;
+
+        final tapChallengeChild = InkWell(
           onTap: widget.onTap,
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -504,9 +561,30 @@ class _EventNotificationState extends State<EventNotification> {
                   '$currentTaps/$requiredTaps',
                   style: const TextStyle(color: Colors.white, fontSize: 14),
                 ),
+                if (autoClickerActive) ...[
+                  const SizedBox(width: 4),
+                  Text(
+                    '(hold)',
+                    style: TextStyle(color: Colors.white70, fontSize: 10),
+                  ),
+                ],
               ],
             ),
           ),
+        );
+
+        if (!autoClickerActive) {
+          return tapChallengeChild;
+        }
+        return GestureDetector(
+          onTapDown: (_) {
+            _autoClickHoldTimer?.cancel();
+            _autoClickHoldTimer = Timer.periodic(const Duration(milliseconds: 100), (_) => _onTapChallengeAutoClickTick());
+          },
+          onTapUp: (_) => _stopAutoClickHoldTimer(),
+          onTapCancel: _stopAutoClickHoldTimer,
+          behavior: HitTestBehavior.opaque,
+          child: tapChallengeChild,
         );
         
       case EventResolutionType.feeBased:
@@ -583,9 +661,10 @@ class _EventNotificationState extends State<EventNotification> {
           );
         }
         
-        // Non-premium: show AD + PP option in compact row
-        return Row(
-          mainAxisSize: MainAxisSize.min,
+        // Non-premium: show AD + PP option; Wrap to avoid overflow on narrow width
+        return Wrap(
+          spacing: 4,
+          runSpacing: 4,
           children: [
             // Watch AD button (compact)
             InkWell(
@@ -606,7 +685,6 @@ class _EventNotificationState extends State<EventNotification> {
                 ),
               ),
             ),
-            const SizedBox(width: 4),
             // PP Skip button (compact pill)
             InkWell(
               onTap: canUsePP ? () {
@@ -670,12 +748,13 @@ class _EventNotificationState extends State<EventNotification> {
     // Display only one resolution button based on the event's resolution type
     switch (widget.event.resolution.type) {
       case EventResolutionType.tapChallenge:
-        // Tap challenge button - Shows tap count
+        // Tap challenge button - Shows tap count; support hold-to-auto-click when Auto Clicker is active
         final int requiredTaps = widget.event.requiredTaps;
-        final int currentTaps = (widget.event.resolution.value is Map) ? 
+        final int currentTaps = (widget.event.resolution.value is Map) ?
             widget.event.resolution.value['current'] ?? 0 : 0;
-            
-        return ElevatedButton.icon(
+        final bool autoClickerActive = widget.gameState.isAutoClickerActive;
+
+        final tapChallengeButton = ElevatedButton.icon(
           onPressed: widget.onTap,
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.blue,
@@ -683,7 +762,21 @@ class _EventNotificationState extends State<EventNotification> {
             minimumSize: const Size(100, 36),
           ),
           icon: const Icon(Icons.touch_app, size: 18),
-          label: Text('TAP ${currentTaps}/${requiredTaps}'),
+          label: Text(autoClickerActive ? 'TAP ${currentTaps}/${requiredTaps} (hold)' : 'TAP ${currentTaps}/${requiredTaps}'),
+        );
+
+        if (!autoClickerActive) {
+          return tapChallengeButton;
+        }
+        return GestureDetector(
+          onTapDown: (_) {
+            _autoClickHoldTimer?.cancel();
+            _autoClickHoldTimer = Timer.periodic(const Duration(milliseconds: 100), (_) => _onTapChallengeAutoClickTick());
+          },
+          onTapUp: (_) => _stopAutoClickHoldTimer(),
+          onTapCancel: _stopAutoClickHoldTimer,
+          behavior: HitTestBehavior.opaque,
+          child: tapChallengeButton,
         );
         
       case EventResolutionType.feeBased:
@@ -734,9 +827,10 @@ class _EventNotificationState extends State<EventNotification> {
           );
         }
         
-        // For non-premium users, show Watch AD + PP skip option
-        return Row(
-          mainAxisSize: MainAxisSize.min,
+        // For non-premium users, show Watch AD + PP skip option; Wrap to avoid overflow on narrow width
+        return Wrap(
+          spacing: 8,
+          runSpacing: 8,
           children: [
             // Watch AD button
             ElevatedButton.icon(
@@ -751,7 +845,6 @@ class _EventNotificationState extends State<EventNotification> {
               icon: const Icon(Icons.video_library, size: 18),
               label: const Text('WATCH AD'),
             ),
-            const SizedBox(width: 8),
             // PP Skip button - compact pill design
             Material(
               color: canUsePP ? Colors.cyan.shade600 : Colors.grey.shade400,

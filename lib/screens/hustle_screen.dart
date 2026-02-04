@@ -1,5 +1,8 @@
+import 'dart:async';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/game_state.dart';
 import '../services/game_service.dart';
@@ -17,6 +20,31 @@ void _callTapOnGameState(GameState gameState) {
   gameState.tap();
 }
 
+/// Wins the horizontal-drag gesture arena when [shouldAccept] is true, so the
+/// TabBarView does not receive the swipe and the hold-to-auto-tap is not cancelled.
+class _HoldAwareHorizontalDragRecognizer extends HorizontalDragGestureRecognizer {
+  _HoldAwareHorizontalDragRecognizer({required this.shouldAccept});
+
+  final bool Function() shouldAccept;
+
+  bool _accepted = false;
+
+  @override
+  void handleEvent(PointerEvent event) {
+    if (event is PointerMoveEvent && shouldAccept() && !_accepted) {
+      acceptGesture(event.pointer);
+      _accepted = true;
+    }
+    super.handleEvent(event);
+  }
+
+  @override
+  void rejectGesture(int pointer) {
+    _accepted = false;
+    super.rejectGesture(pointer);
+  }
+}
+
 class HustleScreen extends StatefulWidget {
   const HustleScreen({Key? key}) : super(key: key);
 
@@ -25,13 +53,18 @@ class HustleScreen extends StatefulWidget {
 }
 
 class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderStateMixin {
+  static const String _firstTapTutorialShownKey = 'hustle_first_tap_tutorial_shown';
+
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
   bool _isWatchingAd = false;
+  Timer? _autoClickHoldTimer;
+  bool _firstTapTutorialShown = false;
 
   @override
   void initState() {
     super.initState();
+    _loadFirstTapTutorialState();
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 150),
@@ -43,6 +76,8 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
 
   @override
   void dispose() {
+    _autoClickHoldTimer?.cancel();
+    _autoClickHoldTimer = null;
     _animationController.dispose();
     super.dispose();
   }
@@ -53,12 +88,35 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
 
   void _onTapUp(TapUpDetails details) {
     _animationController.reverse();
-    // We'll use the onTap handler of InkWell for the actual earning
-    // This is to prevent duplicate earning on both onTap and onTapUp
+    _autoClickHoldTimer?.cancel();
+    _autoClickHoldTimer = null;
   }
 
   void _onTapCancel() {
     _animationController.reverse();
+    // When holding for auto-tap, the tap recognizer may cancel due to pointer movement
+    // (we won the horizontal drag to block TabBarView). Keep the timer running; only
+    // onTapUp (finger lifted) stops it.
+    if (_autoClickHoldTimer != null) return;
+    _autoClickHoldTimer?.cancel();
+    _autoClickHoldTimer = null;
+  }
+
+  Future<void> _loadFirstTapTutorialState() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final shown = prefs.getBool(_firstTapTutorialShownKey) ?? false;
+      if (mounted) setState(() => _firstTapTutorialShown = shown);
+    } catch (_) {}
+  }
+
+  Future<void> _markFirstTapTutorialShown() async {
+    if (_firstTapTutorialShown) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_firstTapTutorialShownKey, true);
+      if (mounted) setState(() => _firstTapTutorialShown = true);
+    } catch (_) {}
   }
 
   void _earnMoney() {
@@ -85,6 +143,9 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
       
       // Use the helper function to avoid extension conflicts
       _callTapOnGameState(gameState);
+
+      // First-tap tutorial: mark as shown so we stop highlighting the tap area
+      if (!_firstTapTutorialShown) _markFirstTapTutorialShown();
       
       _checkForLevelUp(gameState);
       
@@ -293,12 +354,33 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
             if (showBoost)
               _buildBoostCard(gameState, responsive),
             
-            // CRITICAL FIX: Expanded tap area with guaranteed minimum space
+            // CRITICAL FIX: Expanded tap area with guaranteed minimum space.
+            // Use Selector so the tap area only rebuilds when display-related state changes,
+            // not on every tap (money/taps). Rebuilding every 100ms during auto-click was
+            // replacing the GestureDetector and cancelling the hold, stopping auto-tap.
             Expanded(
               flex: responsive.flexValues.content,
               child: ResponsiveContainer(
                 padding: EdgeInsets.all(layoutConstraints.cardPadding),
-                child: _buildClickArea(gameState, responsive),
+                child:                 Selector<GameState, (
+                  bool, int, bool, int, int, double, bool, int, int
+                )>(
+                  selector: (_, gs) => (
+                    gs.isAutoClickerActive,
+                    gs.autoClickerRemainingSeconds,
+                    gs.isAdBoostActive,
+                    gs.platinumClickFrenzyRemainingSeconds,
+                    gs.platinumSteadyBoostRemainingSeconds,
+                    gs.clickValue,
+                    gs.isPermanentClickBoostActive,
+                    gs.clickLevel,
+                    gs.taps,
+                  ),
+                  builder: (context, __, child) {
+                    final gs = Provider.of<GameState>(context, listen: false);
+                    return _buildClickArea(gs, responsive);
+                  },
+                ),
               ),
             ),
             
@@ -556,11 +638,32 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
   }
 
   Widget _buildClickArea(GameState gameState, ResponsiveUtils responsive) {
-    return GestureDetector(
+    final showFirstTapTutorial = !_firstTapTutorialShown && gameState.taps == 0;
+
+    final tapArea = GestureDetector(
       onTap: () {
         _earnMoney();
       },
-      onTapDown: _onTapDown,
+      onTapDown: (details) {
+        _onTapDown(details);
+        if (gameState.isAutoClickerActive) {
+          _autoClickHoldTimer?.cancel();
+          _autoClickHoldTimer = Timer.periodic(const Duration(milliseconds: 100), (_) {
+            if (!mounted) {
+              _autoClickHoldTimer?.cancel();
+              _autoClickHoldTimer = null;
+              return;
+            }
+            final gs = Provider.of<GameState>(context, listen: false);
+            if (!gs.isAutoClickerActive) {
+              _autoClickHoldTimer?.cancel();
+              _autoClickHoldTimer = null;
+              return;
+            }
+            _earnMoney();
+          });
+        }
+      },
       onTapUp: _onTapUp,
       onTapCancel: _onTapCancel,
       behavior: HitTestBehavior.translucent,
@@ -580,21 +683,27 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
                   decoration: BoxDecoration(
                     color: gameState.isAdBoostActive
                         ? Colors.amber.withOpacity(0.1)
-                        : Colors.blue.withOpacity(0.05),
+                        : showFirstTapTutorial
+                            ? Colors.green.withOpacity(0.12)
+                            : Colors.blue.withOpacity(0.05),
                     borderRadius: BorderRadius.circular(responsive.spacing(24.0)),
                     border: Border.all(
-                      color: gameState.isAdBoostActive
-                          ? Colors.amber
-                          : Colors.blue.shade300,
-                      width: 2,
+                      color: showFirstTapTutorial
+                          ? Colors.green.shade600
+                          : gameState.isAdBoostActive
+                              ? Colors.amber
+                              : Colors.blue.shade300,
+                      width: showFirstTapTutorial ? 3 : 2,
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: gameState.isAdBoostActive
-                            ? Colors.amber.withOpacity(0.2)
-                            : Colors.blue.withOpacity(0.1),
-                        blurRadius: responsive.spacing(10),
-                        spreadRadius: responsive.spacing(2),
+                        color: showFirstTapTutorial
+                            ? Colors.green.withOpacity(0.35)
+                            : gameState.isAdBoostActive
+                                ? Colors.amber.withOpacity(0.2)
+                                : Colors.blue.withOpacity(0.1),
+                        blurRadius: responsive.spacing(showFirstTapTutorial ? 14 : 10),
+                        spreadRadius: responsive.spacing(showFirstTapTutorial ? 3 : 2),
                       ),
                     ],
                   ),
@@ -615,24 +724,49 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
                           Icon(
                             Icons.touch_app,
                             size: responsive.iconSize(72),
-                            color: gameState.isAdBoostActive
-                                ? Colors.amber
-                                : Colors.blue.shade400,
+                            color: showFirstTapTutorial
+                                ? Colors.green.shade600
+                                : gameState.isAdBoostActive
+                                    ? Colors.amber
+                                    : Colors.blue.shade400,
                           ),
                           SizedBox(height: responsive.spacing(16)),
                           Flexible(
                             child: ResponsiveText(
-                              'Tap to earn ${NumberFormatter.formatCurrency(_calculateClickValue(gameState))}',
+                              gameState.isAutoClickerActive
+                                  ? 'Tap or hold to earn ${NumberFormatter.formatCurrency(_calculateClickValue(gameState))}'
+                                  : 'Tap to earn ${NumberFormatter.formatCurrency(_calculateClickValue(gameState))}',
                               baseFontSize: 18,
                               fontWeight: FontWeight.bold,
-                              color: gameState.isAdBoostActive
-                                  ? Colors.amber.shade800
-                                  : Colors.blue.shade800,
+                              color: showFirstTapTutorial
+                                  ? Colors.green.shade800
+                                  : gameState.isAdBoostActive
+                                      ? Colors.amber.shade800
+                                      : Colors.blue.shade800,
                               textAlign: TextAlign.center,
                               overflow: TextOverflow.ellipsis,
                               maxLines: 2,
                             ),
                           ),
+                          if (showFirstTapTutorial)
+                            Padding(
+                              padding: EdgeInsets.only(top: responsive.spacing(6)),
+                              child: ResponsiveText(
+                                'Tap here to earn money',
+                                baseFontSize: 14,
+                                color: Colors.green.shade700,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          if (gameState.isAutoClickerActive)
+                            Padding(
+                              padding: EdgeInsets.only(top: responsive.spacing(4)),
+                              child: ResponsiveText(
+                                'Hold to auto-click',
+                                baseFontSize: 12,
+                                color: Colors.blue.shade600,
+                              ),
+                            ),
                           if (gameState.isPlatinumBoostActive)
                             Flexible(
                               child: _buildPlatinumBoostStatus(gameState, responsive),
@@ -645,6 +779,37 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
               ),
           );
         },
+      ),
+    );
+    // When holding for auto-tap, win the horizontal-drag arena so TabBarView does not
+    // receive the swipe and cancel the hold. Listener ensures we stop the timer on
+    // pointer up even when the tap recognizer lost (e.g. drag won).
+    return Listener(
+      onPointerUp: (_) {
+        _autoClickHoldTimer?.cancel();
+        _autoClickHoldTimer = null;
+      },
+      child: RawGestureDetector(
+        gestures: <Type, GestureRecognizerFactory>{
+          _HoldAwareHorizontalDragRecognizer:
+              GestureRecognizerFactoryWithHandlers<_HoldAwareHorizontalDragRecognizer>(
+            () => _HoldAwareHorizontalDragRecognizer(
+                shouldAccept: () => _autoClickHoldTimer != null),
+            (_HoldAwareHorizontalDragRecognizer instance) {
+              instance.onStart = (_) {};
+              instance.onUpdate = (_) {};
+              instance.onEnd = (_) {
+                _autoClickHoldTimer?.cancel();
+                _autoClickHoldTimer = null;
+              };
+              instance.onCancel = () {
+                _autoClickHoldTimer?.cancel();
+                _autoClickHoldTimer = null;
+              };
+            },
+          ),
+        },
+        child: tapArea,
       ),
     );
   }
@@ -669,47 +834,74 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
   }
 
   Widget _buildPlatinumBoostStatus(GameState gameState, ResponsiveUtils responsive) {
+    final chips = <Widget>[];
     if (gameState.platinumClickFrenzyRemainingSeconds > 0) {
-      return Padding(
-        padding: EdgeInsets.only(top: responsive.spacing(8)),
-        child: Container(
-          padding: responsive.padding(horizontal: 12, vertical: 6),
+      chips.add(
+        Container(
+          padding: responsive.padding(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [Colors.purple.shade600, Colors.pink.shade600],
             ),
-            borderRadius: BorderRadius.circular(responsive.spacing(20)),
+            borderRadius: BorderRadius.circular(responsive.spacing(16)),
           ),
           child: ResponsiveText(
-            'PLATINUM FRENZY: ${gameState.platinumClickFrenzyRemainingSeconds}s',
-            baseFontSize: 12,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
-      );
-    } else if (gameState.platinumSteadyBoostRemainingSeconds > 0) {
-      return Padding(
-        padding: EdgeInsets.only(top: responsive.spacing(8)),
-        child: Container(
-          padding: responsive.padding(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Colors.blue.shade600, Colors.cyan.shade600],
-            ),
-            borderRadius: BorderRadius.circular(responsive.spacing(20)),
-          ),
-          child: ResponsiveText(
-            'STEADY BOOST: ${gameState.platinumSteadyBoostRemainingSeconds}s',
-            baseFontSize: 12,
+            'FRENZY: ${gameState.platinumClickFrenzyRemainingSeconds}s',
+            baseFontSize: 11,
             fontWeight: FontWeight.bold,
             color: Colors.white,
           ),
         ),
       );
     }
-    
-    return const SizedBox.shrink();
+    if (gameState.platinumSteadyBoostRemainingSeconds > 0) {
+      chips.add(
+        Container(
+          padding: responsive.padding(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.blue.shade600, Colors.cyan.shade600],
+            ),
+            borderRadius: BorderRadius.circular(responsive.spacing(16)),
+          ),
+          child: ResponsiveText(
+            'STEADY: ${gameState.platinumSteadyBoostRemainingSeconds}s',
+            baseFontSize: 11,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+      );
+    }
+    if (gameState.autoClickerRemainingSeconds > 0) {
+      chips.add(
+        Container(
+          padding: responsive.padding(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.teal.shade600, Colors.green.shade600],
+            ),
+            borderRadius: BorderRadius.circular(responsive.spacing(16)),
+          ),
+          child: ResponsiveText(
+            'AUTO: ${gameState.autoClickerRemainingSeconds}s',
+            baseFontSize: 11,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+      );
+    }
+    if (chips.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: EdgeInsets.only(top: responsive.spacing(6)),
+      child: Wrap(
+        spacing: responsive.spacing(6),
+        runSpacing: responsive.spacing(4),
+        alignment: WrapAlignment.center,
+        children: chips,
+      ),
+    );
   }
 
   double _calculateClickValue(GameState gameState) {
@@ -720,13 +912,10 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
     // Apply Ad boost multiplier
     double adBoostMultiplier = gameState.isAdBoostActive ? 10.0 : 1.0;
 
-    // Apply Platinum Boosters multiplier
+    // Apply Platinum Boosters multiplier (stack Frenzy 10x and Steady 2x; Auto Clicker does not change per-tap value)
     double platinumBoostMultiplier = 1.0;
-    if (gameState.platinumClickFrenzyRemainingSeconds > 0) {
-        platinumBoostMultiplier = 10.0;
-    } else if (gameState.platinumSteadyBoostRemainingSeconds > 0) {
-        platinumBoostMultiplier = 2.0;
-    }
+    if (gameState.platinumClickFrenzyRemainingSeconds > 0) platinumBoostMultiplier *= 10.0;
+    if (gameState.platinumSteadyBoostRemainingSeconds > 0) platinumBoostMultiplier *= 2.0;
 
     // Combine all multipliers: Base * Ad * Platinum
     return baseValue * adBoostMultiplier * platinumBoostMultiplier;

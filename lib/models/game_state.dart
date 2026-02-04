@@ -189,14 +189,20 @@ class GameState with ChangeNotifier {
   DateTime? platinumSteadyBoostEndTime;
   Timer? _platinumSteadyBoostTimer;
 
+  // Auto Clicker: hold-to-auto-click at 10/sec for 5 min
+  int autoClickerRemainingSeconds = 0;
+  DateTime? autoClickerEndTime;
+  Timer? _autoClickerTimer;
+
   // Getter to check if *any* platinum click booster is active
-  bool get isPlatinumBoostActive => platinumClickFrenzyRemainingSeconds > 0 || platinumSteadyBoostRemainingSeconds > 0;
+  bool get isPlatinumBoostActive => platinumClickFrenzyRemainingSeconds > 0 || platinumSteadyBoostRemainingSeconds > 0 || autoClickerRemainingSeconds > 0;
   // << END: Platinum Booster State >>
 
   // >> START: Derived Active Flags for Boosters <<
   // Used to easily check if a specific booster is active for UI/logic
   bool get isClickFrenzyActive => platinumClickFrenzyRemainingSeconds > 0;
   bool get isSteadyBoostActive => platinumSteadyBoostRemainingSeconds > 0;
+  bool get isAutoClickerActive => autoClickerRemainingSeconds > 0;
   // >> END: Derived Active Flags for Boosters <<
 
   // ADDED: Notification permission request tracking
@@ -952,21 +958,19 @@ class GameState with ChangeNotifier {
         case 'temp_boost_10x_5min':
             if (isClickFrenzyActive) {
                 print("DEBUG: Cannot purchase $itemId: Already active.");
-                return false; // Prevent stacking
-            }
-            if (isSteadyBoostActive) {
-                 print("DEBUG: Cannot purchase $itemId: Another Platinum booster (Steady Boost) is active.");
-                 return false; // Prevent running both simultaneously
+                return false; // Already active, no double-stack
             }
             break;
         case 'temp_boost_2x_10min':
             if (isSteadyBoostActive) {
                 print("DEBUG: Cannot purchase $itemId: Already active.");
-                return false; // Prevent stacking
+                return false; // Already active, no double-stack
             }
-             if (isClickFrenzyActive) {
-                 print("DEBUG: Cannot purchase $itemId: Another Platinum booster (Click Frenzy) is active.");
-                 return false; // Prevent running both simultaneously
+            break;
+        case 'auto_clicker':
+            if (isAutoClickerActive) {
+                print("DEBUG: Cannot purchase $itemId: Already active.");
+                return false; // Prevent stacking
             }
             break;
         case 'platinum_foundation':
@@ -1273,6 +1277,13 @@ class GameState with ChangeNotifier {
              print("INFO: Steady Boost (2x) Activated! Ends at: $platinumSteadyBoostEndTime");
              notifyListeners();
              break;
+        case 'auto_clicker':
+             autoClickerEndTime = DateTime.now().add(const Duration(minutes: 5));
+             autoClickerRemainingSeconds = 300;
+             _startPlatinumAutoClickerTimer();
+             print("INFO: Auto Clicker Activated! Ends at: $autoClickerEndTime");
+             notifyListeners();
+             break;
         // --- END: Platinum Click Boosters ---
         case 'unlock_stats_theme_1':
             print("DEBUG: Before unlock: isExecutiveStatsThemeUnlocked=$isExecutiveStatsThemeUnlocked");
@@ -1485,8 +1496,26 @@ class GameState with ChangeNotifier {
   void _cancelPlatinumTimers() {
     _platinumClickFrenzyTimer?.cancel();
     _platinumSteadyBoostTimer?.cancel();
+    _autoClickerTimer?.cancel();
     _platinumClickFrenzyTimer = null;
     _platinumSteadyBoostTimer = null;
+    _autoClickerTimer = null;
+  }
+
+  void _startPlatinumAutoClickerTimer() {
+    _autoClickerTimer?.cancel();
+    _autoClickerTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (autoClickerRemainingSeconds > 0) {
+        autoClickerRemainingSeconds--;
+        notifyListeners();
+      } else {
+        timer.cancel();
+        _autoClickerTimer = null;
+        autoClickerEndTime = null;
+        print("INFO: Auto Clicker expired.");
+        notifyListeners();
+      }
+    });
   }
   // --- END: Helper methods for Platinum Booster Timers ---
 

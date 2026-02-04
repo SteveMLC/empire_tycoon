@@ -78,6 +78,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   // CLASS-LEVEL VARIABLES for purchase dialog management
   Timer? _purchaseProcessingTimeout;
   bool _purchaseDialogClosed = false;
+  NavigatorState? _navigatorForPurchaseDialog;
 
   // User avatar options
   final List<String> _avatarOptions = [
@@ -135,7 +136,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     }
   }
   
-  /// Force close purchase processing dialog with multiple fallback methods
+  /// Force close purchase processing dialog with multiple fallback methods.
+  /// Uses stored NavigatorState only (no BuildContext) so it is safe from dispose/async.
   void _forceClosePurchaseDialog() {
     if (_purchaseDialogClosed) {
       print('🟡 Purchase dialog already marked as closed');
@@ -146,26 +148,28 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     _purchaseDialogClosed = true;
     _purchaseProcessingTimeout?.cancel();
     
-    // Try multiple methods to close the dialog
-    bool dialogClosed = false;
-    
-    // Method 1: Try Navigator.pop()
-    if (!dialogClosed && mounted) {
-      try {
-        if (Navigator.canPop(context)) {
-          Navigator.of(context).pop();
-          dialogClosed = true;
-          print('✅ FORCE CLOSE: Dialog closed via Navigator.pop()');
-        }
-      } catch (e) {
-        print('🔴 FORCE CLOSE: Navigator.pop() failed: $e');
-      }
+    final navigator = _navigatorForPurchaseDialog;
+    _navigatorForPurchaseDialog = null;
+    if (navigator == null) {
+      print('🟢 FORCE CLOSE: No navigator stored, nothing to close');
+      return;
     }
     
-    // Method 2: Try Navigator.popUntil() as fallback
-    if (!dialogClosed && mounted) {
+    bool dialogClosed = false;
+    
+    try {
+      if (navigator.canPop()) {
+        navigator.pop();
+        dialogClosed = true;
+        print('✅ FORCE CLOSE: Dialog closed via Navigator.pop()');
+      }
+    } catch (e) {
+      print('🔴 FORCE CLOSE: Navigator.pop() failed: $e');
+    }
+    
+    if (!dialogClosed) {
       try {
-        Navigator.of(context).popUntil((route) => route.isFirst);
+        navigator.popUntil((route) => route.isFirst);
         dialogClosed = true;
         print('✅ FORCE CLOSE: Dialog closed via Navigator.popUntil()');
       } catch (e) {
@@ -173,10 +177,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       }
     }
     
-    // Method 3: Try maybePop() as final fallback
-    if (!dialogClosed && mounted) {
+    if (!dialogClosed) {
       try {
-        Navigator.of(context).maybePop();
+        navigator.maybePop();
         print('✅ FORCE CLOSE: Attempted Navigator.maybePop() as final fallback');
       } catch (e) {
         print('🔴 FORCE CLOSE: Navigator.maybePop() failed: $e');
@@ -511,7 +514,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 children: [
                   Icon(Icons.security, color: Colors.blue),
                   SizedBox(width: 8),
-                  Text('Verification Test Results'),
+                  Expanded(child: Text('Verification Test Results')),
                 ],
               ),
               content: SingleChildScrollView(
@@ -623,11 +626,11 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 
                 const SizedBox(height: 20),
                 
-                _buildSettingsSection(gameState),
+                _buildPremiumSection(gameState),
                 
                 const SizedBox(height: 20),
                 
-                _buildPremiumSection(gameState),
+                _buildSettingsSection(gameState),
                 
                 const SizedBox(height: 30),
                 
@@ -3043,6 +3046,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               _purchaseDialogClosed = false;
               _purchaseProcessingTimeout?.cancel();
               
+              // Capture navigator before showing dialog so force-close can run without context
+              _navigatorForPurchaseDialog = Navigator.of(context);
               // Show loading indicator with robust timeout protection
               showDialog(
                 context: context,
@@ -3569,7 +3574,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           children: [
             Icon(Icons.shopping_cart, color: Colors.green),
             SizedBox(width: 8),
-            Text('Purchase Flow Testing'),
+            Expanded(child: Text('Purchase Flow Testing')),
           ],
         ),
         content: SingleChildScrollView(
@@ -3712,7 +3717,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           children: [
             Icon(Icons.info, color: Colors.blue),
             SizedBox(width: 8),
-            Text('Billing Service Status'),
+            Expanded(child: Text('Billing Service Status')),
           ],
         ),
         content: SingleChildScrollView(
