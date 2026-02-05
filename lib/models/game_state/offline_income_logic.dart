@@ -41,25 +41,29 @@ extension GameStateOfflineIncome on GameState {
     // This ensures we use the exact same calculation as the UI display
     double incomePerSecond;
     if (incomeService != null) {
-      // Use the same income calculation as the top panel
       incomePerSecond = incomeService.calculateIncomePerSecond(this);
-      print("💰 Using IncomeService for offline income calculation");
-      print("🔍 DEBUG: IncomeService returned: ${NumberFormatter.formatCompact(incomePerSecond)}/sec");
+      if (kDebugMode) {
+        print("💰 Using IncomeService for offline income calculation");
+        print("🔍 DEBUG: IncomeService returned: ${NumberFormatter.formatCompact(incomePerSecond)}/sec");
+      }
     } else {
-      // Fall back to direct calculation if service not provided
       incomePerSecond = calculateTotalIncomePerSecond();
-      print("⚠️ Falling back to direct income calculation (not using IncomeService)");
-      print("🔍 DEBUG: Direct calculation returned: ${NumberFormatter.formatCompact(incomePerSecond)}/sec");
+      if (kDebugMode) {
+        print("⚠️ Falling back to direct income calculation (not using IncomeService)");
+        print("🔍 DEBUG: Direct calculation returned: ${NumberFormatter.formatCompact(incomePerSecond)}/sec");
+      }
     }
-    
-    print("🔍 DEBUG: Income breakdown for offline calculation:");
-    double businessIncome = getBusinessIncomePerSecond();
-    double realEstateIncome = getRealEstateIncomePerSecond();
-    double dividendIncome = getDividendIncomePerSecond();
-    print("   - Business income: ${NumberFormatter.formatCompact(businessIncome)}/sec");
-    print("   - Real Estate income: ${NumberFormatter.formatCompact(realEstateIncome)}/sec");
-    print("   - Dividend income: ${NumberFormatter.formatCompact(dividendIncome)}/sec");
-    print("   - Total income with all multipliers: ${NumberFormatter.formatCompact(incomePerSecond)}/sec");
+
+    if (kDebugMode) {
+      print("🔍 DEBUG: Income breakdown for offline calculation:");
+      double businessIncome = getBusinessIncomePerSecond();
+      double realEstateIncome = getRealEstateIncomePerSecond();
+      double dividendIncome = getDividendIncomePerSecond();
+      print("   - Business income: ${NumberFormatter.formatCompact(businessIncome)}/sec");
+      print("   - Real Estate income: ${NumberFormatter.formatCompact(realEstateIncome)}/sec");
+      print("   - Dividend income: ${NumberFormatter.formatCompact(dividendIncome)}/sec");
+      print("   - Total income with all multipliers: ${NumberFormatter.formatCompact(incomePerSecond)}/sec");
+    }
     
     // Cap offline time at 4 hours (14400 seconds)
     final int cappedOfflineSeconds = min(offlineSeconds, MAX_OFFLINE_SECONDS);
@@ -68,12 +72,13 @@ extension GameStateOfflineIncome on GameState {
     // Users earn 50% of income while offline, can watch ad to get 2x (= 100% total)
     final double calculatedOfflineIncome = incomePerSecond * cappedOfflineSeconds * 0.5;
     
-    // Debug logs for income calculation
-    print("🔍 DEBUG: Offline income calculation:");
-    print("   - Income per second: ${NumberFormatter.formatCompact(incomePerSecond)}/sec");
-    print("   - Offline duration: $offlineSeconds seconds (capped at $cappedOfflineSeconds)");
-    print("   - Raw calculation: $incomePerSecond × $cappedOfflineSeconds × 0.5 = $calculatedOfflineIncome");
-    print("   - Note: 50% base income, can watch ad for 2x (= 100% total)");
+    if (kDebugMode) {
+      print("🔍 DEBUG: Offline income calculation:");
+      print("   - Income per second: ${NumberFormatter.formatCompact(incomePerSecond)}/sec");
+      print("   - Offline duration: $offlineSeconds seconds (capped at $cappedOfflineSeconds)");
+      print("   - Raw calculation: $incomePerSecond × $cappedOfflineSeconds × 0.5 = $calculatedOfflineIncome");
+      print("   - Note: 50% base income, can watch ad for 2x (= 100% total)");
+    }
     
     // Store times for notification display
     this.offlineIncomeStartTime = lastSavedTime;
@@ -102,15 +107,15 @@ extension GameStateOfflineIncome on GameState {
       // Set flag to show notification
       this.showOfflineIncomeNotification = true;
 
-      print(
-          "💰 Calculated offline income: ${NumberFormatter.formatCompact(calculatedOfflineIncome)} (from $cappedOfflineSeconds seconds offline at ${NumberFormatter.formatCompact(incomePerSecond)}/sec)");
+      if (kDebugMode) {
+        print("💰 Calculated offline income: ${NumberFormatter.formatCompact(calculatedOfflineIncome)} (from $cappedOfflineSeconds seconds offline at ${NumberFormatter.formatCompact(incomePerSecond)}/sec)");
+      }
     } else {
-      // Ensure notification isn't shown if no income earned
       this.offlineIncome = 0.0;
       this.offlineIncomeStartTime = null;
       this.offlineIncomeEndTime = null;
       this.showOfflineIncomeNotification = false;
-      print("🕒 Offline time: ${formattedOfflineTime}. No significant income generated.");
+      if (kDebugMode) print("🕒 Offline time: ${formattedOfflineTime}. No significant income generated.");
     }
 
     // Update last opened time

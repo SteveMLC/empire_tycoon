@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import '../models/real_estate.dart';
 
@@ -97,38 +98,39 @@ class RealEstateDataLoader {
   
   // Apply loaded upgrades to properties in all locales
   static void applyUpgradesToProperties(List<RealEstateLocale> locales, Map<String, List<RealEstateUpgrade>> upgradesByPropertyId) {
-    print("🔄 Applying upgrades to properties. Total upgrade entries: ${upgradesByPropertyId.length}");
-    
+    if (kDebugMode) print("🔄 Applying upgrades to properties. Total upgrade entries: ${upgradesByPropertyId.length}");
+
     for (var locale in locales) {
-      print("📍 Processing locale: ${locale.name} (${locale.id})");
-      
+      if (kDebugMode) print("📍 Processing locale: ${locale.name} (${locale.id})");
+
       for (var property in locale.properties) {
         if (upgradesByPropertyId.containsKey(property.id)) {
-          print("🏠 Property ${property.name} (${property.id}) - Applying upgrades");
-          
+          if (kDebugMode) print("🏠 Property ${property.name} (${property.id}) - Applying upgrades");
+
           // Create a copy of the upgrades for this property
           List<RealEstateUpgrade> propertyUpgrades = List.from(upgradesByPropertyId[property.id]!);
-          
+
           // Sort upgrades by cost (ascending)
           propertyUpgrades.sort((a, b) => a.cost.compareTo(b.cost));
-          
-          // Log upgrades being applied
-          print("  ⬆️ Adding ${propertyUpgrades.length} upgrades:");
-          for (var upgrade in propertyUpgrades) {
-            print("    - ${upgrade.description}: \$${upgrade.cost} → \$${upgrade.newIncomePerSecond}/sec");
+
+          if (kDebugMode) {
+            print("  ⬆️ Adding ${propertyUpgrades.length} upgrades:");
+            for (var upgrade in propertyUpgrades) {
+              print("    - ${upgrade.description}: \$${upgrade.cost} → \$${upgrade.newIncomePerSecond}/sec");
+            }
           }
-          
+
           // Update the property with the upgrades
           property.upgrades.clear(); // Clear any existing upgrades
           property.upgrades.addAll(propertyUpgrades);
-          print("  ✅ Upgrades added successfully. Property now has ${property.upgrades.length} upgrades.");
+          if (kDebugMode) print("  ✅ Upgrades added successfully. Property now has ${property.upgrades.length} upgrades.");
         } else {
-          print("⚠️ No upgrades found for property: ${property.name} (${property.id})");
+          if (kDebugMode) print("⚠️ No upgrades found for property: ${property.name} (${property.id})");
         }
       }
     }
-    
-    print("✅ Finished applying upgrades to all properties");
+
+    if (kDebugMode) print("✅ Finished applying upgrades to all properties");
   }
   
   // Normalize locale ID to match game internal IDs

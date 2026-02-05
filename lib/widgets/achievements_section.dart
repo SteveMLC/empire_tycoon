@@ -138,13 +138,25 @@ class AchievementsSection extends StatelessWidget {
     Color? backgroundColor,
     Color? borderColor,
   }) {
+    final baseColor = isExecutive
+        ? const Color(0xFF242C3B)
+        : backgroundColor ?? theme.backgroundColor.withOpacity(0.1);
+
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
         decoration: BoxDecoration(
-          color: isExecutive
-              ? const Color(0xFF242C3B)
-              : backgroundColor ?? theme.backgroundColor.withOpacity(0.1),
+          color: isExecutive ? baseColor : null,
+          gradient: isExecutive
+              ? null
+              : LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    baseColor,
+                    baseColor.withOpacity(0.0),
+                  ],
+                ),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isExecutive
@@ -288,235 +300,239 @@ class AchievementsSection extends StatelessWidget {
         // Get colors based on achievement rarity and completion status
         final rarityColors = _getRarityColors(achievement.rarity, achievement.completed);
         
-        return Card(
-          elevation: achievement.completed ? 1 : 0,
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOut,
           margin: const EdgeInsets.only(bottom: 12),
-          color: isExecutive 
-              ? (achievement.completed 
-                  ? theme.backgroundColor.withOpacity(0.2)
-                  : theme.backgroundColor.withOpacity(0.1))
-              : rarityColors['backgroundColor'],
-          shape: RoundedRectangleBorder(
+          child: InkWell(
             borderRadius: BorderRadius.circular(12),
-            side: BorderSide(
+            // No-op tap handler so we still get ripple and pressed feedback.
+            onTap: () {},
+            child: Card(
+              elevation: achievement.completed ? 1 : 0,
+              margin: EdgeInsets.zero,
               color: isExecutive
                   ? (achievement.completed
-                      ? _getExecutiveRarityColor(achievement.rarity).withOpacity(0.6)
-                      : Colors.transparent)
-                  : rarityColors['borderColor'],
-              width: achievement.completed ? 1.5 : 1,
-            ),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Icon with improved styling based on rarity
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: isExecutive
-                        ? (achievement.completed
-                            ? _getExecutiveRarityColor(achievement.rarity).withOpacity(0.2)
-                            : theme.backgroundColor.withOpacity(0.3))
-                        : rarityColors['iconBackgroundColor'],
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: isExecutive
-                          ? (achievement.completed
-                              ? _getExecutiveRarityColor(achievement.rarity).withOpacity(0.5)
-                              : Colors.transparent)
-                          : rarityColors['borderColor'],
-                      width: 1,
-                    ),
-                    boxShadow: achievement.completed ? [
-                      BoxShadow(
-                        color: isExecutive
-                            ? _getExecutiveRarityColor(achievement.rarity).withOpacity(0.2)
-                            : rarityColors['iconColor'].withOpacity(0.2),
-                        blurRadius: 4,
-                        spreadRadius: 1,
-                        offset: const Offset(0, 2),
-                      ),
-                    ] : null,
-                  ),
-                  child: Icon(
-                    achievement.icon,
-                    color: isExecutive
-                        ? (achievement.completed
-                            ? _getExecutiveRarityColor(achievement.rarity)
-                            : theme.textColor.withOpacity(0.7))
-                        : rarityColors['iconColor'],
-                    size: 24,
-                  ),
+                      ? theme.backgroundColor.withOpacity(0.2)
+                      : theme.backgroundColor.withOpacity(0.1))
+                  : rarityColors['backgroundColor'],
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: BorderSide(
+                  color: isExecutive
+                      ? (achievement.completed
+                          ? _getExecutiveRarityColor(achievement.rarity).withOpacity(0.6)
+                          : Colors.transparent)
+                      : rarityColors['borderColor'],
+                  width: achievement.completed ? 1.5 : 1,
                 ),
-                
-                const SizedBox(width: 16),
-                
-                // Achievement details with improved styling
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          // Add rarity badge for rare and milestone achievements
-                          if (achievement.rarity != AchievementRarity.basic && !isExecutive)
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                              margin: const EdgeInsets.only(right: 8, bottom: 4),
-                              decoration: BoxDecoration(
-                                color: achievement.rarity == AchievementRarity.milestone
-                                    ? Colors.amber.shade400
-                                    : Colors.blue.shade400,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                achievement.rarity == AchievementRarity.milestone
-                                    ? 'MILESTONE'
-                                    : 'RARE',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 9,
-                                ),
-                              ),
-                            ),
-                          
-                          Expanded(
-                            child: Text(
-                              achievement.name,
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: isExecutive
-                                    ? (achievement.completed
-                                        ? _getExecutiveRarityColor(achievement.rarity)
-                                        : theme.textColor)
-                                    : rarityColors['textColor'],
-                              ),
-                            ),
-                          ),
-                          if (achievement.completed)
-                            Container(
-                              padding: const EdgeInsets.all(2),
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: isExecutive 
-                                    ? _getExecutiveRarityColor(achievement.rarity).withOpacity(0.1)
-                                    : rarityColors['backgroundColor'],
-                              ),
-                              child: Icon(
-                                Icons.check_circle,
-                                color: isExecutive
-                                    ? _getExecutiveRarityColor(achievement.rarity)
-                                    : rarityColors['iconColor'],
-                                size: 16,
-                              ),
-                            ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        achievement.description,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: isExecutive
-                              ? theme.textColor.withOpacity(0.8)
-                              : Colors.black87,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-
-                      // Display PP Reward with enhanced styling
-                      Row(
-                        children: [
-                          Container(
-                            width: 16,
-                            height: 16,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: const Color(0xFFFFD700), // Solid gold background
-                              boxShadow: [
-                                BoxShadow(
-                                  color: const Color(0xFFFFD700).withOpacity(0.6),
-                                  blurRadius: 4,
-                                  spreadRadius: 0,
-                                ),
-                              ],
-                              border: Border.all(
-                                color: Colors.white,
-                                width: 1,
-                              ),
-                            ),
-                            child: const Center(
-                              child: Text(
-                                '✦',
-                                style: TextStyle(
-                                  fontSize: 8,
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  height: 1.0,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            '+${achievement.ppReward} P!',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                              color: const Color(0xFFE5B100), // Gold for PP rewards
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      const SizedBox(height: 12),
-                      
-                      // Progress bar with improved styling
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(6),
-                        child: LinearProgressIndicator(
-                          value: progress,
-                          backgroundColor: isExecutive
-                              ? theme.backgroundColor.withOpacity(0.3)
-                              : rarityColors['backgroundColor'].withOpacity(0.5),
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            isExecutive
-                                ? (achievement.completed
-                                    ? _getExecutiveRarityColor(achievement.rarity)
-                                    : theme.textColor.withOpacity(0.7))
-                                : rarityColors['iconColor'],
-                          ),
-                          minHeight: 8,
-                        ),
-                      ),
-                      
-                      const SizedBox(height: 6),
-                      
-                      // Progress text with improved styling
-                      Text(
-                        achievement.completed
-                            ? 'Earned'
-                            : '${(progress * 100).toStringAsFixed(0)}% complete',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Icon with improved styling based on rarity
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: isExecutive
+                            ? (achievement.completed
+                                ? _getExecutiveRarityColor(achievement.rarity).withOpacity(0.2)
+                                : theme.backgroundColor.withOpacity(0.3))
+                            : rarityColors['iconBackgroundColor'],
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
                           color: isExecutive
                               ? (achievement.completed
-                                  ? _getExecutiveRarityColor(achievement.rarity)
-                                  : theme.textColor.withOpacity(0.7))
-                              : rarityColors['iconColor'],
+                                  ? _getExecutiveRarityColor(achievement.rarity).withOpacity(0.5)
+                                  : Colors.transparent)
+                              : rarityColors['borderColor'],
+                          width: 1,
                         ),
+                        boxShadow: achievement.completed
+                            ? [
+                                BoxShadow(
+                                  color: isExecutive
+                                      ? _getExecutiveRarityColor(achievement.rarity).withOpacity(0.2)
+                                      : rarityColors['iconColor'].withOpacity(0.2),
+                                  blurRadius: 4,
+                                  spreadRadius: 1,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ]
+                            : null,
                       ),
-                    ],
-                  ),
+                      child: Icon(
+                        achievement.icon,
+                        color: isExecutive
+                            ? (achievement.completed
+                                ? _getExecutiveRarityColor(achievement.rarity)
+                                : theme.textColor.withOpacity(0.7))
+                            : rarityColors['iconColor'],
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    // Achievement details with improved styling
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              // Add rarity badge for rare and milestone achievements
+                              if (achievement.rarity != AchievementRarity.basic && !isExecutive)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  margin: const EdgeInsets.only(right: 8, bottom: 4),
+                                  decoration: BoxDecoration(
+                                    color: achievement.rarity == AchievementRarity.milestone
+                                        ? Colors.amber.shade400
+                                        : Colors.blue.shade400,
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    achievement.rarity == AchievementRarity.milestone
+                                        ? 'MILESTONE'
+                                        : 'RARE',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 9,
+                                    ),
+                                  ),
+                                ),
+                              Expanded(
+                                child: Text(
+                                  achievement.name,
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: isExecutive
+                                        ? (achievement.completed
+                                            ? _getExecutiveRarityColor(achievement.rarity)
+                                            : theme.textColor)
+                                        : rarityColors['textColor'],
+                                  ),
+                                ),
+                              ),
+                              if (achievement.completed)
+                                Container(
+                                  padding: const EdgeInsets.all(2),
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: isExecutive
+                                        ? _getExecutiveRarityColor(achievement.rarity).withOpacity(0.1)
+                                        : rarityColors['backgroundColor'],
+                                  ),
+                                  child: Icon(
+                                    Icons.check_circle,
+                                    color: isExecutive
+                                        ? _getExecutiveRarityColor(achievement.rarity)
+                                        : rarityColors['iconColor'],
+                                    size: 16,
+                                  ),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            achievement.description,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: isExecutive
+                                  ? theme.textColor.withOpacity(0.8)
+                                  : Colors.black87,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          // Display PP Reward with enhanced styling
+                          Row(
+                            children: [
+                              Container(
+                                width: 16,
+                                height: 16,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: const Color(0xFFFFD700), // Solid gold background
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: const Color(0xFFFFD700).withOpacity(0.6),
+                                      blurRadius: 4,
+                                      spreadRadius: 0,
+                                    ),
+                                  ],
+                                  border: Border.all(
+                                    color: Colors.white,
+                                    width: 1,
+                                  ),
+                                ),
+                                child: const Center(
+                                  child: Text(
+                                    '✦',
+                                    style: TextStyle(
+                                      fontSize: 8,
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      height: 1.0,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                '+${achievement.ppReward} P!',
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFFE5B100), // Gold for PP rewards
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          // Progress bar with improved styling
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(6),
+                            child: LinearProgressIndicator(
+                              value: progress,
+                              backgroundColor: isExecutive
+                                  ? theme.backgroundColor.withOpacity(0.3)
+                                  : rarityColors['backgroundColor'].withOpacity(0.5),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                isExecutive
+                                    ? (achievement.completed
+                                        ? _getExecutiveRarityColor(achievement.rarity)
+                                        : theme.textColor.withOpacity(0.7))
+                                    : rarityColors['iconColor'],
+                              ),
+                              minHeight: 8,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          // Progress text with improved styling
+                          Text(
+                            achievement.completed
+                                ? 'Earned'
+                                : '${(progress * 100).toStringAsFixed(0)}% complete',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: isExecutive
+                                  ? (achievement.completed
+                                      ? _getExecutiveRarityColor(achievement.rarity)
+                                      : theme.textColor.withOpacity(0.7))
+                                  : rarityColors['iconColor'],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         );

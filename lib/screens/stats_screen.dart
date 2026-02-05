@@ -80,16 +80,8 @@ class _StatsScreenState extends State<StatsScreen> {
 
                         const SizedBox(height: 20),
 
-                        // Earnings Breakdown Card
-                        EarningsBreakdownCard(
-                          gameState: gameState,
-                          theme: theme,
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        // Assets Breakdown Card
-                        AssetsBreakdownCard(
+                        // Net Worth Chart (lifetime vs current run)
+                        NetWorthChart(
                           gameState: gameState,
                           theme: theme,
                         ),
@@ -104,13 +96,19 @@ class _StatsScreenState extends State<StatsScreen> {
 
                         const SizedBox(height: 20),
 
-                        // Net Worth Chart
-                        NetWorthChart(
+                        // Earnings Breakdown Card
+                        EarningsBreakdownCard(
                           gameState: gameState,
                           theme: theme,
                         ),
 
                         const SizedBox(height: 20),
+
+                        // Assets Breakdown Card
+                        AssetsBreakdownCard(
+                          gameState: gameState,
+                          theme: theme,
+                        ),
 
                         // Achievements Section (already a separate widget)
                         AchievementsSection(

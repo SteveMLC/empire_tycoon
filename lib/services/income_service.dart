@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 import '../models/game_state.dart';
@@ -49,10 +50,9 @@ class IncomeService extends ChangeNotifier {
     
     _isCalculatingIncome = true;
     try {
-      // OPTIMIZED: Reduced debug logging frequency to improve performance
-      // Only log detailed breakdown every 10 seconds to reduce spam
-      bool shouldLogDetails = (now.second % 10 == 0 && now.millisecond < 200);
-      
+      // OPTIMIZED: Reduced debug logging frequency; only in debug mode
+      bool shouldLogDetails = kDebugMode && (now.second % 10 == 0 && now.millisecond < 200);
+
       if (shouldLogDetails) {
         print("--- Calculating Display Income --- ");
         print("  Global Multipliers: income=${gameState.incomeMultiplier.toStringAsFixed(2)}, prestige=${gameState.prestigeMultiplier.toStringAsFixed(2)}");

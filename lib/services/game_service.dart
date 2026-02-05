@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/game_state.dart';
 import '../utils/time_utils.dart';
@@ -80,12 +81,11 @@ class GameService {
       
       // CRITICAL FIX: Ensure GameState timers are cancelled before initialization
       try {
-        print("⏱️ INIT: Ensuring all GameState timers are cancelled");
-        // Always cancel timers to be safe, regardless of the timersActive flag
+        if (kDebugMode) print("⏱️ INIT: Ensuring all GameState timers are cancelled");
         _gameState.cancelAllTimers();
-        print("⏱️ INIT: GameState timers cancelled successfully");
+        if (kDebugMode) print("⏱️ INIT: GameState timers cancelled successfully");
       } catch (e) {
-        print("⚠️ INIT: Warning cancelling GameState timers: $e");
+        if (kDebugMode) print("⚠️ INIT: Warning cancelling GameState timers: $e");
       }
 
       // Initialize sound service
@@ -103,28 +103,26 @@ class GameService {
 
       final DateTime beforeLoad = DateTime.now();
       final DateTime appStartTime = beforeLoad.subtract(const Duration(seconds: 1)); // Small buffer for timestamp comparison
-      print("⏱️ Start loading game state at ${TimeUtils.formatTime(beforeLoad)}");
+      if (kDebugMode) print("⏱️ Start loading game state at ${TimeUtils.formatTime(beforeLoad)}");
       await _persistenceService.loadGame();
       final DateTime afterLoad = DateTime.now();
 
       final Duration loadDuration = afterLoad.difference(beforeLoad);
-      print("⏱️ Game loading took ${loadDuration.inMilliseconds}ms");
+      if (kDebugMode) print("⏱️ Game loading took ${loadDuration.inMilliseconds}ms");
 
-      // CRITICAL FIX: Timestamp analysis (keep for logging, but remove redundant calculation)
       final DateTime lastSavedTime = _gameState.lastSaved;
-      print("⏱️ TIMESTAMP ANALYSIS: Last saved at ${TimeUtils.formatTime(lastSavedTime)}");
-      print("⏱️ TIMESTAMP ANALYSIS: App started at ${TimeUtils.formatTime(appStartTime)}");
-      print("⏱️ TIMESTAMP ANALYSIS: Current time is ${TimeUtils.formatTime(afterLoad)}");
+      if (kDebugMode) {
+        print("⏱️ TIMESTAMP ANALYSIS: Last saved at ${TimeUtils.formatTime(lastSavedTime)}");
+        print("⏱️ TIMESTAMP ANALYSIS: App started at ${TimeUtils.formatTime(appStartTime)}");
+        print("⏱️ TIMESTAMP ANALYSIS: Current time is ${TimeUtils.formatTime(afterLoad)}");
+      }
 
-      // CRITICAL FIX: Set up all timers after loading is complete
       _setupAllTimers();
-      
-      // Perform initial save to ensure we have a valid save file
+
       await _persistenceService.performInitialSave();
-      
-      // Mark as initialized
+
       _isInitialized = true;
-      print("✅ GameService initialization completed successfully");
+      if (kDebugMode) print("✅ GameService initialization completed successfully");
       
       // Run diagnostics to verify timer system is working correctly
       _runTimerDiagnostics();
