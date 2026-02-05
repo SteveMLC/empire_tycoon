@@ -585,6 +585,7 @@ class _BusinessItemState extends State<BusinessItem> {
                       gameService.requestNotificationPermissions(context);
                       gameState.resetNotificationPermissionRequest();
                     }
+                    unawaited(gameService.saveGame());
                   } catch (e) {
                     // Only log errors occasionally to reduce spam
                     if (DateTime.now().second % 30 == 0) {

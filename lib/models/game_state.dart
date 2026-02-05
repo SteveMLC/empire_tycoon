@@ -22,6 +22,7 @@ import '../data/business_definitions.dart'; // ADDED: Import for business data
 import '../data/investment_definitions.dart'; // ADDED: Import for investment data
 import '../data/platinum_vault_items.dart'; // ADDED: Import for vault items
 import '../utils/number_formatter.dart'; // ADDED: Import for formatting
+import '../utils/tap_boost_config.dart'; // ADDED: Tap boost leveling config
 import 'mogul_avatar.dart'; // ADDED: Import for mogul avatars
 import '../services/income_service.dart'; // ADDED: Import for IncomeService
 import '../services/admob_service.dart'; // ADDED: Import for AdMobService integration
@@ -378,6 +379,9 @@ class GameState with ChangeNotifier {
   /// Optional callback for throttled leaderboard score submit (same interval as net worth history).
   /// Set from app init; receives this GameState so caller can submit totalLifetimeNetWorth via AuthService.
   void Function(GameState)? onThrottledLeaderboardSubmit;
+
+  /// Optional callback to request a debounced save. Set from GameService; called when state changes internally (e.g. completed business upgrade).
+  void Function()? onRequestSave;
 
   GameState() {
     print("🚀 Initializing GameState...");

@@ -19,7 +19,10 @@ class GameService {
   final SharedPreferences _prefs;
   final GameState _gameState;
   bool _isInitialized = false;
-  
+
+  static const Duration _saveDebounceDelay = Duration(seconds: 2);
+  Timer? _debouncedSaveTimer;
+
   // Component services
   late final SoundService _soundService;
   late final TimerService _timerService;
@@ -96,8 +99,10 @@ class GameService {
       
       // ADDED: Initialize app lifecycle service (includes notification service)
       // ENHANCED: Pass IncomeService and AdMobService for consistent background offline income calculations and predictive ad loading
-      await _appLifecycleService.initialize(_gameState, incomeService: _incomeService, adMobService: AdMobService());
-      
+      await _appLifecycleService.initialize(_gameState, incomeService: _incomeService, adMobService: AdMobService(), onSave: saveGame);
+
+      _gameState.onRequestSave = _requestSave;
+
       // Check game version and clear data if needed
       await _persistenceService.checkVersion();
 
@@ -138,6 +143,14 @@ class GameService {
     _timerService.cancelAllTimers();
   }
 
+  void _requestSave() {
+    _debouncedSaveTimer?.cancel();
+    _debouncedSaveTimer = Timer(_saveDebounceDelay, () {
+      _debouncedSaveTimer = null;
+      saveGame();
+    });
+  }
+
   void _setupAllTimers() {
     _timerService.setupAllTimers();
   }
@@ -172,6 +185,10 @@ class GameService {
 
   void dispose() {
     print("🧹 Disposing GameService");
+    _debouncedSaveTimer?.cancel();
+    _debouncedSaveTimer = null;
+    _gameState.onRequestSave = null;
+    unawaited(saveGame());
     _cancelAllTimers();
     _billingService.dispose(); // ADDED: Dispose billing service
     _appLifecycleService.dispose(); // ADDED: Dispose app lifecycle service

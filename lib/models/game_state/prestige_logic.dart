@@ -129,10 +129,8 @@ extension PrestigeLogic on GameState {
     realEstateEarnings = 0.0;
 
     // Click Value: Reset based on level, but apply prestige multiplier
-    // Keep clickLevel across reincorporation
-    double baseClickValue = 1.5;
-    double levelMultiplier = 1.0 + ((clickLevel - 1) * 0.5); // Assuming 50% increase per level
-    clickValue = baseClickValue * levelMultiplier * prestigeMultiplier;
+    // Keep clickLevel across reincorporation; use TapBoostConfig for consistency with Hustle screen
+    clickValue = TapBoostConfig.getClickBaseValueForLevel(clickLevel) * prestigeMultiplier;
     // REMOVED: taps = 0; // No longer reset taps for the current click level
     // clickLevel = 1; // Keep click level
 
@@ -165,10 +163,9 @@ extension PrestigeLogic on GameState {
     cancelAdBoostTimer();
     _cancelPlatinumTimers();
 
-    // Record pre-reset net worth into lifetime history so the chart shows the peak at reincorporation
+    // Record reincorporation point as cumulative lifetime so the Lifetime chart shows total progress (no drop)
     final int preResetMs = DateTime.now().millisecondsSinceEpoch;
-    final double netWorthAtReincorporation = calculateNetWorth();
-    persistentNetWorthHistory[preResetMs] = netWorthAtReincorporation;
+    persistentNetWorthHistory[preResetMs] = lifetimeNetworkWorth;
 
     // Reset stats tracking
     // Keep persistent net worth history so the lifetime chart shows all progress,
@@ -216,6 +213,13 @@ extension PrestigeLogic on GameState {
     recentEventTimes = [];
     businessesOwnedCount = 0;
     localesWithPropertiesCount = 0;
+
+    // Reset run-specific challenge and timed effects (do not carry over to new run)
+    activeChallenge = null;
+    isDisasterShieldActive = false;
+    disasterShieldEndTime = null;
+    isCrisisAcceleratorActive = false;
+    crisisAcceleratorEndTime = null;
     
     // We're now preserving event stats through reincorporation
     // DO NOT reset event achievement tracking fields

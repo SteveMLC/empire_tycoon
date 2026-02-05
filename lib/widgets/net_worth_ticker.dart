@@ -57,12 +57,12 @@ class _NetWorthTickerState extends State<NetWorthTicker> with TickerProviderStat
       }
     });
     
-    // Initialize with current value
+    // Initialize with current value (lifetime net worth so it persists across reincorporation)
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         final gameState = Provider.of<GameState>(context, listen: false);
-        _previousValue = gameState.totalEarned;
-        _targetValue = gameState.totalEarned;
+        _previousValue = gameState.totalLifetimeNetWorth;
+        _targetValue = gameState.totalLifetimeNetWorth;
         setState(() {});
       }
     });
@@ -77,7 +77,7 @@ class _NetWorthTickerState extends State<NetWorthTicker> with TickerProviderStat
 
   void _updateTickerValue() {
     final gameState = Provider.of<GameState>(context, listen: false);
-    final currentValue = gameState.totalEarned;
+    final currentValue = gameState.totalLifetimeNetWorth;
     
     // Only animate if there's a meaningful change (more than $1)
     if ((currentValue - _targetValue).abs() > 1.0) {
@@ -244,7 +244,7 @@ class _NetWorthTickerState extends State<NetWorthTicker> with TickerProviderStat
               builder: (context, child) {
                 final displayValue = _numberAnimation.value > 0 
                     ? _numberAnimation.value 
-                    : gameState.totalEarned;
+                    : gameState.totalLifetimeNetWorth;
                 
                 return ShaderMask(
                   shaderCallback: (bounds) {

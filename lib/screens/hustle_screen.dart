@@ -12,6 +12,7 @@ import '../widgets/hustle/boost_dialog.dart';
 import '../utils/number_formatter.dart';
 import '../utils/matrix4_fallback.dart';
 import '../utils/responsive_utils.dart';
+import '../utils/tap_boost_config.dart';
 
 // Helper function to avoid extension conflicts
 void _callTapOnGameState(GameState gameState) {
@@ -178,58 +179,34 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
   void _checkForLevelUp(GameState gameState) {
     try {
       final int nextLevel = gameState.clickLevel + 1;
-      int requiredTaps;
+      final int requiredTaps = TapBoostConfig.getCumulativeTapsForLevel(nextLevel);
       
-      if (nextLevel <= 5) {
-        requiredTaps = 500 * nextLevel;
-      } else if (nextLevel <= 10) {
-        requiredTaps = 750 * nextLevel;
-      } else {
-        requiredTaps = 1000 * nextLevel;
-      }
-      
-      if (gameState.taps >= requiredTaps && gameState.clickLevel < 20) {
+      if (gameState.taps >= requiredTaps && gameState.clickLevel < TapBoostConfig.maxClickLevel) {
         gameState.clickLevel = nextLevel;
-        
-        double baseValue;
-        if (nextLevel <= 5) {
-          baseValue = 1.5 + (nextLevel * 0.5);
-        } else if (nextLevel <= 10) {
-          baseValue = 4.0 + ((nextLevel - 5) * 1.0);
-        } else if (nextLevel <= 15) {
-          baseValue = 9.0 + ((nextLevel - 10) * 2.0);
-        } else {
-          baseValue = 19.0 + ((nextLevel - 15) * 3.5);
-        }
-        
-        gameState.clickValue = baseValue * gameState.prestigeMultiplier;
+        gameState.clickValue = TapBoostConfig.getClickBaseValueForLevel(nextLevel) * gameState.prestigeMultiplier;
         
         try {
           GameService? gameService = Provider.of<GameService>(context, listen: false);
-          
-          if (nextLevel >= 15) {
+          if (nextLevel >= 40) {
             gameService.playSound(() => gameService.soundManager.playAchievementMilestoneSound());
-          } else if (nextLevel >= 10) {
+          } else if (nextLevel >= 25) {
             gameService.playSound(() => gameService.soundManager.playAchievementRareSound());
-          } else if (nextLevel >= 5) {
+          } else if (nextLevel >= 10) {
             gameService.playAchievementSound();
           } else {
             gameService.playSound(() => gameService.soundManager.playFeedbackSuccessSound());
           }
         } catch (e) {
-          // Only log sound errors occasionally to reduce spam
           if (DateTime.now().second % 30 == 0) {
             print("Sound error: $e");
           }
         }
         
-        // Only log level ups occasionally to reduce spam, or for significant milestones
-        if (nextLevel % 5 == 0 || nextLevel >= 15) {
+        if (nextLevel % 5 == 0 || nextLevel >= 40) {
           print("🌟 LEVEL UP! New click level: ${gameState.clickLevel}, new value: ${gameState.clickValue.toStringAsFixed(2)}");
         }
       }
     } catch (e) {
-      // Only log errors occasionally
       if (DateTime.now().second % 30 == 0) {
         print("Error in _checkForLevelUp: $e");
       }
@@ -315,30 +292,15 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
     return Consumer<GameState>(
       builder: (context, gameState, child) {
         final int nextLevel = gameState.clickLevel + 1;
-        int requiredTaps;
-        int currentLevelTaps;
-        int relativeTaps;
-
-        if (nextLevel <= 5) {
-          requiredTaps = 500 * nextLevel;
-        } else if (nextLevel <= 10) {
-          requiredTaps = 750 * nextLevel;
-        } else {
-          requiredTaps = 1000 * nextLevel;
-        }
+        final int requiredTaps = TapBoostConfig.getCumulativeTapsForLevel(nextLevel);
+        final int currentLevelTaps = TapBoostConfig.getCumulativeTapsForLevel(gameState.clickLevel);
+        final int relativeTaps = gameState.taps - currentLevelTaps;
         
-        currentLevelTaps = gameState.clickLevel <= 1 ? 0 : 
-          gameState.clickLevel <= 5 ? 500 * gameState.clickLevel :
-          gameState.clickLevel <= 10 ? 750 * gameState.clickLevel :
-          1000 * gameState.clickLevel;
-        
-        relativeTaps = gameState.taps - currentLevelTaps;
-        
-        final double progress = gameState.clickLevel >= 20 ? 1.0 :
+        final double progress = gameState.clickLevel >= TapBoostConfig.maxClickLevel ? 1.0 :
           (relativeTaps <= 0 || (requiredTaps - currentLevelTaps) <= 0) ? 0.0 :
           (relativeTaps / (requiredTaps - currentLevelTaps)).clamp(0.0, 1.0);
         
-        final double nextClickValue = gameState.clickLevel >= 20 ? gameState.clickValue :
+        final double nextClickValue = gameState.clickLevel >= TapBoostConfig.maxClickLevel ? gameState.clickValue :
           _calculateNextClickValue(gameState.clickLevel + 1);
         
         // Hide boost section ONLY when achievement notification is visible
@@ -384,8 +346,8 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
               ),
             ),
             
-            // RESPONSIVE BOTTOM SPACING: Ensure safe area for navigation
-            SizedBox(height: responsive.safeAreaBottom),
+            // Bottom spacing: use smaller value to avoid overflow when notification bar is visible
+            SizedBox(height: responsive.spacing(16)),
           ],
         );
       },
@@ -393,19 +355,8 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
   }
   
   double _calculateNextClickValue(int level) {
-    double baseValue;
-    if (level <= 5) {
-      baseValue = 1.5 + (level * 0.5);
-    } else if (level <= 10) {
-      baseValue = 4.0 + ((level - 5) * 1.0);
-    } else if (level <= 15) {
-      baseValue = 9.0 + ((level - 10) * 2.0);
-    } else {
-      baseValue = 19.0 + ((level - 15) * 3.5);
-    }
-    
     final gameState = Provider.of<GameState>(context, listen: false);
-    return baseValue * gameState.prestigeMultiplier;
+    return TapBoostConfig.getClickBaseValueForLevel(level) * gameState.prestigeMultiplier;
   }
   
   Widget _buildClickInfoCard(GameState gameState, double progress, double nextClickValue, ResponsiveUtils responsive) {
@@ -457,7 +408,7 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
                     ],
                   ),
                 ),
-                if (gameState.clickLevel < 20)
+                if (gameState.clickLevel < TapBoostConfig.maxClickLevel)
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
@@ -488,7 +439,7 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
                     borderRadius: BorderRadius.circular(responsive.spacing(12)),
                   ),
                   child: ResponsiveText(
-                    '${gameState.clickLevel} ${gameState.clickLevel >= 20 ? "(MAX)" : ""}',
+                    '${gameState.clickLevel} ${gameState.clickLevel >= TapBoostConfig.maxClickLevel ? "(MAX)" : ""}',
                     baseFontSize: 12,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
@@ -511,11 +462,11 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
                         ),
                       ),
                       
-                      if (gameState.clickLevel < 20)
+                      if (gameState.clickLevel < TapBoostConfig.maxClickLevel)
                         Padding(
                           padding: EdgeInsets.only(top: responsive.spacing(4.0)),
                           child: ResponsiveText(
-                            '${gameState.taps} / ${_calculateRequiredTaps(gameState.clickLevel + 1)} taps',
+                            '${gameState.taps} / ${TapBoostConfig.getCumulativeTapsForLevel(gameState.clickLevel + 1)} taps',
                             baseFontSize: 10,
                             color: Colors.white.withOpacity(0.8),
                           ),
@@ -529,16 +480,6 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
         ),
       ),
     );
-  }
-  
-  int _calculateRequiredTaps(int level) {
-    if (level <= 5) {
-      return 500 * level;
-    } else if (level <= 10) {
-      return 750 * level;
-    } else {
-      return 1000 * level;
-    }
   }
   
   Widget _buildBoostCard(GameState gameState, ResponsiveUtils responsive) {

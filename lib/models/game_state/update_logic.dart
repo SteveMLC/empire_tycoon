@@ -453,8 +453,8 @@ extension UpdateLogic on GameState {
           now.difference(_lastNetWorthUpdateTime!).inMinutes >= _netWorthUpdateIntervalMinutes) {
         final int timestampMs = now.millisecondsSinceEpoch;
         final double currentNetWorth = calculateNetWorth();
-        // Update both lifetime- and run-scoped histories
-        persistentNetWorthHistory[timestampMs] = currentNetWorth;
+        // Lifetime history stores total lifetime net worth so the Stats "Lifetime" chart does not drop at reincorporation
+        persistentNetWorthHistory[timestampMs] = lifetimeNetworkWorth + currentNetWorth;
         runNetWorthHistory[timestampMs] = currentNetWorth;
         _prunePersistentNetWorthHistory();
         _lastNetWorthUpdateTime = now;
@@ -528,9 +528,9 @@ extension UpdateLogic on GameState {
       crisisAcceleratorEndTime = null;
       stateChanged = true;
     }
-    
-    // Only check these if they exist in the GameState class
-    // If these properties don't exist yet, you'll need to add them to the GameState class
+
+    // Platinum Challenge: clear if expired or completed (so UI updates when in foreground or after load)
+    _checkActiveChallenge(now);
     
     return stateChanged;
   }

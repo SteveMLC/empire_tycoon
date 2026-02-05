@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../models/game_state.dart';
@@ -18,6 +19,7 @@ class AppLifecycleService with WidgetsBindingObserver {
   GameState? _gameState;
   IncomeService? _incomeService;
   AdMobService? _adMobService;
+  Future<void> Function()? _onSave;
   bool _isInitialized = false;
   bool _hasRequestedPermission = false;
   
@@ -26,12 +28,14 @@ class AppLifecycleService with WidgetsBindingObserver {
 
   /// Initialize the lifecycle service
   /// ENHANCED: Now accepts IncomeService and AdMobService for consistent coordination
-  Future<void> initialize(GameState gameState, {IncomeService? incomeService, AdMobService? adMobService}) async {
+  /// ENHANCED: Optional onSave callback to persist game state when app goes to background
+  Future<void> initialize(GameState gameState, {IncomeService? incomeService, AdMobService? adMobService, Future<void> Function()? onSave}) async {
     if (_isInitialized) return;
     
     _gameState = gameState;
     _incomeService = incomeService;
     _adMobService = adMobService;
+    _onSave = onSave;
     
     // Initialize notification service
     await _notificationService.initialize();
@@ -68,7 +72,9 @@ class AppLifecycleService with WidgetsBindingObserver {
   /// ENHANCED: Now records background start time for offline income calculation
   void _handleAppGoingToBackground() {
     debugPrint('📱 App going to background - recording time and scheduling notifications');
-    
+
+    unawaited(_onSave?.call());
+
     _backgroundStartTime = DateTime.now();
     debugPrint('🕒 Background start time recorded: $_backgroundStartTime');
     
@@ -97,6 +103,10 @@ class AppLifecycleService with WidgetsBindingObserver {
   }
 
   void _handleAppReturningToForegroundDeferred() {
+    // Clear Platinum Challenge if it expired or completed while app was in background
+    if (_gameState != null) {
+      _gameState!.checkAndClearExpiredPlatinumChallenge();
+    }
     if (_backgroundStartTime != null && _gameState != null) {
       final DateTime now = DateTime.now();
       final Duration backgroundDuration = now.difference(_backgroundStartTime!);

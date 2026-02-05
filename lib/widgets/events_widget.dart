@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../models/game_state.dart';
 import '../models/event.dart';
+import '../services/game_service.dart';
 import 'event_notification.dart';
 
 /// Refined events management widget with polished command center styling
@@ -421,13 +423,13 @@ class EventsWidget extends StatelessWidget {
         final event = activeEvents[index];
         return Padding(
           padding: const EdgeInsets.only(bottom: 12),
-          child: _buildRefinedEventCard(event, gameState, index),
+          child: _buildRefinedEventCard(context, event, gameState, index),
         );
       },
     );
   }
 
-  Widget _buildRefinedEventCard(GameEvent event, GameState gameState, int index) {
+  Widget _buildRefinedEventCard(BuildContext context, GameEvent event, GameState gameState, int index) {
     final isPlatinum = gameState.isPlatinumFrameActive;
     
     return Container(
@@ -454,6 +456,10 @@ class EventsWidget extends StatelessWidget {
           // Event resolved, GameState's notifyListeners will trigger rebuild
         },
         onTap: event.resolution.type == EventResolutionType.tapChallenge ? () {
+          HapticFeedback.lightImpact();
+          try {
+            Provider.of<GameService>(context, listen: false).playTapSound();
+          } catch (_) {}
           gameState.processTapForEvent(event);
         } : null,
       ),

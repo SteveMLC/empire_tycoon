@@ -293,6 +293,10 @@ extension SerializationLogic on GameState {
     networkWorth = (json['networkWorth'] as num?)?.toDouble() ?? 0.0;
     lifetimeNetworkWorth = (json['lifetimeNetworkWorth'] as num?)?.toDouble() ?? 0.0;
     reincorporationUsesAvailable = json['reincorporationUsesAvailable'] ?? 0;
+
+    // Option A: Recompute click level from taps (taps is source of truth for new leveling system)
+    clickLevel = TapBoostConfig.getLevelFromTaps(taps);
+    clickValue = TapBoostConfig.getClickBaseValueForLevel(clickLevel) * prestigeMultiplier;
     totalReincorporations = json['totalReincorporations'] ?? 0;
     maxedFoodStallBranches = json['maxedFoodStallBranches'] != null 
         ? Set<String>.from(json['maxedFoodStallBranches']) 
@@ -693,11 +697,10 @@ extension SerializationLogic on GameState {
       print("⚠️ Skipping offline income processing: lastSaved time not available.");
     }
 
-    // Bootstrap net worth history if needed so the stats page never starts empty
+    // Bootstrap net worth history if needed so the stats page never starts empty (use total lifetime)
     if (persistentNetWorthHistory.isEmpty) {
       final int nowMs = DateTime.now().millisecondsSinceEpoch;
-      final double currentNetWorth = calculateNetWorth();
-      persistentNetWorthHistory[nowMs] = currentNetWorth;
+      persistentNetWorthHistory[nowMs] = lifetimeNetworkWorth + calculateNetWorth();
     }
 
     if (runNetWorthHistory.isEmpty) {

@@ -185,6 +185,8 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
                     ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
                   ),
                 ),
 
@@ -571,105 +573,113 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
                       ),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
                     ),
                   ),
-                  // Yacht indicator in header
-                  if (gameState.platinumYachtDockedLocaleId == locale.id) ...[
-                    Tooltip(
-                      message: 'Platinum Yacht Docked\n+5% Income Boost Active',
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [Colors.blue.shade100, Colors.blue.shade50],
-                          ),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.blue.shade300, width: 1),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.blue.withOpacity(0.2),
-                              blurRadius: 4,
-                              spreadRadius: 0,
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.sailing,
-                              color: Colors.blue.shade700,
-                              size: 16,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              '+5%',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.blue.shade700,
+                  // Yacht and completion badges - flexible so row doesn't overflow
+                  Flexible(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (gameState.platinumYachtDockedLocaleId == locale.id) ...[
+                          Tooltip(
+                            message: 'Platinum Yacht Docked\n+5% Income Boost Active',
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [Colors.blue.shade100, Colors.blue.shade50],
+                                ),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.blue.shade300, width: 1),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.blue.withOpacity(0.2),
+                                    blurRadius: 4,
+                                    spreadRadius: 0,
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.sailing,
+                                    color: Colors.blue.shade700,
+                                    size: 14,
+                                  ),
+                                  const SizedBox(width: 2),
+                                  Text(
+                                    '+5%',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.blue.shade700,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                  ],
-                  // Completion status in header
-                  if (isFullyMaxed)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFFFFD700).withOpacity(0.4),
-                            blurRadius: 6,
-                            spreadRadius: 0,
                           ),
+                          const SizedBox(width: 6),
                         ],
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.star,
-                            color: Colors.white,
-                            size: 12,
-                          ),
-                          const SizedBox(width: 4),
-                          const Text(
-                            'MAX',
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
+                        if (isFullyMaxed)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFFFFD700), Color(0xFFFFA500)],
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color(0xFFFFD700).withOpacity(0.4),
+                                  blurRadius: 6,
+                                  spreadRadius: 0,
+                                ),
+                              ],
+                            ),
+                            child: const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.star,
+                                  color: Colors.white,
+                                  size: 10,
+                                ),
+                                SizedBox(width: 2),
+                                Text(
+                                  'MAX',
+                                  style: TextStyle(
+                                    fontSize: 9,
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        else if (isFullyPurchased)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.green.shade500,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.green.shade600, width: 1),
+                            ),
+                            child: const Text(
+                              'FULL',
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
-                        ],
-                      ),
-                    )
-                  else if (isFullyPurchased)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: Colors.green.shade500,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.green.shade600, width: 1),
-                      ),
-                      child: const Text(
-                        'FULL',
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      ],
                     ),
+                  ),
                 ],
               ),
 
@@ -939,6 +949,8 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
                                     ),
                                   ],
                                 ),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
                               ),
                             ),
                             if (isOwned)
@@ -985,21 +997,25 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
                               color: isLocaleAffectedByEvent ? Colors.red.shade300 : Colors.green.shade300,
                             ),
                             const SizedBox(width: 4),
-                            Text(
-                              isLocaleAffectedByEvent && displayedIncome < 0
-                                  ? '(\$${NumberFormatter.formatCompact(displayedIncome.abs())})/sec'
-                                  : '\$${NumberFormatter.formatCompact(displayedIncome)}/sec',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: isLocaleAffectedByEvent ? Colors.red.shade300 : Colors.green.shade300,
-                                shadows: const [
-                                  Shadow(
-                                    offset: Offset(0, 1),
-                                    blurRadius: 2,
-                                    color: Colors.black54,
-                                  ),
-                                ],
+                            Expanded(
+                              child: Text(
+                                isLocaleAffectedByEvent && displayedIncome < 0
+                                    ? '(\$${NumberFormatter.formatCompact(displayedIncome.abs())})/sec'
+                                    : '\$${NumberFormatter.formatCompact(displayedIncome)}/sec',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: isLocaleAffectedByEvent ? Colors.red.shade300 : Colors.green.shade300,
+                                  shadows: const [
+                                    Shadow(
+                                      offset: Offset(0, 1),
+                                      blurRadius: 2,
+                                      color: Colors.black54,
+                                    ),
+                                  ],
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
                               ),
                             ),
                           ],
@@ -1022,18 +1038,22 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
                 Row(
                   children: [
                     Icon(
-                      Icons.payments, 
-                      size: 16, 
-                      color: Colors.grey.shade600
+                      Icons.payments,
+                      size: 16,
+                      color: Colors.grey.shade600,
                     ),
                     const SizedBox(width: 6),
-                    Text(
-                      isOwned
-                        ? 'Value: ${NumberFormatter.formatCurrency(property.totalValue)}'
-                        : 'Price: ${NumberFormatter.formatCurrency(property.purchasePrice)}',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
+                    Expanded(
+                      child: Text(
+                        isOwned
+                            ? 'Value: ${NumberFormatter.formatCurrency(property.totalValue)}'
+                            : 'Price: ${NumberFormatter.formatCurrency(property.purchasePrice)}',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
                       ),
                     ),
                   ],
@@ -1075,6 +1095,7 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
                                   final assetLoader = AssetLoader();
                                   unawaited(assetLoader.preloadSound(SoundAssets.realEstatePurchase));
                                   gameService.playRealEstateSound();
+                                  unawaited(gameService.saveGame());
                                 } catch (e) {
                                   if (DateTime.now().second % 30 == 0) {
                                     print("Error playing real estate purchase sound: $e");
@@ -1132,6 +1153,7 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
                 unawaited(assetLoader.preloadSound(SoundAssets.businessUpgrade));
                 // Use the business sound method as it uses the same sound
                 gameService.playBusinessSound();
+                unawaited(gameService.saveGame());
               } catch (e) {
                 // Only log real estate sound errors occasionally to reduce spam
                 if (DateTime.now().second % 30 == 0) {
