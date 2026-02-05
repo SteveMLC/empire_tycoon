@@ -99,6 +99,11 @@ extension SerializationLogic on GameState {
 
       // --- Added: UI State Persistence ---
       'lastSelectedRealEstateLocaleId': lastSelectedRealEstateLocaleId,
+      'netWorthTickerPosition': netWorthTickerPosition != null ? {
+        'dx': netWorthTickerPosition!.dx,
+        'dy': netWorthTickerPosition!.dy,
+      } : null,
+      'isNetWorthTickerExpanded': isNetWorthTickerExpanded,
       // --- End Added ---
 
       // Boost Timer Data
@@ -594,6 +599,16 @@ extension SerializationLogic on GameState {
 
     // --- Added: Load UI State Persistence ---
     lastSelectedRealEstateLocaleId = json['lastSelectedRealEstateLocaleId'];
+    
+    // Load Net Worth Ticker state
+    if (json['netWorthTickerPosition'] != null) {
+      final posData = json['netWorthTickerPosition'] as Map;
+      netWorthTickerPosition = Offset(
+        (posData['dx'] as num).toDouble(),
+        (posData['dy'] as num).toDouble(),
+      );
+    }
+    isNetWorthTickerExpanded = json['isNetWorthTickerExpanded'] ?? false;
     // --- End Added ---
 
     // Recalculate active flags based on loaded end times

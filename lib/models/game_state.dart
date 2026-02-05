@@ -162,6 +162,10 @@ class GameState with ChangeNotifier {
   // ADDED: UI State Persistence - Real Estate Screen
   String? lastSelectedRealEstateLocaleId; // Remember last selected locale in Real Estate screen
 
+  // ADDED: Net Worth Ticker State
+  Offset? netWorthTickerPosition; // Position of the draggable net worth ticker
+  bool isNetWorthTickerExpanded = false; // Collapsed (crown only) or expanded (full display)
+
   // ADDED: Income Surge State
   bool isIncomeSurgeActive = false;
   DateTime? incomeSurgeEndTime;
@@ -1549,6 +1553,17 @@ class GameState with ChangeNotifier {
     } else {
       print("Cannot toggle platinum frame: Not unlocked.");
     }
+  }
+
+  // Methods for Net Worth Ticker state management
+  void toggleNetWorthTicker() {
+    isNetWorthTickerExpanded = !isNetWorthTickerExpanded;
+    notifyListeners();
+  }
+
+  void setNetWorthTickerPosition(Offset position) {
+    netWorthTickerPosition = position;
+    notifyListeners();
   }
 
   // Public method to cancel the standard boost timer

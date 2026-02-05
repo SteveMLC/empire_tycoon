@@ -18,6 +18,7 @@ import '../widgets/main_screen/main_tab_bar.dart';
 import '../widgets/main_screen/notification_section.dart';
 import '../widgets/main_screen/event_corner_badge.dart';
 import '../widgets/empire_loading_screen.dart';
+import '../widgets/net_worth_ticker.dart';
 
 /// Main screen of the app, refactored to use smaller, more maintainable component files.
 /// Components extracted include:
@@ -369,6 +370,9 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
               
               // Ultra-minimal corner badge for events
               const EventCornerBadge(),
+              
+              // Net Worth Ticker - draggable crown/earnings display
+              const NetWorthTicker(),
             ],
           ),
         );
