@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../models/game_state.dart';
 import '../services/game_service.dart';
+import '../services/review_manager.dart';
 import '../utils/number_formatter.dart';
 import '../utils/time_utils.dart';
 import '../utils/sounds.dart';
@@ -1376,6 +1377,10 @@ class _StatsScreenState extends State<StatsScreen> {
 
               if (success) {
                 unawaited(Provider.of<GameService>(context, listen: false).saveGame());
+                ReviewManager.instance.onIncomeMultiplier(
+                  context,
+                  multiplier: gameState.incomeMultiplier,
+                );
                 // ScaffoldMessenger.of(context).showSnackBar(
                 //   SnackBar(
                 //     content: Text('Successfully re-incorporated! New passive bonus: ${gameState.incomeMultiplier.toStringAsFixed(2)}x'),

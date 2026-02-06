@@ -9,6 +9,7 @@ import '../models/business_branch.dart';
 import '../models/game_state.dart';
 import '../services/game_service.dart';
 import '../services/admob_service.dart';
+import '../services/review_manager.dart';
 import '../utils/number_formatter.dart';
 import '../utils/time_formatter.dart';
 import '../utils/asset_loader.dart';
@@ -31,6 +32,7 @@ class BusinessItem extends StatefulWidget {
 
 class _BusinessItemState extends State<BusinessItem> {
   Timer? _timer;
+  int _lastKnownLevel = 0;
   
   // List of professional, attractive business colors
   static const List<Color> _businessColors = [
@@ -85,6 +87,7 @@ class _BusinessItemState extends State<BusinessItem> {
   @override
   void initState() {
     super.initState();
+    _lastKnownLevel = widget.business.level;
     if (widget.business.isUpgrading) {
       _startUiUpdateTimer();
     }
@@ -93,6 +96,7 @@ class _BusinessItemState extends State<BusinessItem> {
   @override
   void didUpdateWidget(covariant BusinessItem oldWidget) {
     super.didUpdateWidget(oldWidget);
+    _checkForBusinessLevelUp();
     if (widget.business.isUpgrading != oldWidget.business.isUpgrading) {
       if (widget.business.isUpgrading) {
         _startUiUpdateTimer();
@@ -138,6 +142,18 @@ class _BusinessItemState extends State<BusinessItem> {
   void _stopUiUpdateTimer() {
     _timer?.cancel();
     _timer = null;
+  }
+
+  void _checkForBusinessLevelUp() {
+    final int currentLevel = widget.business.level;
+    if (currentLevel > _lastKnownLevel) {
+      _lastKnownLevel = currentLevel;
+      ReviewManager.instance.onBusinessLevelUp(
+        context,
+        level: currentLevel,
+        businessId: widget.business.id,
+      );
+    }
   }
 
   @override
@@ -565,7 +581,11 @@ class _BusinessItemState extends State<BusinessItem> {
       child: ElevatedButton(
         onPressed: business.isMaxLevel() ? null : (canAfford
             ? () {
+                final int previousLevel = business.level;
                 if (gameState.buyBusiness(business.id)) {
+                  if (business.level > previousLevel) {
+                    _checkForBusinessLevelUp();
+                  }
                   // 🎯 HAPTIC FEEDBACK: Satisfying feedback on purchase
                   SoundManager().playMediumHaptic();
                   
