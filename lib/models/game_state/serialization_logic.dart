@@ -438,6 +438,31 @@ extension SerializationLogic on GameState {
       }
     }
 
+    // Load active market events (FIX: This was missing, causing market events to disappear on reload)
+    if (json['activeMarketEvents'] != null && json['activeMarketEvents'] is List) {
+      try {
+        List<dynamic> marketEventsJson = json['activeMarketEvents'];
+        activeMarketEvents = marketEventsJson
+            .map((e) => MarketEvent.fromJson(e as Map<String, dynamic>))
+            .toList();
+        
+        // Clean up expired market events (those with 0 or negative remaining days)
+        activeMarketEvents.removeWhere((event) => event.remainingDays <= 0);
+        
+        if (kDebugMode) {
+          print("✅ Loaded ${activeMarketEvents.length} active market events");
+          for (var event in activeMarketEvents) {
+            print("   - ${event.name} (${event.remainingDays} days left)");
+          }
+        }
+      } catch (e) {
+        print("⚠️ Error loading market events: $e. Resetting to empty list.");
+        activeMarketEvents = [];
+      }
+    } else {
+      activeMarketEvents = [];
+    }
+
     // Ensure real estate upgrades are loaded before applying saved state
     if (realEstateInitializationFuture != null) {
       if (kDebugMode) print("⏳ Waiting for real estate initialization before loading saved state...");
