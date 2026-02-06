@@ -149,6 +149,15 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
       // Use the helper function to avoid extension conflicts
       _callTapOnGameState(gameState);
 
+      // 💰 FLOATING MONEY: Show catchy floating money animation
+      if (_lastTapPosition != null && mounted) {
+        final floatingMoneyManager = FloatingMoneyManager.of(context);
+        if (floatingMoneyManager != null) {
+          final clickValue = _calculateClickValue(gameState);
+          floatingMoneyManager.spawnFloatingMoney(clickValue, _lastTapPosition!);
+        }
+      }
+
       // First-tap tutorial: mark as shown so we stop highlighting the tap area
       if (!_firstTapTutorialShown) _markFirstTapTutorialShown();
       
@@ -320,8 +329,9 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
         final bool showBoost = !gameState.isAchievementNotificationVisible;
         
         // RESPONSIVE LAYOUT: Optimize for device size and ensure tap zone visibility
-        return Column(
-          children: [
+        return FloatingMoneyManager(
+          child: Column(
+            children: [
             // Click info card - responsive sizing
             _buildClickInfoCard(gameState, progress, nextClickValue, responsive),
             
@@ -362,6 +372,7 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
             // Bottom spacing: use smaller value to avoid overflow when notification bar is visible
             SizedBox(height: responsive.spacing(16)),
           ],
+          ),
         );
       },
     );
