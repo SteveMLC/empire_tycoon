@@ -67,6 +67,7 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
   bool _firstTapTutorialShown = false;
   Offset? _lastTapPosition;
   final GlobalKey<FloatingMoneyManagerState> _floatingMoneyKey = GlobalKey<FloatingMoneyManagerState>();
+  final GlobalKey<FloatingMoneyManagerState> _floatingMoneyKey = GlobalKey<FloatingMoneyManagerState>();
 
   @override
   void initState() {
@@ -329,6 +330,7 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
         
         // RESPONSIVE LAYOUT: Optimize for device size and ensure tap zone visibility
         return FloatingMoneyManager(
+          key: _floatingMoneyKey,
           key: _floatingMoneyKey,
           child: Column(
             children: [
@@ -748,7 +750,7 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
           );
         },
       ),
-    ),
+      ),
     );
     // When holding for auto-tap, win the horizontal-drag arena so TabBarView does not
     // receive the swipe and cancel the hold. Listener ensures we stop the timer on

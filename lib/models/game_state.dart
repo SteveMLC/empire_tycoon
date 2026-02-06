@@ -25,6 +25,7 @@ import '../data/pacing_config.dart'; // Pacing multipliers for progression scali
 import '../utils/number_formatter.dart'; // ADDED: Import for formatting
 import '../utils/tap_boost_config.dart'; // ADDED: Tap boost leveling config
 import 'mogul_avatar.dart'; // ADDED: Import for mogul avatars
+import 'daily_reward.dart'; // ADDED: Daily rewards state
 import '../services/income_service.dart'; // ADDED: Import for IncomeService
 import '../services/admob_service.dart'; // ADDED: Import for AdMobService integration
 
@@ -277,6 +278,7 @@ class GameState with ChangeNotifier {
   // Login streak for achievements (consecutive days)
   DateTime? lastLoginDay;
   int consecutiveLoginDays = 1;
+  DailyRewardsState dailyRewardsState = DailyRewardsState();
 
   int currentDay = DateTime.now().weekday; // 1=Mon, 7=Sun
   bool isInitialized = false;

@@ -9,6 +9,16 @@ extension BoosterLogic on GameState {
     }
   }
 
+  // Start or extend the standard boost for a specific duration.
+  void startBoostForDuration(Duration duration) {
+    final int nextSeconds = duration.inSeconds;
+    if (nextSeconds <= 0) return;
+    if (boostRemainingSeconds < nextSeconds) {
+      boostRemainingSeconds = nextSeconds;
+      notifyListeners();
+    }
+  }
+
   // Start the ad boost (10x for 60 seconds)
   void startAdBoost() {
     adBoostRemainingSeconds = 60; // 60 seconds
