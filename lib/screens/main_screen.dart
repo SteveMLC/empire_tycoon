@@ -19,6 +19,8 @@ import '../widgets/main_screen/notification_section.dart';
 import '../widgets/main_screen/event_corner_badge.dart';
 import '../widgets/empire_loading_screen.dart';
 import '../widgets/net_worth_ticker.dart';
+import '../services/daily_rewards_manager.dart';
+import '../widgets/daily_reward_popup.dart';
 
 /// Main screen of the app, refactored to use smaller, more maintainable component files.
 /// Components extracted include:
@@ -42,6 +44,8 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
   StreamSubscription<Uri>? _deepLinkSubscription;
   final Set<String> _processedDeepLinks = <String>{};
   bool _isRateUsRequestInProgress = false;
+  bool _dailyRewardCheckInProgress = false;
+  bool _dailyRewardChecked = false;
   
   // We'll access these services through Provider instead of storing local references
   // This helps avoid memory leaks and ensures consistent access patterns
@@ -190,6 +194,31 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
     _checkAndShowRateUsDialog(gameState);
   }
 
+  Future<void> _checkAndShowDailyReward(GameState gameState) async {
+    if (_dailyRewardCheckInProgress || _dailyRewardChecked) return;
+
+    _dailyRewardCheckInProgress = true;
+    final DailyRewardsManager manager = DailyRewardsManager();
+
+    await manager.hydrateFromGameState(gameState);
+    final reward = await manager.checkDailyReward();
+    if (!mounted) return;
+
+    if (reward != null) {
+      await DailyRewardPopup.show(
+        context,
+        reward: reward,
+        allRewards: manager.rewards,
+        streakBroken: manager.lastCheckResult?.streakBroken ?? false,
+        currentDay: reward.day,
+        onClaim: () => manager.claimReward(reward, gameState),
+      );
+    }
+
+    _dailyRewardChecked = true;
+    _dailyRewardCheckInProgress = false;
+  }
+
   // Start or stop the timer based on GameState
   void _updateBoostTimer(GameState gameState) {
     final bool isBoostActive = gameState.clickMultiplier > 1.0 && 
@@ -333,6 +362,11 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
             loadingText: 'EMPIRE TYCOON',
             subText: 'Finalizing your business empire...',
           );
+        }
+        if (!_dailyRewardChecked && !_dailyRewardCheckInProgress) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _checkAndShowDailyReward(gameState);
+          });
         }
         
         return Scaffold(
