@@ -566,6 +566,9 @@ class _BusinessItemState extends State<BusinessItem> {
                   // 🎯 HAPTIC FEEDBACK: Satisfying feedback on purchase
                   HapticFeedback.mediumImpact();
                   
+                  // 💫 VISUAL FEEDBACK: Show purchase flash effect
+                  PurchaseFlashOverlay.show(context);
+                  
                   try {
                     final gameService = Provider.of<GameService>(context, listen: false);
                     
