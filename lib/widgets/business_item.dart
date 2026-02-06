@@ -13,6 +13,7 @@ import '../utils/time_formatter.dart';
 import '../utils/asset_loader.dart';
 import 'business_branch_selection_dialog.dart';
 import 'animated_upgrade_progress_bar.dart';
+import 'purchase_flash_overlay.dart';
 
 class BusinessItem extends StatefulWidget {
   final Business business;
@@ -729,6 +730,7 @@ class _BusinessItemState extends State<BusinessItem> {
   
   Widget _buildUpgradeTimerSection(BuildContext context, GameState gameState, Business business, Duration remainingTime) {
     double progress = business.getUpgradeProgress();
+    final businessColor = _getBusinessColor(business.id);
 
     return Container(
       padding: const EdgeInsets.all(12),
@@ -766,14 +768,12 @@ class _BusinessItemState extends State<BusinessItem> {
             ],
           ),
           const SizedBox(height: 8),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: progress,
-              backgroundColor: Colors.orange.shade100,
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.orange.shade500),
-              minHeight: 6,
-            ),
+          AnimatedUpgradeProgressBar(
+            progress: progress,
+            remainingTime: remainingTime,
+            primaryColor: businessColor,
+            showGlow: true,
+            enablePulse: true,
           ),
           const SizedBox(height: 8),
           SizedBox(
