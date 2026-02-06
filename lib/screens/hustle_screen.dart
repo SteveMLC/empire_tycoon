@@ -88,6 +88,7 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
   }
 
   void _onTapDown(TapDownDetails details) {
+    _lastTapPosition = details.localPosition;
     _animationController.forward();
     // Track the last tap position so FloatingMoneyManager can spawn money
     // animations from the correct location.
