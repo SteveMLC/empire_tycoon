@@ -6,8 +6,8 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/event.dart';
 import '../models/game_state.dart';
-
 import '../services/admob_service.dart';
+import '../utils/sound_manager.dart';
 import 'package:flutter/foundation.dart';
 
 class EventNotification extends StatefulWidget {

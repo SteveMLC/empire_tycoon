@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../models/game_state.dart';
 import '../models/event.dart';
 import '../services/game_service.dart';
+import '../utils/sound_manager.dart';
 import 'event_notification.dart';
 
 /// Refined events management widget with polished command center styling

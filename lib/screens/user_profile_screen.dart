@@ -2000,7 +2000,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                           setState(() {});
                         },
                         icon: Icon(
-                          hapticsEnabled ? Icons.vibration : Icons.vibration_disabled,
+                          Icons.vibration,
                           color: hapticsEnabled ? Colors.orange : Colors.grey,
                         ),
                         style: OutlinedButton.styleFrom(

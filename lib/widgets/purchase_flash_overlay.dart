@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 
-/// A reusable overlay widget that displays a satisfying visual feedback
-/// when a purchase is made. Combines multiple effects:
-/// - Gold pulse radiating outward from tap point
-/// - Brief amber screen tint (200-300ms)
-/// - Subtle scale pulse on success
+/// A reusable overlay widget that displays subtle visual feedback
+/// when a purchase is made. Combines:
+/// - Soft gold rings radiating outward from tap point
+/// - Brief, low-opacity screen tint
 ///
 /// Usage:
 /// ```dart
@@ -20,7 +19,7 @@ class PurchaseFlashOverlay {
     BuildContext context, {
     Offset? tapPosition,
     Color flashColor = const Color(0xFFFFD700), // Gold
-    Duration duration = const Duration(milliseconds: 600),
+    Duration duration = const Duration(milliseconds: 400),
   }) {
     final overlay = Overlay.of(context);
     final renderBox = context.findRenderObject() as RenderBox?;
@@ -99,9 +98,9 @@ class _PurchaseFlashWidgetState extends State<_PurchaseFlashWidget>
       curve: const Interval(0.3, 1.0, curve: Curves.easeOut),
     ));
     
-    // Tint animation: quick flash then fade
+    // Tint animation: subtle flash then fade
     _tintAnimation = Tween<double>(
-      begin: 0.15, // Peak opacity
+      begin: 0.07, // Low peak opacity for a gentle glow
       end: 0.0,
     ).animate(CurvedAnimation(
       parent: _controller,
@@ -179,32 +178,22 @@ class _PulsePainter extends CustomPainter {
     
     final currentRadius = maxDistance * progress;
     
-    // Draw multiple expanding circles for a layered effect
+    // Draw multiple expanding circles for a soft layered effect (no center dot)
     for (int i = 0; i < 3; i++) {
       final layerDelay = i * 0.15;
       final layerProgress = math.max(0.0, math.min(1.0, progress - layerDelay));
       
       if (layerProgress > 0) {
         final layerRadius = currentRadius * layerProgress;
-        final layerOpacity = opacity * (1.0 - layerProgress) * 0.3;
+        final layerOpacity = opacity * (1.0 - layerProgress) * 0.2;
         
         final paint = Paint()
           ..color = color.withOpacity(layerOpacity)
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 4.0 + (i * 2.0);
+          ..strokeWidth = 3.0 + (i * 1.5);
         
         canvas.drawCircle(tapPosition, layerRadius, paint);
       }
-    }
-    
-    // Draw a filled circle at the center that shrinks
-    final centerRadius = 40.0 * (1.0 - progress);
-    if (centerRadius > 0) {
-      final centerPaint = Paint()
-        ..color = color.withOpacity(opacity * 0.5)
-        ..style = PaintingStyle.fill;
-      
-      canvas.drawCircle(tapPosition, centerRadius, centerPaint);
     }
   }
   

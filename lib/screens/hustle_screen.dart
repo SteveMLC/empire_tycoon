@@ -13,6 +13,7 @@ import '../widgets/hustle/boost_dialog.dart';
 import '../utils/number_formatter.dart';
 import '../utils/matrix4_fallback.dart';
 import '../utils/responsive_utils.dart';
+import '../utils/sound_manager.dart';
 import '../utils/tap_boost_config.dart';
 import '../widgets/floating_money.dart';
 
