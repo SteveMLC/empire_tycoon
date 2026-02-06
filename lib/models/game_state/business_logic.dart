@@ -104,6 +104,7 @@ extension BusinessLogic on GameState {
 
       _updateBusinessUnlocks(); // Check if new unlocks are triggered
       notifyListeners();
+      onRequestSave?.call();
     } else {
       print("⚠️ Attempted to complete upgrade for ${business.name}, but not ready.");
     }

@@ -1891,6 +1891,68 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
             const SizedBox(height: 16),
 
+            // Net Worth Ticker visibility toggle (button centered like others; info icon to the side)
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      gameState.setNetWorthTickerVisible(!gameState.showNetWorthTicker);
+                    },
+                    icon: Icon(
+                      gameState.showNetWorthTicker ? Icons.visibility : Icons.visibility_off,
+                      color: gameState.showNetWorthTicker ? Colors.teal : Colors.grey,
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      side: BorderSide(
+                        color: gameState.showNetWorthTicker ? Colors.teal : Colors.grey,
+                      ),
+                    ),
+                    label: Text(
+                      gameState.showNetWorthTicker
+                          ? 'Net Worth Ticker: VISIBLE'
+                          : 'Net Worth Ticker: HIDDEN',
+                      style: TextStyle(
+                        color: gameState.showNetWorthTicker ? Colors.teal : Colors.grey,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                IconButton(
+                  icon: const Icon(Icons.info_outline, size: 22),
+                  color: gameState.showNetWorthTicker ? Colors.teal : Colors.grey,
+                  tooltip: 'What is the Net Worth Ticker?',
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (ctx) {
+                        return AlertDialog(
+                          title: const Text('Net Worth Ticker'),
+                          content: const Text(
+                            'The Net Worth Ticker is a draggable crown widget that shows your lifetime net worth.\n\n'
+                            '- Drag it anywhere on the screen to position it.\n'
+                            '- Tap the crown to expand or collapse the display.\n'
+                            '- Double-tap the ticker to temporarily enlarge it for easier reading.\n\n'
+                            'You can hide it here if you prefer a cleaner HUD.',
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(ctx).pop(),
+                              child: const Text('Got it'),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                  },
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 16),
+
             Consumer<GameService>(
               builder: (context, gameService, child) {
                 // Get sound enabled state from the SoundManager singleton

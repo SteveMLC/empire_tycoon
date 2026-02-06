@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -690,6 +691,7 @@ class _BusinessBranchSelectionDialogState extends State<BusinessBranchSelectionD
       try {
         final gameService = Provider.of<GameService>(context, listen: false);
         gameService.playBusinessSound();
+        unawaited(gameService.saveGame());
       } catch (e) {
         print("Error playing sound: $e");
       }

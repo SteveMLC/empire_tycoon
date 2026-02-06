@@ -22,6 +22,7 @@ import '../data/business_definitions.dart'; // ADDED: Import for business data
 import '../data/investment_definitions.dart'; // ADDED: Import for investment data
 import '../data/platinum_vault_items.dart'; // ADDED: Import for vault items
 import '../utils/number_formatter.dart'; // ADDED: Import for formatting
+import '../utils/tap_boost_config.dart'; // ADDED: Tap boost leveling config
 import 'mogul_avatar.dart'; // ADDED: Import for mogul avatars
 import '../services/income_service.dart'; // ADDED: Import for IncomeService
 import '../services/admob_service.dart'; // ADDED: Import for AdMobService integration
@@ -165,6 +166,7 @@ class GameState with ChangeNotifier {
   // ADDED: Net Worth Ticker State
   Offset? netWorthTickerPosition; // Position of the draggable net worth ticker
   bool isNetWorthTickerExpanded = false; // Collapsed (crown only) or expanded (full display)
+  bool showNetWorthTicker = true; // Whether the Net Worth Ticker is visible
 
   // ADDED: Income Surge State
   bool isIncomeSurgeActive = false;
@@ -234,6 +236,10 @@ class GameState with ChangeNotifier {
   // Persistent Net Worth History (key: timestamp ms, value: net worth)
   // This map persists across reincorporation
   Map<int, double> persistentNetWorthHistory = {};
+
+  // Per-run Net Worth History (key: timestamp ms, value: net worth)
+  // This is reset on each reincorporation and only reflects the current run.
+  Map<int, double> runNetWorthHistory = {};
 
   bool isPremium = false;
   
@@ -374,6 +380,9 @@ class GameState with ChangeNotifier {
   /// Set from app init; receives this GameState so caller can submit totalLifetimeNetWorth via AuthService.
   void Function(GameState)? onThrottledLeaderboardSubmit;
 
+  /// Optional callback to request a debounced save. Set from GameService; called when state changes internally (e.g. completed business upgrade).
+  void Function()? onRequestSave;
+
   GameState() {
     print("🚀 Initializing GameState...");
     _initializeDefaultBusinesses(); // From initialization_logic.dart
@@ -393,14 +402,14 @@ class GameState with ChangeNotifier {
     achievementManager = AchievementManager(this);
     print("🏆 Achievement Manager Initialized.");
 
-    print("🏘️ Starting Real Estate Upgrade Initialization...");
+    if (kDebugMode) print("🏘️ Starting Real Estate Upgrade Initialization...");
     realEstateInitializationFuture = initializeRealEstateUpgrades(); // From initialization_logic.dart
     realEstateInitializationFuture?.then((_) {
-       print("✅ Real Estate Upgrades Initialized Successfully.");
+       if (kDebugMode) print("✅ Real Estate Upgrades Initialized Successfully.");
        _updateBusinessUnlocks(); // From business_logic.dart
        _updateRealEstateUnlocks(); // From real_estate_logic.dart
        isInitialized = true;
-       print("🏁 GameState Initialized (after async). Setting up timers...");
+       if (kDebugMode) print("🏁 GameState Initialized (after async). Setting up timers...");
        _setupTimers(); // No-op; GameService TimerService drives all timers
        notifyListeners();
     }).catchError((e, stackTrace) {
@@ -476,221 +485,10 @@ class GameState with ChangeNotifier {
     notifyListeners();
   }
 
-  void _updateGameState() {
-    if (!isInitialized) return; // Skip if not initialized
-    
-    final DateTime now = DateTime.now();
-    final String hourKey = TimeUtils.getHourKey(now);
-    final String dayKey = TimeUtils.getDayKey(now);
-    
-    // OPTIMIZED SAFEGUARD: Prevent duplicate income application with improved thresholds
-    // Increased threshold and reduced logging frequency to improve performance
-    if (_lastIncomeApplicationTime != null) {
-      final int msSinceLastIncome = now.difference(_lastIncomeApplicationTime!).inMilliseconds;
-      if (msSinceLastIncome < 1000) { // Increased to full second for better stability
-        // Only log every 20th skip and only if significant delay to reduce spam
-        if (msSinceLastIncome < 100 && DateTime.now().second % 20 == 0 && DateTime.now().millisecond < 100) {
-          print("! INCOME SAFEGUARD: Skipping income application - too soon (${msSinceLastIncome}ms since last)");
-        }
-        return; // Skip update entirely if too soon
-      }
-    }
-    
-    // Apply all daily updates if needed
-    if (currentDay != now.weekday) {
-      currentDay = now.weekday;
-      _updateInvestments(); // Update investments on day change
-      _updateInvestmentPrices(); // Update prices on day change
-    }
-
-    try {
-      // Track the last time income was applied to prevent duplicate income
-      _lastIncomeApplicationTime = now;
-
-      String hourKey = TimeUtils.getHourKey(now);
-
-      // --- ADDED: Check for Business Upgrades --- 
-      for (var business in businesses) {
-        if (business.isUpgrading && business.upgradeEndTime != null && now.isAfter(business.upgradeEndTime!)) {
-          completeBusinessUpgrade(business);
-        }
-      }
-      // --- END: Check for Business Upgrades --- 
-
-      // --- ADDED: Challenge Check --- 
-      if (activeChallenge != null) {
-        if (!activeChallenge!.isActive(now)) {
-          // Challenge has expired
-          bool success = activeChallenge!.wasSuccessful(totalEarned);
-          if (success) {
-            print("🎉 Platinum Challenge Successful! Awarding ${activeChallenge!.rewardPP} PP.");
-            awardPlatinumPoints(activeChallenge!.rewardPP);
-            // TODO: Add user-facing notification for success
-          } else {
-            print("😞 Platinum Challenge Failed. Goal not met.");
-            // TODO: Add user-facing notification for failure
-          }
-          activeChallenge = null; // Clear the challenge
-          notifyListeners(); // Update UI potentially showing challenge status
-        }
-      }
-      // --- END: Challenge Check --- 
-
-      // --- ADDED: Disaster Shield Check --- 
-      if (isDisasterShieldActive && disasterShieldEndTime != null && now.isAfter(disasterShieldEndTime!)) {
-        print("INFO: Disaster Shield expired.");
-        isDisasterShieldActive = false;
-        disasterShieldEndTime = null;
-        // TODO: Add user-facing notification for shield expiry?
-        notifyListeners();
-      }
-      // --- END: Disaster Shield Check --- 
-
-      // --- ADDED: Crisis Accelerator Check --- 
-      if (isCrisisAcceleratorActive && crisisAcceleratorEndTime != null && now.isAfter(crisisAcceleratorEndTime!)) {
-        print("INFO: Crisis Accelerator expired.");
-        isCrisisAcceleratorActive = false;
-        crisisAcceleratorEndTime = null;
-        // TODO: Add user-facing notification?
-        notifyListeners();
-      }
-      // --- END: Crisis Accelerator Check --- 
-
-      // --- ADDED: Income Surge Check --- 
-      if (isIncomeSurgeActive && incomeSurgeEndTime != null && now.isAfter(incomeSurgeEndTime!)) {
-        print("INFO: Income Surge expired.");
-        isIncomeSurgeActive = false;
-        incomeSurgeEndTime = null;
-        notifyListeners();
-      }
-      // --- END: Income Surge Check --- 
-
-      checkAndTriggerEvents();
-
-      if (clickBoostEndTime != null && now.isAfter(clickBoostEndTime!)) {
-        clickMultiplier = 1.0;
-        clickBoostEndTime = null;
-        notifyListeners();
-      }
-
-      _updateInvestmentPricesMicro();
-
-      if (isInitialized && achievementManager != null) {
-        List<Achievement> newlyCompleted = achievementManager.evaluateAchievements(this);
-        if (newlyCompleted.isNotEmpty) {
-          queueAchievementsForDisplay(newlyCompleted);
-        }
-      }
-
-      updateReincorporationUses();
-      _updateRealEstateUnlocks();
-
-      double previousMoney = money;
-      double permanentIncomeBoostMultiplier = isPermanentIncomeBoostActive ? 1.05 : 1.0;
-
-      // Update businesses income
-      double businessIncomeThisTick = 0;
-      double businessEfficiencyMultiplier = isPlatinumEfficiencyActive ? 1.05 : 1.0;
-      for (var business in businesses) {
-        if (business.level > 0) {
-          business.secondsSinceLastIncome++;
-          if (business.secondsSinceLastIncome >= business.incomeInterval) {
-            bool hasEvent = hasActiveEventForBusiness(business.id);
-            // Apply Platinum Efficiency to base income first
-            double income = business.getCurrentIncome(isResilienceActive: isPlatinumResilienceActive) * businessEfficiencyMultiplier;
-            // Then apply standard multipliers
-            income *= incomeMultiplier; // Removed prestigeMultiplier
-            // Then apply the overall permanent boost
-            income *= permanentIncomeBoostMultiplier;
-            // ADDED: Apply Income Surge
-            if (isIncomeSurgeActive) income *= 2.0;
-            
-            // CRITICAL FIX: Apply event penalty if business is affected
-            if (hasEvent) {
-              income *= GameStateEvents.NEGATIVE_EVENT_MULTIPLIER;
-            }
-            
-            businessIncomeThisTick += income;
-            business.secondsSinceLastIncome = 0;
-          }
-        }
-      }
-      if (businessIncomeThisTick != 0) {
-        money += businessIncomeThisTick;
-        totalEarned += businessIncomeThisTick;
-        passiveEarnings += businessIncomeThisTick;
-        _updateHourlyEarnings(hourKey, businessIncomeThisTick);
-      }
-
-      // Generate real estate income
-      double realEstateIncomePerSecond = getRealEstateIncomePerSecond();
-      // Apply standard multipliers
-      double realEstateIncomeThisTick = realEstateIncomePerSecond * incomeMultiplier; // Removed prestigeMultiplier
-      // Apply the overall permanent boost
-      realEstateIncomeThisTick *= permanentIncomeBoostMultiplier;
-      // Apply Income Surge (if applicable)
-      if (isIncomeSurgeActive) realEstateIncomeThisTick *= 2.0;
-      if (realEstateIncomeThisTick != 0) { // Changed from > 0 to != 0 to handle negative income
-        money += realEstateIncomeThisTick;
-        totalEarned += realEstateIncomeThisTick;
-        realEstateEarnings += realEstateIncomeThisTick;
-        _updateHourlyEarnings(hourKey, realEstateIncomeThisTick);
-      }
-
-      // Generate dividend income from investments
-      double dividendIncomeThisTick = 0.0;
-      double diversificationBonus = calculateDiversificationBonus();
-      double portfolioMultiplier = isPlatinumPortfolioActive ? 1.25 : 1.0;
-      for (var investment in investments) {
-        if (investment.owned > 0 && investment.hasDividends()) {
-          // Apply Platinum Portfolio and Diversification Bonus first
-          double investmentDividend = investment.getDividendIncomePerSecond() * portfolioMultiplier *
-                                     (1 + diversificationBonus);
-          // Then apply standard multipliers
-          investmentDividend *= incomeMultiplier *
-                               permanentIncomeBoostMultiplier;
-          // ADDED: Apply Income Surge
-          if (isIncomeSurgeActive) investmentDividend *= 2.0;
-          dividendIncomeThisTick += investmentDividend;
-        }
-      }
-      if (dividendIncomeThisTick != 0) { // Changed from > 0 to != 0 to handle negative income
-        money += dividendIncomeThisTick;
-        totalEarned += dividendIncomeThisTick;
-        investmentDividendEarnings += dividendIncomeThisTick;
-        _updateHourlyEarnings(hourKey, dividendIncomeThisTick);
-      }
-
-      if (money != previousMoney) {
-         notifyListeners();
-      }
-
-      // Persistent Net Worth Tracking (every 30 mins)
-      if (now.minute % 30 == 0 && now.second < 5) {
-        int timestampMs = now.millisecondsSinceEpoch;
-        persistentNetWorthHistory[timestampMs] = calculateNetWorth();
-
-        final cutoffMs = now.subtract(const Duration(days: 7)).millisecondsSinceEpoch;
-        persistentNetWorthHistory.removeWhere((key, value) => key < cutoffMs);
-      }
-
-      // Check for new day
-      int todayDay = now.weekday;
-      if (todayDay != currentDay) {
-        currentDay = todayDay;
-        _updateInvestments();
-        _updateRealEstateUnlocks();
-        notifyListeners();
-      }
-
-      // ADDED: Check active challenge
-      _checkActiveChallenge(now);
-
-    } catch (e, stackTrace) {
-      print("❌❌❌ CRITICAL ERROR in _updateGameState: $e");
-      print(stackTrace);
-    }
-  }
+  // NOTE: The core game update loop is implemented in the UpdateLogic extension
+  // in `game_state/update_logic.dart`. The legacy implementation that previously
+  // lived here (including its own net worth sampling) has been fully migrated
+  // and should not be duplicated inside this class.
 
   void _updateInvestments() {
     _generateMarketEvents();
@@ -1558,6 +1356,11 @@ class GameState with ChangeNotifier {
   // Methods for Net Worth Ticker state management
   void toggleNetWorthTicker() {
     isNetWorthTickerExpanded = !isNetWorthTickerExpanded;
+    notifyListeners();
+  }
+
+  void setNetWorthTickerVisible(bool visible) {
+    showNetWorthTicker = visible;
     notifyListeners();
   }
 

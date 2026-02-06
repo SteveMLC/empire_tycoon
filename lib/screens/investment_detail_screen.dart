@@ -472,7 +472,8 @@ class _InvestmentDetailScreenState extends State<InvestmentDetailScreen> {
                                         // Continue with the sell process even if sound fails
                                       }
                                     }
-                                    
+                                    unawaited(gameService.saveGame());
+
                                     if (!mounted) return; 
 
                                     // scaffoldMessenger.showSnackBar(

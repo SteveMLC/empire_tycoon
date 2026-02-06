@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/game_state.dart';
@@ -1252,6 +1253,7 @@ class _InvestmentPortfolioScreenState extends State<InvestmentPortfolioScreen> {
                             // Continue with the transaction process even if sound fails
                             print("Error playing investment ${isBuying ? 'buy' : 'sell'} sound: $e");
                           }
+                          unawaited(gameService.saveGame());
                         } else {
                           // Play error sound for failed transactions
                           try {

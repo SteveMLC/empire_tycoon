@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'dart:math';
 import 'dart:async';
 import 'package:provider/provider.dart';
@@ -31,6 +32,7 @@ class _EventNotificationState extends State<EventNotification> {
   bool _isMinimized = false;
   Timer? _countdownTimer;
   Timer? _autoClickHoldTimer;
+  int _autoClickTicks = 0;
   static const int _eventPPSkipCost = 5;
 
   // Fail-open rewarded ad UX state
@@ -70,6 +72,10 @@ class _EventNotificationState extends State<EventNotification> {
     }
     gs.processTapForEvent(widget.event);
     gs.tap();
+    _autoClickTicks++;
+    if (_autoClickTicks % 5 == 0) {
+      HapticFeedback.selectionClick();
+    }
   }
 
   void _startCountdownTimer() {

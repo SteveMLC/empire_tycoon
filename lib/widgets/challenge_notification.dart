@@ -97,71 +97,83 @@ class _ChallengeNotificationState extends State<ChallengeNotification> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: Colors.amber.shade100,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.amber.withOpacity(0.3),
-                              blurRadius: 4,
-                              spreadRadius: 1,
-                            ),
-                          ],
-                        ),
-                        child: const Icon(
-                          Icons.emoji_events,
-                          color: Color(0xFFD4AF37),
-                          size: 24,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'PLATINUM CHALLENGE',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFFD4AF37),
-                            ),
+                  Expanded(
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: Colors.amber.shade100,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.amber.withOpacity(0.3),
+                                blurRadius: 4,
+                                spreadRadius: 1,
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 2),
-                          Text(
-                            widget.challenge.name,
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.grey.shade800,
-                            ),
+                          child: const Icon(
+                            Icons.emoji_events,
+                            color: Color(0xFFD4AF37),
+                            size: 24,
                           ),
-                        ],
-                      ),
-                    ],
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Text(
+                                'PLATINUM CHALLENGE',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFFD4AF37),
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                widget.challenge.name,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.grey.shade800,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                   Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       // Timer display
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                         decoration: BoxDecoration(
                           color: Colors.red.shade100,
                           borderRadius: BorderRadius.circular(4),
                           border: Border.all(color: Colors.red.shade300),
                         ),
                         child: Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.timer, size: 14, color: Colors.red),
-                            const SizedBox(width: 4),
+                            const Icon(Icons.timer, size: 12, color: Colors.red),
+                            const SizedBox(width: 2),
                             Text(
                               _formatDuration(_remainingTime),
                               style: TextStyle(
-                                fontSize: 14,
+                                fontSize: 12,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.red.shade700,
                               ),
@@ -169,8 +181,7 @@ class _ChallengeNotificationState extends State<ChallengeNotification> {
                           ],
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      // Minimize/expand button
+                      const SizedBox(width: 4),
                       Icon(
                         _isMinimized ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_up,
                         color: Colors.grey.shade600,
@@ -188,6 +199,8 @@ class _ChallengeNotificationState extends State<ChallengeNotification> {
                     fontSize: 14,
                     color: Colors.grey.shade700,
                   ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 8),
                 _buildProgressBar(),
@@ -298,26 +311,33 @@ class _ChallengeNotificationState extends State<ChallengeNotification> {
                 ],
               ),
             ),
-            const Spacer(),
-            // Tip
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.blue.shade50,
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.lightbulb_outline, size: 14, color: Colors.blue.shade700),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Tap more to earn faster!',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.blue.shade700,
+            const SizedBox(width: 8),
+            // Tip - Flexible so it doesn't overflow on narrow screens
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.lightbulb_outline, size: 12, color: Colors.blue.shade700),
+                    const SizedBox(width: 4),
+                    Flexible(
+                      child: Text(
+                        'Tap more to earn faster!',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.blue.shade700,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ],

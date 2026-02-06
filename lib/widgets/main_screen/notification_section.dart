@@ -14,17 +14,27 @@ import '../offline_income_notification.dart';
 class NotificationSection extends StatelessWidget {
   const NotificationSection({Key? key}) : super(key: key);
 
+  static const double _maxNotificationSectionHeight = 280;
+
   @override
   Widget build(BuildContext context) {
     final gameState = Provider.of<GameState>(context);
-    
+    final hasNotifications = _hasActiveNotifications(gameState);
+    final screenHeight = MediaQuery.of(context).size.height;
+    final maxHeight = screenHeight * 0.4;
+    final effectiveMaxHeight = _maxNotificationSectionHeight.clamp(0.0, maxHeight);
+
+    // Size to content height (so one notification = small strip) but cap at effectiveMaxHeight.
+    // Use height: null when active so the strip collapses properly when the last notification is dismissed.
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
-      height: _hasActiveNotifications(gameState) ? null : 0,
-      // Only set clipBehavior when there are notifications
-      clipBehavior: _hasActiveNotifications(gameState) ? Clip.antiAlias : Clip.none,
-      decoration: _hasActiveNotifications(gameState) ? BoxDecoration(
+      height: hasNotifications ? null : 0,
+      constraints: hasNotifications
+          ? BoxConstraints(maxHeight: effectiveMaxHeight)
+          : const BoxConstraints(maxHeight: 0),
+      clipBehavior: hasNotifications ? Clip.antiAlias : Clip.none,
+      decoration: hasNotifications ? BoxDecoration(
         gradient: gameState.isPlatinumFrameActive 
           ? LinearGradient(
               begin: Alignment.topCenter,
@@ -61,24 +71,28 @@ class NotificationSection extends StatelessWidget {
           ),
         ),
       ) : null,
-      // Add padding when there are notifications to display
       padding: EdgeInsets.only(
-        top: _hasActiveNotifications(gameState) ? 8.0 : 0,
-        bottom: _hasActiveNotifications(gameState) ? 8.0 : 0,
+        top: hasNotifications ? 8.0 : 0,
+        bottom: hasNotifications ? 8.0 : 0,
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _buildAchievementNotifications(gameState, context),
-          _buildChallengeNotification(gameState),
-          _buildOfflineIncomeNotification(gameState),
-          AnimatedSize(
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeInOut,
-            child: _buildPremiumNotification(gameState),
-          ),
-        ],
-      ),
+      child: hasNotifications
+          ? SingleChildScrollView(
+              physics: const ClampingScrollPhysics(),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildAchievementNotifications(gameState, context),
+                  _buildChallengeNotification(gameState),
+                  _buildOfflineIncomeNotification(gameState),
+                  AnimatedSize(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                    child: _buildPremiumNotification(gameState),
+                  ),
+                ],
+              ),
+            )
+          : const SizedBox.shrink(),
     );
   }
   

@@ -42,6 +42,11 @@ extension ChallengeLogic on GameState {
     }
   }
 
+  /// Called when app returns from background so any challenge that expired while backgrounded is cleared.
+  void checkAndClearExpiredPlatinumChallenge() {
+    _checkActiveChallenge(DateTime.now());
+  }
+
   // Method to manage platinum challenge daily limits
   void checkAndResetPlatinumChallengeLimit(DateTime now) {
     // If never used before, initialize

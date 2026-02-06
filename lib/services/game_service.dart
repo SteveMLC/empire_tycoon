@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/game_state.dart';
 import '../utils/time_utils.dart';
@@ -18,7 +19,10 @@ class GameService {
   final SharedPreferences _prefs;
   final GameState _gameState;
   bool _isInitialized = false;
-  
+
+  static const Duration _saveDebounceDelay = Duration(seconds: 2);
+  Timer? _debouncedSaveTimer;
+
   // Component services
   late final SoundService _soundService;
   late final TimerService _timerService;
@@ -80,12 +84,11 @@ class GameService {
       
       // CRITICAL FIX: Ensure GameState timers are cancelled before initialization
       try {
-        print("⏱️ INIT: Ensuring all GameState timers are cancelled");
-        // Always cancel timers to be safe, regardless of the timersActive flag
+        if (kDebugMode) print("⏱️ INIT: Ensuring all GameState timers are cancelled");
         _gameState.cancelAllTimers();
-        print("⏱️ INIT: GameState timers cancelled successfully");
+        if (kDebugMode) print("⏱️ INIT: GameState timers cancelled successfully");
       } catch (e) {
-        print("⚠️ INIT: Warning cancelling GameState timers: $e");
+        if (kDebugMode) print("⚠️ INIT: Warning cancelling GameState timers: $e");
       }
 
       // Initialize sound service
@@ -96,35 +99,35 @@ class GameService {
       
       // ADDED: Initialize app lifecycle service (includes notification service)
       // ENHANCED: Pass IncomeService and AdMobService for consistent background offline income calculations and predictive ad loading
-      await _appLifecycleService.initialize(_gameState, incomeService: _incomeService, adMobService: AdMobService());
-      
+      await _appLifecycleService.initialize(_gameState, incomeService: _incomeService, adMobService: AdMobService(), onSave: saveGame);
+
+      _gameState.onRequestSave = _requestSave;
+
       // Check game version and clear data if needed
       await _persistenceService.checkVersion();
 
       final DateTime beforeLoad = DateTime.now();
       final DateTime appStartTime = beforeLoad.subtract(const Duration(seconds: 1)); // Small buffer for timestamp comparison
-      print("⏱️ Start loading game state at ${TimeUtils.formatTime(beforeLoad)}");
+      if (kDebugMode) print("⏱️ Start loading game state at ${TimeUtils.formatTime(beforeLoad)}");
       await _persistenceService.loadGame();
       final DateTime afterLoad = DateTime.now();
 
       final Duration loadDuration = afterLoad.difference(beforeLoad);
-      print("⏱️ Game loading took ${loadDuration.inMilliseconds}ms");
+      if (kDebugMode) print("⏱️ Game loading took ${loadDuration.inMilliseconds}ms");
 
-      // CRITICAL FIX: Timestamp analysis (keep for logging, but remove redundant calculation)
       final DateTime lastSavedTime = _gameState.lastSaved;
-      print("⏱️ TIMESTAMP ANALYSIS: Last saved at ${TimeUtils.formatTime(lastSavedTime)}");
-      print("⏱️ TIMESTAMP ANALYSIS: App started at ${TimeUtils.formatTime(appStartTime)}");
-      print("⏱️ TIMESTAMP ANALYSIS: Current time is ${TimeUtils.formatTime(afterLoad)}");
+      if (kDebugMode) {
+        print("⏱️ TIMESTAMP ANALYSIS: Last saved at ${TimeUtils.formatTime(lastSavedTime)}");
+        print("⏱️ TIMESTAMP ANALYSIS: App started at ${TimeUtils.formatTime(appStartTime)}");
+        print("⏱️ TIMESTAMP ANALYSIS: Current time is ${TimeUtils.formatTime(afterLoad)}");
+      }
 
-      // CRITICAL FIX: Set up all timers after loading is complete
       _setupAllTimers();
-      
-      // Perform initial save to ensure we have a valid save file
+
       await _persistenceService.performInitialSave();
-      
-      // Mark as initialized
+
       _isInitialized = true;
-      print("✅ GameService initialization completed successfully");
+      if (kDebugMode) print("✅ GameService initialization completed successfully");
       
       // Run diagnostics to verify timer system is working correctly
       _runTimerDiagnostics();
@@ -138,6 +141,14 @@ class GameService {
 
   void _cancelAllTimers() {
     _timerService.cancelAllTimers();
+  }
+
+  void _requestSave() {
+    _debouncedSaveTimer?.cancel();
+    _debouncedSaveTimer = Timer(_saveDebounceDelay, () {
+      _debouncedSaveTimer = null;
+      saveGame();
+    });
   }
 
   void _setupAllTimers() {
@@ -174,6 +185,10 @@ class GameService {
 
   void dispose() {
     print("🧹 Disposing GameService");
+    _debouncedSaveTimer?.cancel();
+    _debouncedSaveTimer = null;
+    _gameState.onRequestSave = null;
+    unawaited(saveGame());
     _cancelAllTimers();
     _billingService.dispose(); // ADDED: Dispose billing service
     _appLifecycleService.dispose(); // ADDED: Dispose app lifecycle service

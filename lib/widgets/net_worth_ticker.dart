@@ -18,7 +18,7 @@ import '../utils/number_formatter.dart';
 /// - Semi-transparent to not block gameplay
 /// - High z-index to render on top of everything
 class NetWorthTicker extends StatefulWidget {
-  const NetWorthTicker({Key? key}) : super(key: key);
+  const NetWorthTicker({super.key});
 
   @override
   State<NetWorthTicker> createState() => _NetWorthTickerState();
@@ -30,6 +30,7 @@ class _NetWorthTickerState extends State<NetWorthTicker> with TickerProviderStat
   double _previousValue = 0.0;
   double _targetValue = 0.0;
   Timer? _updateTimer;
+  double _scale = 1.0;
 
   @override
   void initState() {
@@ -56,12 +57,12 @@ class _NetWorthTickerState extends State<NetWorthTicker> with TickerProviderStat
       }
     });
     
-    // Initialize with current value
+    // Initialize with current value (lifetime net worth so it persists across reincorporation)
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         final gameState = Provider.of<GameState>(context, listen: false);
-        _previousValue = gameState.totalEarned;
-        _targetValue = gameState.totalEarned;
+        _previousValue = gameState.totalLifetimeNetWorth;
+        _targetValue = gameState.totalLifetimeNetWorth;
         setState(() {});
       }
     });
@@ -76,7 +77,7 @@ class _NetWorthTickerState extends State<NetWorthTicker> with TickerProviderStat
 
   void _updateTickerValue() {
     final gameState = Provider.of<GameState>(context, listen: false);
-    final currentValue = gameState.totalEarned;
+    final currentValue = gameState.totalLifetimeNetWorth;
     
     // Only animate if there's a meaningful change (more than $1)
     if ((currentValue - _targetValue).abs() > 1.0) {
@@ -114,7 +115,6 @@ class _NetWorthTickerState extends State<NetWorthTicker> with TickerProviderStat
             childWhenDragging: Container(), // Hide original while dragging
             onDragEnd: (details) {
               // Save new position to GameState
-              final RenderBox renderBox = context.findRenderObject() as RenderBox;
               final screenSize = MediaQuery.of(context).size;
               
               // Calculate new position, ensuring it stays within screen bounds
@@ -144,48 +144,61 @@ class _NetWorthTickerState extends State<NetWorthTicker> with TickerProviderStat
         // Toggle expanded state when tapping the crown icon
         gameState.toggleNetWorthTicker();
       },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-        padding: EdgeInsets.symmetric(
-          horizontal: isExpanded ? 16 : 8,
-          vertical: isExpanded ? 12 : 8,
-        ),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Colors.black.withOpacity(0.85),
-              Colors.black.withOpacity(0.75),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+      onDoubleTap: () {
+        // Quick zoom toggle between normal size and 150%
+        setState(() {
+          if (_scale > 1.0) {
+            _scale = 1.0;
+          } else {
+            _scale = 1.5;
+          }
+        });
+      },
+      child: Transform.scale(
+        scale: _scale,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+          padding: EdgeInsets.symmetric(
+            horizontal: isExpanded ? 16 : 8,
+            vertical: isExpanded ? 12 : 8,
           ),
-          borderRadius: BorderRadius.circular(isExpanded ? 16 : 30),
-          border: Border.all(
-            color: Colors.amber.withOpacity(0.5),
-            width: 2,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.amber.withOpacity(isDragging ? 0.4 : 0.2),
-              blurRadius: isDragging ? 20 : 12,
-              spreadRadius: isDragging ? 2 : 0,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Colors.black.withValues(alpha: 0.85),
+                Colors.black.withValues(alpha: 0.75),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
-          ],
+            borderRadius: BorderRadius.circular(isExpanded ? 16 : 30),
+            border: Border.all(
+              color: Colors.amber.withValues(alpha: 0.5),
+              width: 2,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.amber.withValues(alpha: isDragging ? 0.4 : 0.2),
+                blurRadius: isDragging ? 20 : 12,
+                spreadRadius: isDragging ? 2 : 0,
+              ),
+            ],
+          ),
+          child: isExpanded ? _buildExpandedView(gameState) : _buildCollapsedView(),
         ),
-        child: isExpanded ? _buildExpandedView(gameState) : _buildCollapsedView(),
       ),
     );
   }
 
   Widget _buildCollapsedView() {
-    return Container(
+    return const SizedBox(
       width: 44,
       height: 44,
-      child: const Center(
+      child: Center(
         child: Text(
           '👑',
-          style: TextStyle(fontSize: 32),
+          style: TextStyle(fontSize: 16),
         ),
       ),
     );
@@ -201,7 +214,7 @@ class _NetWorthTickerState extends State<NetWorthTicker> with TickerProviderStat
           height: 44,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: Colors.amber.withOpacity(0.2),
+            color: Colors.amber.withValues(alpha: 0.2),
           ),
           child: const Center(
             child: Text(
@@ -231,7 +244,7 @@ class _NetWorthTickerState extends State<NetWorthTicker> with TickerProviderStat
               builder: (context, child) {
                 final displayValue = _numberAnimation.value > 0 
                     ? _numberAnimation.value 
-                    : gameState.totalEarned;
+                    : gameState.totalLifetimeNetWorth;
                 
                 return ShaderMask(
                   shaderCallback: (bounds) {
@@ -245,7 +258,7 @@ class _NetWorthTickerState extends State<NetWorthTicker> with TickerProviderStat
                     ).createShader(bounds);
                   },
                   child: Text(
-                    '\$${formatNumber(displayValue)}',
+                    NumberFormatter.formatLargeNumber(displayValue),
                     style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,

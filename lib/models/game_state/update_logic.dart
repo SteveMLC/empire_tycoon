@@ -7,7 +7,9 @@ extension UpdateLogic on GameState {
   static const int _netWorthUpdateIntervalMinutes = 30;
   static const int _maxHistoryEntries = 50; // Limit for history entries
   static const int _pruneHistoryThreshold = 45; // Prune when we reach this many entries
-  
+  /// Set to true only when debugging income calculation pipeline; keeps terminal quiet by default.
+  static const bool _kVerboseIncomeDebug = false;
+
   // Tracking variables for income diagnostics
 
   // Timer setup is handled by TimerService.
@@ -29,7 +31,7 @@ extension UpdateLogic on GameState {
     if (_lastUpdateTime != null) {
       final int msSinceLastUpdate = now.difference(_lastUpdateTime!).inMilliseconds;
       if (msSinceLastUpdate < 950) { // Almost a full second to prevent edge cases
-        print("⚠️ Skipping update: Too soon (${msSinceLastUpdate}ms since last update)");
+        if (kDebugMode && _kVerboseIncomeDebug) print("⚠️ Skipping update: Too soon (${msSinceLastUpdate}ms since last update)");
         return; // Skip update silently if too soon
       }
     }
@@ -89,8 +91,9 @@ extension UpdateLogic on GameState {
       // --- END ADDED [1.5] ---
 
       // --- [2] Boosters --- 
-      // DEBUG: Log booster check
-      print("DEBUG: Checking boosters at ${DateTime.now().millisecondsSinceEpoch}");
+      if (kDebugMode && _kVerboseIncomeDebug) {
+        print("DEBUG: Checking boosters at ${DateTime.now().millisecondsSinceEpoch}");
+      }
       if (clickBoostEndTime != null && now.isAfter(clickBoostEndTime!)) {
         clickMultiplier = 1.0;
         clickBoostEndTime = null;
@@ -142,9 +145,10 @@ extension UpdateLogic on GameState {
       
         // DEBUG: Track income calculation frequency
         DateTime incomeCalculationStartTime = DateTime.now();
-        
-        print("DEBUG: Starting business income calculation at ${DateTime.now().millisecondsSinceEpoch}");
-        
+        if (kDebugMode && _kVerboseIncomeDebug) {
+          print("DEBUG: Starting business income calculation at ${DateTime.now().millisecondsSinceEpoch}");
+        }
+
         // Define business efficiency multiplier
         double businessEfficiencyMultiplier = isPlatinumEfficiencyActive ? 1.05 : 1.0;
       
@@ -153,49 +157,65 @@ extension UpdateLogic on GameState {
         double businessIncomeThisTick = 0.0;
         for (var business in businesses) {
           if (business.level > 0) {
-            print("DEBUG: Processing business ${business.name} - Level: ${business.level}");
-            
+            if (kDebugMode && _kVerboseIncomeDebug) {
+              print("DEBUG: Processing business ${business.name} - Level: ${business.level}");
+            }
+
             // Get base income with efficiency multiplier if active
             double baseIncome = business.getCurrentIncome(isResilienceActive: isPlatinumResilienceActive);
-            print("DEBUG: Business '${business.name}' baseIncome: $baseIncome at ${DateTime.now().millisecondsSinceEpoch}");
-            
+            if (kDebugMode && _kVerboseIncomeDebug) {
+              print("DEBUG: Business '${business.name}' baseIncome: $baseIncome at ${DateTime.now().millisecondsSinceEpoch}");
+            }
+
             // Apply Platinum Efficiency first
             double incomeWithEfficiency = baseIncome * businessEfficiencyMultiplier;
-            print("DEBUG: Business '${business.name}' after efficiency: $incomeWithEfficiency");
+            if (kDebugMode && _kVerboseIncomeDebug) {
+              print("DEBUG: Business '${business.name}' after efficiency: $incomeWithEfficiency");
+            }
 
             // Apply standard multipliers
             double finalIncome = incomeWithEfficiency * incomeMultiplier;
-            print("DEBUG: Business '${business.name}' after income multiplier: $finalIncome");
-            
+            if (kDebugMode && _kVerboseIncomeDebug) {
+              print("DEBUG: Business '${business.name}' after income multiplier: $finalIncome");
+            }
+
             // Apply the overall permanent boost
             finalIncome *= permanentIncomeBoostMultiplier;
-            print("DEBUG: Business '${business.name}' after permanent boost: $finalIncome");
+            if (kDebugMode && _kVerboseIncomeDebug) {
+              print("DEBUG: Business '${business.name}' after permanent boost: $finalIncome");
+            }
 
             // Apply Income Surge (if applicable)
             if (isIncomeSurgeActive) {
               finalIncome *= 2.0;
-              print("DEBUG: Business '${business.name}' after income surge: $finalIncome");
+              if (kDebugMode && _kVerboseIncomeDebug) {
+                print("DEBUG: Business '${business.name}' after income surge: $finalIncome");
+              }
             }
 
             // Check for negative event and apply multiplier AFTER all bonuses
             bool hasEvent = hasActiveEventForBusiness(business.id);
             if (hasEvent) {
               finalIncome *= GameStateEvents.NEGATIVE_EVENT_MULTIPLIER;
-              print("DEBUG: Business '${business.name}' after event penalty: $finalIncome");
+              if (kDebugMode && _kVerboseIncomeDebug) {
+                print("DEBUG: Business '${business.name}' after event penalty: $finalIncome");
+              }
             }
-            
-            // DEBUG: Log final income
-            print("DEBUG: Business '${business.name}' finalIncome: $finalIncome");
-            
+
+            if (kDebugMode && _kVerboseIncomeDebug) {
+              print("DEBUG: Business '${business.name}' finalIncome: $finalIncome");
+            }
+
             businessIncomeThisTick += finalIncome;
           }
         }
       
-        // DEBUG: Log calculation time
-        Duration incomeCalculationDuration = DateTime.now().difference(incomeCalculationStartTime);
-        print("DEBUG: Business income calculation duration: ${incomeCalculationDuration.inMilliseconds}ms");
-        print("DEBUG: Total business income this tick: $businessIncomeThisTick");
-        
+        if (kDebugMode && _kVerboseIncomeDebug) {
+          Duration incomeCalculationDuration = DateTime.now().difference(incomeCalculationStartTime);
+          print("DEBUG: Business income calculation duration: ${incomeCalculationDuration.inMilliseconds}ms");
+          print("DEBUG: Total business income this tick: $businessIncomeThisTick");
+        }
+
         // Add business income to total (only tracking, not applying to money yet)
         totalIncomeThisTick += businessIncomeThisTick;
         if (businessIncomeThisTick > 0) {
@@ -205,8 +225,10 @@ extension UpdateLogic on GameState {
         // CRITICAL FIX: Use the same per-second real estate income calculation as in getRealEstateIncomePerSecond()
         // This ensures the accrual matches the displayed income rate
         double realEstateIncomeThisTick = 0.0;
-        print("DEBUG: Starting real estate income calculation");
-        
+        if (kDebugMode && _kVerboseIncomeDebug) {
+          print("DEBUG: Starting real estate income calculation");
+        }
+
         for (var locale in realEstateLocales) {
           if (locale.unlocked) {
             // Get locale-specific multipliers
@@ -216,46 +238,64 @@ extension UpdateLogic on GameState {
             double foundationMultiplier = isFoundationApplied ? 1.05 : 1.0;
             double yachtMultiplier = isYachtDocked ? 1.05 : 1.0;
             
-            print("DEBUG: Processing locale ${locale.name} - Event: $isLocaleAffectedByEvent, Foundation: $isFoundationApplied, Yacht: $isYachtDocked");
+            if (kDebugMode && _kVerboseIncomeDebug) {
+              print("DEBUG: Processing locale ${locale.name} - Event: $isLocaleAffectedByEvent, Foundation: $isFoundationApplied, Yacht: $isYachtDocked");
+            }
 
             for (var property in locale.properties) {
               if (property.owned > 0) {
                 // Get base income per property (already includes owned count)
-                double basePropertyIncome = property.getTotalIncomePerSecond(isResilienceActive: isPlatinumResilienceActive); 
-                print("DEBUG: Property '${property.name}' baseIncome: $basePropertyIncome");
-                
+                double basePropertyIncome = property.getTotalIncomePerSecond(isResilienceActive: isPlatinumResilienceActive);
+                if (kDebugMode && _kVerboseIncomeDebug) {
+                  print("DEBUG: Property '${property.name}' baseIncome: $basePropertyIncome");
+                }
+
                 // Apply locale-specific multipliers (Foundation, Yacht)
                 double incomeWithLocaleBoosts = basePropertyIncome * foundationMultiplier * yachtMultiplier;
-                print("DEBUG: Property '${property.name}' after locale boosts: $incomeWithLocaleBoosts");
+                if (kDebugMode && _kVerboseIncomeDebug) {
+                  print("DEBUG: Property '${property.name}' after locale boosts: $incomeWithLocaleBoosts");
+                }
 
                 // Apply standard global multipliers
                 double finalPropertyIncome = incomeWithLocaleBoosts * incomeMultiplier;
-                print("DEBUG: Property '${property.name}' after global multiplier: $finalPropertyIncome");
+                if (kDebugMode && _kVerboseIncomeDebug) {
+                  print("DEBUG: Property '${property.name}' after global multiplier: $finalPropertyIncome");
+                }
 
                 // Apply the overall permanent boost
                 finalPropertyIncome *= permanentIncomeBoostMultiplier;
-                print("DEBUG: Property '${property.name}' after permanent boost: $finalPropertyIncome");
-                
+                if (kDebugMode && _kVerboseIncomeDebug) {
+                  print("DEBUG: Property '${property.name}' after permanent boost: $finalPropertyIncome");
+                }
+
                 // Apply Income Surge (if applicable)
                 if (isIncomeSurgeActive) {
                   finalPropertyIncome *= 2.0;
-                  print("DEBUG: Property '${property.name}' after income surge: $finalPropertyIncome");
+                  if (kDebugMode && _kVerboseIncomeDebug) {
+                    print("DEBUG: Property '${property.name}' after income surge: $finalPropertyIncome");
+                  }
                 }
 
                 // Check for negative event affecting the LOCALE and apply multiplier AFTER all bonuses
                 if (isLocaleAffectedByEvent) {
                   finalPropertyIncome *= GameStateEvents.NEGATIVE_EVENT_MULTIPLIER; // Apply -0.25
-                  print("DEBUG: Property '${property.name}' after event penalty: $finalPropertyIncome");
+                  if (kDebugMode && _kVerboseIncomeDebug) {
+                    print("DEBUG: Property '${property.name}' after event penalty: $finalPropertyIncome");
+                  }
                 }
-                
-                print("DEBUG: Property '${property.name}' final income: $finalPropertyIncome");
+
+                if (kDebugMode && _kVerboseIncomeDebug) {
+                  print("DEBUG: Property '${property.name}' final income: $finalPropertyIncome");
+                }
                 realEstateIncomeThisTick += finalPropertyIncome;
               }
             }
           }
         }
-        
-        print("DEBUG: Total real estate income this tick: $realEstateIncomeThisTick");
+
+        if (kDebugMode && _kVerboseIncomeDebug) {
+          print("DEBUG: Total real estate income this tick: $realEstateIncomeThisTick");
+        }
         // Add real estate income to total (only tracking, not applying to money yet)
         totalIncomeThisTick += realEstateIncomeThisTick;
         // FIXED: Always track real estate earnings regardless of sign
@@ -264,8 +304,10 @@ extension UpdateLogic on GameState {
         // CRITICAL FIX: Use the same per-second dividend income calculation as in getDividendIncomePerSecond()
         // This ensures the accrual matches the displayed income rate
         double dividendIncomeThisTick = 0.0;
-        print("DEBUG: Starting dividend income calculation");
-        
+        if (kDebugMode && _kVerboseIncomeDebug) {
+          print("DEBUG: Starting dividend income calculation");
+        }
+
         double diversificationBonus = calculateDiversificationBonus(); // Calculate once for efficiency
         double portfolioMultiplier = isPlatinumPortfolioActive ? 1.25 : 1.0;
         
@@ -273,37 +315,53 @@ extension UpdateLogic on GameState {
           if (investment.owned > 0 && investment.hasDividends()) {
             // Get base dividend per second for this investment (already includes owned count)
             double baseDividend = investment.getDividendIncomePerSecond();
-            print("DEBUG: Investment '${investment.name}' base dividend: $baseDividend");
-            
+            if (kDebugMode && _kVerboseIncomeDebug) {
+              print("DEBUG: Investment '${investment.name}' base dividend: $baseDividend");
+            }
+
             // Apply portfolio multiplier and diversification bonus
             double adjustedDividend = baseDividend * portfolioMultiplier * (1 + diversificationBonus);
-            print("DEBUG: Investment '${investment.name}' after portfolio/diversification: $adjustedDividend");
-            
+            if (kDebugMode && _kVerboseIncomeDebug) {
+              print("DEBUG: Investment '${investment.name}' after portfolio/diversification: $adjustedDividend");
+            }
+
             // FIXED: Removed duplicate multiplication by investment.owned
             // investment.getDividendIncomePerSecond() already multiplies by owned
             double totalDividendForInvestment = adjustedDividend;
-            print("DEBUG: Investment '${investment.name}' after removing duplicate owned multiplication: $totalDividendForInvestment");
-            
+            if (kDebugMode && _kVerboseIncomeDebug) {
+              print("DEBUG: Investment '${investment.name}' after removing duplicate owned multiplication: $totalDividendForInvestment");
+            }
+
             // Apply global income multiplier
             totalDividendForInvestment *= incomeMultiplier;
-            print("DEBUG: Investment '${investment.name}' after global multiplier: $totalDividendForInvestment");
-            
+            if (kDebugMode && _kVerboseIncomeDebug) {
+              print("DEBUG: Investment '${investment.name}' after global multiplier: $totalDividendForInvestment");
+            }
+
             // Apply the overall permanent boost
             totalDividendForInvestment *= permanentIncomeBoostMultiplier;
-            print("DEBUG: Investment '${investment.name}' after permanent boost: $totalDividendForInvestment");
+            if (kDebugMode && _kVerboseIncomeDebug) {
+              print("DEBUG: Investment '${investment.name}' after permanent boost: $totalDividendForInvestment");
+            }
 
             // Apply Income Surge (if applicable)
             if (isIncomeSurgeActive) {
               totalDividendForInvestment *= 2.0;
-              print("DEBUG: Investment '${investment.name}' after income surge: $totalDividendForInvestment");
+              if (kDebugMode && _kVerboseIncomeDebug) {
+                print("DEBUG: Investment '${investment.name}' after income surge: $totalDividendForInvestment");
+              }
             }
 
-            print("DEBUG: Investment '${investment.name}' final dividend: $totalDividendForInvestment");
+            if (kDebugMode && _kVerboseIncomeDebug) {
+              print("DEBUG: Investment '${investment.name}' final dividend: $totalDividendForInvestment");
+            }
             dividendIncomeThisTick += totalDividendForInvestment;
           }
         }
-        
-        print("DEBUG: Total dividend income this tick: $dividendIncomeThisTick");
+
+        if (kDebugMode && _kVerboseIncomeDebug) {
+          print("DEBUG: Total dividend income this tick: $dividendIncomeThisTick");
+        }
         // Add dividend income to total (only tracking, not applying to money yet)
         totalIncomeThisTick += dividendIncomeThisTick;
         // FIXED: Always track dividend earnings regardless of sign
@@ -313,19 +371,19 @@ extension UpdateLogic on GameState {
         // This is used to display income rate and verify it matches what's being applied
         double incomePerSecond = calculateTotalIncomePerSecond();
         
-        // Log income calculation for diagnostic purposes
-        if (now.second % 10 == 0) {
+        // Log income calculation for diagnostic purposes (only when verbose income debug is on)
+        if (kDebugMode && _kVerboseIncomeDebug && now.second % 10 == 0) {
           // Calculate the breakdown of income sources for diagnostics
           double businessIncome = 0.0;
           for (var business in businesses) {
             if (business.level > 0) {
               double cyclesPerSecond = 1 / business.incomeInterval;
-              businessIncome += business.getCurrentIncome(isResilienceActive: isPlatinumResilienceActive) * 
-                               cyclesPerSecond * 
+              businessIncome += business.getCurrentIncome(isResilienceActive: isPlatinumResilienceActive) *
+                               cyclesPerSecond *
                                (isPlatinumEfficiencyActive ? 1.05 : 1.0);
             }
           }
-          
+
           double realEstateIncome = 0.0;
           for (var locale in realEstateLocales) {
             if (locale.unlocked) {
@@ -333,30 +391,29 @@ extension UpdateLogic on GameState {
               bool isYachtDocked = platinumYachtDockedLocaleId == locale.id;
               double foundationMultiplier = isFoundationApplied ? 1.05 : 1.0;
               double yachtMultiplier = isYachtDocked ? 1.05 : 1.0;
-              
+
               for (var property in locale.properties) {
                 if (property.owned > 0) {
-                  realEstateIncome += property.getTotalIncomePerSecond(isResilienceActive: isPlatinumResilienceActive) * 
-                                      foundationMultiplier * 
+                  realEstateIncome += property.getTotalIncomePerSecond(isResilienceActive: isPlatinumResilienceActive) *
+                                      foundationMultiplier *
                                       yachtMultiplier;
                 }
               }
             }
           }
-          
+
           double dividendIncome = 0.0;
           double diversificationBonus = calculateDiversificationBonus();
           double portfolioMultiplier = isPlatinumPortfolioActive ? 1.25 : 1.0;
-          
+
           for (var investment in investments) {
             if (investment.owned > 0 && investment.hasDividends()) {
-              dividendIncome += investment.getDividendIncomePerSecond() * 
-                               portfolioMultiplier * 
+              dividendIncome += investment.getDividendIncomePerSecond() *
+                               portfolioMultiplier *
                                (1 + diversificationBonus);
             }
           }
-          
-          // Log detailed income breakdown
+
           print("💰 [INCOME DIAGNOSTICS] Rate: ${incomePerSecond.toStringAsFixed(2)}/sec, Money: ${money.toStringAsFixed(2)}");
           print("💰 [INCOME DIAGNOSTICS] Breakdown - Business: ${businessIncome.toStringAsFixed(2)}, Real Estate: ${realEstateIncome.toStringAsFixed(2)}, Dividends: ${dividendIncome.toStringAsFixed(2)}");
         }
@@ -396,7 +453,9 @@ extension UpdateLogic on GameState {
           now.difference(_lastNetWorthUpdateTime!).inMinutes >= _netWorthUpdateIntervalMinutes) {
         final int timestampMs = now.millisecondsSinceEpoch;
         final double currentNetWorth = calculateNetWorth();
-        persistentNetWorthHistory[timestampMs] = currentNetWorth;
+        // Lifetime history stores total lifetime net worth so the Stats "Lifetime" chart does not drop at reincorporation
+        persistentNetWorthHistory[timestampMs] = lifetimeNetworkWorth + currentNetWorth;
+        runNetWorthHistory[timestampMs] = currentNetWorth;
         _prunePersistentNetWorthHistory();
         _lastNetWorthUpdateTime = now;
         // Throttled leaderboard submit (callback wired from app init when signed in)
@@ -469,9 +528,9 @@ extension UpdateLogic on GameState {
       crisisAcceleratorEndTime = null;
       stateChanged = true;
     }
-    
-    // Only check these if they exist in the GameState class
-    // If these properties don't exist yet, you'll need to add them to the GameState class
+
+    // Platinum Challenge: clear if expired or completed (so UI updates when in foreground or after load)
+    _checkActiveChallenge(now);
     
     return stateChanged;
   }

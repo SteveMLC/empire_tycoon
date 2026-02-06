@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -80,16 +81,8 @@ class _StatsScreenState extends State<StatsScreen> {
 
                         const SizedBox(height: 20),
 
-                        // Earnings Breakdown Card
-                        EarningsBreakdownCard(
-                          gameState: gameState,
-                          theme: theme,
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        // Assets Breakdown Card
-                        AssetsBreakdownCard(
+                        // Net Worth Chart (lifetime vs current run)
+                        NetWorthChart(
                           gameState: gameState,
                           theme: theme,
                         ),
@@ -104,13 +97,19 @@ class _StatsScreenState extends State<StatsScreen> {
 
                         const SizedBox(height: 20),
 
-                        // Net Worth Chart
-                        NetWorthChart(
+                        // Earnings Breakdown Card
+                        EarningsBreakdownCard(
                           gameState: gameState,
                           theme: theme,
                         ),
 
                         const SizedBox(height: 20),
+
+                        // Assets Breakdown Card
+                        AssetsBreakdownCard(
+                          gameState: gameState,
+                          theme: theme,
+                        ),
 
                         // Achievements Section (already a separate widget)
                         AchievementsSection(
@@ -1367,6 +1366,7 @@ class _StatsScreenState extends State<StatsScreen> {
               Navigator.of(context).pop();
 
               if (success) {
+                unawaited(Provider.of<GameService>(context, listen: false).saveGame());
                 // ScaffoldMessenger.of(context).showSnackBar(
                 //   SnackBar(
                 //     content: Text('Successfully re-incorporated! New passive bonus: ${gameState.incomeMultiplier.toStringAsFixed(2)}x'),

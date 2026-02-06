@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -116,6 +117,7 @@ class ReincorporationUtils {
               Navigator.of(context).pop();
 
               if (success) {
+                unawaited(Provider.of<GameService>(context, listen: false).saveGame());
                 // ScaffoldMessenger.of(context).showSnackBar(
                 //   SnackBar(
                 //     content: Text('Successfully re-incorporated! New passive bonus: ${gameState.incomeMultiplier.toStringAsFixed(2)}x'),

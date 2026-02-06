@@ -21,11 +21,11 @@ class PersistenceService {
   
   Future<void> checkVersion() async {
     final String? savedVersion = _prefs.getString(_versionKey);
-    print("📊 Current game version: $_currentVersion, Saved version: $savedVersion");
+    if (kDebugMode) print("📊 Current game version: $_currentVersion, Saved version: $savedVersion");
 
     // If version is different or not set, clear saved data to apply new balance changes
     if (savedVersion != _currentVersion) {
-      print("🔄 Game version changed from $savedVersion to $_currentVersion. Resetting game data.");
+      if (kDebugMode) print("🔄 Game version changed from $savedVersion to $_currentVersion. Resetting game data.");
       await _prefs.remove(_saveKey);
       await _prefs.setString(_versionKey, _currentVersion);
     }
@@ -33,9 +33,9 @@ class PersistenceService {
   
   Future<void> performAutoSave() async {
     try {
-      print("💾 Auto-saving game at ${TimeUtils.formatTime(DateTime.now())}");
+      if (kDebugMode) print("💾 Auto-saving game at ${TimeUtils.formatTime(DateTime.now())}");
       await saveGame();
-      print("✅ Auto-save completed successfully");
+      if (kDebugMode) print("✅ Auto-save completed successfully");
     } catch (e) {
       print("⚠️ Error during auto-save: $e");
     }
@@ -45,11 +45,11 @@ class PersistenceService {
     try {
       // Only perform initial save if the game state is not already saved
       if (!_prefs.containsKey(_saveKey)) {
-        print("💾 Performing initial save");
+        if (kDebugMode) print("💾 Performing initial save");
         await saveGame();
-        print("✅ Initial save completed successfully");
+        if (kDebugMode) print("✅ Initial save completed successfully");
       } else {
-        print("ℹ️ Initial save skipped - save data already exists");
+        if (kDebugMode) print("ℹ️ Initial save skipped - save data already exists");
       }
     } catch (e) {
       print("⚠️ Error during initial save: $e");
@@ -76,7 +76,7 @@ class PersistenceService {
           final directory = await getApplicationDocumentsDirectory();
           final file = File('${directory.path}/empire_tycoon_save.json');
           await file.writeAsString(jsonData);
-          print("💾 Backup save to file: ${file.path}");
+          if (kDebugMode) print("💾 Backup save to file: ${file.path}");
         } catch (e) {
           print("⚠️ Error during backup save to file: $e");
           // Continue even if backup fails
@@ -85,7 +85,7 @@ class PersistenceService {
       
       final DateTime afterSave = DateTime.now();
       final Duration saveDuration = afterSave.difference(beforeSave);
-      print("💾 Game saved successfully in ${saveDuration.inMilliseconds}ms");
+      if (kDebugMode) print("💾 Game saved successfully in ${saveDuration.inMilliseconds}ms");
     } catch (e) {
       print("⚠️ Error during save: $e");
       throw Exception("Failed to save game: $e");
@@ -98,7 +98,7 @@ class PersistenceService {
       final String? jsonData = _prefs.getString(_saveKey);
       
       if (jsonData == null || jsonData.isEmpty) {
-        print("ℹ️ No saved game found, starting new game");
+        if (kDebugMode) print("ℹ️ No saved game found, starting new game");
         return;
       }
       
@@ -108,17 +108,19 @@ class PersistenceService {
       // Load the game state from the JSON data
       // UPDATED: Pass the IncomeService to ensure consistent income calculation
       await _gameState.fromJson(gameData, incomeService: _incomeService);
-      
-      print("📊 Loaded game state with ${_gameState.businesses.length} businesses and ${_gameState.investments.length} investments");
-      print("💰 Player has ${_gameState.money} money and ${_gameState.platinumPoints} platinum points");
-      
+
+      if (kDebugMode) {
+        print("📊 Loaded game state with ${_gameState.businesses.length} businesses and ${_gameState.investments.length} investments");
+        print("💰 Player has ${_gameState.money} money and ${_gameState.platinumPoints} platinum points");
+      }
+
       // Process offline income if applicable
       final DateTime now = DateTime.now();
       final DateTime lastSaved = _gameState.lastSaved;
       final Duration offlineTime = now.difference(lastSaved);
-      
+
       if (offlineTime.inMinutes > 1) {
-        print("⏱️ Player was offline for ${offlineTime.inMinutes} minutes");
+        if (kDebugMode) print("⏱️ Player was offline for ${offlineTime.inMinutes} minutes");
         // UPDATED: Pass the IncomeService to ensure consistent income calculation
         _gameState.processOfflineIncome(lastSaved, incomeService: _incomeService);
       }
@@ -130,10 +132,10 @@ class PersistenceService {
   
   Future<void> resetGame() async {
     try {
-      print("🔄 Resetting game data");
+      if (kDebugMode) print("🔄 Resetting game data");
       await _prefs.remove(_saveKey);
       _gameState.resetToDefaults();
-      print("✅ Game reset successfully");
+      if (kDebugMode) print("✅ Game reset successfully");
     } catch (e) {
       print("⚠️ Error during reset: $e");
       throw Exception("Failed to reset game: $e");
@@ -151,7 +153,7 @@ class PersistenceService {
       // UPDATED: Pass the IncomeService to ensure consistent income calculation
       await _gameState.fromJson(gameData, incomeService: _incomeService);
       await saveGame();
-      print("✅ Game data imported successfully");
+      if (kDebugMode) print("✅ Game data imported successfully");
     } catch (e) {
       print("⚠️ Error during import: $e");
       throw Exception("Failed to import game data: $e");

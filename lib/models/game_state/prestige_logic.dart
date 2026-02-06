@@ -129,10 +129,8 @@ extension PrestigeLogic on GameState {
     realEstateEarnings = 0.0;
 
     // Click Value: Reset based on level, but apply prestige multiplier
-    // Keep clickLevel across reincorporation
-    double baseClickValue = 1.5;
-    double levelMultiplier = 1.0 + ((clickLevel - 1) * 0.5); // Assuming 50% increase per level
-    clickValue = baseClickValue * levelMultiplier * prestigeMultiplier;
+    // Keep clickLevel across reincorporation; use TapBoostConfig for consistency with Hustle screen
+    clickValue = TapBoostConfig.getClickBaseValueForLevel(clickLevel) * prestigeMultiplier;
     // REMOVED: taps = 0; // No longer reset taps for the current click level
     // clickLevel = 1; // Keep click level
 
@@ -165,8 +163,15 @@ extension PrestigeLogic on GameState {
     cancelAdBoostTimer();
     _cancelPlatinumTimers();
 
-    // Reset stats tracking (keep persistent net worth)
+    // Record reincorporation point as cumulative lifetime so the Lifetime chart shows total progress (no drop)
+    final int preResetMs = DateTime.now().millisecondsSinceEpoch;
+    persistentNetWorthHistory[preResetMs] = lifetimeNetworkWorth;
+
+    // Reset stats tracking
+    // Keep persistent net worth history so the lifetime chart shows all progress,
+    // but clear the per-run history so the current run starts fresh.
     hourlyEarnings = {};
+    runNetWorthHistory.clear();
 
     // Reset market events
     activeMarketEvents = [];
@@ -208,6 +213,13 @@ extension PrestigeLogic on GameState {
     recentEventTimes = [];
     businessesOwnedCount = 0;
     localesWithPropertiesCount = 0;
+
+    // Reset run-specific challenge and timed effects (do not carry over to new run)
+    activeChallenge = null;
+    isDisasterShieldActive = false;
+    disasterShieldEndTime = null;
+    isCrisisAcceleratorActive = false;
+    crisisAcceleratorEndTime = null;
     
     // We're now preserving event stats through reincorporation
     // DO NOT reset event achievement tracking fields
@@ -275,6 +287,10 @@ extension PrestigeLogic on GameState {
     _updateBusinessUnlocks(); // From business_logic.dart
     _updateRealEstateUnlocks(); // From real_estate_logic.dart
     _updateInvestmentUnlocks(); // From investment_logic.dart
+
+    // Seed run net worth history with the new run's starting net worth so the chart has one point immediately
+    final int postResetMs = DateTime.now().millisecondsSinceEpoch;
+    runNetWorthHistory[postResetMs] = calculateNetWorth();
 
     // Notify listeners that state has changed
     notifyListeners();

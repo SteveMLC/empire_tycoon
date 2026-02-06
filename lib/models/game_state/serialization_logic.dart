@@ -5,7 +5,7 @@ extension SerializationLogic on GameState {
 
   // Convert game state to JSON
   Map<String, dynamic> toJson() {
-    print("💾 GameState.toJson starting...");
+    if (kDebugMode) print("💾 GameState.toJson starting...");
     Map<String, dynamic> json = {
       'money': money,
       'totalEarned': totalEarned,
@@ -104,6 +104,7 @@ extension SerializationLogic on GameState {
         'dy': netWorthTickerPosition!.dy,
       } : null,
       'isNetWorthTickerExpanded': isNetWorthTickerExpanded,
+      'showNetWorthTicker': showNetWorthTicker,
       // --- End Added ---
 
       // Boost Timer Data
@@ -195,6 +196,9 @@ extension SerializationLogic on GameState {
     json['persistentNetWorthHistory'] = persistentNetWorthHistory.map(
       (key, value) => MapEntry(key.toString(), value)
     );
+    json['runNetWorthHistory'] = runNetWorthHistory.map(
+      (key, value) => MapEntry(key.toString(), value)
+    );
 
     // Save achievements
     json['achievements'] = achievementManager.achievements.map((achievement) => achievement.toJson()).toList();
@@ -202,14 +206,14 @@ extension SerializationLogic on GameState {
     // Save event system data using the extension method from game_state_events.dart
     json.addAll(eventsToJson()); // This includes event tracking stats
 
-    print("✅ GameState.toJson complete.");
+    if (kDebugMode) print("✅ GameState.toJson complete.");
     return json;
   }
 
   // Load game from JSON - NOW ASYNC
   // UPDATED: Added optional incomeService parameter to ensure consistent income calculation
   Future<void> fromJson(Map<String, dynamic> json, {dynamic incomeService}) async { // <-- Mark as async
-     print("🔄 GameState.fromJson starting...");
+    if (kDebugMode) print("🔄 GameState.fromJson starting...");
     // Reset defaults before loading to ensure clean state
     // resetToDefaults(); // NO! This clears lifetime stats. Load over existing defaults.
 
@@ -289,6 +293,10 @@ extension SerializationLogic on GameState {
     networkWorth = (json['networkWorth'] as num?)?.toDouble() ?? 0.0;
     lifetimeNetworkWorth = (json['lifetimeNetworkWorth'] as num?)?.toDouble() ?? 0.0;
     reincorporationUsesAvailable = json['reincorporationUsesAvailable'] ?? 0;
+
+    // Option A: Recompute click level from taps (taps is source of truth for new leveling system)
+    clickLevel = TapBoostConfig.getLevelFromTaps(taps);
+    clickValue = TapBoostConfig.getClickBaseValueForLevel(clickLevel) * prestigeMultiplier;
     totalReincorporations = json['totalReincorporations'] ?? 0;
     maxedFoodStallBranches = json['maxedFoodStallBranches'] != null 
         ? Set<String>.from(json['maxedFoodStallBranches']) 
@@ -322,7 +330,7 @@ extension SerializationLogic on GameState {
     
     // Make sure current time is valid (after last opened - handles clock tampering or anomalies)
     if (!now.isAfter(lastOpened)) {
-      print("⚠️ Current time is not after previous open time. No offline progress possible.");
+      if (kDebugMode) print("⚠️ Current time is not after previous open time. No offline progress possible.");
       lastOpened = now; // Reset to current time to be safe
     }
     
@@ -360,7 +368,7 @@ extension SerializationLogic on GameState {
                 businesses[index].level >= 3 && 
                 businesses[index].hasBranching &&
                 !businesses[index].hasMadeBranchChoice) {
-              print("🔄 Migration: Auto-assigning Burger Bar branch to existing food_stall at level ${businesses[index].level}");
+              if (kDebugMode) print("🔄 Migration: Auto-assigning Burger Bar branch to existing food_stall at level ${businesses[index].level}");
               businesses[index].selectedBranchId = 'burger_bar';
               businesses[index].hasMadeBranchChoice = true;
               businesses[index].branchSelectionTime = DateTime.now();
@@ -368,7 +376,7 @@ extension SerializationLogic on GameState {
 
             // CRITICAL FIX: If loading reveals an upgrade ended while offline, complete it immediately
             if (businesses[index].isUpgrading && businesses[index].upgradeEndTime != null && businesses[index].upgradeEndTime!.isBefore(now)) {
-               print("🔧 Completing offline upgrade for ${businesses[index].name}...");
+               if (kDebugMode) print("🔧 Completing offline upgrade for ${businesses[index].name}...");
                businesses[index].completeUpgrade(); // Use the model's method
                // Note: Unlocks based on the new level will be handled later by _updateBusinessUnlocks
             }
@@ -432,9 +440,9 @@ extension SerializationLogic on GameState {
 
     // Ensure real estate upgrades are loaded before applying saved state
     if (realEstateInitializationFuture != null) {
-      print("⏳ Waiting for real estate initialization before loading saved state...");
+      if (kDebugMode) print("⏳ Waiting for real estate initialization before loading saved state...");
       await realEstateInitializationFuture;
-      print("✅ Real estate initialization complete. Proceeding with loading saved state.");
+      if (kDebugMode) print("✅ Real estate initialization complete. Proceeding with loading saved state.");
     }
 
     // Load real estate
@@ -510,8 +518,6 @@ extension SerializationLogic on GameState {
             (key, value) => MapEntry(int.parse(key.toString()), (value as num).toDouble())
           )
         );
-         // Prune old net worth history after loading
-         _prunePersistentNetWorthHistory();
       } catch (e) {
         print("Error loading persistentNetWorthHistory: $e. Resetting.");
         persistentNetWorthHistory = {};
@@ -519,6 +525,24 @@ extension SerializationLogic on GameState {
     } else {
       persistentNetWorthHistory = {}; // Initialize if not found
     }
+
+    if (json['runNetWorthHistory'] != null && json['runNetWorthHistory'] is Map) {
+      try {
+        runNetWorthHistory = Map<int, double>.from(
+          (json['runNetWorthHistory'] as Map).map(
+            (key, value) => MapEntry(int.parse(key.toString()), (value as num).toDouble())
+          )
+        );
+      } catch (e) {
+        print("Error loading runNetWorthHistory: $e. Resetting.");
+        runNetWorthHistory = {};
+      }
+    } else {
+      runNetWorthHistory = {}; // Initialize if not found
+    }
+
+    // Prune both histories after load so we stay within caps and 7-day window
+    _prunePersistentNetWorthHistory();
 
     // Initialize/Load achievements
     achievementManager = AchievementManager(this); // Re-initialize with current state
@@ -609,6 +633,8 @@ extension SerializationLogic on GameState {
       );
     }
     isNetWorthTickerExpanded = json['isNetWorthTickerExpanded'] ?? false;
+     // Default to true for existing saves that don't have this flag yet
+    showNetWorthTicker = json['showNetWorthTicker'] ?? true;
     // --- End Added ---
 
     // Recalculate active flags based on loaded end times
@@ -671,8 +697,20 @@ extension SerializationLogic on GameState {
       print("⚠️ Skipping offline income processing: lastSaved time not available.");
     }
 
+    // Bootstrap net worth history if needed so the stats page never starts empty (use total lifetime)
+    if (persistentNetWorthHistory.isEmpty) {
+      final int nowMs = DateTime.now().millisecondsSinceEpoch;
+      persistentNetWorthHistory[nowMs] = lifetimeNetworkWorth + calculateNetWorth();
+    }
+
+    if (runNetWorthHistory.isEmpty) {
+      final int nowMs = DateTime.now().millisecondsSinceEpoch;
+      final double currentNetWorth = calculateNetWorth();
+      runNetWorthHistory[nowMs] = currentNetWorth;
+    }
+
     notifyListeners(); // Notify UI after loading is complete
-    print("✅ GameState.fromJson complete.");
+    if (kDebugMode) print("✅ GameState.fromJson complete.");
   }
 
   // Helper to prune old hourly earnings (e.g., older than 7 days)
@@ -734,53 +772,57 @@ extension SerializationLogic on GameState {
     }
   }
 
-  // Helper to prune old persistent net worth history (e.g., older than 7 days)
-  // Optimized pruning for net worth history with fixed-size limit
+  // Helper to prune old net worth history (e.g., older than 7 days) for both
+  // lifetime and per-run maps. Optimized pruning with a fixed-size limit.
   void _prunePersistentNetWorthHistory() {
+    _pruneNetWorthHistoryMap(persistentNetWorthHistory);
+    _pruneNetWorthHistoryMap(runNetWorthHistory);
+  }
+
+  void _pruneNetWorthHistoryMap(Map<int, double> historyMap) {
     // If we're under the limit, no need for aggressive pruning
-    if (persistentNetWorthHistory.length <= UpdateLogic._maxHistoryEntries) {
+    if (historyMap.length <= UpdateLogic._maxHistoryEntries) {
       // Just do basic time-based pruning
       final cutoffMs = DateTime.now().subtract(const Duration(days: 7)).millisecondsSinceEpoch;
-      persistentNetWorthHistory.removeWhere((key, _) => key < cutoffMs);
+      historyMap.removeWhere((key, _) => key < cutoffMs);
       return;
     }
-    
+
     // Two-step approach: First remove old entries, then if still over limit, remove with sampling
     final cutoffMs = DateTime.now().subtract(const Duration(days: 7)).millisecondsSinceEpoch;
-    
+
     // Step 1: Remove entries older than cutoff
-    persistentNetWorthHistory.removeWhere((key, _) => key < cutoffMs);
-    
+    historyMap.removeWhere((key, _) => key < cutoffMs);
+
     // Step 2: If still over limit, use intelligent sampling to keep a representative dataset
-    if (persistentNetWorthHistory.length > UpdateLogic._maxHistoryEntries) {
+    if (historyMap.length > UpdateLogic._maxHistoryEntries) {
       // Sort keys by timestamp (oldest first)
-      final List<int> sortedKeys = persistentNetWorthHistory.keys.toList()
-        ..sort();
-      
+      final List<int> sortedKeys = historyMap.keys.toList()..sort();
+
       // Calculate how many entries to keep
       final int entriesToKeep = UpdateLogic._maxHistoryEntries;
-      
+
       // If we have more entries than we want to keep
       if (sortedKeys.length > entriesToKeep) {
         // Create a new map with sampled entries
         final Map<int, double> sampledHistory = {};
-        
+
         // Always keep newest and oldest entries
-        sampledHistory[sortedKeys.first] = persistentNetWorthHistory[sortedKeys.first]!;
-        sampledHistory[sortedKeys.last] = persistentNetWorthHistory[sortedKeys.last]!;
-        
+        sampledHistory[sortedKeys.first] = historyMap[sortedKeys.first]!;
+        sampledHistory[sortedKeys.last] = historyMap[sortedKeys.last]!;
+
         // Sample the rest with even distribution
         final int step = (sortedKeys.length - 2) ~/ (entriesToKeep - 2);
         for (int i = 1; i < entriesToKeep - 1; i++) {
           final int index = 1 + (i * step);
           if (index < sortedKeys.length - 1) {
-            sampledHistory[sortedKeys[index]] = persistentNetWorthHistory[sortedKeys[index]]!;
+            sampledHistory[sortedKeys[index]] = historyMap[sortedKeys[index]]!;
           }
         }
-        
+
         // Replace the original map with our sampled version
-        persistentNetWorthHistory.clear();
-        persistentNetWorthHistory.addAll(sampledHistory);
+        historyMap.clear();
+        historyMap.addAll(sampledHistory);
       }
     }
   }

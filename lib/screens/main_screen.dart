@@ -319,8 +319,8 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
         // Add any other properties that should trigger a rebuild
       ],
       builder: (context, data, child) {
-        // Get the current gameState without listening to all changes
-        final gameState = Provider.of<GameState>(context, listen: false);
+        // Listen to GameState so UI reacts to settings like showNetWorthTicker
+        final gameState = Provider.of<GameState>(context);
         
         // REMOVED: Excessive debug logging that was causing log spam
         // Only log rebuilds in debug mode and less frequently
@@ -372,7 +372,8 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
               const EventCornerBadge(),
               
               // Net Worth Ticker - draggable crown/earnings display
-              const NetWorthTicker(),
+              if (gameState.showNetWorthTicker)
+                const NetWorthTicker(),
             ],
           ),
         );

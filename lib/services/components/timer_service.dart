@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import '../../models/game_state.dart';
 import '../../utils/time_utils.dart';
 import '../../services/income_service.dart';
@@ -38,30 +39,30 @@ class TimerService {
   }
   
   void cancelAllTimers() {
-    print("⏱️ CENTRAL TIMER SYSTEM: Cancelling all timers");
-    
+    if (kDebugMode) print("⏱️ CENTRAL TIMER SYSTEM: Cancelling all timers");
+
     if (_gameUpdateTimer != null) {
       _gameUpdateTimer!.cancel();
       _gameUpdateTimer = null;
-      print("⏱️ Cancelled game update timer");
+      if (kDebugMode) print("⏱️ Cancelled game update timer");
     }
-    
+
     if (_autoSaveTimer != null) {
       _autoSaveTimer!.cancel();
       _autoSaveTimer = null;
-      print("⏱️ Cancelled auto-save timer");
+      if (kDebugMode) print("⏱️ Cancelled auto-save timer");
     }
-    
+
     if (_investmentUpdateTimer != null) {
       _investmentUpdateTimer!.cancel();
       _investmentUpdateTimer = null;
-      print("⏱️ Cancelled investment update timer");
+      if (kDebugMode) print("⏱️ Cancelled investment update timer");
     }
-    
+
     if (_diagnosticTimer != null) {
       _diagnosticTimer!.cancel();
       _diagnosticTimer = null;
-      print("⏱️ Cancelled diagnostic timer");
+      if (kDebugMode) print("⏱️ Cancelled diagnostic timer");
     }
     _scheduledTasks.clear();
     _lastCentralTimerUpdate = null;
@@ -71,7 +72,7 @@ class TimerService {
   void setupAllTimers() {
     // Prevent duplicate timer setup
     if (_isSettingUpTimers) {
-      print("⚠️ CENTRAL TIMER SYSTEM: Already setting up timers, skipping");
+      if (kDebugMode) print("⚠️ CENTRAL TIMER SYSTEM: Already setting up timers, skipping");
       return;
     }
     
@@ -82,8 +83,8 @@ class TimerService {
     _isSettingUpTimers = true;
     
     try {
-      print("⏱️ CENTRAL TIMER SYSTEM: Setting up all game timers");
-      
+      if (kDebugMode) print("⏱️ CENTRAL TIMER SYSTEM: Setting up all game timers");
+
       // Set up the main game update timer (1 second)
       _gameUpdateTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
         final now = DateTime.now();
@@ -109,38 +110,38 @@ class TimerService {
               try {
                 callback(now);
               } catch (e) {
-                print("⚠️ Timer callback error: $e");
+                if (kDebugMode) print("⚠️ Timer callback error: $e");
               }
             }
           } finally {
             _isUpdatingGameState = false;
           }
         } else {
-          print("⚠️ Skipped game state update due to ongoing update");
+          if (kDebugMode) print("⚠️ Skipped game state update due to ongoing update");
         }
       });
-      print("⏱️ Set up game update timer (1 second)");
+      if (kDebugMode) print("⏱️ Set up game update timer (1 second)");
       
-      // Set up the auto-save timer (1 minute)
-      _autoSaveTimer = Timer.periodic(const Duration(minutes: 1), (timer) {
-        print("⏱️ Auto-save timer triggered at ${TimeUtils.formatTime(DateTime.now())}");
+      // Set up the auto-save timer (30 seconds)
+      _autoSaveTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
+        if (kDebugMode) print("⏱️ Auto-save timer triggered at ${TimeUtils.formatTime(DateTime.now())}");
         // Only save if we're not in the middle of a game state update
         if (!_isUpdatingGameState) {
           _performAutoSave();
         } else {
           // Schedule a delayed save if we're currently updating
-          Future.delayed(const Duration(seconds: 5), () {
+          Future.delayed(const Duration(seconds: 2), () {
             if (!_isUpdatingGameState) {
               _performAutoSave();
             }
           });
         }
       });
-      print("⏱️ Set up auto-save timer (1 minute)");
-      
+      if (kDebugMode) print("⏱️ Set up auto-save timer (30 seconds)");
+
       // Set up the investment update timer (30 seconds)
       _investmentUpdateTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
-        print("⏱️ Investment update timer triggered at ${TimeUtils.formatTime(DateTime.now())}");
+        if (kDebugMode) print("⏱️ Investment update timer triggered at ${TimeUtils.formatTime(DateTime.now())}");
         // Only update investments if we're not in the middle of a game state update
         if (!_isUpdatingGameState) {
           _isUpdatingGameState = true;
@@ -150,17 +151,17 @@ class TimerService {
             _isUpdatingGameState = false;
           }
         } else {
-          print("⚠️ Skipped investment update due to ongoing update");
+          if (kDebugMode) print("⚠️ Skipped investment update due to ongoing update");
         }
       });
-      print("⏱️ Set up investment update timer (30 seconds)");
-      
+      if (kDebugMode) print("⏱️ Set up investment update timer (30 seconds)");
+
       // Set timers active flag
       _timersActive = true;
-      
-      print("✅ CENTRAL TIMER SYSTEM: All timers successfully initialized");
+
+      if (kDebugMode) print("✅ CENTRAL TIMER SYSTEM: All timers successfully initialized");
     } catch (e) {
-      print("⚠️ CENTRAL TIMER SYSTEM: Error setting up timers: $e");
+      if (kDebugMode) print("⚠️ CENTRAL TIMER SYSTEM: Error setting up timers: $e");
     } finally {
       // Reset the flag regardless of success or failure
       _isSettingUpTimers = false;
@@ -243,7 +244,7 @@ class TimerService {
       try {
         task.action();
       } catch (e) {
-        print("⚠️ Scheduled task error ($id): $e");
+        if (kDebugMode) print("⚠️ Scheduled task error ($id): $e");
       }
     }
   }
@@ -297,7 +298,7 @@ class TimerService {
         }
         if (nextClickFrenzySeconds == 0) {
           _gameState.platinumClickFrenzyEndTime = null;
-          print("INFO: Click Frenzy boost expired.");
+          if (kDebugMode) print("INFO: Click Frenzy boost expired.");
         }
       }
     }
@@ -315,7 +316,7 @@ class TimerService {
         }
         if (nextSteadyBoostSeconds == 0) {
           _gameState.platinumSteadyBoostEndTime = null;
-          print("INFO: Steady Boost expired.");
+          if (kDebugMode) print("INFO: Steady Boost expired.");
         }
       }
     }
