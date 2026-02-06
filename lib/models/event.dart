@@ -22,6 +22,8 @@ enum EventResolutionType {
   adBased,       // Resolves when player watches an ad
   feeBased,      // Resolves when player pays a fee
   tapChallenge,  // Resolves when player taps a certain number of times
+  dualChoice,    // Fast Fix vs Full Fix - player chooses tradeoff
+  gamble,        // Risk/Reward - 70% bonus, 30% penalty
 }
 
 /// Resolution parameter and state for an event
@@ -133,6 +135,22 @@ class GameEvent {
     if (resolution.type != EventResolutionType.feeBased) return 0.0;
     
     return resolution.value as double;
+  }
+  
+  /// Get dual choice options for dualChoice resolutions
+  /// Returns Map with 'fastFix' and 'fullFix' options
+  Map<String, dynamic>? get dualChoiceOptions {
+    if (resolution.type != EventResolutionType.dualChoice) return null;
+    
+    return resolution.value as Map<String, dynamic>?;
+  }
+  
+  /// Get gamble info for gamble resolutions
+  /// Returns Map with 'bonusChance', 'bonusEffect', 'penaltyEffect'
+  Map<String, dynamic>? get gambleOptions {
+    if (resolution.type != EventResolutionType.gamble) return null;
+    
+    return resolution.value as Map<String, dynamic>?;
   }
   
   /// Mark the event as resolved 

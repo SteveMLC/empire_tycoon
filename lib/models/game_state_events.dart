@@ -204,6 +204,17 @@ extension GameStateEvents on GameState {
       availableResolutionTypes.add(EventResolutionType.adBased);
     }
     
+    // PHASE 1 EVENT IMPROVEMENTS: Add Risk/Reward and Dual Choice options
+    // Add dual choice (Fast Fix vs Full Fix) for economic and utility events after 2+ events resolved
+    if (totalEventsResolved >= 2 && (eventType == EventType.economic || eventType == EventType.utility)) {
+      availableResolutionTypes.add(EventResolutionType.dualChoice);
+    }
+    
+    // Add gamble option for security and staff events after 3+ events resolved
+    if (totalEventsResolved >= 3 && (eventType == EventType.security || eventType == EventType.staff)) {
+      availableResolutionTypes.add(EventResolutionType.gamble);
+    }
+    
     // Select resolution type from available options
     final resolutionType = availableResolutionTypes[Random().nextInt(availableResolutionTypes.length)];
     
@@ -235,6 +246,47 @@ extension GameStateEvents on GameState {
       case EventResolutionType.timeBased:
         // Duration handled by the event itself, no specific value needed here
         resolutionValue = null;
+        break;
+      case EventResolutionType.dualChoice:
+        // Dual choice: Fast Fix (expensive but instant) vs Full Fix (cheaper but with temp penalty)
+        double currentIncomePerSecond = this.totalIncomePerSecond;
+        double fastFixCost = (currentIncomePerSecond * 60 * 0.5) + 200; // Higher cost for instant fix
+        double fullFixCost = (currentIncomePerSecond * 60 * 0.15) + 50; // Lower cost
+        int penaltyDurationMinutes = 5 + Random().nextInt(6); // 5-10 minute penalty
+        double penaltyMultiplier = 0.10; // 10% income reduction during penalty
+        resolutionValue = {
+          'fastFix': {
+            'cost': fastFixCost,
+            'description': 'Pay more to resolve instantly',
+          },
+          'fullFix': {
+            'cost': fullFixCost,
+            'penaltyDurationMinutes': penaltyDurationMinutes,
+            'penaltyMultiplier': penaltyMultiplier,
+            'description': 'Pay less but accept -${(penaltyMultiplier * 100).toInt()}% income for ${penaltyDurationMinutes}m',
+          },
+        };
+        print("INFO: Created dualChoice event - Fast: \$${fastFixCost.toStringAsFixed(0)}, Full: \$${fullFixCost.toStringAsFixed(0)} + ${penaltyDurationMinutes}min penalty");
+        break;
+      case EventResolutionType.gamble:
+        // Gamble: 70% chance of bonus, 30% chance of penalty
+        double bonusChance = 0.70;
+        int bonusDurationMinutes = 3 + Random().nextInt(5); // 3-7 min bonus
+        double bonusMultiplier = 0.05 + (Random().nextDouble() * 0.05); // 5-10% income bonus
+        int penaltyExtensionMinutes = 3 + Random().nextInt(5); // 3-7 min extension
+        resolutionValue = {
+          'bonusChance': bonusChance,
+          'bonusEffect': {
+            'durationMinutes': bonusDurationMinutes,
+            'incomeMultiplier': bonusMultiplier,
+            'description': '+${(bonusMultiplier * 100).toInt()}% income for ${bonusDurationMinutes}m',
+          },
+          'penaltyEffect': {
+            'extensionMinutes': penaltyExtensionMinutes,
+            'description': 'Event extended by ${penaltyExtensionMinutes}m',
+          },
+        };
+        print("INFO: Created gamble event - ${(bonusChance * 100).toInt()}% chance for +${(bonusMultiplier * 100).toInt()}% bonus");
         break;
     }
     
@@ -578,6 +630,16 @@ extension GameStateEvents on GameState {
       'eventsResolvedByLocale': eventsResolvedByLocale,
       'lastEventResolvedTime': lastEventResolvedTime?.toIso8601String(),
       'resolvedEvents': resolvedEvents.map((e) => e.toJson()).toList(),
+      
+      // Phase 1 Event Improvements: Gamble and Dual Choice tracking
+      'eventsResolvedByGamble': eventsResolvedByGamble,
+      'gambleWins': gambleWins,
+      'gambleLosses': gambleLosses,
+      'eventsResolvedByDualChoice': eventsResolvedByDualChoice,
+      'fastFixesUsed': fastFixesUsed,
+      'fullFixesUsed': fullFixesUsed,
+      'temporaryBonuses': temporaryBonuses,
+      'temporaryPenalties': temporaryPenalties,
     };
   }
   
@@ -656,6 +718,45 @@ extension GameStateEvents on GameState {
       resolvedEvents = eventsList
           .map((e) => GameEvent.fromJson(e as Map<String, dynamic>))
           .toList();
+    }
+    
+    // Phase 1 Event Improvements: Load Gamble and Dual Choice tracking
+    eventsResolvedByGamble = json['eventsResolvedByGamble'] as int? ?? 0;
+    gambleWins = json['gambleWins'] as int? ?? 0;
+    gambleLosses = json['gambleLosses'] as int? ?? 0;
+    eventsResolvedByDualChoice = json['eventsResolvedByDualChoice'] as int? ?? 0;
+    fastFixesUsed = json['fastFixesUsed'] as int? ?? 0;
+    fullFixesUsed = json['fullFixesUsed'] as int? ?? 0;
+    
+    // Load temporary bonuses and penalties
+    if (json.containsKey('temporaryBonuses') && json['temporaryBonuses'] != null) {
+      temporaryBonuses = List<Map<String, dynamic>>.from(
+        (json['temporaryBonuses'] as List).map((e) => Map<String, dynamic>.from(e as Map))
+      );
+      // Clean up expired bonuses
+      final now = DateTime.now();
+      temporaryBonuses.removeWhere((bonus) {
+        if (bonus['expiresAt'] != null) {
+          final expiresAt = DateTime.parse(bonus['expiresAt'] as String);
+          return now.isAfter(expiresAt);
+        }
+        return false;
+      });
+    }
+    
+    if (json.containsKey('temporaryPenalties') && json['temporaryPenalties'] != null) {
+      temporaryPenalties = List<Map<String, dynamic>>.from(
+        (json['temporaryPenalties'] as List).map((e) => Map<String, dynamic>.from(e as Map))
+      );
+      // Clean up expired penalties
+      final now = DateTime.now();
+      temporaryPenalties.removeWhere((penalty) {
+        if (penalty['expiresAt'] != null) {
+          final expiresAt = DateTime.parse(penalty['expiresAt'] as String);
+          return now.isAfter(expiresAt);
+        }
+        return false;
+      });
     }
   }
 }
