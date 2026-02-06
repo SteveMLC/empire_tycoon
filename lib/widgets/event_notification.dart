@@ -743,7 +743,7 @@ class _EventNotificationState extends State<EventNotification> {
           ),
           child: const Icon(Icons.access_time, color: Colors.white, size: 16),
         );
-        
+
       default:
         return const SizedBox();
     }
@@ -910,7 +910,7 @@ class _EventNotificationState extends State<EventNotification> {
           icon: const Icon(Icons.timer, size: 18),
           label: Text(timeRemaining.isNotEmpty ? timeRemaining : 'RESOLVING...'),
         );
-        
+
       default:
         return const SizedBox(); // Should never happen
     }
@@ -1070,7 +1070,7 @@ class _EventNotificationState extends State<EventNotification> {
             ],
           ],
         );
-        
+
       default:
         return const SizedBox();
     }

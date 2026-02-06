@@ -7,11 +7,17 @@ import '../../models/game_state.dart';
 import '../../utils/time_utils.dart';
 import '../../services/income_service.dart'; // ADDED: Import IncomeService
 
-/// Persistence management component for GameService
+/// Persistence management component for GameService.
+///
+/// Save flow: [saveGame] writes to SharedPreferences first (primary), then to a
+/// backup file. Load flow: [loadGame] reads from prefs; if empty, tries backup
+/// file and restores to prefs only when backup JSON is valid. Version check runs
+/// before load and may clear primary save; backup can still recover.
 class PersistenceService {
   static const String _saveKey = 'empire_tycoon_save';
   static const String _versionKey = 'empire_tycoon_version';
   static const String _currentVersion = '1.0.1'; // Increment this whenever significant game balance changes are made
+  static const String _backupFileName = 'empire_tycoon_save.json';
   
   final SharedPreferences _prefs;
   final GameState _gameState;
@@ -70,11 +76,11 @@ class PersistenceService {
       // Save to SharedPreferences
       await _prefs.setString(_saveKey, jsonData);
       
-      // Also save to a file for backup
+      // Also save to a file for backup (used as fallback if SharedPreferences is lost)
       if (!kIsWeb) {
         try {
           final directory = await getApplicationDocumentsDirectory();
-          final file = File('${directory.path}/empire_tycoon_save.json');
+          final file = File('${directory.path}/$_backupFileName');
           await file.writeAsString(jsonData);
           if (kDebugMode) print("💾 Backup save to file: ${file.path}");
         } catch (e) {
@@ -94,16 +100,41 @@ class PersistenceService {
   
   Future<void> loadGame() async {
     try {
-      // Get the saved game data from SharedPreferences
-      final String? jsonData = _prefs.getString(_saveKey);
-      
+      // Get the saved game data from SharedPreferences first
+      String? jsonData = _prefs.getString(_saveKey);
+      Map<String, dynamic>? gameDataFromBackup;
+
+      // CRITICAL: If prefs are empty (e.g. cleared, or save never completed), try backup file
+      if ((jsonData == null || jsonData.isEmpty) && !kIsWeb) {
+        try {
+          final directory = await getApplicationDocumentsDirectory();
+          final file = File('${directory.path}/$_backupFileName');
+          if (await file.exists()) {
+            final String backupContent = await file.readAsString();
+            if (backupContent.isNotEmpty) {
+              // Validate backup is valid JSON before overwriting prefs
+              final Map<String, dynamic> decoded = jsonDecode(backupContent) as Map<String, dynamic>;
+              if (decoded.isNotEmpty) {
+                gameDataFromBackup = decoded;
+                jsonData = backupContent;
+                if (kDebugMode) print("💾 Recovered save from backup file (prefs were empty)");
+                await _prefs.setString(_saveKey, backupContent);
+                await _prefs.setString(_versionKey, _currentVersion);
+              }
+            }
+          }
+        } catch (e) {
+          if (kDebugMode) print("⚠️ Backup file load failed: $e");
+        }
+      }
+
       if (jsonData == null || jsonData.isEmpty) {
         if (kDebugMode) print("ℹ️ No saved game found, starting new game");
         return;
       }
-      
-      // Parse the JSON data
-      final Map<String, dynamic> gameData = jsonDecode(jsonData) as Map<String, dynamic>;
+
+      // Parse the JSON data (reuse decoded map from backup recovery when available)
+      final Map<String, dynamic> gameData = gameDataFromBackup ?? jsonDecode(jsonData) as Map<String, dynamic>;
       
       // Load the game state from the JSON data
       // UPDATED: Pass the IncomeService to ensure consistent income calculation

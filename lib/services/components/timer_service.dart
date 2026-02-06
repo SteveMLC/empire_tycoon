@@ -122,8 +122,8 @@ class TimerService {
       });
       if (kDebugMode) print("⏱️ Set up game update timer (1 second)");
       
-      // Set up the auto-save timer (30 seconds)
-      _autoSaveTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
+      // Set up the auto-save timer (20 seconds - more frequent to reduce progress loss risk)
+      _autoSaveTimer = Timer.periodic(const Duration(seconds: 20), (timer) {
         if (kDebugMode) print("⏱️ Auto-save timer triggered at ${TimeUtils.formatTime(DateTime.now())}");
         // Only save if we're not in the middle of a game state update
         if (!_isUpdatingGameState) {
@@ -137,7 +137,7 @@ class TimerService {
           });
         }
       });
-      if (kDebugMode) print("⏱️ Set up auto-save timer (30 seconds)");
+      if (kDebugMode) print("⏱️ Set up auto-save timer (20 seconds)");
 
       // Set up the investment update timer (30 seconds)
       _investmentUpdateTimer = Timer.periodic(const Duration(seconds: 30), (timer) {

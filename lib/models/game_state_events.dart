@@ -204,18 +204,7 @@ extension GameStateEvents on GameState {
       availableResolutionTypes.add(EventResolutionType.adBased);
     }
     
-    // PHASE 1 EVENT IMPROVEMENTS: Add Risk/Reward and Dual Choice options
-    // Add dual choice (Fast Fix vs Full Fix) for economic and utility events after 2+ events resolved
-    if (totalEventsResolved >= 2 && (eventType == EventType.economic || eventType == EventType.utility)) {
-      availableResolutionTypes.add(EventResolutionType.dualChoice);
-    }
-    
-    // Add gamble option for security and staff events after 3+ events resolved
-    if (totalEventsResolved >= 3 && (eventType == EventType.security || eventType == EventType.staff)) {
-      availableResolutionTypes.add(EventResolutionType.gamble);
-    }
-    
-    // Select resolution type from available options
+    // Select resolution type from available options (tap, fee, or ad/PP only)
     final resolutionType = availableResolutionTypes[Random().nextInt(availableResolutionTypes.length)];
     
     // Determine resolution value based on type
@@ -246,47 +235,6 @@ extension GameStateEvents on GameState {
       case EventResolutionType.timeBased:
         // Duration handled by the event itself, no specific value needed here
         resolutionValue = null;
-        break;
-      case EventResolutionType.dualChoice:
-        // Dual choice: Fast Fix (expensive but instant) vs Full Fix (cheaper but with temp penalty)
-        double currentIncomePerSecond = this.totalIncomePerSecond;
-        double fastFixCost = (currentIncomePerSecond * 60 * 0.5) + 200; // Higher cost for instant fix
-        double fullFixCost = (currentIncomePerSecond * 60 * 0.15) + 50; // Lower cost
-        int penaltyDurationMinutes = 5 + Random().nextInt(6); // 5-10 minute penalty
-        double penaltyMultiplier = 0.10; // 10% income reduction during penalty
-        resolutionValue = {
-          'fastFix': {
-            'cost': fastFixCost,
-            'description': 'Pay more to resolve instantly',
-          },
-          'fullFix': {
-            'cost': fullFixCost,
-            'penaltyDurationMinutes': penaltyDurationMinutes,
-            'penaltyMultiplier': penaltyMultiplier,
-            'description': 'Pay less but accept -${(penaltyMultiplier * 100).toInt()}% income for ${penaltyDurationMinutes}m',
-          },
-        };
-        print("INFO: Created dualChoice event - Fast: \$${fastFixCost.toStringAsFixed(0)}, Full: \$${fullFixCost.toStringAsFixed(0)} + ${penaltyDurationMinutes}min penalty");
-        break;
-      case EventResolutionType.gamble:
-        // Gamble: 70% chance of bonus, 30% chance of penalty
-        double bonusChance = 0.70;
-        int bonusDurationMinutes = 3 + Random().nextInt(5); // 3-7 min bonus
-        double bonusMultiplier = 0.05 + (Random().nextDouble() * 0.05); // 5-10% income bonus
-        int penaltyExtensionMinutes = 3 + Random().nextInt(5); // 3-7 min extension
-        resolutionValue = {
-          'bonusChance': bonusChance,
-          'bonusEffect': {
-            'durationMinutes': bonusDurationMinutes,
-            'incomeMultiplier': bonusMultiplier,
-            'description': '+${(bonusMultiplier * 100).toInt()}% income for ${bonusDurationMinutes}m',
-          },
-          'penaltyEffect': {
-            'extensionMinutes': penaltyExtensionMinutes,
-            'description': 'Event extended by ${penaltyExtensionMinutes}m',
-          },
-        };
-        print("INFO: Created gamble event - ${(bonusChance * 100).toInt()}% chance for +${(bonusMultiplier * 100).toInt()}% bonus");
         break;
     }
     

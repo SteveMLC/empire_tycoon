@@ -70,10 +70,23 @@ class AppLifecycleService with WidgetsBindingObserver {
 
   /// Handle app going to background
   /// ENHANCED: Now records background start time for offline income calculation
+  /// CRITICAL: Start save immediately and give it time to complete (fire-and-forget
+  /// can lose progress if the app is killed before the async save finishes).
   void _handleAppGoingToBackground() {
     debugPrint('📱 App going to background - recording time and scheduling notifications');
 
-    unawaited(_onSave?.call());
+    // Start save immediately; wait up to 5s so it can complete before app may be suspended.
+    final saveFuture = _onSave?.call() ?? Future.value();
+    unawaited(
+      saveFuture.timeout(
+        const Duration(seconds: 5),
+        onTimeout: () {
+          debugPrint('⚠️ Background save timed out after 5s');
+        },
+      ).catchError((Object e, StackTrace st) {
+        debugPrint('⚠️ Background save failed: $e');
+      }),
+    );
 
     _backgroundStartTime = DateTime.now();
     debugPrint('🕒 Background start time recorded: $_backgroundStartTime');
