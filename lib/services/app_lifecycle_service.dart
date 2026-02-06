@@ -5,6 +5,7 @@ import '../models/game_state.dart';
 import 'notification_service.dart';
 import 'income_service.dart';
 import 'admob_service.dart';
+import 'review_manager.dart';
 
 /// Service that handles app lifecycle changes and coordinates notifications
 /// Integrates with existing SoundManager lifecycle handling
@@ -45,6 +46,8 @@ class AppLifecycleService with WidgetsBindingObserver {
     
     _isInitialized = true;
     debugPrint('✅ AppLifecycleService initialized with AdMobService integration');
+    await ReviewManager.instance.initialize();
+    unawaited(ReviewManager.instance.onAppResumed());
   }
 
   @override
@@ -74,6 +77,7 @@ class AppLifecycleService with WidgetsBindingObserver {
     debugPrint('📱 App going to background - recording time and scheduling notifications');
 
     unawaited(_onSave?.call());
+    unawaited(ReviewManager.instance.onAppPaused());
 
     _backgroundStartTime = DateTime.now();
     debugPrint('🕒 Background start time recorded: $_backgroundStartTime');
@@ -93,6 +97,7 @@ class AppLifecycleService with WidgetsBindingObserver {
     debugPrint('📱 App returning to foreground');
     
     _notificationService.cancelOfflineIncomeNotification();
+    unawaited(ReviewManager.instance.onAppResumed());
     
     // Defer heavy work so the EGL/surface can settle after resume (reduces
     // chance of IMGeglMakeCurrent crash on MediaTek/PowerVR devices).

@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/game_state.dart';
 import '../services/game_service.dart';
 import '../services/admob_service.dart';
+import '../services/review_manager.dart';
 import '../widgets/hustle/upgrade_dialog.dart';
 import '../widgets/hustle/boost_dialog.dart';
 import '../utils/number_formatter.dart';
@@ -62,6 +63,7 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
   bool _isWatchingAd = false;
   Timer? _autoClickHoldTimer;
   bool _firstTapTutorialShown = false;
+  int _lastBusinessesOwnedCount = -1;
 
   @override
   void initState() {
@@ -313,6 +315,7 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
     
     return Consumer<GameState>(
       builder: (context, gameState, child) {
+        _checkBusinessUnlockReview(gameState);
         final int nextLevel = gameState.clickLevel + 1;
         final int requiredTaps = TapBoostConfig.getCumulativeTapsForLevel(nextLevel);
         final int currentLevelTaps = TapBoostConfig.getCumulativeTapsForLevel(gameState.clickLevel);
@@ -381,6 +384,27 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
   double _calculateNextClickValue(int level) {
     final gameState = Provider.of<GameState>(context, listen: false);
     return TapBoostConfig.getClickBaseValueForLevel(level) * gameState.prestigeMultiplier;
+  }
+
+  void _checkBusinessUnlockReview(GameState gameState) {
+    final int currentCount = gameState.businessesOwnedCount;
+    if (_lastBusinessesOwnedCount < 0) {
+      _lastBusinessesOwnedCount = currentCount;
+      return;
+    }
+
+    if (currentCount > _lastBusinessesOwnedCount) {
+      _lastBusinessesOwnedCount = currentCount;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ReviewManager.instance.onBusinessUnlocked(
+          context,
+          totalBusinesses: currentCount,
+        );
+      });
+    } else {
+      _lastBusinessesOwnedCount = currentCount;
+    }
   }
   
   Widget _buildClickInfoCard(GameState gameState, double progress, double nextClickValue, ResponsiveUtils responsive) {
