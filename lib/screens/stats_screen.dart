@@ -10,6 +10,7 @@ import '../utils/sounds.dart';
 import '../widgets/achievements_section.dart';
 import '../themes/stats_themes.dart';
 import '../widgets/stats/overview_card.dart';
+import '../widgets/stats/leaderboard_card.dart';
 import '../widgets/stats/earnings_breakdown_card.dart';
 import '../widgets/stats/assets_breakdown_card.dart';
 import '../widgets/stats/hourly_earnings_chart.dart';
@@ -76,6 +77,14 @@ class _StatsScreenState extends State<StatsScreen> {
                               ReincorporationUtils.showReincorporateInfo(context),
                           buildThemeToggle: ThemeDialogUtils.buildThemeToggle,
                           scrollToSection: _scrollToSection,
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        // Global Leaderboard Card
+                        LeaderboardCard(
+                          gameState: gameState,
+                          theme: theme,
                         ),
 
                         const SizedBox(height: 20),
