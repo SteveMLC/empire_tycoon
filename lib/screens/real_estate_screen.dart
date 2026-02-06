@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // For haptic feedback
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -1126,6 +1127,9 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
 
             // Attempt to purchase the upgrade - use the PASSED locale.id
             if (gameState.purchasePropertyUpgrade(locale.id, property.id, upgrade.id)) {
+              // 🎯 HAPTIC FEEDBACK: Satisfying feedback on property upgrade
+              HapticFeedback.mediumImpact();
+              
               try {
                 // Preload sound first
                 final assetLoader = AssetLoader();

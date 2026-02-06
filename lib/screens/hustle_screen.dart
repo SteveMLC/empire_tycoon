@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // For haptic feedback
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -131,6 +132,9 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
         return;
       }
       
+      // 🎯 HAPTIC FEEDBACK: Light tap feel for every click
+      HapticFeedback.lightImpact();
+      
       GameService? gameService;
       try {
         gameService = Provider.of<GameService>(context, listen: false);
@@ -189,6 +193,9 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
       }
       
       if (gameState.taps >= requiredTaps && gameState.clickLevel < 20) {
+        // 🎯 HAPTIC FEEDBACK: Heavy impact for level up - make it feel significant!
+        HapticFeedback.heavyImpact();
+        
         gameState.clickLevel = nextLevel;
         
         double baseValue;
@@ -245,6 +252,9 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
       // Premium users skip ads and get boost immediately
       gameState.startAdBoost();
       
+      // 🎯 HAPTIC FEEDBACK: Medium impact for boost activation
+      HapticFeedback.mediumImpact();
+      
       try {
         GameService? gameService = Provider.of<GameService>(context, listen: false);
         gameService.soundManager.playFeedbackNotificationSound();
@@ -270,6 +280,9 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
         if (rewardType == 'HustleBoost') {
           // User watched the ad successfully, give the boost
           gameState.startAdBoost();
+          
+          // 🎯 HAPTIC FEEDBACK: Medium impact for boost activation from ad
+          HapticFeedback.mediumImpact();
           
           // Update local state for UI
           setState(() {

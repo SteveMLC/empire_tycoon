@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // For haptic feedback
 import 'package:provider/provider.dart';
 
 import '../models/business.dart';
@@ -561,6 +562,9 @@ class _BusinessItemState extends State<BusinessItem> {
         onPressed: business.isMaxLevel() ? null : (canAfford
             ? () {
                 if (gameState.buyBusiness(business.id)) {
+                  // 🎯 HAPTIC FEEDBACK: Satisfying feedback on purchase
+                  HapticFeedback.mediumImpact();
+                  
                   try {
                     final gameService = Provider.of<GameService>(context, listen: false);
                     
