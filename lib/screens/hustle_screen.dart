@@ -66,6 +66,7 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
   Timer? _autoClickHoldTimer;
   bool _firstTapTutorialShown = false;
   Offset? _lastTapPosition;
+  final GlobalKey<FloatingMoneyManagerState> _floatingMoneyKey = GlobalKey<FloatingMoneyManagerState>();
 
   @override
   void initState() {
@@ -139,7 +140,7 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
         return;
       }
       
-      // 🎯 HAPTIC FEEDBACK: Light tap feel for every click
+      // HAPTIC FEEDBACK: Light tap feel for every click
       SoundManager().playLightHaptic();
       
       GameService? gameService;
@@ -155,9 +156,9 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
       // Use the helper function to avoid extension conflicts
       _callTapOnGameState(gameState);
 
-      // 💰 FLOATING MONEY: Show catchy floating money animation
+      // FLOATING MONEY: Show catchy floating money animation
       if (_lastTapPosition != null && mounted) {
-        final floatingMoneyManager = FloatingMoneyManager.of(context);
+        final floatingMoneyManager = _floatingMoneyKey.currentState;
         if (floatingMoneyManager != null) {
           final clickValue = _calculateClickValue(gameState);
           floatingMoneyManager.spawnFloatingMoney(clickValue, _lastTapPosition!);
@@ -201,7 +202,7 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
       final int requiredTaps = TapBoostConfig.getCumulativeTapsForLevel(nextLevel);
       
       if (gameState.taps >= requiredTaps && gameState.clickLevel < TapBoostConfig.maxClickLevel) {
-        // 🎯 HAPTIC FEEDBACK: Heavy impact for level up - make it feel significant!
+        // HAPTIC FEEDBACK: Heavy impact for level up - make it feel significant!
         SoundManager().playHeavyHaptic();
 
         gameState.clickLevel = nextLevel;
@@ -217,7 +218,7 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
         }
         
         if (nextLevel % 5 == 0 || nextLevel >= 40) {
-          print("🌟 LEVEL UP! New click level: ${gameState.clickLevel}, new value: ${gameState.clickValue.toStringAsFixed(2)}");
+          print(" LEVEL UP! New click level: ${gameState.clickLevel}, new value: ${gameState.clickValue.toStringAsFixed(2)}");
         }
       }
     } catch (e) {
@@ -236,7 +237,7 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
       // Premium users skip ads and get boost immediately
       gameState.startAdBoost();
       
-      // 🎯 HAPTIC FEEDBACK: Medium impact for boost activation
+      // HAPTIC FEEDBACK: Medium impact for boost activation
       SoundManager().playMediumHaptic();
       
       try {
@@ -265,7 +266,7 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
           // User watched the ad successfully, give the boost
           gameState.startAdBoost();
           
-          // 🎯 HAPTIC FEEDBACK: Medium impact for boost activation from ad
+          // HAPTIC FEEDBACK: Medium impact for boost activation from ad
           SoundManager().playMediumHaptic();
           
           // Update local state for UI
@@ -328,6 +329,7 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
         
         // RESPONSIVE LAYOUT: Optimize for device size and ensure tap zone visibility
         return FloatingMoneyManager(
+          key: _floatingMoneyKey,
           child: Column(
             children: [
             // Click info card - responsive sizing
@@ -603,12 +605,15 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
   Widget _buildClickArea(GameState gameState, ResponsiveUtils responsive) {
     final showFirstTapTutorial = !_firstTapTutorialShown && gameState.taps == 0;
 
-    final tapArea = GestureDetector(
-      onTap: () {
-        _earnMoney();
+    final tapArea = Listener(
+      onPointerDown: (event) {
+        // Always capture tap position via Listener (not affected by gesture arena)
+        _lastTapPosition = event.position;
       },
+      child: GestureDetector(
       onTapDown: (details) {
-        _onTapDown(details);
+        _lastTapPosition = details.globalPosition;
+        _animationController.forward();
         if (gameState.isAutoClickerActive) {
           _autoClickHoldTimer?.cancel();
           _autoClickHoldTimer = Timer.periodic(const Duration(milliseconds: 100), (_) {
@@ -743,6 +748,7 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
           );
         },
       ),
+    ),
     );
     // When holding for auto-tap, win the horizontal-drag arena so TabBarView does not
     // receive the swipe and cancel the hold. Listener ensures we stop the timer on

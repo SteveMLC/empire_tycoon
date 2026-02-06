@@ -1,12 +1,12 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 
-/// A widget that displays a floating money amount with catchy animations.
+/// A widget that displays a floating money amount with clean animations.
 /// Features:
-/// - Gold/green gradient text with glow effect
-/// - Smooth float-up animation
-/// - Random horizontal offset for variety
-/// - Scale animation (1.0 → 1.2 → 1.0) before fading
+/// - Clean white text on semi-transparent dark pill
+/// - Smooth float-up animation centered on tap point
+/// - Small random horizontal jitter for variety
+/// - Scale pop animation before fading
 /// - Automatic cleanup after animation completes
 class FloatingMoneyWidget extends StatefulWidget {
   final double amount;
@@ -36,9 +36,9 @@ class _FloatingMoneyWidgetState extends State<FloatingMoneyWidget>
   void initState() {
     super.initState();
 
-    // Random horizontal offset for variety (-20 to +20 pixels)
+    // Small random horizontal jitter for variety (-12 to +12 pixels)
     final random = Random();
-    _horizontalOffset = (random.nextDouble() * 40) - 20;
+    _horizontalOffset = (random.nextDouble() * 24) - 12;
 
     _controller = AnimationController(
       duration: const Duration(milliseconds: 900),
@@ -117,64 +117,40 @@ class _FloatingMoneyWidgetState extends State<FloatingMoneyWidget>
         return Positioned(
           left: widget.startPosition.dx + _horizontalOffset,
           top: widget.startPosition.dy + _verticalPosition.value,
-          child: Opacity(
-            opacity: _opacity.value,
-            child: Transform.scale(
-              scale: _scale.value,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Color(0xFFFFD700), // Gold
-                      Color(0xFF66FF66), // Bright green
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+          child: FractionalTranslation(
+            translation: const Offset(-0.5, -0.5),
+            child: Opacity(
+              opacity: _opacity.value,
+              child: Transform.scale(
+                scale: _scale.value,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
                   ),
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Color(0xFFFFD700).withOpacity(0.6),
-                      blurRadius: 12,
-                      spreadRadius: 2,
-                    ),
-                    BoxShadow(
-                      color: Color(0xFF66FF66).withOpacity(0.4),
-                      blurRadius: 8,
-                      spreadRadius: 1,
-                    ),
-                  ],
-                ),
-                child: ShaderMask(
-                  shaderCallback: (bounds) => LinearGradient(
-                    colors: [
-                      Color(0xFFFFD700),
-                      Color(0xFFFFFFFF),
-                      Color(0xFF66FF66),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.65),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.3),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
+                      ),
                     ],
-                    stops: [0.0, 0.5, 1.0],
-                  ).createShader(bounds),
+                  ),
                   child: Text(
                     _formatAmount(widget.amount),
                     style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.white,
-                      letterSpacing: 0.5,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: Color(0xFF4ADE80),
+                      letterSpacing: 0.3,
                       shadows: [
                         Shadow(
-                          color: Colors.black.withOpacity(0.8),
-                          offset: const Offset(2, 2),
-                          blurRadius: 4,
-                        ),
-                        Shadow(
-                          color: Color(0xFFFFD700).withOpacity(0.8),
-                          offset: const Offset(0, 0),
-                          blurRadius: 10,
+                          color: Colors.black.withOpacity(0.5),
+                          offset: const Offset(0, 1),
+                          blurRadius: 2,
                         ),
                       ],
                     ),
