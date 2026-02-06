@@ -185,9 +185,9 @@ extension GameStateEvents on GameState {
       !event.isResolved && event.resolution.type == EventResolutionType.adBased
     ).length;
     
-    // NEW PLAYER PROTECTION: Don't require ads until player has solved at least 4 events
+    // NEW PLAYER PROTECTION: Don't require ads until player has solved at least 2 events
     // This improves the new player experience by letting them learn the event system first
-    const int minEventsBeforeAds = 4;
+    const int minEventsBeforeAds = 2;
     bool playerHasEnoughExperience = totalEventsResolved >= minEventsBeforeAds;
     
     // Available resolution types based on premium status, existing events, and player experience
@@ -197,7 +197,7 @@ extension GameStateEvents on GameState {
     ];
     
     // Add ad-based resolution only if:
-    // 1. Player has resolved at least 4 events (new player protection), AND
+    // 1. Player has resolved at least 2 events (new player protection), AND
     // 2. User has premium (no limit), OR
     // 3. User doesn't have premium but there are no existing ad events (max 1)
     if (playerHasEnoughExperience && (isPremium || existingAdEvents == 0)) {
