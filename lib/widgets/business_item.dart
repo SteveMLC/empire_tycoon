@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // For haptic feedback
 import 'package:provider/provider.dart';
 
 import '../models/business.dart';
@@ -11,6 +12,7 @@ import '../utils/number_formatter.dart';
 import '../utils/time_formatter.dart';
 import '../utils/asset_loader.dart';
 import 'business_branch_selection_dialog.dart';
+import 'animated_upgrade_progress_bar.dart';
 
 class BusinessItem extends StatefulWidget {
   final Business business;
@@ -561,6 +563,9 @@ class _BusinessItemState extends State<BusinessItem> {
         onPressed: business.isMaxLevel() ? null : (canAfford
             ? () {
                 if (gameState.buyBusiness(business.id)) {
+                  // 🎯 HAPTIC FEEDBACK: Satisfying feedback on purchase
+                  HapticFeedback.mediumImpact();
+                  
                   try {
                     final gameService = Provider.of<GameService>(context, listen: false);
                     
