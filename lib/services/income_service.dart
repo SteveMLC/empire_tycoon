@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
+import '../data/pacing_config.dart';
 import '../models/game_state.dart';
 import '../models/game_state_events.dart';
 import '../utils/number_formatter.dart';
@@ -71,10 +72,12 @@ class IncomeService extends ChangeNotifier {
       double portfolioMultiplier = gameState.isPlatinumPortfolioActive ? 1.25 : 1.0;
       double diversificationBonus = gameState.calculateDiversificationBonus();
 
-      // Business Income (with event check)
-      for (var business in gameState.businesses) {
+      // Business Income (with event check and pacing)
+      for (int i = 0; i < gameState.businesses.length; i++) {
+        final business = gameState.businesses[i];
         if (business.level > 0) {
-          double baseIncome = business.getCurrentIncome(isResilienceActive: gameState.isPlatinumResilienceActive); // Use getCurrentIncome
+          double baseIncome = business.getCurrentIncome(isResilienceActive: gameState.isPlatinumResilienceActive);
+          baseIncome *= PacingConfig.businessIncomeMultiplierForIndex(i);
           double incomeWithEfficiency = baseIncome * businessEfficiencyMultiplier;
           double finalIncome = incomeWithEfficiency * gameState.incomeMultiplier;
           finalIncome *= permanentIncomeBoostMultiplier;
@@ -153,6 +156,7 @@ class IncomeService extends ChangeNotifier {
       for (var investment in gameState.investments) {
         if (investment.owned > 0 && investment.hasDividends()) {
           double baseDividend = investment.getDividendIncomePerSecond();
+          baseDividend *= PacingConfig.dividendMultiplierByMarketCap(investment.marketCap);
           double portfolioAdjustedDividend = baseDividend * portfolioMultiplier * diversificationBonusValue;
           
           // Apply global multipliers

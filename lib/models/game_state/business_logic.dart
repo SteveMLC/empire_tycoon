@@ -22,7 +22,8 @@ extension BusinessLogic on GameState {
         return false;
     }
 
-    double cost = business.getNextUpgradeCost();
+    double baseCost = business.getNextUpgradeCost();
+    double cost = baseCost * PacingConfig.businessCostMultiplierForIndex(index);
     int timerSeconds = business.getNextUpgradeTimerSeconds();
 
     if (money >= cost) {
@@ -226,36 +227,36 @@ extension BusinessLogic on GameState {
   // Calculate the total business income per second (with multipliers)
   double getBusinessIncomePerSecond() {
     double total = 0.0;
-    for (var business in businesses) {
+    for (int i = 0; i < businesses.length; i++) {
+      final business = businesses[i];
       if (business.level > 0) {
-        // Get base income with efficiency multiplier if active
         double baseIncome = business.getCurrentIncome(isResilienceActive: isPlatinumResilienceActive);
+        baseIncome *= PacingConfig.businessIncomeMultiplierForIndex(i);
         double incomeWithEfficiency = baseIncome * (isPlatinumEfficiencyActive ? 1.05 : 1.0);
-        
-        // Apply global income multiplier
         double incomeWithMultiplier = incomeWithEfficiency * incomeMultiplier;
-        
-        // Apply permanent income boost if active
         if (isPermanentIncomeBoostActive) {
           incomeWithMultiplier *= 1.05;
         }
-        
-        // Apply income surge if active
         if (isIncomeSurgeActive) {
           incomeWithMultiplier *= 2.0;
         }
-        
-        // CRITICAL FIX: Check if business is affected by an event and apply the multiplier
         bool hasEvent = hasActiveEventForBusiness(business.id);
         if (hasEvent) {
-          // Apply the negative event multiplier (-25%)
           incomeWithMultiplier *= GameStateEvents.NEGATIVE_EVENT_MULTIPLIER;
         }
-        
         total += incomeWithMultiplier;
       }
     }
     return total;
+  }
+
+  /// Paced upgrade cost for a business (for display and affordability).
+  double getEffectiveBusinessUpgradeCost(String businessId) {
+    final index = businesses.indexWhere((b) => b.id == businessId);
+    if (index < 0) return 0.0;
+    final business = businesses[index];
+    final baseCost = business.getNextUpgradeCost();
+    return baseCost * PacingConfig.businessCostMultiplierForIndex(index);
   }
 
 } 

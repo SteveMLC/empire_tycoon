@@ -838,13 +838,14 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
 
   Widget _buildPropertyItem(RealEstateLocale locale, RealEstateProperty property, GameState gameState, ThemeData theme) {
     bool isOwned = property.owned > 0;
-    bool canAfford = gameState.money >= property.purchasePrice;
-
     String localeId = locale.id;
+    double effectivePrice = gameState.getEffectivePropertyPurchaseCost(localeId, property.id);
+    bool canAfford = gameState.money >= effectivePrice;
 
     RealEstateUpgrade? nextUpgrade = isOwned ? property.getNextAvailableUpgrade() : null;
     bool hasUpgrade = nextUpgrade != null;
-    bool canAffordUpgrade = hasUpgrade && gameState.money >= nextUpgrade.cost;
+    double effectiveUpgradeCost = hasUpgrade ? gameState.getEffectiveUpgradeCost(localeId, property.id, nextUpgrade!.id) : 0.0;
+    bool canAffordUpgrade = hasUpgrade && gameState.money >= effectiveUpgradeCost;
     bool allUpgradesPurchased = isOwned && property.allUpgradesPurchased;
 
     // Check if this property's locale is affected by an event
@@ -1047,7 +1048,7 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
                       child: Text(
                         isOwned
                             ? 'Value: ${NumberFormatter.formatCurrency(property.totalValue)}'
-                            : 'Price: ${NumberFormatter.formatCurrency(property.purchasePrice)}',
+                            : 'Price: ${NumberFormatter.formatCurrency(effectivePrice)}',
                         style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
@@ -1121,7 +1122,7 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
 
                 if (isOwned && hasUpgrade) ...[
                   const SizedBox(height: 12),
-                  _buildUpgradeInfo(property, nextUpgrade!, theme),
+                  _buildUpgradeInfo(locale, property, nextUpgrade!, gameState, theme),
                 ],
               ],
             ),
@@ -1192,28 +1193,15 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
     );
   }
 
-  Widget _buildUpgradeInfo(RealEstateProperty property, RealEstateUpgrade upgrade, ThemeData theme) {
-  // Get the GameState to access multipliers
-  final gameState = Provider.of<GameState>(context);
-  
-  // Calculate all multipliers that affect income
+  Widget _buildUpgradeInfo(RealEstateLocale locale, RealEstateProperty property, RealEstateUpgrade upgrade, GameState gameState, ThemeData theme) {
   double permanentIncomeBoostMultiplier = gameState.isPermanentIncomeBoostActive ? 1.05 : 1.0;
-  
-  // We can't directly access the locale from the property, so we'll just use the multipliers
-  // without the event penalty for now - the event penalty will be applied when the property is displayed
-  // in the main property item widget
-  
-  // Calculate current income with all multipliers (same way as in _buildPropertyItem)
   double currentBaseIncome = property.cashFlowPerSecond;
   double currentDisplayedIncome = currentBaseIncome * gameState.incomeMultiplier * permanentIncomeBoostMultiplier;
-  
-  // Calculate new income with all multipliers
   double newBaseIncome = upgrade.newIncomePerSecond;
   double newDisplayedIncome = newBaseIncome * gameState.incomeMultiplier * permanentIncomeBoostMultiplier;
-  
-  // Calculate percentage increase based on the displayed values (with multipliers)
   double percentageIncrease = ((newDisplayedIncome / currentDisplayedIncome) - 1) * 100;
-  
+  double effectiveUpgradeCost = gameState.getEffectiveUpgradeCost(locale.id, property.id, upgrade.id);
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -1242,7 +1230,7 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
               const Icon(Icons.attach_money, size: 16, color: Colors.grey),
               const SizedBox(width: 4),
               Text(
-                'Cost: ${NumberFormatter.formatCurrency(upgrade.cost)}',
+                'Cost: ${NumberFormatter.formatCurrency(effectiveUpgradeCost)}',
                 style: const TextStyle(
                   fontSize: 14,
                   color: Colors.black87,

@@ -574,6 +574,7 @@ extension InvestmentLogic on GameState {
     for (var investment in investments) {
       if (investment.owned > 0 && investment.hasDividends()) {
         double baseDividend = investment.getDividendIncomePerSecond();
+        baseDividend *= PacingConfig.dividendMultiplierByMarketCap(investment.marketCap);
         double adjustedDividend = baseDividend * portfolioMultiplier * (1 + diversificationBonus);
         double totalDividendForInvestment = adjustedDividend;
         

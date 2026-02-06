@@ -81,11 +81,13 @@ extension UpdateLogic on GameState {
       // --- END ADDED [1.6] ---
 
       // --- ADDED [1.5]: Check for Completed Business Upgrades ---
-      for (var business in List.from(businesses)) { // Iterate over a copy in case list changes
+      for (var element in List.from(businesses)) {
+          if (element is! Business) continue; // Defensive: skip if list was ever corrupted (e.g. String in list)
+          final business = element as Business;
           if (business.isUpgrading && business.upgradeEndTime != null && now.isAfter(business.upgradeEndTime!)) {
               print("⏲️ Detected completed upgrade for ${business.name} in update loop.");
-              completeBusinessUpgrade(business.id); // This will handle logic and notifyListeners
-              stateChanged = true; // Ensure notifyListeners is called if not already handled
+              completeBusinessUpgrade(business.id);
+              stateChanged = true;
           }
       }
       // --- END ADDED [1.5] ---
@@ -155,14 +157,16 @@ extension UpdateLogic on GameState {
         // CRITICAL FIX: Use the same per-second income calculation as in getBusinessIncomePerSecond()
         // This ensures the accrual matches the displayed income rate
         double businessIncomeThisTick = 0.0;
-        for (var business in businesses) {
+        for (int i = 0; i < businesses.length; i++) {
+          final business = businesses[i];
           if (business.level > 0) {
             if (kDebugMode && _kVerboseIncomeDebug) {
               print("DEBUG: Processing business ${business.name} - Level: ${business.level}");
             }
 
-            // Get base income with efficiency multiplier if active
+            // Get base income with pacing then efficiency multiplier if active
             double baseIncome = business.getCurrentIncome(isResilienceActive: isPlatinumResilienceActive);
+            baseIncome *= PacingConfig.businessIncomeMultiplierForIndex(i);
             if (kDebugMode && _kVerboseIncomeDebug) {
               print("DEBUG: Business '${business.name}' baseIncome: $baseIncome at ${DateTime.now().millisecondsSinceEpoch}");
             }
@@ -313,13 +317,12 @@ extension UpdateLogic on GameState {
         
         for (var investment in investments) {
           if (investment.owned > 0 && investment.hasDividends()) {
-            // Get base dividend per second for this investment (already includes owned count)
             double baseDividend = investment.getDividendIncomePerSecond();
+            baseDividend *= PacingConfig.dividendMultiplierByMarketCap(investment.marketCap);
             if (kDebugMode && _kVerboseIncomeDebug) {
               print("DEBUG: Investment '${investment.name}' base dividend: $baseDividend");
             }
 
-            // Apply portfolio multiplier and diversification bonus
             double adjustedDividend = baseDividend * portfolioMultiplier * (1 + diversificationBonus);
             if (kDebugMode && _kVerboseIncomeDebug) {
               print("DEBUG: Investment '${investment.name}' after portfolio/diversification: $adjustedDividend");
@@ -408,9 +411,9 @@ extension UpdateLogic on GameState {
 
           for (var investment in investments) {
             if (investment.owned > 0 && investment.hasDividends()) {
-              dividendIncome += investment.getDividendIncomePerSecond() *
-                               portfolioMultiplier *
-                               (1 + diversificationBonus);
+              double baseDiv = investment.getDividendIncomePerSecond();
+              baseDiv *= PacingConfig.dividendMultiplierByMarketCap(investment.marketCap);
+              dividendIncome += baseDiv * portfolioMultiplier * (1 + diversificationBonus);
             }
           }
 

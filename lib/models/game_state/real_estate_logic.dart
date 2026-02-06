@@ -118,6 +118,35 @@ extension RealEstateLogic on GameState {
     return total;
   }
 
+  /// Paced cost to purchase one unit of this property (for display and affordability).
+  double getEffectivePropertyPurchaseCost(String localeId, String propertyId) {
+    for (var locale in realEstateLocales) {
+      if (locale.id != localeId) continue;
+      final propertyIndex = locale.properties.indexWhere((p) => p.id == propertyId);
+      if (propertyIndex < 0) return 0.0;
+      final property = locale.properties[propertyIndex];
+      final int tier = PacingConfig.realEstateTierFromPropertyIndex(propertyIndex);
+      return property.purchasePrice * PacingConfig.realEstateCostMultiplierForTier(tier);
+    }
+    return 0.0;
+  }
+
+  /// Paced cost for a property upgrade (for display and affordability).
+  double getEffectiveUpgradeCost(String localeId, String propertyId, String upgradeId) {
+    for (var locale in realEstateLocales) {
+      if (locale.id != localeId) continue;
+      final propertyIndex = locale.properties.indexWhere((p) => p.id == propertyId);
+      if (propertyIndex < 0) return 0.0;
+      final property = locale.properties[propertyIndex];
+      final upgradeIndex = property.upgrades.indexWhere((u) => u.id == upgradeId);
+      if (upgradeIndex < 0) return 0.0;
+      final upgrade = property.upgrades[upgradeIndex];
+      final int tier = PacingConfig.realEstateTierFromPropertyIndex(propertyIndex);
+      return upgrade.cost * PacingConfig.realEstateCostMultiplierForTier(tier);
+    }
+    return 0.0;
+  }
+
   // Buy a real estate property
   bool buyRealEstateProperty(String localeId, String propertyId) {
     RealEstateLocale? locale = realEstateLocales.firstWhere(
@@ -140,7 +169,9 @@ extension RealEstateLogic on GameState {
       return false;
     }
 
-    double cost = property.purchasePrice;
+    final int propertyIndex = locale.properties.indexOf(property);
+    final int tier = PacingConfig.realEstateTierFromPropertyIndex(propertyIndex);
+    final double cost = property.purchasePrice * PacingConfig.realEstateCostMultiplierForTier(tier);
     print("DEBUG: Attempting to buy $propertyId. Cost: $cost, Money: $money");
 
     if (money >= cost) {
@@ -187,8 +218,12 @@ extension RealEstateLogic on GameState {
 
     if (upgrade == null || upgrade.purchased) return false;
 
-    if (money >= upgrade.cost) {
-      money -= upgrade.cost;
+    final int propertyIndex = locale.properties.indexOf(property);
+    final int tier = PacingConfig.realEstateTierFromPropertyIndex(propertyIndex);
+    final double effectiveUpgradeCost = upgrade.cost * PacingConfig.realEstateCostMultiplierForTier(tier);
+
+    if (money >= effectiveUpgradeCost) {
+      money -= effectiveUpgradeCost;
       upgrade.purchased = true;
       totalRealEstateUpgradesPurchased++; // Increment total count
 

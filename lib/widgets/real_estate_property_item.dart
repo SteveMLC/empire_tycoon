@@ -221,7 +221,7 @@ class RealEstatePropertyItem extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Price: \$${NumberFormatter.formatCurrency(property.purchasePrice)}',
+                  'Price: \$${NumberFormatter.formatCurrency(gameState.getEffectivePropertyPurchaseCost(localeId, property.id))}',
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,

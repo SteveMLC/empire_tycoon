@@ -159,9 +159,9 @@ extension EventLogic on GameState {
         // Skip investments not owned or without dividends (combined check)
         if (owned <= 0 || !investment.hasDividends()) continue;
         
-        // FIXED: Removed duplicate multiplication by owned
-        // investment.getDividendIncomePerSecond() already multiplies by owned
-        dividendIncome += investment.getDividendIncomePerSecond();
+        double baseDiv = investment.getDividendIncomePerSecond();
+        baseDiv *= PacingConfig.dividendMultiplierByMarketCap(investment.marketCap);
+        dividendIncome += baseDiv;
       }
       
       // Only calculate diversification bonus if we have dividend income

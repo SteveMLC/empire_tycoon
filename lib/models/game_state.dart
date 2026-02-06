@@ -21,6 +21,7 @@ import 'challenge.dart'; // ADDED: Import for Challenge model
 import '../data/business_definitions.dart'; // ADDED: Import for business data
 import '../data/investment_definitions.dart'; // ADDED: Import for investment data
 import '../data/platinum_vault_items.dart'; // ADDED: Import for vault items
+import '../data/pacing_config.dart'; // Pacing multipliers for progression scaling
 import '../utils/number_formatter.dart'; // ADDED: Import for formatting
 import '../utils/tap_boost_config.dart'; // ADDED: Tap boost leveling config
 import 'mogul_avatar.dart'; // ADDED: Import for mogul avatars
@@ -331,9 +332,10 @@ class GameState with ChangeNotifier {
   double get totalIncomePerSecond {
     double total = 0.0;
 
-    for (var business in businesses) {
+    for (int i = 0; i < businesses.length; i++) {
+      final business = businesses[i];
       if (business.level > 0) {
-        total += business.getIncomePerSecond();
+        total += business.getIncomePerSecond() * PacingConfig.businessIncomeMultiplierForIndex(i);
       }
     }
 
@@ -341,7 +343,8 @@ class GameState with ChangeNotifier {
 
     for (var investment in investments) {
       if (investment.owned > 0 && investment.hasDividends()) {
-        total += investment.getDividendIncomePerSecond();
+        double div = investment.getDividendIncomePerSecond();
+        total += div * PacingConfig.dividendMultiplierByMarketCap(investment.marketCap);
       }
     }
 
@@ -1159,21 +1162,19 @@ class GameState with ChangeNotifier {
   
   // Calculate total income per second (including all sources)
   double calculateTotalIncomePerSecond() {
-    // Business income per second
+    // Business income per second (with pacing)
     double businessIncome = 0.0;
-    for (var business in businesses) {
+    for (int i = 0; i < businesses.length; i++) {
+      final business = businesses[i];
       if (business.level > 0) {
         double cyclesPerSecond = 1 / business.incomeInterval;
         double baseIncomePerSecond = business.getCurrentIncome(isResilienceActive: isPlatinumResilienceActive) * cyclesPerSecond;
-        // Apply efficiency multiplier
+        baseIncomePerSecond *= PacingConfig.businessIncomeMultiplierForIndex(i);
         double modifiedIncomePerSecond = baseIncomePerSecond * (isPlatinumEfficiencyActive ? 1.05 : 1.0);
-        
-        // CRITICAL FIX: Apply event penalty if business is affected
         bool hasEvent = hasActiveEventForBusiness(business.id);
         if (hasEvent) {
           modifiedIncomePerSecond *= GameStateEvents.NEGATIVE_EVENT_MULTIPLIER;
         }
-        
         businessIncome += modifiedIncomePerSecond;
       }
     }
@@ -1213,9 +1214,11 @@ class GameState with ChangeNotifier {
     
     for (var investment in investments) {
       if (investment.owned > 0 && investment.hasDividends()) {
+        // getDividendIncomePerSecond() already returns dividendPerSecond * owned (total for this investment)
         double baseDividendPerSecond = investment.getDividendIncomePerSecond();
-        double effectiveDividendPerShare = baseDividendPerSecond * portfolioMultiplier * (1 + diversificationBonus);
-        dividendIncome += effectiveDividendPerShare * investment.owned;
+        baseDividendPerSecond *= PacingConfig.dividendMultiplierByMarketCap(investment.marketCap);
+        double adjustedTotal = baseDividendPerSecond * portfolioMultiplier * (1 + diversificationBonus);
+        dividendIncome += adjustedTotal;
       }
     }
     

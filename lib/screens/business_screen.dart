@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../data/pacing_config.dart';
 import '../models/game_state.dart';
 import '../models/business.dart';
 import '../widgets/business_item.dart';
@@ -16,7 +17,7 @@ class BusinessScreen extends StatefulWidget {
 class _BusinessScreenState extends State<BusinessScreen> {
   String _sortBy = 'default'; // default, level, income, cost
 
-  List<Business> _getSortedBusinesses(List<Business> businesses) {
+  List<Business> _getSortedBusinesses(List<Business> businesses, GameState gameState) {
     List<Business> sorted = List.from(businesses);
     
     switch (_sortBy) {
@@ -24,13 +25,18 @@ class _BusinessScreenState extends State<BusinessScreen> {
         sorted.sort((a, b) => b.level.compareTo(a.level));
         break;
       case 'income':
-        sorted.sort((a, b) => b.getIncomePerSecond().compareTo(a.getIncomePerSecond()));
+        sorted.sort((a, b) {
+          final iA = gameState.businesses.indexWhere((x) => x.id == a.id);
+          final iB = gameState.businesses.indexWhere((x) => x.id == b.id);
+          final incA = a.getIncomePerSecond() * (iA >= 0 ? PacingConfig.businessIncomeMultiplierForIndex(iA) : 1.0);
+          final incB = b.getIncomePerSecond() * (iB >= 0 ? PacingConfig.businessIncomeMultiplierForIndex(iB) : 1.0);
+          return incB.compareTo(incA);
+        });
         break;
       case 'cost':
-        sorted.sort((a, b) => a.getNextUpgradeCost().compareTo(b.getNextUpgradeCost()));
+        sorted.sort((a, b) => gameState.getEffectiveBusinessUpgradeCost(a.id).compareTo(gameState.getEffectiveBusinessUpgradeCost(b.id)));
         break;
       default:
-        // Keep default order (by unlock sequence)
         break;
     }
     
@@ -45,7 +51,7 @@ class _BusinessScreenState extends State<BusinessScreen> {
     return Consumer<GameState>(
       builder: (context, gameState, child) {
         // Get list of businesses and sort based on selection
-        List<Business> businesses = _getSortedBusinesses(gameState.businesses);
+        List<Business> businesses = _getSortedBusinesses(gameState.businesses, gameState);
 
         return Scaffold(
           body: ResponsiveContainer(

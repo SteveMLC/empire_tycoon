@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../data/pacing_config.dart';
 import '../models/business.dart';
 import '../models/business_branch.dart';
 import '../models/game_state.dart';
@@ -143,16 +144,16 @@ class _BusinessItemState extends State<BusinessItem> {
     final Duration remainingUpgradeTime = business.getRemainingUpgradeTime();
     final bool isOwned = business.level > 0;
     
-    // Determine if business can be afforded
-    double cost = business.getNextUpgradeCost();
+    final int businessIndex = gameState.businesses.indexWhere((b) => b.id == business.id);
+    final double incomePacingMult = businessIndex >= 0 ? PacingConfig.businessIncomeMultiplierForIndex(businessIndex) : 1.0;
+
+    double cost = gameState.getEffectiveBusinessUpgradeCost(business.id);
     bool canAfford = gameState.money >= cost && !business.isMaxLevel();
-    
-    // Calculate next level income increase if not at max level
-    double baseIncome = business.getIncomePerSecond();
-    double nextLevelIncome = !business.isMaxLevel() ? business.getNextLevelIncomePerSecond() : baseIncome;
-    
-    // Get expected income for unpurchased businesses
-    double expectedIncome = business.getExpectedIncomeAfterPurchase();
+
+    double baseIncome = business.getIncomePerSecond() * incomePacingMult;
+    double nextLevelIncome = !business.isMaxLevel() ? business.getNextLevelIncomePerSecond() * incomePacingMult : baseIncome;
+
+    double expectedIncome = business.getExpectedIncomeAfterPurchase() * incomePacingMult;
     
     double businessEfficiencyMultiplier = gameState.isPlatinumEfficiencyActive ? 1.05 : 1.0;
     double permanentIncomeBoostMultiplier = gameState.isPermanentIncomeBoostActive ? 1.05 : 1.0;
@@ -550,7 +551,7 @@ class _BusinessItemState extends State<BusinessItem> {
   }
   
   Widget _buildBuyUpgradeButton(BuildContext context, GameState gameState, Business business, bool canAfford, double incomeIncrease) {
-    final cost = business.getNextUpgradeCost();
+    final cost = gameState.getEffectiveBusinessUpgradeCost(business.id);
     final timerSeconds = business.getNextUpgradeTimerSeconds();
     final isInitialPurchase = business.level == 0;
     final businessBaseColor = _getBusinessColor(business.id);
