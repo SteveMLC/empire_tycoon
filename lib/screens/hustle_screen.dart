@@ -14,6 +14,7 @@ import '../utils/number_formatter.dart';
 import '../utils/matrix4_fallback.dart';
 import '../utils/responsive_utils.dart';
 import '../utils/sound_manager.dart';
+import '../utils/sound_assets.dart';
 import '../utils/tap_boost_config.dart';
 import '../widgets/floating_money.dart';
 
@@ -88,11 +89,9 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
   }
 
   void _onTapDown(TapDownDetails details) {
-    _lastTapPosition = details.localPosition;
+    // Store global tap position; FloatingMoneyManager converts to its coordinate system.
+    _lastTapPosition = details.globalPosition;
     _animationController.forward();
-    // Track the last tap position so FloatingMoneyManager can spawn money
-    // animations from the correct location.
-    _lastTapPosition = details.localPosition;
   }
 
   void _onTapUp(TapUpDetails details) {
@@ -210,15 +209,7 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
         
         try {
           GameService? gameService = Provider.of<GameService>(context, listen: false);
-          if (nextLevel >= 40) {
-            gameService.playSound(() => gameService.soundManager.playAchievementMilestoneSound());
-          } else if (nextLevel >= 25) {
-            gameService.playSound(() => gameService.soundManager.playAchievementRareSound());
-          } else if (nextLevel >= 10) {
-            gameService.playAchievementSound();
-          } else {
-            gameService.playSound(() => gameService.soundManager.playFeedbackSuccessSound());
-          }
+          gameService.playSound(() => gameService.soundManager.playSound(SoundAssets.levelUp, priority: SoundPriority.high));
         } catch (e) {
           if (DateTime.now().second % 30 == 0) {
             print("Sound error: $e");

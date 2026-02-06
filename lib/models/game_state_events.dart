@@ -236,6 +236,10 @@ extension GameStateEvents on GameState {
         // Duration handled by the event itself, no specific value needed here
         resolutionValue = null;
         break;
+      case EventResolutionType.dualChoice:
+      case EventResolutionType.gamble:
+        // These resolution types are no longer used - simplified event system (tap, fee, ad/PP only)
+        throw StateError('dualChoice and gamble are disabled; should not be selected');
     }
     
     // Get names of affected businesses and locales for more descriptive messages

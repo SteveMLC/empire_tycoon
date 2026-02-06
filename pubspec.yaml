@@ -88,6 +88,7 @@ flutter:
     - assets/sounds/real_estate/
     - assets/sounds/events/
     - assets/sounds/feedback/
+    - assets/sounds/game/
     - assets/sounds/platinum/
     - assets/
     - web/assets/

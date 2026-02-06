@@ -211,7 +211,8 @@ class FloatingMoneyManagerState extends State<FloatingMoneyManager> {
   final List<Widget> _activeAnimations = [];
   static const int _maxAnimations = 10;
 
-  /// Spawn a new floating money animation at the given position
+  /// Spawn a new floating money animation at the given position.
+  /// [position] is in global coordinates; converted to Stack-local for Positioned.
   void spawnFloatingMoney(double amount, Offset position) {
     if (!mounted) return;
 
@@ -222,11 +223,18 @@ class FloatingMoneyManagerState extends State<FloatingMoneyManager> {
       });
     }
 
+    // Convert global to Stack-local for Positioned.
+    Offset startPosition = position;
+    final box = context.findRenderObject() as RenderBox?;
+    if (box != null && box.hasSize) {
+      startPosition = box.globalToLocal(position);
+    }
+
     final key = UniqueKey();
     final animation = FloatingMoneyWidget(
       key: key,
       amount: amount,
-      startPosition: position,
+      startPosition: startPosition,
       onComplete: () {
         if (!mounted) return;
         setState(() {
@@ -253,6 +261,7 @@ class FloatingMoneyManagerState extends State<FloatingMoneyManager> {
   @override
   Widget build(BuildContext context) {
     return Stack(
+      clipBehavior: Clip.none,
       children: [
         widget.child,
         ..._activeAnimations,
