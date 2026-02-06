@@ -306,6 +306,18 @@ class GameState with ChangeNotifier {
   Map<String, int> eventsResolvedByLocale = {};
   DateTime? lastEventResolvedTime;
   List<GameEvent> resolvedEvents = []; // History of resolved events (limited)
+  
+  // Phase 1 Event Improvements: Gamble and Dual Choice tracking
+  int eventsResolvedByGamble = 0; // Events resolved via gamble mechanic
+  int gambleWins = 0; // Successful gambles (won the roll)
+  int gambleLosses = 0; // Failed gambles (lost the roll)
+  int eventsResolvedByDualChoice = 0; // Events resolved via dual choice (fast/full fix)
+  int fastFixesUsed = 0; // Times player chose Fast Fix
+  int fullFixesUsed = 0; // Times player chose Full Fix
+  
+  // Temporary bonuses and penalties from event mechanics
+  List<Map<String, dynamic>> temporaryBonuses = []; // [{type, multiplier, expiresAt, source}]
+  List<Map<String, dynamic>> temporaryPenalties = []; // [{type, multiplier, expiresAt, source}]
 
   // Add near the other theme-related variables like isExecutiveThemeUnlocked
   bool isExecutiveStatsThemeUnlocked = false;  // Whether the user has unlocked the theme

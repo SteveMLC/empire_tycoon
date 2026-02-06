@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // For haptic feedback
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -6,6 +7,7 @@ import '../models/game_state.dart';
 import '../models/real_estate.dart';
 import '../widgets/money_display.dart';
 import '../widgets/property_gallery_dialog.dart';
+import '../widgets/purchase_flash_overlay.dart';
 import '../utils/number_formatter.dart';
 import '../services/game_service.dart';
 import '../utils/asset_loader.dart';
@@ -1091,6 +1093,9 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
                         onPressed: canAfford
                           ? () {
                               if (gameState.buyRealEstateProperty(locale.id, property.id)) {
+                                // 💫 VISUAL FEEDBACK: Show purchase flash effect
+                                PurchaseFlashOverlay.show(context);
+                                
                                 final gameService = Provider.of<GameService>(context, listen: false);
                                 try {
                                   final assetLoader = AssetLoader();
@@ -1148,6 +1153,12 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
 
             // Attempt to purchase the upgrade - use the PASSED locale.id
             if (gameState.purchasePropertyUpgrade(locale.id, property.id, upgrade.id)) {
+              // 🎯 HAPTIC FEEDBACK: Satisfying feedback on property upgrade
+              HapticFeedback.mediumImpact();
+              
+              // 💫 VISUAL FEEDBACK: Show purchase flash effect
+              PurchaseFlashOverlay.show(context);
+              
               try {
                 // Preload sound first
                 final assetLoader = AssetLoader();

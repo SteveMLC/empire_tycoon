@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; // For haptic feedback
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -132,6 +133,9 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
         return;
       }
       
+      // 🎯 HAPTIC FEEDBACK: Light tap feel for every click
+      HapticFeedback.lightImpact();
+      
       GameService? gameService;
       try {
         gameService = Provider.of<GameService>(context, listen: false);
@@ -144,6 +148,15 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
       
       // Use the helper function to avoid extension conflicts
       _callTapOnGameState(gameState);
+
+      // 💰 FLOATING MONEY: Show catchy floating money animation
+      if (_lastTapPosition != null && mounted) {
+        final floatingMoneyManager = FloatingMoneyManager.of(context);
+        if (floatingMoneyManager != null) {
+          final clickValue = _calculateClickValue(gameState);
+          floatingMoneyManager.spawnFloatingMoney(clickValue, _lastTapPosition!);
+        }
+      }
 
       // First-tap tutorial: mark as shown so we stop highlighting the tap area
       if (!_firstTapTutorialShown) _markFirstTapTutorialShown();
@@ -182,6 +195,9 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
       final int requiredTaps = TapBoostConfig.getCumulativeTapsForLevel(nextLevel);
       
       if (gameState.taps >= requiredTaps && gameState.clickLevel < TapBoostConfig.maxClickLevel) {
+        // 🎯 HAPTIC FEEDBACK: Heavy impact for level up - make it feel significant!
+        HapticFeedback.heavyImpact();
+
         gameState.clickLevel = nextLevel;
         gameState.clickValue = TapBoostConfig.getClickBaseValueForLevel(nextLevel) * gameState.prestigeMultiplier;
         
@@ -222,6 +238,9 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
       // Premium users skip ads and get boost immediately
       gameState.startAdBoost();
       
+      // 🎯 HAPTIC FEEDBACK: Medium impact for boost activation
+      HapticFeedback.mediumImpact();
+      
       try {
         GameService? gameService = Provider.of<GameService>(context, listen: false);
         gameService.soundManager.playFeedbackNotificationSound();
@@ -247,6 +266,9 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
         if (rewardType == 'HustleBoost') {
           // User watched the ad successfully, give the boost
           gameState.startAdBoost();
+          
+          // 🎯 HAPTIC FEEDBACK: Medium impact for boost activation from ad
+          HapticFeedback.mediumImpact();
           
           // Update local state for UI
           setState(() {
@@ -307,8 +329,9 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
         final bool showBoost = !gameState.isAchievementNotificationVisible;
         
         // RESPONSIVE LAYOUT: Optimize for device size and ensure tap zone visibility
-        return Column(
-          children: [
+        return FloatingMoneyManager(
+          child: Column(
+            children: [
             // Click info card - responsive sizing
             _buildClickInfoCard(gameState, progress, nextClickValue, responsive),
             
@@ -349,6 +372,7 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
             // Bottom spacing: use smaller value to avoid overflow when notification bar is visible
             SizedBox(height: responsive.spacing(16)),
           ],
+          ),
         );
       },
     );
