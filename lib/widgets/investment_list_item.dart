@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../utils/sound_manager.dart';
 import '../models/investment.dart';
 import '../utils/number_formatter.dart';
 
@@ -50,7 +51,7 @@ class _InvestmentListItemState extends State<InvestmentListItem> with SingleTick
           _isPressed = true;
         });
         _controller.forward();
-        HapticFeedback.lightImpact(); // Add haptic feedback for better interaction feel
+        SoundManager().playLightHaptic(); // Add haptic feedback for better interaction feel
       },
       onTapUp: (_) {
         setState(() {

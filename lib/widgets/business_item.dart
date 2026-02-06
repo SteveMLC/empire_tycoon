@@ -566,7 +566,7 @@ class _BusinessItemState extends State<BusinessItem> {
             ? () {
                 if (gameState.buyBusiness(business.id)) {
                   // 🎯 HAPTIC FEEDBACK: Satisfying feedback on purchase
-                  HapticFeedback.mediumImpact();
+                  SoundManager().playMediumHaptic();
                   
                   // 💫 VISUAL FEEDBACK: Show purchase flash effect
                   PurchaseFlashOverlay.show(context);

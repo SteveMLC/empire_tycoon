@@ -82,13 +82,15 @@ extension UpdateLogic on GameState {
 
       // --- ADDED [1.5]: Check for Completed Business Upgrades ---
       for (var element in List.from(businesses)) {
-          if (element is! Business) continue; // Defensive: skip if list was ever corrupted (e.g. String in list)
-          final business = element as Business;
-          if (business.isUpgrading && business.upgradeEndTime != null && now.isAfter(business.upgradeEndTime!)) {
-              print("⏲️ Detected completed upgrade for ${business.name} in update loop.");
-              completeBusinessUpgrade(business.id);
-              stateChanged = true;
-          }
+        if (element is! Business) continue; // Defensive: skip if list was ever corrupted (e.g. String in list)
+        final business = element as Business;
+        if (business.isUpgrading && business.upgradeEndTime != null && now.isAfter(business.upgradeEndTime!)) {
+          print("⏲️ Detected completed upgrade for ${business.name} in update loop.");
+          // Use the enhanced BusinessLogic extension method that accepts a businessId,
+          // so we also benefit from its notification and save hooks.
+          BusinessLogic(this).completeBusinessUpgrade(business.id);
+          stateChanged = true;
+        }
       }
       // --- END ADDED [1.5] ---
 

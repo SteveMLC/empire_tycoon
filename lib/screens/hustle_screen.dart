@@ -14,6 +14,7 @@ import '../utils/number_formatter.dart';
 import '../utils/matrix4_fallback.dart';
 import '../utils/responsive_utils.dart';
 import '../utils/tap_boost_config.dart';
+import '../widgets/floating_money.dart';
 
 // Helper function to avoid extension conflicts
 void _callTapOnGameState(GameState gameState) {
@@ -62,6 +63,7 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
   bool _isWatchingAd = false;
   Timer? _autoClickHoldTimer;
   bool _firstTapTutorialShown = false;
+  Offset? _lastTapPosition;
 
   @override
   void initState() {
@@ -86,6 +88,9 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
 
   void _onTapDown(TapDownDetails details) {
     _animationController.forward();
+    // Track the last tap position so FloatingMoneyManager can spawn money
+    // animations from the correct location.
+    _lastTapPosition = details.localPosition;
   }
 
   void _onTapUp(TapUpDetails details) {
@@ -134,7 +139,7 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
       }
       
       // 🎯 HAPTIC FEEDBACK: Light tap feel for every click
-      HapticFeedback.lightImpact();
+      SoundManager().playLightHaptic();
       
       GameService? gameService;
       try {
@@ -196,7 +201,7 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
       
       if (gameState.taps >= requiredTaps && gameState.clickLevel < TapBoostConfig.maxClickLevel) {
         // 🎯 HAPTIC FEEDBACK: Heavy impact for level up - make it feel significant!
-        HapticFeedback.heavyImpact();
+        SoundManager().playHeavyHaptic();
 
         gameState.clickLevel = nextLevel;
         gameState.clickValue = TapBoostConfig.getClickBaseValueForLevel(nextLevel) * gameState.prestigeMultiplier;
@@ -239,7 +244,7 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
       gameState.startAdBoost();
       
       // 🎯 HAPTIC FEEDBACK: Medium impact for boost activation
-      HapticFeedback.mediumImpact();
+      SoundManager().playMediumHaptic();
       
       try {
         GameService? gameService = Provider.of<GameService>(context, listen: false);
@@ -268,7 +273,7 @@ class _HustleScreenState extends State<HustleScreen> with SingleTickerProviderSt
           gameState.startAdBoost();
           
           // 🎯 HAPTIC FEEDBACK: Medium impact for boost activation from ad
-          HapticFeedback.mediumImpact();
+          SoundManager().playMediumHaptic();
           
           // Update local state for UI
           setState(() {

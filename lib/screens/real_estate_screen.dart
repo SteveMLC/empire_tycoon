@@ -1154,7 +1154,7 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
             // Attempt to purchase the upgrade - use the PASSED locale.id
             if (gameState.purchasePropertyUpgrade(locale.id, property.id, upgrade.id)) {
               // 🎯 HAPTIC FEEDBACK: Satisfying feedback on property upgrade
-              HapticFeedback.mediumImpact();
+              SoundManager().playMediumHaptic();
               
               // 💫 VISUAL FEEDBACK: Show purchase flash effect
               PurchaseFlashOverlay.show(context);

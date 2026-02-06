@@ -552,43 +552,6 @@ class GameState with ChangeNotifier {
     }
   }
 
-  bool buyBusiness(String businessId) {
-    int index = businesses.indexWhere((b) => b.id == businessId);
-    if (index == -1) return false;
-
-    Business business = businesses[index];
-    if (business.isMaxLevel()) return false;
-
-    double cost = business.getNextUpgradeCost();
-    int timerSeconds = business.getNextUpgradeTimerSeconds();
-    
-    if (money >= cost) {
-      money -= cost;
-      
-      // Check if this upgrade requires a timer
-      if (timerSeconds <= 0) {
-        // No timer needed, increment level immediately
-        business.level++;
-      } else {
-        // Start the upgrade timer instead of incrementing level immediately
-        business.startUpgrade(timerSeconds);
-      }
-      
-      business.unlocked = true;
-      _updateBusinessUnlocks();
-      notifyListeners();
-      return true;
-    }
-    return false;
-  }
-
-  // Add method to complete a business upgrade when its timer finishes
-  void completeBusinessUpgrade(Business business) {
-    business.completeUpgrade(); // This will increment the level
-    _updateBusinessUnlocks();
-    notifyListeners();
-  }
-
   void _updateBusinessUnlocks() {
     businessesOwnedCount = businesses.where((b) => b.level > 0).length;
 

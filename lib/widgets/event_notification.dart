@@ -74,7 +74,7 @@ class _EventNotificationState extends State<EventNotification> {
     gs.tap();
     _autoClickTicks++;
     if (_autoClickTicks % 5 == 0) {
-      HapticFeedback.selectionClick();
+      SoundManager().playSelectionHaptic();
     }
   }
 

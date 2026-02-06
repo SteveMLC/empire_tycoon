@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/services.dart';
+import '../utils/sound_manager.dart';
 
 import '../models/game_state.dart';
 import '../models/investment.dart';
@@ -51,12 +52,12 @@ class _InvestmentItemState extends State<InvestmentItem> with SingleTickerProvid
   }
   
   void _handleBuyPressed() {
-    HapticFeedback.mediumImpact();
+    SoundManager().playMediumHaptic();
     widget.onBuy();
   }
   
   void _handleSellPressed() {
-    HapticFeedback.mediumImpact();
+    SoundManager().playMediumHaptic();
     widget.onSell();
   }
   

@@ -456,7 +456,7 @@ class EventsWidget extends StatelessWidget {
           // Event resolved, GameState's notifyListeners will trigger rebuild
         },
         onTap: event.resolution.type == EventResolutionType.tapChallenge ? () {
-          HapticFeedback.lightImpact();
+          SoundManager().playLightHaptic();
           try {
             Provider.of<GameService>(context, listen: false).playTapSound();
           } catch (_) {}

@@ -3,6 +3,7 @@ import 'dart:collection';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/services.dart';
 import 'sound_assets.dart'; // Assuming sound_assets.dart exists and is correct
 
 // Re-export SoundPriority if needed elsewhere, though it's defined in sounds.dart
@@ -18,6 +19,7 @@ const String _investmentSoundsEnabledPrefsKey = 'investment_sounds_enabled';
 const String _realEstateSoundsEnabledPrefsKey = 'real_estate_sounds_enabled';
 const String _eventSoundsEnabledPrefsKey = 'event_sounds_enabled';
 const String _feedbackSoundsEnabledPrefsKey = 'feedback_sounds_enabled';
+const String _hapticsEnabledPrefsKey = 'haptics_enabled';
 
 
 // Sound priority enum (ensure this matches the one in sounds.dart or remove duplication)
@@ -62,6 +64,7 @@ class SoundManager with WidgetsBindingObserver {
   bool _isRealEstateSoundsEnabled = true;
   bool _isEventSoundsEnabled = true;
   bool _isFeedbackSoundsEnabled = true;
+  bool _isHapticsEnabled = true;
 
   // Dedicated tap player pool for overlapping sounds
   final List<AudioPlayer> _tapPlayerPool = [];
@@ -534,6 +537,7 @@ class SoundManager with WidgetsBindingObserver {
     _isRealEstateSoundsEnabled = _prefs.getBool(_realEstateSoundsEnabledPrefsKey) ?? true;
     _isEventSoundsEnabled = _prefs.getBool(_eventSoundsEnabledPrefsKey) ?? true;
     _isFeedbackSoundsEnabled = _prefs.getBool(_feedbackSoundsEnabledPrefsKey) ?? true;
+    _isHapticsEnabled = _prefs.getBool(_hapticsEnabledPrefsKey) ?? true;
     
     // Apply initial volume to pool (using safe method)
     for (var player in _playerPool) {
@@ -555,6 +559,7 @@ class SoundManager with WidgetsBindingObserver {
     await _prefs.setBool(_realEstateSoundsEnabledPrefsKey, _isRealEstateSoundsEnabled);
     await _prefs.setBool(_eventSoundsEnabledPrefsKey, _isEventSoundsEnabled);
     await _prefs.setBool(_feedbackSoundsEnabledPrefsKey, _isFeedbackSoundsEnabled);
+    await _prefs.setBool(_hapticsEnabledPrefsKey, _isHapticsEnabled);
   }
 
   // Getters for settings
@@ -567,6 +572,7 @@ class SoundManager with WidgetsBindingObserver {
   bool get isRealEstateSoundsEnabled => _isRealEstateSoundsEnabled;
   bool get isEventSoundsEnabled => _isEventSoundsEnabled;
   bool get isFeedbackSoundsEnabled => _isFeedbackSoundsEnabled;
+  bool get isHapticsEnabled => _isHapticsEnabled;
 
   // Setters for settings
   Future<void> setSoundEnabled(bool enabled) async {
@@ -631,6 +637,50 @@ class SoundManager with WidgetsBindingObserver {
     if (_isFeedbackSoundsEnabled == enabled) return;
     _isFeedbackSoundsEnabled = enabled;
     await _saveSettings();
+  }
+
+  Future<void> setHapticsEnabled(bool enabled) async {
+    if (_isHapticsEnabled == enabled) return;
+    _isHapticsEnabled = enabled;
+    await _saveSettings();
+  }
+
+  // --- Haptics helpers ---
+
+  Future<void> playLightHaptic() async {
+    if (!_isHapticsEnabled) return;
+    try {
+      await HapticFeedback.lightImpact();
+    } catch (_) {
+      // Ignore platform haptics errors
+    }
+  }
+
+  Future<void> playMediumHaptic() async {
+    if (!_isHapticsEnabled) return;
+    try {
+      await HapticFeedback.mediumImpact();
+    } catch (_) {
+      // Ignore platform haptics errors
+    }
+  }
+
+  Future<void> playHeavyHaptic() async {
+    if (!_isHapticsEnabled) return;
+    try {
+      await HapticFeedback.heavyImpact();
+    } catch (_) {
+      // Ignore platform haptics errors
+    }
+  }
+
+  Future<void> playSelectionHaptic() async {
+    if (!_isHapticsEnabled) return;
+    try {
+      await HapticFeedback.selectionClick();
+    } catch (_) {
+      // Ignore platform haptics errors
+    }
   }
 
   Future<void> toggleSound(bool enabled) async {

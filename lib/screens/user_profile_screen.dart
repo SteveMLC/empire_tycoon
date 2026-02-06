@@ -1955,34 +1955,69 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
             Consumer<GameService>(
               builder: (context, gameService, child) {
-                // Get sound enabled state from the SoundManager singleton
-                bool soundEnabled = SoundManager().isSoundEnabled;
-                return SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      // Toggle sound using the SoundManager singleton
-                      SoundManager().toggleSound(!soundEnabled);
-                      // Force rebuild to update icon
-                      setState(() {});
-                    },
-                    icon: Icon(
-                      soundEnabled ? Icons.volume_up : Icons.volume_off,
-                      color: soundEnabled ? Colors.green : Colors.grey,
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      side: BorderSide(
-                        color: soundEnabled ? Colors.green : Colors.grey,
+                // Get sound and haptics enabled state from the SoundManager singleton
+                final soundManager = SoundManager();
+                final bool soundEnabled = soundManager.isSoundEnabled;
+                final bool hapticsEnabled = soundManager.isHapticsEnabled;
+
+                return Column(
+                  children: [
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: () async {
+                          // Toggle sound using the SoundManager singleton
+                          await soundManager.toggleSound(!soundEnabled);
+                          // Force rebuild to update icon/text
+                          setState(() {});
+                        },
+                        icon: Icon(
+                          soundEnabled ? Icons.volume_up : Icons.volume_off,
+                          color: soundEnabled ? Colors.green : Colors.grey,
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          side: BorderSide(
+                            color: soundEnabled ? Colors.green : Colors.grey,
+                          ),
+                        ),
+                        label: Text(
+                          soundEnabled ? 'Sound: ON' : 'Sound: OFF',
+                          style: TextStyle(
+                            color: soundEnabled ? Colors.green : Colors.grey,
+                          ),
+                        ),
                       ),
                     ),
-                    label: Text(
-                      soundEnabled ? 'Sound: ON' : 'Sound: OFF',
-                      style: TextStyle(
-                        color: soundEnabled ? Colors.green : Colors.grey,
+
+                    const SizedBox(height: 12),
+
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: () async {
+                          await soundManager.setHapticsEnabled(!hapticsEnabled);
+                          setState(() {});
+                        },
+                        icon: Icon(
+                          hapticsEnabled ? Icons.vibration : Icons.vibration_disabled,
+                          color: hapticsEnabled ? Colors.orange : Colors.grey,
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          side: BorderSide(
+                            color: hapticsEnabled ? Colors.orange : Colors.grey,
+                          ),
+                        ),
+                        label: Text(
+                          hapticsEnabled ? 'Haptics: ON' : 'Haptics: OFF',
+                          style: TextStyle(
+                            color: hapticsEnabled ? Colors.orange : Colors.grey,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
+                  ],
                 );
               },
             ),
