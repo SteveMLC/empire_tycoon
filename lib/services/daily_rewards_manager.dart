@@ -17,22 +17,21 @@ class DailyRewardsManager {
 
   static const int _cycleLength = 7;
   static const double _loyaltyCashMultiplier = 1.5;
-  static const int _megaBoostMinutes = 15;
 
   final List<DailyReward> _baseRewards = const [
     DailyReward(
       day: 1,
-      type: DailyRewardType.cash,
-      value: 10,
+      type: DailyRewardType.pp,
+      value: 5,
       description: 'Welcome back!',
-      icon: '💰',
+      icon: '💎',
     ),
     DailyReward(
       day: 2,
-      type: DailyRewardType.cash,
-      value: 15,
+      type: DailyRewardType.pp,
+      value: 10,
       description: 'Keep the momentum going!',
-      icon: '💰',
+      icon: '💎',
     ),
     DailyReward(
       day: 3,
@@ -44,7 +43,7 @@ class DailyRewardsManager {
     DailyReward(
       day: 4,
       type: DailyRewardType.cash,
-      value: 30,
+      value: 10,
       description: 'Solid progress!',
       icon: '💰',
     ),
@@ -57,15 +56,15 @@ class DailyRewardsManager {
     ),
     DailyReward(
       day: 6,
-      type: DailyRewardType.cash,
-      value: 60,
+      type: DailyRewardType.pp,
+      value: 25,
       description: 'Almost there!',
-      icon: '💰',
+      icon: '💎',
     ),
     DailyReward(
       day: 7,
       type: DailyRewardType.mega,
-      value: 120,
+      value: 20,
       description: 'Perfect Week! Mega reward',
       icon: '🌟',
     ),
@@ -192,12 +191,14 @@ class DailyRewardsManager {
       case DailyRewardType.cash:
         _applyCashReward(gameState, reward.value, cashMultiplier);
         break;
+      case DailyRewardType.pp:
+        gameState.awardPlatinumPoints(reward.value.toInt());
+        break;
       case DailyRewardType.boost:
         gameState.startBoostForDuration(Duration(minutes: reward.value.round()));
         break;
       case DailyRewardType.mega:
-        _applyCashReward(gameState, reward.value, cashMultiplier);
-        gameState.startBoostForDuration(const Duration(minutes: _megaBoostMinutes));
+        gameState.startBoostForDuration(Duration(minutes: reward.value.round()));
         break;
     }
 

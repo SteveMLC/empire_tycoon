@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-enum DailyRewardType { cash, boost, mega }
+enum DailyRewardType { cash, boost, mega, pp }
 
 class DailyReward {
   final int day;

@@ -374,6 +374,8 @@ class _RewardShowcase extends StatelessWidget {
     switch (reward.type) {
       case DailyRewardType.cash:
         return '${reward.value.toStringAsFixed(0)} min income';
+      case DailyRewardType.pp:
+        return '${reward.value.toInt()} PP';
       case DailyRewardType.boost:
         return '2x Boost (${reward.value.toStringAsFixed(0)} min)';
       case DailyRewardType.mega:
@@ -384,11 +386,11 @@ class _RewardShowcase extends StatelessWidget {
   String _rewardSubtitle(DailyReward reward) {
     switch (reward.type) {
       case DailyRewardType.cash:
-        return reward.description;
+      case DailyRewardType.pp:
       case DailyRewardType.boost:
         return reward.description;
       case DailyRewardType.mega:
-        return '2h income + 15 min 2x boost';
+        return '20 min 2x boost';
     }
   }
 }
