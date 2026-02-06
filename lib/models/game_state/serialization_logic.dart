@@ -121,6 +121,7 @@ extension SerializationLogic on GameState {
       'lastCloudSync': lastCloudSync?.toIso8601String(),
       'lastLoginDay': lastLoginDay?.toIso8601String(),
       'consecutiveLoginDays': consecutiveLoginDays,
+      'dailyRewardsState': dailyRewardsState.toJson(),
       
       // ADDED: Mogul avatars fields
       'isMogulAvatarsUnlocked': isMogulAvatarsUnlocked,
@@ -254,6 +255,17 @@ extension SerializationLogic on GameState {
       }
     }
     consecutiveLoginDays = json['consecutiveLoginDays'] ?? 1;
+    if (json['dailyRewardsState'] != null) {
+      try {
+        dailyRewardsState = DailyRewardsState.fromJson(
+          Map<String, dynamic>.from(json['dailyRewardsState']),
+        );
+      } catch (_) {
+        dailyRewardsState = DailyRewardsState();
+      }
+    } else {
+      dailyRewardsState = DailyRewardsState();
+    }
     
     // ADDED: Load mogul avatars fields
     isMogulAvatarsUnlocked = json['isMogulAvatarsUnlocked'] ?? false;

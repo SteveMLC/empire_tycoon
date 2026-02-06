@@ -39,6 +39,17 @@ extension UtilityLogic on GameState {
     notifyListeners();
   }
 
+  void addMoney(double amount, {bool asPassive = false}) {
+    if (amount <= 0) return;
+    money += amount;
+    totalEarned += amount;
+    if (asPassive) {
+      passiveEarnings += amount;
+    }
+    notifyListeners();
+    onRequestSave?.call();
+  }
+
   // Helper method to format time intervals in a human-readable way
   String _formatTimeInterval(int seconds) {
     final int days = seconds ~/ 86400;
