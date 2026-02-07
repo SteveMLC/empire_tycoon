@@ -437,57 +437,83 @@ class _LeaderboardCardState extends State<LeaderboardCard> {
 
         const SizedBox(height: 16),
 
-        // View leaderboard button
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton.icon(
-            onPressed: _isLoading
-                ? null
-                : () async {
-                    setState(() => _isLoading = true);
-                    
-                    // Submit latest score first
-                    await authService.submitHighestNetWorth(
-                        widget.gameState.totalLifetimeNetWorth);
-                    
-                    // Show leaderboard
-                    await authService.showHighestNetWorthLeaderboard();
-                    
-                    if (mounted) setState(() => _isLoading = false);
-                    
-                    // Show error if any
-                    if (authService.lastError != null && mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(authService.lastError!),
-                          backgroundColor: Colors.red.shade700,
-                        ),
-                      );
-                    }
-                  },
-            icon: _isLoading
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  )
-                : const Icon(Icons.leaderboard, size: 20),
-            label: Text(_isLoading ? 'Loading...' : 'View Global Rankings'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: isExecutive
-                  ? const Color(0xFFFFD700)
-                  : Colors.amber.shade600,
-              foregroundColor: isExecutive ? Colors.black : Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+        // View leaderboard buttons
+        Row(
+          children: [
+            // In-app leaderboard button
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.pushNamed(context, '/leaderboard');
+                },
+                icon: const Icon(Icons.emoji_events, size: 18),
+                label: const Text('Full Leaderboard'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: isExecutive
+                      ? const Color(0xFFFFD700)
+                      : Colors.amber.shade600,
+                  foregroundColor: isExecutive ? Colors.black : Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  elevation: 2,
+                ),
               ),
-              elevation: 2,
             ),
-          ),
+            const SizedBox(width: 8),
+            // Google Play leaderboard button
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: _isLoading
+                    ? null
+                    : () async {
+                        setState(() => _isLoading = true);
+                        
+                        // Submit latest score first
+                        await authService.submitHighestNetWorth(
+                            widget.gameState.totalLifetimeNetWorth);
+                        
+                        // Show leaderboard
+                        await authService.showHighestNetWorthLeaderboard();
+                        
+                        if (mounted) setState(() => _isLoading = false);
+                        
+                        // Show error if any
+                        if (authService.lastError != null && mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(authService.lastError!),
+                              backgroundColor: Colors.red.shade700,
+                            ),
+                          );
+                        }
+                      },
+                icon: _isLoading
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(Icons.sports_esports, size: 18),
+                label: Text(_isLoading ? '...' : 'Play Games'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: isExecutive
+                      ? const Color(0xFF1A56DB)
+                      : Colors.green.shade600,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  elevation: 2,
+                ),
+              ),
+            ),
+          ],
         ),
 
         const SizedBox(height: 12),

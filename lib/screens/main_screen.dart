@@ -405,6 +405,48 @@ class _MainScreenState extends State<MainScreen> with SingleTickerProviderStateM
               // Ultra-minimal corner badge for events
               const EventCornerBadge(),
               
+              // Leaderboard quick-access button
+              Positioned(
+                right: 16,
+                bottom: MediaQuery.of(context).padding.bottom + 100,
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: () => Navigator.pushNamed(context, '/leaderboard'),
+                    borderRadius: BorderRadius.circular(28),
+                    child: Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Colors.amber.shade400, Colors.amber.shade600],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.amber.withOpacity(0.4),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.2),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.emoji_events,
+                        color: Colors.white,
+                        size: 26,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              
               // Net Worth Ticker - draggable crown/earnings display
               if (gameState.showNetWorthTicker)
                 const NetWorthTicker(),
