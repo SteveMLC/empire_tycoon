@@ -5,9 +5,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/game_state.dart';
 import '../models/real_estate.dart';
+import '../models/real_estate_manager.dart';
 import '../widgets/money_display.dart';
 import '../widgets/property_gallery_dialog.dart';
 import '../widgets/purchase_flash_overlay.dart';
+import '../widgets/real_estate_manager_widgets.dart';
 import '../utils/number_formatter.dart';
 import '../services/game_service.dart';
 import '../utils/asset_loader.dart';
@@ -374,6 +376,11 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
     // Check if yacht is docked at this locale
     bool isYachtDocked = gameState.platinumYachtDockedLocaleId == locale.id;
     
+    // Check if this locale has a manager
+    bool hasManager = gameState.hasManagerForLocale(locale.id);
+    bool isRegionalManager = hasManager && gameState.hasRegionalManager(LocaleTierConfig.getTierForLocale(locale.id));
+    bool canUnlockManager = gameState.canUnlockLocaleManager(locale.id);
+    
     return GestureDetector(
       onTap: () {
         setState(() {
@@ -389,17 +396,26 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
           color: isSelected ? theme.colorScheme.primary.withOpacity(0.1) : Colors.white,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isSelected ? theme.colorScheme.primary : Colors.grey.shade300,
-            width: isSelected ? 2 : 1,
+            color: hasManager 
+                ? (isRegionalManager ? Colors.purple.shade400 : Colors.blue.shade400)
+                : (isSelected ? theme.colorScheme.primary : Colors.grey.shade300),
+            width: (isSelected || hasManager) ? 2 : 1,
           ),
-          // Add special glow effect for yacht docking
-          boxShadow: isYachtDocked ? [
-            BoxShadow(
-              color: Colors.blue.withOpacity(0.3),
-              blurRadius: 8,
-              spreadRadius: 0,
-            ),
-          ] : null,
+          // Add special glow effect for yacht docking or manager
+          boxShadow: [
+            if (isYachtDocked)
+              BoxShadow(
+                color: Colors.blue.withOpacity(0.3),
+                blurRadius: 8,
+                spreadRadius: 0,
+              ),
+            if (hasManager && !isYachtDocked)
+              BoxShadow(
+                color: (isRegionalManager ? Colors.purple : Colors.blue).withOpacity(0.25),
+                blurRadius: 6,
+                spreadRadius: 0,
+              ),
+          ],
         ),
         child: Row(
           children: [
@@ -409,6 +425,24 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
               size: 20,
             ),
             const SizedBox(width: 8),
+            
+            // Manager indicator
+            if (hasManager) ...[
+              ManagerBadge(isRegionalManager: isRegionalManager),
+              const SizedBox(width: 6),
+            ]
+            // Unlock available indicator (pulsing star)
+            else if (canUnlockManager) ...[
+              Tooltip(
+                message: 'Manager available to hire!',
+                child: Icon(
+                  Icons.star,
+                  color: Colors.amber.shade600,
+                  size: 16,
+                ),
+              ),
+              const SizedBox(width: 6),
+            ],
             
             // Yacht indicator with tooltip
             if (isYachtDocked) ...[
@@ -514,6 +548,10 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
     int totalProperties = locale.properties.length;
     bool isFullyPurchased = ownedProperties == totalProperties;
     bool isFullyMaxed = isFullyPurchased && locale.properties.every((p) => p.owned > 0 && p.allUpgradesPurchased);
+    
+    // Check manager status
+    bool hasManager = gameState.hasManagerForLocale(locale.id);
+    bool canUnlockManager = gameState.canUnlockLocaleManager(locale.id);
     
     // Calculate displayed total RE income
     double permanentIncomeBoostMultiplier = gameState.isPermanentIncomeBoostActive ? 1.05 : 1.0;
@@ -692,6 +730,18 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
           ),
         ),
 
+        // Manager Panel or Unlock Prompt
+        if (hasManager)
+          ManagerPanel(
+            localeId: locale.id,
+            localeName: locale.name,
+          )
+        else if (canUnlockManager)
+          UnlockManagerPrompt(
+            localeId: locale.id,
+            localeName: locale.name,
+          ),
+
         const SizedBox(height: 8),
 
         // Properties list
@@ -849,6 +899,9 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
     double effectiveUpgradeCost = hasUpgrade ? gameState.getEffectiveUpgradeCost(localeId, property.id, nextUpgrade!.id) : 0.0;
     bool canAffordUpgrade = hasUpgrade && gameState.money >= effectiveUpgradeCost;
     bool allUpgradesPurchased = isOwned && property.allUpgradesPurchased;
+    
+    // Check if this locale has a manager for "Buy with Upgrades" feature
+    bool hasManager = gameState.hasManagerForLocale(locale.id);
 
     // Check if this property's locale is affected by an event
     bool isLocaleAffectedByEvent = gameState.hasActiveEventForLocale(locale.id);
@@ -1125,6 +1178,12 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
                       ),
                 ),
 
+                // Manager feature: Buy Property + All Upgrades in one click
+                if (!isOwned && hasManager && property.upgrades.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  _buildBuyWithUpgradesButton(locale, property, gameState, theme),
+                ],
+
                 if (isOwned && hasUpgrade) ...[
                   const SizedBox(height: 12),
                   _buildUpgradeInfo(locale, property, nextUpgrade!, gameState, theme),
@@ -1200,6 +1259,62 @@ class _RealEstateScreenState extends State<RealEstateScreen> {
         disabledBackgroundColor: Colors.grey.shade400,
         disabledForegroundColor: Colors.white70,
         padding: const EdgeInsets.symmetric(vertical: 12),
+      ),
+    );
+  }
+
+  /// Manager feature: Buy a property with all its upgrades in one click
+  Widget _buildBuyWithUpgradesButton(RealEstateLocale locale, RealEstateProperty property, GameState gameState, ThemeData theme) {
+    // Calculate total cost: property + all upgrades
+    double propertyCost = gameState.getEffectivePropertyPurchaseCost(locale.id, property.id);
+    double totalUpgradeCost = 0.0;
+    for (var upgrade in property.upgrades) {
+      totalUpgradeCost += gameState.getEffectiveUpgradeCost(locale.id, property.id, upgrade.id);
+    }
+    double totalCost = propertyCost + totalUpgradeCost;
+    bool canAfford = gameState.money >= totalCost;
+    
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        onPressed: canAfford
+          ? () {
+              if (gameState.buyPropertyWithUpgrades(locale.id, property.id)) {
+                SoundManager().playMediumHaptic();
+                PurchaseFlashOverlay.show(context);
+                
+                final gameService = Provider.of<GameService>(context, listen: false);
+                gameService.playRealEstateSound();
+                unawaited(gameService.saveGame());
+                
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('${property.name} + all upgrades purchased!'),
+                    backgroundColor: Colors.green,
+                    duration: const Duration(seconds: 2),
+                  ),
+                );
+              }
+            }
+          : null,
+        icon: const Icon(Icons.rocket_launch, size: 16),
+        label: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('BUY WITH ALL UPGRADES'),
+            Text(
+              NumberFormatter.formatCurrency(totalCost),
+              style: const TextStyle(fontSize: 10),
+            ),
+          ],
+        ),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.blue.shade600,
+          foregroundColor: Colors.white,
+          disabledBackgroundColor: Colors.grey.shade400,
+          disabledForegroundColor: Colors.white70,
+          padding: const EdgeInsets.symmetric(vertical: 10),
+        ),
       ),
     );
   }

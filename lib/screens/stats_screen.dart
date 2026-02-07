@@ -21,6 +21,7 @@ import '../widgets/stats/theme_dialog.dart';
 import '../widgets/stats/reincorporation_utils.dart';
 import '../widgets/stats/stats_utils.dart';
 import '../widgets/stats/events_breakdown_card.dart';
+import '../widgets/real_estate_manager_widgets.dart';
 
 class StatsScreen extends StatefulWidget {
   const StatsScreen({Key? key}) : super(key: key);
@@ -1349,6 +1350,11 @@ class _StatsScreenState extends State<StatsScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Show manager persistence alert if player has managers
+            if (gameState.getTotalManagerCount() > 0) ...[
+              _buildManagerPersistenceAlert(gameState),
+              const SizedBox(height: 16),
+            ],
             const Text(
               'Re-incorporating will reset most of your progress but grants permanent multipliers to income and clicks.',
               style: TextStyle(fontWeight: FontWeight.bold),
@@ -1397,6 +1403,112 @@ class _StatsScreenState extends State<StatsScreen> {
         ],
       ),
     );
+  }
+
+  /// Build manager persistence alert for reincorporation dialog
+  Widget _buildManagerPersistenceAlert(GameState gameState) {
+    final managerCount = gameState.getTotalManagerCount();
+    final managedLocales = gameState.getManagedLocaleIds();
+    
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.blue.shade50, Colors.blue.shade100],
+        ),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.blue.shade300, width: 1.5),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.manage_accounts, color: Colors.blue.shade700, size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'You have $managerCount Real Estate Manager${managerCount > 1 ? 's' : ''}!',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blue.shade800,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'These will persist and help you rebuild faster:',
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.blue.shade700,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 6,
+            runSpacing: 4,
+            children: managedLocales.take(6).map((localeId) => Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade200,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                _formatLocaleName(localeId),
+                style: const TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.white,
+                ),
+              ),
+            )).toList(),
+          ),
+          if (managedLocales.length > 6)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                '+${managedLocales.length - 6} more...',
+                style: TextStyle(
+                  fontSize: 10,
+                  color: Colors.blue.shade600,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Icon(Icons.flash_on, color: Colors.amber.shade600, size: 14),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  'One-tap rebuilding available after re-incorporation!',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.blue.shade600,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+  
+  String _formatLocaleName(String localeId) {
+    return localeId
+        .replaceAll('_', ' ')
+        .split(' ')
+        .map((word) => word.isNotEmpty 
+            ? '${word[0].toUpperCase()}${word.substring(1)}'
+            : word)
+        .join(' ');
   }
 
   void _showReincorporateInfo(BuildContext context) {
