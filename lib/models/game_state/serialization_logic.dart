@@ -97,6 +97,13 @@ extension SerializationLogic on GameState {
       'platinumSpireLocaleId': platinumSpireLocaleId,
       // --- End Added ---
 
+      // --- Added: Real Estate Manager System (persists through reincorporation) ---
+      'realEstateManagers': realEstateManagers.map((m) => m.toJson()).toList(),
+      'unlockedLocaleManagerIds': unlockedLocaleManagerIds.toList(),
+      'unlockedRegionalManagerTiers': unlockedRegionalManagerTiers.toList(),
+      'autoRebuyOnReincorporation': autoRebuyOnReincorporation,
+      // --- End Added ---
+
       // --- Added: UI State Persistence ---
       'lastSelectedRealEstateLocaleId': lastSelectedRealEstateLocaleId,
       'netWorthTickerPosition': netWorthTickerPosition != null ? {
@@ -657,6 +664,26 @@ extension SerializationLogic on GameState {
     platinumFacadeAppliedBusinessIds = Set<String>.from(json['platinumFacadeAppliedBusinessIds'] ?? []);
     isPlatinumCrestUnlocked = json['isPlatinumCrestUnlocked'] ?? false;
     platinumSpireLocaleId = json['platinumSpireLocaleId'];
+
+    // --- Added: Load Real Estate Manager System (persists through reincorporation) ---
+    if (json['realEstateManagers'] != null && json['realEstateManagers'] is List) {
+      try {
+        realEstateManagers = (json['realEstateManagers'] as List)
+            .map((m) => RealEstateManager.fromJson(m as Map<String, dynamic>))
+            .toList();
+      } catch (e) {
+        print("⚠️ Error loading realEstateManagers: $e. Resetting to empty list.");
+        realEstateManagers = [];
+      }
+    } else {
+      realEstateManagers = [];
+    }
+    unlockedLocaleManagerIds = Set<String>.from(json['unlockedLocaleManagerIds'] ?? []);
+    unlockedRegionalManagerTiers = Set<int>.from(
+      (json['unlockedRegionalManagerTiers'] as List?)?.map((e) => e as int) ?? []
+    );
+    autoRebuyOnReincorporation = json['autoRebuyOnReincorporation'] ?? false;
+    // --- End Added ---
 
     // --- Added: Load UI State Persistence ---
     lastSelectedRealEstateLocaleId = json['lastSelectedRealEstateLocaleId'];

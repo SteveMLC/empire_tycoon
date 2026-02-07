@@ -116,6 +116,12 @@ extension PrestigeLogic on GameState {
       // ADDED: Store current taps to preserve hustle progress
       'taps': taps,
       'clickLevel': clickLevel,
+      
+      // ADDED: Real Estate Manager System (persists through reincorporation)
+      'realEstateManagers': realEstateManagers.map((m) => m.toJson()).toList(),
+      'unlockedLocaleManagerIds': unlockedLocaleManagerIds.toList(),
+      'unlockedRegionalManagerTiers': unlockedRegionalManagerTiers.toList(),
+      'autoRebuyOnReincorporation': autoRebuyOnReincorporation,
     };
 
     // --- Reset Game State --- 
@@ -257,6 +263,19 @@ extension PrestigeLogic on GameState {
     // ADDED: Restore hustle taps progress
     taps = preservedState['taps'];
     clickLevel = preservedState['clickLevel'];
+    
+    // ADDED: Restore Real Estate Manager System
+    if (preservedState['realEstateManagers'] != null) {
+      final List<dynamic> managersList = preservedState['realEstateManagers'] as List<dynamic>;
+      realEstateManagers = managersList
+          .map((m) => RealEstateManager.fromJson(m as Map<String, dynamic>))
+          .toList();
+    }
+    unlockedLocaleManagerIds = Set<String>.from(preservedState['unlockedLocaleManagerIds'] ?? []);
+    unlockedRegionalManagerTiers = Set<int>.from(
+      (preservedState['unlockedRegionalManagerTiers'] as List?)?.map((e) => e as int) ?? []
+    );
+    autoRebuyOnReincorporation = preservedState['autoRebuyOnReincorporation'] ?? false;
     
     // Restore event stats
     totalEventsResolved = preservedState['totalEventsResolved'];

@@ -26,6 +26,7 @@ import '../utils/number_formatter.dart'; // ADDED: Import for formatting
 import '../utils/tap_boost_config.dart'; // ADDED: Tap boost leveling config
 import 'mogul_avatar.dart'; // ADDED: Import for mogul avatars
 import 'daily_reward.dart'; // ADDED: Daily rewards state
+import 'real_estate_manager.dart'; // ADDED: Real Estate Manager system
 import '../services/income_service.dart'; // ADDED: Import for IncomeService
 import '../services/admob_service.dart'; // ADDED: Import for AdMobService integration
 
@@ -46,6 +47,7 @@ part 'game_state/notification_logic.dart'; // ADDED: New part file
 part 'game_state/promo_logic.dart';      // ADDED: Promo codes and deep-link rewards
 part 'game_state/income_logic.dart';    // ADDED: New part file
 part 'game_state/offline_income_logic.dart';    // ADDED: New part file for offline income
+part 'game_state/manager_logic.dart';   // ADDED: Real Estate Manager system
 
 // Define a limit for how many days of earnings history to keep
 const int _maxDailyEarningsHistory = 30; // Memory Optimization: Limit history size
@@ -141,6 +143,13 @@ class GameState with ChangeNotifier {
   DateTime? lastTimeWarpReset; // Timestamp for weekly reset of 'platinum_warp'
   DateTime? timeWarpCooldownEnd; // Cooldown for 'platinum_warp' (2h after each use)
   // >> END: Platinum Vault Item State <<
+
+  // >> START: Real Estate Manager System (Persists through reincorporation) <<
+  List<RealEstateManager> realEstateManagers = [];       // Full manager records
+  Set<String> unlockedLocaleManagerIds = {};             // Quick lookup for locale managers
+  Set<int> unlockedRegionalManagerTiers = {};            // Quick lookup for regional managers (by tier)
+  bool autoRebuyOnReincorporation = false;               // Premium feature: auto-rebuy after reincorporation
+  // >> END: Real Estate Manager System <<
 
   // ADDED: Active Challenge State
   Challenge? activeChallenge;
