@@ -148,10 +148,20 @@ class _BusinessItemState extends State<BusinessItem> {
     final int currentLevel = widget.business.level;
     if (currentLevel > _lastKnownLevel) {
       _lastKnownLevel = currentLevel;
+      
+      // Check for individual business max level achievement
       ReviewManager.instance.onBusinessLevelUp(
         context,
         level: currentLevel,
         businessId: widget.business.id,
+      );
+      
+      // Check for total level milestones (10, 25, 50, 100)
+      final gameState = Provider.of<GameState>(context, listen: false);
+      final int totalLevel = gameState.businesses.fold(0, (sum, b) => sum + b.level);
+      ReviewManager.instance.onTotalLevelMilestone(
+        context,
+        totalLevel: totalLevel,
       );
     }
   }

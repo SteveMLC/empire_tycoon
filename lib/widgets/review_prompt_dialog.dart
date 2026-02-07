@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 class ReviewPromptDialog extends StatelessWidget {
   final VoidCallback onLoveIt;
   final VoidCallback onNotReally;
+  final VoidCallback? onNeverShowAgain;
 
   const ReviewPromptDialog({
     Key? key,
     required this.onLoveIt,
     required this.onNotReally,
+    this.onNeverShowAgain,
   }) : super(key: key);
 
   @override
@@ -33,6 +35,14 @@ class ReviewPromptDialog extends StatelessWidget {
         style: TextStyle(fontSize: 16, height: 1.3),
       ),
       actions: [
+        if (onNeverShowAgain != null)
+          TextButton(
+            onPressed: onNeverShowAgain,
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.grey,
+            ),
+            child: const Text('Never ask again'),
+          ),
         TextButton(
           onPressed: onNotReally,
           child: const Text('Not Really'),
