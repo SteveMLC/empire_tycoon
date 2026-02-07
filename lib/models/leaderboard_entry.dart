@@ -202,7 +202,7 @@ enum LeaderboardCategory {
   achievements('ACHIEVEMENTS_COUNT'),
   businessesOwned('BUSINESSES_OWNED'),
   upgradesPurchased('UPGRADES_PURCHASED'),
-  reincarnations('REINCARNATIONS'),
+  reincorporations('REINCORPORATIONS'),
   tycoonRanking('TYCOON_RANKING');
 
   final String id;
@@ -218,7 +218,7 @@ enum LeaderboardCategory {
         return 'Businesses Owned';
       case LeaderboardCategory.upgradesPurchased:
         return 'Total Upgrades';
-      case LeaderboardCategory.reincarnations:
+      case LeaderboardCategory.reincorporations:
         return 'Reincorporations';
       case LeaderboardCategory.tycoonRanking:
         return 'Tycoon Ranking';
@@ -235,7 +235,7 @@ enum LeaderboardCategory {
         return '🏢';
       case LeaderboardCategory.upgradesPurchased:
         return '⬆️';
-      case LeaderboardCategory.reincarnations:
+      case LeaderboardCategory.reincorporations:
         return '🔄';
       case LeaderboardCategory.tycoonRanking:
         return '👑';
