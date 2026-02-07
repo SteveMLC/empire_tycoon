@@ -39,10 +39,14 @@ dependencies:
   flutter_svg: ^2.0.0
   google_fonts: ^4.0.0
   
-  # Firebase Authentication - REQUIRED for Google Play Games Services
-  firebase_core: ^2.24.2
-  firebase_auth: ^4.15.3
+  # Firebase - REQUIRED for Auth, Leaderboards, Cloud Functions
+  firebase_core: ^3.15.2
+  firebase_auth: ^5.6.0
   google_sign_in: ^6.1.6
+  
+  # Firebase Firestore & Cloud Functions for Global Leaderboards
+  cloud_firestore: ^5.6.6
+  cloud_functions: ^5.6.2
   
   # Google Play Games Services
   games_services: ^4.1.1
